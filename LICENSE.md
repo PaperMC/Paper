@@ -68,4 +68,5 @@ mja00 <me@mja00.dev>
 roro1506HD <16260475+roro1506HD@users.noreply.github.com>
 Toffikk <slodkitofik@gmail.com>
 NonSwag <mail@nonswag.dev>
+Strokkur24 <strokkur.24@gmail.com>
 ```

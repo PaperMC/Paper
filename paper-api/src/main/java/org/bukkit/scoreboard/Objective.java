@@ -1,6 +1,8 @@
 package org.bukkit.scoreboard;
 
+import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -148,10 +150,13 @@ public interface Objective {
      * @return Score tracking the Objective and player specified
      * @throws IllegalStateException if this objective has been unregistered
      * @see #getScore(String)
+     * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
-    // @Deprecated(since = "1.7.8") // Paper
     @NotNull
-    Score getScore(@NotNull OfflinePlayer player);
+    @ApiStatus.Obsolete(since = "1.21.11")
+    default Score getScore(@NotNull OfflinePlayer player) {
+        return this.getScore((ScoreHolder) player);
+    }
 
     /**
      * Gets an entry's Score for an Objective on this Scoreboard.
@@ -162,9 +167,21 @@ public interface Objective {
      * @throws IllegalArgumentException if entry is longer than 32767 characters.
      */
     @NotNull
-    Score getScore(@NotNull String entry);
+    default Score getScore(@NotNull String entry) {
+        return this.getScore(ScoreHolder.scoreHolder(entry));
+    }
 
-    // Paper start - improve scoreboard entries
+    /**
+     * Gets a score holder's Score for an Objective on this Scoreboard.
+     *
+     * @param holder score holder for the Score
+     * @return Score tracking the Objective and score holder specified
+     * @throws IllegalStateException if this objective has been unregistered
+     * @throws IllegalArgumentException if the holder's name is longer than 32767 characters.
+     */
+    @NotNull
+    Score getScore(@NotNull ScoreHolder holder);
+
     /**
      * Gets an entity's Score for an Objective on this Scoreboard.
      *
@@ -172,11 +189,13 @@ public interface Objective {
      * @return Score tracking the Objective and entity specified
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this objective has been unregistered
+     * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
-    @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException;
-    // Paper end - improve scoreboard entries
+    @ApiStatus.Obsolete(since = "1.21.11")
+    default @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) {
+        return this.getScore(entity);
+    }
 
-    // Paper start - add more score API
     /**
      * Gets if this objective will auto update score
      * displays on changes.
@@ -194,16 +213,14 @@ public interface Objective {
      * @throws IllegalStateException if this objective has been unregistered
      */
     void setAutoUpdateDisplay(boolean autoUpdateDisplay);
-    // Paper end - add more score API
 
-    // Paper start - number format api
     /**
      * Gets the number format for this objective's scores or null if the client default is used.
      *
      * @return this objective's number format, or null if the client default is used
      * @throws IllegalStateException if this objective has been unregistered
      */
-    @Nullable io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat();
+    @Nullable NumberFormat numberFormat();
 
     /**
      * Sets the number format for this objective's scores.
@@ -211,6 +228,5 @@ public interface Objective {
      * @param format the number format to set, pass null to reset format to default
      * @throws IllegalStateException if this objective has been unregistered
      */
-    void numberFormat(@Nullable io.papermc.paper.scoreboard.numbers.NumberFormat format);
-    // Paper end - number format api
+    void numberFormat(@Nullable NumberFormat format);
 }
