@@ -26,6 +26,13 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class StructureTagKeys {
     /**
+     * {@code #minecraft:abandoned_camp}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ABANDONED_CAMP = create(key("abandoned_camp"));
+
+    /**
      * {@code #minecraft:cats_spawn_as_black}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -68,6 +75,83 @@ public final class StructureTagKeys {
     public static final TagKey<Structure> OCEAN_RUIN = create(key("ocean_ruin"));
 
     /**
+     * {@code #minecraft:on_abandoned_camp_bamboo_jungle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_BAMBOO_JUNGLE = create(key("on_abandoned_camp_bamboo_jungle"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_birch_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_BIRCH_FOREST = create(key("on_abandoned_camp_birch_forest"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_cherry_grove}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_CHERRY_GROVE = create(key("on_abandoned_camp_cherry_grove"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_dappled_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_DAPPLED_FOREST = create(key("on_abandoned_camp_dappled_forest"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_flower_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_FLOWER_FOREST = create(key("on_abandoned_camp_flower_forest"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_pale_garden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_PALE_GARDEN = create(key("on_abandoned_camp_pale_garden"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_swamp}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_SWAMP = create(key("on_abandoned_camp_swamp"));
+
+    /**
+     * {@code #minecraft:on_abandoned_camp_windswept_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ABANDONED_CAMP_WINDSWEPT_FOREST = create(key("on_abandoned_camp_windswept_forest"));
+
+    /**
+     * {@code #minecraft:on_ancient_city_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_ANCIENT_CITY_MAPS = create(key("on_ancient_city_maps"));
+
+    /**
+     * {@code #minecraft:on_buried_trial_chambers_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_BURIED_TRIAL_CHAMBERS_MAPS = create(key("on_buried_trial_chambers_maps"));
+
+    /**
+     * {@code #minecraft:on_desert_pyramid_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_DESERT_PYRAMID_MAPS = create(key("on_desert_pyramid_maps"));
+
+    /**
      * {@code #minecraft:on_desert_village_maps}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -75,18 +159,32 @@ public final class StructureTagKeys {
     public static final TagKey<Structure> ON_DESERT_VILLAGE_MAPS = create(key("on_desert_village_maps"));
 
     /**
-     * {@code #minecraft:on_jungle_explorer_maps}
+     * {@code #minecraft:on_jungle_pyramid_maps}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<Structure> ON_JUNGLE_EXPLORER_MAPS = create(key("on_jungle_explorer_maps"));
+    public static final TagKey<Structure> ON_JUNGLE_PYRAMID_MAPS = create(key("on_jungle_pyramid_maps"));
 
     /**
-     * {@code #minecraft:on_ocean_explorer_maps}
+     * {@code #minecraft:on_mineshaft_maps}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<Structure> ON_OCEAN_EXPLORER_MAPS = create(key("on_ocean_explorer_maps"));
+    public static final TagKey<Structure> ON_MINESHAFT_MAPS = create(key("on_mineshaft_maps"));
+
+    /**
+     * {@code #minecraft:on_ocean_monument_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_OCEAN_MONUMENT_MAPS = create(key("on_ocean_monument_maps"));
+
+    /**
+     * {@code #minecraft:on_ocean_ruin_warm_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Structure> ON_OCEAN_RUIN_WARM_MAPS = create(key("on_ocean_ruin_warm_maps"));
 
     /**
      * {@code #minecraft:on_plains_village_maps}
@@ -110,11 +208,11 @@ public final class StructureTagKeys {
     public static final TagKey<Structure> ON_SNOWY_VILLAGE_MAPS = create(key("on_snowy_village_maps"));
 
     /**
-     * {@code #minecraft:on_swamp_explorer_maps}
+     * {@code #minecraft:on_swamp_hut_maps}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<Structure> ON_SWAMP_EXPLORER_MAPS = create(key("on_swamp_explorer_maps"));
+    public static final TagKey<Structure> ON_SWAMP_HUT_MAPS = create(key("on_swamp_hut_maps"));
 
     /**
      * {@code #minecraft:on_taiga_village_maps}
@@ -131,18 +229,11 @@ public final class StructureTagKeys {
     public static final TagKey<Structure> ON_TREASURE_MAPS = create(key("on_treasure_maps"));
 
     /**
-     * {@code #minecraft:on_trial_chambers_maps}
+     * {@code #minecraft:on_woodland_mansion_maps}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<Structure> ON_TRIAL_CHAMBERS_MAPS = create(key("on_trial_chambers_maps"));
-
-    /**
-     * {@code #minecraft:on_woodland_explorer_maps}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Structure> ON_WOODLAND_EXPLORER_MAPS = create(key("on_woodland_explorer_maps"));
+    public static final TagKey<Structure> ON_WOODLAND_MANSION_MAPS = create(key("on_woodland_mansion_maps"));
 
     /**
      * {@code #minecraft:ruined_portal}

@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent;
 
 import io.papermc.paper.annotation.MinecraftVersionDependent;
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.item.AttackRange;
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
@@ -27,7 +28,7 @@ import io.papermc.paper.datacomponent.item.KineticWeapon;
 import io.papermc.paper.datacomponent.item.LodestoneTracker;
 import io.papermc.paper.datacomponent.item.MapDecorations;
 import io.papermc.paper.datacomponent.item.MapId;
-import io.papermc.paper.datacomponent.item.MapItemColor;
+import io.papermc.paper.datacomponent.item.MobVisibility;
 import io.papermc.paper.datacomponent.item.OminousBottleAmplifier;
 import io.papermc.paper.datacomponent.item.PiercingWeapon;
 import io.papermc.paper.datacomponent.item.PotDecorations;
@@ -35,6 +36,7 @@ import io.papermc.paper.datacomponent.item.PotionContents;
 import io.papermc.paper.datacomponent.item.Repairable;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
+import io.papermc.paper.datacomponent.item.SignText;
 import io.papermc.paper.datacomponent.item.SulfurCubeContent;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
@@ -43,6 +45,7 @@ import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.datacomponent.item.UseCooldown;
 import io.papermc.paper.datacomponent.item.UseEffects;
 import io.papermc.paper.datacomponent.item.UseRemainder;
+import io.papermc.paper.datacomponent.item.VillagerFood;
 import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
@@ -213,6 +216,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
     public static final DataComponentType.Valued<Weapon> WEAPON = valued("weapon");
+    public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
     public static final DataComponentType.Valued<Enchantable> ENCHANTABLE = valued("enchantable");
     public static final DataComponentType.Valued<Equippable> EQUIPPABLE = valued("equippable");
     public static final DataComponentType.Valued<Repairable> REPAIRABLE = valued("repairable");
@@ -222,8 +226,9 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<BlocksAttacks> BLOCKS_ATTACKS = valued("blocks_attacks");
     public static final DataComponentType.Valued<PiercingWeapon> PIERCING_WEAPON = valued("piercing_weapon");
     public static final DataComponentType.Valued<KineticWeapon> KINETIC_WEAPON = valued("kinetic_weapon");
-    public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
-    public static final DataComponentType.Valued<SwingAnimation> SWING_ANIMATION = valued("swing_animation");
+    public static final DataComponentType.Valued<SwingAnimation> ATTACK_ANIMATION = valued("attack_animation");
+    public static final DataComponentType.Valued<SwingAnimation> INTERACT_ANIMATION = valued("interact_animation");
+    public static final DataComponentType.Valued<VillagerFood> VILLAGER_FOOD = valued("villager_food");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
      * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments
@@ -243,10 +248,6 @@ public final class DataComponentTypes {
      * Represents a color applied to a dyeable item.
      */
     public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
-    /**
-     * Represents the tint of the decorations on the {@link org.bukkit.inventory.ItemType#FILLED_MAP} item.
-     */
-    public static final DataComponentType.Valued<MapItemColor> MAP_COLOR = valued("map_color");
     /**
      * References the shared map state holding map contents and markers for a {@link org.bukkit.inventory.ItemType#FILLED_MAP}.
      */
@@ -299,7 +300,6 @@ public final class DataComponentTypes {
      * Holds the instrument type used by a Goat Horn.
      */
     public static final DataComponentType.Valued<MusicInstrument> INSTRUMENT = valued("instrument");
-    // this is a either holder, but due to legacy item loading
     public static final DataComponentType.Valued<TrimMaterial> PROVIDES_TRIM_MATERIAL = valued("provides_trim_material");
     /**
      * Controls the amplifier amount for an Ominous Bottle's Bad Omen effect.
@@ -366,6 +366,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
     public static final DataComponentType.Valued<Key> BREAK_SOUND = valued("break_sound");
+    public static final DataComponentType.Valued<MobVisibility> MOB_VISIBILITY = valued("mob_visibility");
     public static final DataComponentType.Valued<Villager.Type> VILLAGER_VARIANT = valued("villager/variant");
     public static final DataComponentType.Valued<Wolf.Variant> WOLF_VARIANT = valued("wolf/variant");
     public static final DataComponentType.Valued<Wolf.SoundVariant> WOLF_SOUND_VARIANT = valued("wolf/sound_variant");
@@ -395,6 +396,11 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
+    public static final DataComponentType.Valued<PotPatternType> PROVIDES_POTTERY_PATTERN = valued("provides_pottery_pattern");
+    public static final DataComponentType.Valued<SignText> SIGN_TEXT_FRONT = valued("sign_text_front");
+    public static final DataComponentType.Valued<SignText> SIGN_TEXT_BACK = valued("sign_text_back");
+    public static final DataComponentType.NonValued WAXED = unvalued("waxed");
+    public static final DataComponentType.Valued<DyeColor> CUSHION_COLOR = valued("cushion/color");
 
     private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));

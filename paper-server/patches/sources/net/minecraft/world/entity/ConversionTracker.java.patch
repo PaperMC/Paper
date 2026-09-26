@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/entity/ConversionTracker.java
++++ b/net/minecraft/world/entity/ConversionTracker.java
+@@ -25,6 +_,16 @@
+     private final @Nullable BiConsumer<M, ServerLevel> postConversionStep;
+     public int afflictionTime = 0;
+     public int conversionTime;
++    // Paper start - add spawn and transform reasons
++    private org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason = org.bukkit.event.entity.EntityTransformEvent.TransformReason.UNKNOWN;
++    private org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT;
++
++    public ConversionTracker<M> setEventReasons(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason, final org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason) {
++        this.spawnReason = spawnReason;
++        this.transformReason = transformReason;
++        return this;
++    }
++    // Paper end - add spawn and transform reasons
+ 
+     public ConversionTracker(
+         final M mob,
+@@ -95,7 +_,7 @@
+     }
+ 
+     private void doConversion(final ServerLevel serverLevel) {
+-        this.mob.convertTo(this.convertsTo.get(), ConversionParams.single(this.mob, true, true), converted -> {
++        M mob = this.mob.convertTo(this.convertsTo.get(), ConversionParams.single(this.mob, true, true), converted -> { // Paper - Fix issues with mob conversion; reset conversion time to prevent event spam
+             if (this.postConversionStep != null) {
+                 this.postConversionStep.accept((M)converted, serverLevel);
+             }
+@@ -103,7 +_,14 @@
+             if (!converted.isSilent()) {
+                 serverLevel.levelEvent(null, this.conversionSound.get(), converted.blockPosition(), 0);
+             }
+-        });
++        // Paper start - add spawn and transform reasons
++        }, this.transformReason, this.spawnReason);
++
++        if (mob == null) {
++            // Reset conversion time to prevent event spam
++            this.conversionTime = this.totalConversionTime;
++        }
++        // Paper end - add spawn and transform reasons
+     }
+ 
+     public void startConversion(final int time) {

@@ -6,10 +6,10 @@ Subject: [PATCH] Improve cancelling PreCreatureSpawnEvent with per player mob
 
 
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index a79b74beb7a21dccf667eb0dea0506339acc797d..b42bf0ecd381c07ff7c42dea3970f598ec426e98 100644
+index fee899044c389003a1f976f04b752bc78e2bfb69..b4d62fac8af59f98463f55f2b864343baeefc79d 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -257,8 +257,25 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -256,8 +256,25 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -37,10 +37,10 @@ index a79b74beb7a21dccf667eb0dea0506339acc797d..b42bf0ecd381c07ff7c42dea3970f598
      // Paper end - Optional per player mob spawns
  
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index a7ef3915dca196e6c5afac43dff99c870f4dee2a..c3adbe0753f6a4158f25126ed7443f8a958763d9 100644
+index c1f6f20247e85c98fbefaee707c1532e8bca64f1..66d706d2a7995b437d102903012a714c38e4876c 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -540,7 +540,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -539,7 +539,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
              // re-set mob counts
              for (ServerPlayer player : this.level.players()) {
@@ -57,13 +57,13 @@ index a7ef3915dca196e6c5afac43dff99c870f4dee2a..c3adbe0753f6a4158f25126ed7443f8a
 +                }
 +                // Paper end - per player mob spawning backoff
              }
-             spawnCookie = NaturalSpawner.createState(chunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
+             spawnCookie = NaturalSpawner.createState(chunkCount, this.level, this::getFullChunk, null, true);
          } else {
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 2e261e411bee7777008696d992c2e30cf5ca0c5e..3ee3d29340bc82b071d621e8e3afa294c20dd06f 100644
+index 5185dd1f05c166f4ed5891130d1deb6ee551169a..4227d7b652b989bb86bff6960545c323dc535e46 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -421,6 +421,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+@@ -426,6 +426,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
      public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
      public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS];
      // Paper end - Optional per player mob spawns
@@ -72,10 +72,10 @@ index 2e261e411bee7777008696d992c2e30cf5ca0c5e..3ee3d29340bc82b071d621e8e3afa294
      public @Nullable String lastKnownName; // Better rename detection
      public String displayName;
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index c75fcec1aaa88da8f50a8b2d94fa76a058b171a7..e193cbed115663e9ca7a611837d5b8540dda03db 100644
+index 60cbd430bd41b1268dee9e5c53c9eb48129be44a..06c63a3429d010546c8b9de610cbae7bf6bb6935 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -304,6 +304,11 @@ public final class NaturalSpawner {
+@@ -298,6 +298,11 @@ public final class NaturalSpawner {
  
                              // Paper start - PreCreatureSpawnEvent
                              PreSpawnStatus doSpawning = isValidSpawnPostitionForType(level, mobCategory, structureManager, generator, currentSpawnData, pos, nearestPlayerDistanceSqr);

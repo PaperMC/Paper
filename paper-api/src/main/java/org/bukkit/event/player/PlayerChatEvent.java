@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link io.papermc.paper.event.player.AsyncChatEvent} instead, wherever possible.
  */
 @Deprecated(since = "1.3.1")
-@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
+@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.", value = true, propagate = false)
 public class PlayerChatEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

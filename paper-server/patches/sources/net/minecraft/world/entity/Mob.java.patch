@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -96,6 +_,14 @@
+@@ -97,6 +_,14 @@
  import net.minecraft.world.ticks.ContainerSingleItem;
  import org.jspecify.annotations.Nullable;
  
@@ -15,7 +15,7 @@
  public abstract class Mob extends LivingEntity implements Targeting, EquipmentUser, Leashable {
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
-@@ -132,6 +_,7 @@
+@@ -133,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      protected final GoalSelector goalSelector;
@@ -23,15 +23,16 @@
      public GoalSelector targetSelector;
      private @Nullable LivingEntity target;
      private final Sensing sensing;
-@@ -144,6 +_,7 @@
+@@ -145,6 +_,8 @@
      private Leashable.@Nullable LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
++    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
  
      protected Mob(final EntityType<? extends Mob> type, final Level level) {
          super(type, level);
-@@ -249,7 +_,44 @@
+@@ -250,7 +_,44 @@
      }
  
      public void setTarget(final @Nullable LivingEntity target) {
@@ -77,11 +78,16 @@
      }
  
      @Override
-@@ -388,13 +_,22 @@
+@@ -389,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
 +        output.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
++        // Paper start - allow changing despawnInPeaceful
++        if (this.despawnInPeacefulOverride != net.kyori.adventure.util.TriState.NOT_SET) {
++            output.putString("Paper.DespawnInPeacefulOverride", this.despawnInPeacefulOverride.name());
++        }
++        // Paper end - allow changing despawnInPeaceful
      }
  
      @Override
@@ -102,11 +108,12 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -406,12 +_,13 @@
+@@ -407,12 +_,14 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
 +        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
++        this.despawnInPeacefulOverride = input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - allow changing despawnInPeaceful
      }
  
      @Override
@@ -117,7 +124,7 @@
      }
  
      @Override
-@@ -470,6 +_,11 @@
+@@ -471,6 +_,11 @@
              for (ItemEntity entity : this.level()
                  .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(pickupReach.getX(), pickupReach.getY(), pickupReach.getZ()))) {
                  if (!entity.isRemoved() && !entity.getItem().isEmpty() && !entity.hasPickUpDelay() && this.wantsToPickUp(serverLevel, entity.getItem())) {
@@ -129,7 +136,7 @@
                      this.pickUpItem(serverLevel, entity);
                  }
              }
-@@ -520,18 +_,24 @@
+@@ -516,18 +_,24 @@
  
      protected void pickUpItem(final ServerLevel level, final ItemEntity entity) {
          ItemStack itemStack = entity.getItem();
@@ -156,7 +163,7 @@
          EquipmentSlot slot = this.getEquipmentSlotForItem(itemStack);
          if (!this.isEquippableInSlot(itemStack, slot)) {
              return ItemStack.EMPTY;
-@@ -544,8 +_,13 @@
+@@ -540,8 +_,13 @@
              current = this.getItemBySlot(slot);
              canReplace = current.isEmpty();
          }
@@ -172,20 +179,23 @@
              double dropChance = this.dropChances.byEquipment(slot);
              if (!current.isEmpty() && Math.max(this.random.nextFloat() - 0.1F, 0.0F) < dropChance) {
                  this.spawnAtLocation(level, current);
-@@ -688,22 +_,29 @@
+@@ -683,28 +_,34 @@
+ 
      @Override
      public void checkDespawn() {
-         if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
+-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
 -            this.discard();
++        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.despawnInPeacefulOverride.toBooleanOrElse(!this.getType().isAllowedInPeaceful())) { // Paper - allow changing despawnInPeaceful
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+         } else {
+             boolean isPersistent = this.isPersistenceRequired() || this.requiresCustomPersistence();
 -            Entity player = this.level().getNearestPlayer(this, -1.0);
 +            Entity player = this.level().findNearbyPlayer(this, -1.0, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
              if (player != null) {
 -                double distSqr = player.distanceToSqr(this);
 -                int instantDespawnDistance = this.getType().getCategory().getDespawnDistance();
 -                int despawnDistanceSqr = instantDespawnDistance * instantDespawnDistance;
--                if (distSqr > despawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
+-                if (!isPersistent && distSqr > despawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
 -                    this.discard();
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
@@ -196,17 +206,24 @@
 +                final double dzSqr = Mth.square(player.getZ() - this.getZ());
 +                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
-+                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
++                if (!isPersistent && despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
 +                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                  }
  
 -                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
 -                int noDespawnDistanceSqr = noDespawnDistance * noDespawnDistance;
--                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && distSqr > noDespawnDistanceSqr && this.removeWhenFarAway(distSqr)) {
+-                if (!isPersistent
+-                    && this.noActionTime > 600
+-                    && this.random.nextInt(800) == 0
+-                    && distSqr > noDespawnDistanceSqr
+-                    && this.removeWhenFarAway(distSqr)) {
 -                    this.discard();
 -                } else if (distSqr < noDespawnDistanceSqr) {
 +                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
-+                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
++                    if (!isPersistent
++                        && this.noActionTime > 600
++                        && this.random.nextInt(800) == 0
++                        && this.removeWhenFarAway(distanceSquared)) {
 +                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +                    }
 +                } else {
@@ -214,7 +231,7 @@
                      this.noActionTime = 0;
                  }
              }
-@@ -715,6 +_,15 @@
+@@ -714,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
          this.noActionTime++;
@@ -230,7 +247,7 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("sensing");
          this.sensing.tick();
-@@ -885,15 +_,79 @@
+@@ -884,15 +_,79 @@
              public boolean stillValid(final Player player) {
                  return player.getVehicle() == Mob.this || player.isWithinEntityInteractionRange(Mob.this, 4.0);
              }
@@ -310,7 +327,7 @@
              float dropChance = this.dropChances.byEquipment(slot);
              if (dropChance != 0.0F) {
                  boolean preserve = this.dropChances.isPreserved(slot);
-@@ -912,7 +_,8 @@
+@@ -911,7 +_,8 @@
                      }
  
                      this.spawnAtLocation(level, itemStack);
@@ -320,7 +337,7 @@
                  }
              }
          }
-@@ -931,11 +_,17 @@
+@@ -930,11 +_,17 @@
  
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
              ItemStack itemStack = this.getItemBySlot(slot);
@@ -340,7 +357,7 @@
                      this.spawnAtLocation(level, itemStack);
                  }
              }
-@@ -1236,6 +_,22 @@
+@@ -1235,6 +_,22 @@
          final EntitySpawnReason spawnReason,
          final ConversionParams.AfterConversion<T> afterConversion
      ) {
@@ -363,7 +380,7 @@
          if (this.isRemoved()) {
              return null;
          }
-@@ -1246,13 +_,23 @@
+@@ -1245,13 +_,23 @@
          }
  
          params.type().convert(this, newMob, params);
@@ -390,7 +407,7 @@
          }
  
          return newMob;
-@@ -1261,7 +_,17 @@
+@@ -1260,7 +_,17 @@
      public <T extends Mob> @Nullable T convertTo(
          final EntityType<T> entityType, final ConversionParams params, final ConversionParams.AfterConversion<T> afterConversion
      ) {
@@ -409,7 +426,7 @@
      }
  
      @Override
-@@ -1302,7 +_,17 @@
+@@ -1301,7 +_,17 @@
      public boolean startRiding(final Entity entity, final boolean force, final boolean sendEventAndTriggers) {
          boolean result = super.startRiding(entity, force, sendEventAndTriggers);
          if (result && this.isLeashed()) {
@@ -428,7 +445,7 @@
          }
  
          return result;
-@@ -1471,7 +_,7 @@
+@@ -1470,7 +_,7 @@
                  Set<WrappedGoal> availableGoals = this.goalSelector.getAvailableGoals();
                  List<DebugGoalInfo.DebugGoal> goalInfo = new ArrayList<>(availableGoals.size());
                  availableGoals.forEach(

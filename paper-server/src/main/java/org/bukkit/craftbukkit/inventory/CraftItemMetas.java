@@ -7,6 +7,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -202,7 +203,7 @@ public final class CraftItemMetas {
                 || itemType == ItemType.LINGERING_POTION || itemType == ItemType.TIPPED_ARROW) {
             return CraftItemMetas.asType(CraftItemMetas.POTION_META_DATA);
         }
-        if (itemType == ItemType.FILLED_MAP) {
+        if (itemHandle instanceof MapItem) {
             return CraftItemMetas.asType(CraftItemMetas.MAP_META_DATA);
         }
         if (itemType == ItemType.FIREWORK_ROCKET) {

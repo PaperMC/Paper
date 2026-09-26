@@ -14,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:26.2+build.1")
+    mache("io.papermc:mache:26.3+build.1")
     paperclip("io.papermc:paperclip:3.0.4")
 }
 
@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
+        //oldPaperCommit = "e5fe71723e2ffde7cc9fafc085ac3bb73e63175e"
     }
 }
 
@@ -90,9 +90,9 @@ val log4jPlugins = sourceSets.create("log4jPlugins")
 configurations.named(log4jPlugins.compileClasspathConfigurationName) {
     extendsFrom(configurations.compileClasspath.get())
 }
-val alsoShade: Configuration by configurations.creating
+val alsoShade: Configuration = configurations.create("alsoShade")
 
-val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
+configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
     extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
 }
@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.2.0")
+    implementation("ca.spottedleaf:leafpile:1.2.2")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -130,7 +130,7 @@ dependencies {
     implementation("com.velocitypowered:velocity-native:4.1.0") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
@@ -209,7 +209,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
 }
 
-val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
@@ -289,6 +289,7 @@ fun TaskContainer.registerRunTask(
         systemProperty("disable.watchdog", true)
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
+    systemProperty("paper.alwaysPrintWarningState", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
