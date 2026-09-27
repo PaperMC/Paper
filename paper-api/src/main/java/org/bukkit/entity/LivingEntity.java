@@ -720,20 +720,28 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public boolean hasLineOfSight(@NotNull Location location);
 
     /**
-     * Returns if the living entity despawns when away from players or not.
+     * Gets whether this living entity is allowed to be removed when far away.
      * <p>
-     * By default, animals are not removed while other mobs are.
+     * For mobs, this is the inverse of {@link Mob#isPersistenceRequired()}.
+     * A return value of {@code true} does not guarantee that the mob will
+     * despawn, as other conditions may prevent despawning.
      *
-     * @return true if the living entity is removed when away from players
+     * @return true if this living entity is allowed to be removed when far away
+     * @deprecated use {@link Mob#isPersistenceRequired()} for mobs
      */
+    @Deprecated(since = "26.3")
     public boolean getRemoveWhenFarAway();
 
     /**
-     * Sets whether or not the living entity despawns when away from players
-     * or not.
+     * Sets whether this living entity is allowed to be removed when far away.
+     * <p>
+     * For mobs, this is the inverse of
+     * {@link Mob#setPersistenceRequired(boolean)}.
      *
-     * @param remove the removal status
+     * @param remove whether this living entity is allowed to be removed
+     * @deprecated use {@link Mob#setPersistenceRequired(boolean)} for mobs
      */
+    @Deprecated(since = "26.3")
     public void setRemoveWhenFarAway(boolean remove);
 
     /**
