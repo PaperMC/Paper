@@ -346,3 +346,7 @@ fill {
         }
     }
 }
+
+tasks.named("publishToFill") {
+    notCompatibleWithConfigurationCache("Holds an HttpClient in a task field")
+}
