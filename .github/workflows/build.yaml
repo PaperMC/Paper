@@ -39,6 +39,7 @@ jobs:
     runs-on: namespace-profile-linux-default
     steps:
       - name: "git / checkout (push)"
+        if: ${{ github.event_name == 'push' }}
         uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
         with:
           fetch-depth: 0
@@ -50,8 +51,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # todo: cache-read-only: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/dev/') }}
       - uses: papermc/ci/setup-gradle@main
+        with:
+          gradle_cache_push: ${{ github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/dev/') || startsWith(github.ref, 'refs/heads/ver/')) }}
 
       - name: Configure Build
         uses: actions/github-script@v9
@@ -88,7 +90,8 @@ jobs:
 
       - uses: papermc/ci/build-paper@main
 
-      - uses: papermc/ci/upload-test-results@main
+      - if: ${{ !cancelled() }}
+        uses: papermc/ci/upload-test-results@main
 
       - name: Publish Checkstyle Report
         if: ${{ failure() || success() }}
@@ -117,11 +120,10 @@ jobs:
 
   event_file:
     name: "Event File"
-    # Only run on PRs if the source branch is on someone else's repo
-    if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
+    # Only run when the build job ran
+    needs: build
+    if: ${{ !cancelled() && needs.build.result != 'skipped' }}
     runs-on: namespace-profile-linux-small
-    permissions:
-      actions: write
     steps:
       - name: "upload / event data"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
