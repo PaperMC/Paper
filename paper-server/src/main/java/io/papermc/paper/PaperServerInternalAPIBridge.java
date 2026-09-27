@@ -223,7 +223,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public ItemStack createEmptyStack() {
-        return CraftItemStack.asCraftMirror(null);
+        return CraftItemStack.asBukkitMirror(null);
     }
 
     @Override

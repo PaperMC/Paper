@@ -58,7 +58,7 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import org.slf4j.Logger;
 import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -557,7 +557,7 @@ public class WorldConfiguration extends ConfigurationPart {
         @Setting(FeatureSeedsGeneration.GENERATE_KEY)
         public boolean generateRandomSeedsForAll = false;
         @Setting(FeatureSeedsGeneration.FEATURES_KEY)
-        public Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = new Reference2LongOpenHashMap<>();
+        public Reference2LongMap<Holder<Feature>> features = new Reference2LongOpenHashMap<>();
 
         @PostProcess
         private void postProcess() {

@@ -11,14 +11,12 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Controls the behavior of the item as a tool.
  * @see DataComponentTypes#TOOL
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Tool {
 
@@ -44,7 +42,7 @@ public interface Tool {
      * @return A new {@link Rule} instance representing the mining rule.
      */
     static Rule rule(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-        return ItemComponentTypesBridge.bridge().rule(blocks, speed, correctForDrops);
+        return ItemComponentTypesBridge.bridge().toolRule(blocks, speed, correctForDrops);
     }
 
     /**

@@ -35,21 +35,21 @@ public class MetaComparisonTest {
 
     @Test
     public void testMetaApplication() {
-        ItemStack itemStack = new ItemStack(Material.STONE);
+        ItemStack itemStack = ItemStack.of(Material.STONE);
 
         ItemMeta meta = itemStack.getItemMeta();
-        meta.setCustomModelData(1);
+        meta.setMaxStackSize(1);
 
         ItemMeta converted = FACTORY.asMetaFor(meta, Material.GOLD_INGOT);
-        Assertions.assertEquals(converted.getCustomModelData(), meta.getCustomModelData());
+        Assertions.assertEquals(converted.getMaxStackSize(), meta.getMaxStackSize());
 
         ItemMeta convertedAdvanced = FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
-        Assertions.assertEquals(convertedAdvanced.getCustomModelData(), meta.getCustomModelData());
+        Assertions.assertEquals(convertedAdvanced.getMaxStackSize(), meta.getMaxStackSize());
     }
 
     @Test
     public void testMetaApplicationDowngrading() {
-        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
+        ItemStack itemStack = ItemStack.of(Material.PLAYER_HEAD);
         PlayerProfile profile = Bukkit.createProfile("Owen1212055");
 
         SkullMeta meta = (SkullMeta) itemStack.getItemMeta();
@@ -64,7 +64,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testMetaApplicationDowngradingPotion() {
-        ItemStack itemStack = new ItemStack(Material.POTION);
+        ItemStack itemStack = ItemStack.of(Material.POTION);
         Color color = Color.BLUE;
 
         PotionMeta meta = (PotionMeta) itemStack.getItemMeta();
@@ -79,7 +79,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testNullMeta() {
-        ItemStack itemStack = new ItemStack(Material.AIR);
+        ItemStack itemStack = ItemStack.of(Material.AIR);
 
         Assertions.assertFalse(itemStack.hasItemMeta());
         Assertions.assertNull(itemStack.getItemMeta());
@@ -88,7 +88,7 @@ public class MetaComparisonTest {
     @Test
     public void testPotionMeta() {
         PotionEffect potionEffect = new PotionEffect(PotionEffectType.SPEED, 10, 10, false);
-        ItemStack nmsItemStack = new ItemStack(Material.POTION, 1);
+        ItemStack nmsItemStack = ItemStack.of(Material.POTION);
 
         testSetAndGet(nmsItemStack,
             (meta) -> ((PotionMeta) meta).addCustomEffect(potionEffect, true),
@@ -98,7 +98,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testEnchantment() {
-        ItemStack stack = new ItemStack(Material.STICK, 1);
+        ItemStack stack = ItemStack.of(Material.STICK);
 
         testSetAndGet(stack,
             (meta) -> Assertions.assertTrue(meta.addEnchant(Enchantment.SHARPNESS, 1, true)),
@@ -110,7 +110,7 @@ public class MetaComparisonTest {
     @Disabled
     public void testPlayerHead() {
         PlayerProfile profile = new CraftPlayerProfile(UUID.randomUUID(), "Owen1212055");
-        ItemStack stack = new ItemStack(Material.PLAYER_HEAD, 1);
+        ItemStack stack = ItemStack.of(Material.PLAYER_HEAD);
 
         testSetAndGet(stack,
             (meta) -> ((SkullMeta) meta).setPlayerProfile(profile),
@@ -131,7 +131,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testBookMetaAuthor() {
-        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
+        ItemStack stack = ItemStack.of(Material.WRITTEN_BOOK);
 
         // Legacy string
         testSetAndGet(stack,
@@ -156,7 +156,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testBookMetaTitle() {
-        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
+        ItemStack stack = ItemStack.of(Material.WRITTEN_BOOK);
 
         // Legacy string
         testSetAndGet(stack,
@@ -182,7 +182,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testWriteableBookPages() {
-        ItemStack stack = new ItemStack(Material.WRITABLE_BOOK, 1);
+        ItemStack stack = ItemStack.of(Material.WRITABLE_BOOK);
 
         // Writeable books are serialized as plain text, but has weird legacy color support.
         // So, we need to test to make sure that all works here.
@@ -226,7 +226,7 @@ public class MetaComparisonTest {
 
     @Test
     public void testWrittenBookPages() {
-        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
+        ItemStack stack = ItemStack.of(Material.WRITTEN_BOOK);
 
         // Writeable books are serialized as plain text, but has weird legacy color support.
         // So, we need to test to make sure that all works here.
