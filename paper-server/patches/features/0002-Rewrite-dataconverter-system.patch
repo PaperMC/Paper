@@ -8,10 +8,10 @@ for details.
 
 diff --git a/ca/spottedleaf/dataconverter/minecraft/MCDataConverter.java b/ca/spottedleaf/dataconverter/minecraft/MCDataConverter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..45da8ee6046fa5e3dfa88dd90a112b11aa60dc6c
+index 0000000000000000000000000000000000000000..f664ad3c770bc2303604d2ea727eacb58a49249f
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/MCDataConverter.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,137 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -21,12 +21,22 @@ index 0000000000000000000000000000000000000000..45da8ee6046fa5e3dfa88dd90a112b11
 +import ca.spottedleaf.dataconverter.types.json.JsonMapType;
 +import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
 +import com.google.gson.JsonObject;
++import com.mojang.datafixers.DSL;
++import com.mojang.datafixers.DataFixer;
++import com.mojang.logging.LogUtils;
++import com.mojang.serialization.Dynamic;
 +import it.unimi.dsi.fastutil.longs.LongArrayList;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.util.datafix.DataFixers;
++import org.slf4j.Logger;
 +
 +public final class MCDataConverter {
 +
 +    private static final LongArrayList BREAKPOINTS = MCVersionRegistry.getBreakpoints();
++    private static final Logger LOGGER = LogUtils.getLogger();
++    private static boolean warnedForPassOn;
 +
 +    public static <T> T copy(final T type) {
 +        if (type instanceof CompoundTag) {
@@ -36,6 +46,47 @@ index 0000000000000000000000000000000000000000..45da8ee6046fa5e3dfa88dd90a112b11
 +        }
 +
 +        return type;
++    }
++
++    public static CompoundTag convertTag(final MCDataType type, final DataFixTypes vanillaType, final CompoundTag data, final int fromVersion, final int toVersion) {
++        final int maxVersion = MCVersionRegistry.getMaxImplementedVersion();
++        if (toVersion > maxVersion) {
++            warnPassOn(toVersion);
++
++            // Convert what we can first
++            final CompoundTag converted = fromVersion < maxVersion ? convertTag(type, data, fromVersion, maxVersion) : data;
++
++            // Convert the rest via Vanilla fixers
++            return vanillaType.update(DataFixers.getDataFixer(), converted, Math.max(fromVersion, maxVersion), toVersion);
++        }
++
++        return convertTag(type, data, fromVersion, toVersion);
++    }
++
++    public static CompoundTag convertTag(final MCDataType type, final DSL.TypeReference vanillaType, final DataFixer fixer, final CompoundTag data, final int fromVersion, final int toVersion) {
++        final int maxVersion = MCVersionRegistry.getMaxImplementedVersion();
++        if (toVersion > maxVersion) {
++            warnPassOn(toVersion);
++
++            // Convert what we can first
++            final CompoundTag converted = fromVersion < maxVersion ? convertTag(type, data, fromVersion, maxVersion) : data;
++
++            // Convert the rest via Vanilla fixers
++            return (CompoundTag)fixer.update(
++                vanillaType,
++                new Dynamic<>(NbtOps.INSTANCE, converted),
++                Math.max(fromVersion, maxVersion), toVersion
++            ).getValue();
++        }
++
++        return convertTag(type, data, fromVersion, toVersion);
++    }
++
++    private static void warnPassOn(final int toVersion) {
++        if (!warnedForPassOn) {
++            warnedForPassOn = true;
++            LOGGER.warn("Passing on conversion to Vanilla converters to version: {}", toVersion);
++        }
 +    }
 +
 +    public static CompoundTag convertTag(final MCDataType type, final CompoundTag data, final int fromVersion, final int toVersion) {
@@ -100,10 +151,10 @@ index 0000000000000000000000000000000000000000..45da8ee6046fa5e3dfa88dd90a112b11
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java b/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..65514ce5def43ac1a13cf8b0e78276793a481ebf
+index 0000000000000000000000000000000000000000..ea79ce7a0c8315f474aca002ed1449068165101e
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
-@@ -0,0 +1,533 @@
+@@ -0,0 +1,541 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -134,6 +185,10 @@ index 0000000000000000000000000000000000000000..65514ce5def43ac1a13cf8b0e7827679
 +    private static final LongLinkedOpenHashSet DATACONVERTER_VERSIONS = new LongLinkedOpenHashSet();
 +    private static final Int2ObjectLinkedOpenHashMap<IntArrayList> SUBVERSIONS = new Int2ObjectLinkedOpenHashMap<>();
 +    private static final LongArrayList BREAKPOINTS = new LongArrayList();
++
++    // Anything above this version will pass conversion through Vanilla fixers instead
++    private static final int MAX_IMPLEMENTED_VERSION = MCVersions.V26_3;
++
 +    static {
 +        // Note: Some of these are nameless.
 +        // Unless a data version is specified here, it will NOT have converters ran for it. Please add them on update!
@@ -623,6 +678,10 @@ index 0000000000000000000000000000000000000000..65514ce5def43ac1a13cf8b0e7827679
 +
 +    public static int getMaxVersion() {
 +        return VERSION_LIST.getInt(VERSION_LIST.size() - 1);
++    }
++
++    public static int getMaxImplementedVersion() {
++        return MAX_IMPLEMENTED_VERSION;
 +    }
 +
 +    public static LongArrayList getBreakpoints() {
@@ -33555,7 +33614,7 @@ index 0000000000000000000000000000000000000000..4ffd23c6ae2201fed0f1be719ef838c9
 +}
 diff --git a/ca/spottedleaf/dataconverter/util/ConvertUtil.java b/ca/spottedleaf/dataconverter/util/ConvertUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ffce10dd0f244c05e437422f75cf6c29b3ebcd70
+index 0000000000000000000000000000000000000000..04ba6d6c54fde178f086c35c7aa7c3d62aa5fc84
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/util/ConvertUtil.java
 @@ -0,0 +1,214 @@
@@ -33731,7 +33790,7 @@ index 0000000000000000000000000000000000000000..ffce10dd0f244c05e437422f75cf6c29
 +        if (USE_DATACONVERTER) {
 +            final MCDataType mcDataType = getDCType(type);
 +
-+            return MCDataConverter.convertTag(mcDataType, input, fromVersion, toVersion);
++            return MCDataConverter.convertTag(mcDataType, type, fixer, input, fromVersion, toVersion);
 +        } else {
 +            return (CompoundTag)fixer.update(
 +                type, new Dynamic<>(NbtOps.INSTANCE, input), fromVersion, toVersion
@@ -33842,7 +33901,7 @@ index 7bb2210f2fea91b3f611a58d39a57279200abeb0..4a62c50d0b4fe82c3aacaa56b303b969
 \ No newline at end of file
 +}
 diff --git a/net/minecraft/data/structures/StructureUpdater.java b/net/minecraft/data/structures/StructureUpdater.java
-index 06103ffdf599af91bc1d3baf89772a1acc93a21a..ddaa6ba67a2af00565fe9cd0dbeafcac0ff041ec 100644
+index 06103ffdf599af91bc1d3baf89772a1acc93a21a..fc1f82d313acb8bf9bd03b1f09c680355aabc886 100644
 --- a/net/minecraft/data/structures/StructureUpdater.java
 +++ b/net/minecraft/data/structures/StructureUpdater.java
 @@ -27,7 +27,7 @@ public class StructureUpdater implements SnbtToNbt.Filter {
@@ -33850,7 +33909,7 @@ index 06103ffdf599af91bc1d3baf89772a1acc93a21a..ddaa6ba67a2af00565fe9cd0dbeafcac
          }
  
 -        CompoundTag updated = DataFixTypes.STRUCTURE.updateToCurrentVersion(DataFixers.getDataFixer(), tag, fromVersion);
-+        CompoundTag updated = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, tag, fromVersion, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - rewrite dataconverter system
++        CompoundTag updated = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, DataFixTypes.STRUCTURE, tag, fromVersion, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - rewrite dataconverter system
          structureTemplate.load(BuiltInRegistries.BLOCK, updated);
          return structureTemplate.save(new CompoundTag());
      }
@@ -33867,7 +33926,7 @@ index d40863262dd7cf0e7c5667fd836e80d4f47e25aa..c4adc7266f41057bc93e8c34929c079c
          Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> serverReference.get().runServer(), "Server thread");
          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Uncaught exception in server thread", e));
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index ebb94d87e3b659e9049cbe5a3d5375274773fe57..4257d11f9d046249fd78fc8f453bb7c59818dd23 100644
+index ebb94d87e3b659e9049cbe5a3d5375274773fe57..2ccb20f4fa0a2ce514b199616cbd791fd749b3f8 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -79,7 +79,7 @@ public class SimpleRegionStorage implements AutoCloseable {
@@ -33875,7 +33934,7 @@ index ebb94d87e3b659e9049cbe5a3d5375274773fe57..4257d11f9d046249fd78fc8f453bb7c5
              // Spigot end
              injectDatafixingContext(chunkTag, dataFixContextTag);
 -            chunkTag = this.dataFixType.update(this.fixerUpper, chunkTag, version, targetVersion);
-+            chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
++            chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), this.dataFixType, chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
              // Spigot start
              if (stopBelowZero) {
                  chunkTag.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
@@ -33901,7 +33960,7 @@ index ebb94d87e3b659e9049cbe5a3d5375274773fe57..4257d11f9d046249fd78fc8f453bb7c5
          return this.upgradeChunkTag(chunkTag, defaultVersion, null, SharedConstants.getCurrentVersion().dataVersion().version());
      }
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 71799a74e2e85724de3b590728045e258c2a5df3..f47d0f31e9a16c10aa12eef7fc36841ef729816e 100644
+index 71799a74e2e85724de3b590728045e258c2a5df3..6ff3a339da8ae6849985836c1138434e9b42bced 100644
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -174,7 +174,7 @@ public class StructureCheck {
@@ -33909,12 +33968,12 @@ index 71799a74e2e85724de3b590728045e258c2a5df3..f47d0f31e9a16c10aa12eef7fc36841e
              CompoundTag fixedChunkTag;
              try {
 -                fixedChunkTag = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, chunkTag, version);
-+                fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
++                fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, DataFixTypes.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
              } catch (Exception e) {
                  LOGGER.warn("Failed to partially datafix chunk {}", pos, e);
                  return StructureCheckResult.CHUNK_LOAD_NEEDED;
 diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java b/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
-index e61076a9ff3d9bce5c44e548158716db105db3ee..fe1500ebbfb09bef18989c891a19608ec9d4661c 100644
+index e61076a9ff3d9bce5c44e548158716db105db3ee..67b42da7175d2f81a356e59566a53265b1e70ad5 100644
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
 @@ -71,7 +71,7 @@ public abstract class TemplateSource {
@@ -33922,12 +33981,12 @@ index e61076a9ff3d9bce5c44e548158716db105db3ee..fe1500ebbfb09bef18989c891a19608e
          StructureTemplate structureTemplate = new StructureTemplate();
          int version = NbtUtils.getDataVersion(tag, 500);
 -        structureTemplate.load(this.blockLookup, DataFixTypes.STRUCTURE.updateToCurrentVersion(this.fixerUpper, tag, version));
-+        structureTemplate.load(this.blockLookup, ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, tag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion())); // Paper - rewrite dataconverter system
++        structureTemplate.load(this.blockLookup, ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, DataFixTypes.STRUCTURE, tag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion())); // Paper - rewrite dataconverter system
          return structureTemplate;
      }
  }
 diff --git a/net/minecraft/world/level/storage/PlayerDataStorage.java b/net/minecraft/world/level/storage/PlayerDataStorage.java
-index 8eda63e1f07f7998875713447c5f39eea3f85ca4..eddb6ebe3fa50a818e54079b73ba117be0abd195 100644
+index 8eda63e1f07f7998875713447c5f39eea3f85ca4..142a34eb046c87f16b73023c83218d8752922fbe 100644
 --- a/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
 @@ -98,7 +98,7 @@ public class PlayerDataStorage {
@@ -33935,7 +33994,7 @@ index 8eda63e1f07f7998875713447c5f39eea3f85ca4..eddb6ebe3fa50a818e54079b73ba117b
          return optTag.or(() -> this.load(nameAndId, ".dat_old")).map(tag -> {
              int version = NbtUtils.getDataVersion(tag);
 -            return DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, tag, version);
-+            return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, tag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion());
++            return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, DataFixTypes.PLAYER, tag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion());
          });
      }
  

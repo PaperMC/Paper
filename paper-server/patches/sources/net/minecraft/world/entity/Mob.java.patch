@@ -23,11 +23,12 @@
      public GoalSelector targetSelector;
      private @Nullable LivingEntity target;
      private final Sensing sensing;
-@@ -145,6 +_,7 @@
+@@ -145,6 +_,8 @@
      private Leashable.@Nullable LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
++    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
  
      protected Mob(final EntityType<? extends Mob> type, final Level level) {
          super(type, level);
@@ -77,11 +78,16 @@
      }
  
      @Override
-@@ -389,13 +_,22 @@
+@@ -389,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
 +        output.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
++        // Paper start - allow changing despawnInPeaceful
++        if (this.despawnInPeacefulOverride != net.kyori.adventure.util.TriState.NOT_SET) {
++            output.putString("Paper.DespawnInPeacefulOverride", this.despawnInPeacefulOverride.name());
++        }
++        // Paper end - allow changing despawnInPeaceful
      }
  
      @Override
@@ -102,11 +108,12 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -407,12 +_,13 @@
+@@ -407,12 +_,14 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
 +        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
++        this.despawnInPeacefulOverride = input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - allow changing despawnInPeaceful
      }
  
      @Override
@@ -172,11 +179,13 @@
              double dropChance = this.dropChances.byEquipment(slot);
              if (!current.isEmpty() && Math.max(this.random.nextFloat() - 0.1F, 0.0F) < dropChance) {
                  this.spawnAtLocation(level, current);
-@@ -684,27 +_,33 @@
+@@ -683,28 +_,34 @@
+ 
      @Override
      public void checkDespawn() {
-         if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
+-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
 -            this.discard();
++        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.despawnInPeacefulOverride.toBooleanOrElse(!this.getType().isAllowedInPeaceful())) { // Paper - allow changing despawnInPeaceful
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              boolean isPersistent = this.isPersistenceRequired() || this.requiresCustomPersistence();

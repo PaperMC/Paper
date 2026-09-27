@@ -415,7 +415,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
         final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
         ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
-            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
+            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.BLOCKING, future::complete
         );
         world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
         return future.thenApply(c -> {
