@@ -54,7 +54,7 @@ public interface Pig extends Steerable, Vehicle {
         Variant WARM = getVariant("warm");
         // End generate - PigVariant
 
-        private static Variant getVariant(@KeyPattern.Value String key) {
+        private static Variant getVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
@@ -72,7 +72,7 @@ public interface Pig extends Steerable, Vehicle {
         SoundVariant MINI = getSoundVariant("mini");
         // End generate - PigSoundVariant
 
-        private static SoundVariant getSoundVariant(final @KeyPattern.Value String key) {
+        private static SoundVariant getSoundVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }

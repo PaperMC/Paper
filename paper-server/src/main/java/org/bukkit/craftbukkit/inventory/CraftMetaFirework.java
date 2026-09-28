@@ -21,22 +21,8 @@ import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific.To;
 import org.bukkit.inventory.meta.FireworkMeta;
 
-public @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
-    /*
-       "Fireworks", "Explosion", "Explosions", "Flight", "Type", "Trail", "Flicker", "Colors", "FadeColors";
-
-        Fireworks
-        - Compound: Fireworks
-        -- Byte: Flight
-        -- List: Explosions
-        --- Compound: Explosion
-        ---- IntArray: Colors
-        ---- Byte: Type
-        ---- Boolean: Trail
-        ---- Boolean: Flicker
-        ---- IntArray: FadeColors
-     */
+@DelegateDeserialization(SerializableMeta.class)
+public class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
     @Specific(To.NBT)
     static final ItemMetaKeyType<Fireworks> FIREWORKS = new ItemMetaKeyType<>(DataComponents.FIREWORKS, "Fireworks");

@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.util.MCUtil;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
@@ -22,13 +23,10 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
     protected ClientAsset.@Nullable ResourceTexture babyTameClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
-    protected final Conversions conversions;
-
     public PaperWolfVariantRegistryEntry(
-        final Conversions conversions,
+        final Conversions ignoredConversions,
         final @Nullable WolfVariant internal
     ) {
-        this.conversions = conversions;
         if (internal == null) {
             this.spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
@@ -45,32 +43,32 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
     @Override
     public ClientTextureAsset angryClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.angryClientTextureAsset, "angryClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.angryClientTextureAsset, "angryClientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset wildClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.wildClientTextureAsset, "wildClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.wildClientTextureAsset, "wildClientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset tameClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset babyAngryClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset babyWildClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.babyWildClientTextureAsset, "babyWildClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.babyWildClientTextureAsset, "babyWildClientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset babyTameClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.babyTameClientTextureAsset, "babyTameClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.babyTameClientTextureAsset, "babyTameClientTextureAsset"));
     }
 
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
@@ -81,37 +79,37 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
         @Override
         public Builder angryClientTextureAsset(final ClientTextureAsset angryClientTextureAsset) {
-            this.angryClientTextureAsset = this.conversions.asVanilla(asArgument(angryClientTextureAsset, "angryClientTextureAsset"));
+            this.angryClientTextureAsset = MCUtil.toResourceTexture(asArgument(angryClientTextureAsset, "angryClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder wildClientTextureAsset(final ClientTextureAsset wildClientTextureAsset) {
-            this.wildClientTextureAsset = this.conversions.asVanilla(asArgument(wildClientTextureAsset, "wildClientTextureAsset"));
+            this.wildClientTextureAsset = MCUtil.toResourceTexture(asArgument(wildClientTextureAsset, "wildClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder tameClientTextureAsset(final ClientTextureAsset tameClientTextureAsset) {
-            this.tameClientTextureAsset = this.conversions.asVanilla(asArgument(tameClientTextureAsset, "tameClientTextureAsset"));
+            this.tameClientTextureAsset = MCUtil.toResourceTexture(asArgument(tameClientTextureAsset, "tameClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder babyAngryClientTextureAsset(final ClientTextureAsset babyAngryClientTextureAsset) {
-            this.babyAngryClientTextureAsset = this.conversions.asVanilla(asArgument(babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
+            this.babyAngryClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder babyWildClientTextureAsset(final ClientTextureAsset babyWildClientTextureAsset) {
-            this.babyWildClientTextureAsset = this.conversions.asVanilla(asArgument(babyWildClientTextureAsset, "babyWildClientTextureAsset"));
+            this.babyWildClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyWildClientTextureAsset, "babyWildClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder babyTameClientTextureAsset(final ClientTextureAsset babyTameClientTextureAsset) {
-            this.babyTameClientTextureAsset = this.conversions.asVanilla(asArgument(babyTameClientTextureAsset, "babyTameClientTextureAsset"));
+            this.babyTameClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyTameClientTextureAsset, "babyTameClientTextureAsset"));
             return this;
         }
 

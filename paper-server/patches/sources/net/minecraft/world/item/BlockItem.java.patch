@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -60,6 +_,7 @@
+@@ -69,6 +_,7 @@
          }
  
          BlockState placementState = this.getPlacementState(updatedPlaceContext);
@@ -8,19 +8,24 @@
          if (placementState == null) {
              return InteractionResult.FAIL;
          }
-@@ -75,19 +_,43 @@
+@@ -82,21 +_,46 @@
+         Player player = updatedPlaceContext.getPlayer();
+         ItemStack itemStack = updatedPlaceContext.getItemInHand();
          BlockState placedState = level.getBlockState(pos);
++        java.util.function.UnaryOperator<InteractionResult.PaperSuccessContext> context = c -> c.placedBlockAt(pos.immutable()); // Paper - track placed block position from block item
          if (placedState.is(placementState.getBlock())) {
-             placedState = this.updateBlockStateFromTag(pos, level, itemStack, placedState);
+             placedState = updateBlockStateFromTag(pos, level, itemStack, placedState);
+-            updateCustomBlockEntityTag(level, player, pos, itemStack);
+-            updateBlockEntityComponents(level, pos, itemStack);
 +            // Paper start - Reset placed block on exception
 +            try {
-             this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
-             updateBlockEntityComponents(level, pos, itemStack);
++                updateCustomBlockEntityTag(level, player, pos, itemStack);
++                updateBlockEntityComponents(level, pos, itemStack);
 +            } catch (Exception ex) {
-+                ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace();
++                ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace(false);
 +                if (player instanceof ServerPlayer serverPlayer) {
 +                    net.minecraft.server.MinecraftServer.LOGGER.warn("Player {} tried placing invalid block", player.getScoreboardName(), ex);
-+                    serverPlayer.connection.disconnect(net.minecraft.network.chat.Component.literal("Packet processing error"));
++                    serverPlayer.connection.disconnect(net.minecraft.network.chat.Component.literal("Packet processing error"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION);
 +                    return InteractionResult.FAIL;
 +                }
 +                throw ex; // Rethrow exception if not placed by a player
@@ -31,15 +36,15 @@
 +            if (player != null && (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem)) {
 +                org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, updatedPlaceContext.getHand(), previousState, pos);
 +                if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
-+                    ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace();
++                    ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace(false);
 +
 +                    player.containerMenu.forceHeldSlot(updatedPlaceContext.getHand());
 +                    return InteractionResult.FAIL;
 +                }
 +            }
 +            // CraftBukkit end
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, pos, itemStack);
+             if (player instanceof ServerPlayer serverPlayer) {
+                 CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, pos, itemStack);
              }
          }
  
@@ -49,11 +54,11 @@
          level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(player, placedState));
          itemStack.consume(1, player);
 -        return InteractionResult.SUCCESS;
-+        return InteractionResult.SUCCESS.configurePaper(e -> e.placedBlockAt(pos.immutable())); // Paper - track placed block position from block item
++        return InteractionResult.SUCCESS.configurePaper(context); // Paper
      }
  
      protected SoundEvent getPlaceSound(final BlockState blockState) {
-@@ -133,8 +_,20 @@
+@@ -136,8 +_,20 @@
  
      protected boolean canPlace(final BlockPlaceContext context, final BlockState stateForPlacement) {
          Player player = context.getPlayer();
@@ -76,7 +81,7 @@
      }
  
      protected boolean mustSurvive() {
-@@ -159,7 +_,7 @@
+@@ -162,7 +_,7 @@
                      return false;
                  }
  

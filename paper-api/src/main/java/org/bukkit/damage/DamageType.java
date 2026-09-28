@@ -104,6 +104,8 @@ public interface DamageType extends Keyed, Translatable {
 
     DamageType STING = getDamageType("sting");
 
+    DamageType SULFUR_CUBE_HOT = getDamageType("sulfur_cube_hot");
+
     DamageType SWEET_BERRY_BUSH = getDamageType("sweet_berry_bush");
 
     DamageType THORNS = getDamageType("thorns");

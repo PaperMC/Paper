@@ -3,22 +3,20 @@ package io.papermc.paper.datacomponent.item;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.text.Filtered;
 import java.util.List;
+import net.kyori.adventure.inventory.BookLike;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the contents and metadata of a Written Book.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface WrittenBookContent {
+public interface WrittenBookContent extends BookLike {
 
     @Contract(value = "_, _ -> new", pure = true)
     static WrittenBookContent.Builder writtenBookContent(final String title, final String author) {
@@ -74,7 +72,6 @@ public interface WrittenBookContent {
     /**
      * Builder for {@link WrittenBookContent}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<WrittenBookContent> {
 

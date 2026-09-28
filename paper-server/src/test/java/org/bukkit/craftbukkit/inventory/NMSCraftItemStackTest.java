@@ -15,7 +15,7 @@ public class NMSCraftItemStackTest {
     public void testCloneEnchantedItem() throws Exception {
         net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTION);
         nmsItemStack.enchant(CraftEnchantment.bukkitToMinecraftHolder(Enchantment.SHARPNESS), 1);
-        ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
+        ItemStack itemStack = CraftItemStack.asBukkitMirror(nmsItemStack);
         ItemStack clone = itemStack.clone();
         assertThat(clone.getType(), is(itemStack.getType()));
         assertThat(clone.getAmount(), is(itemStack.getAmount()));
@@ -28,7 +28,7 @@ public class NMSCraftItemStackTest {
     @Test
     public void testCloneNullItem() throws Exception {
         net.minecraft.world.item.ItemStack nmsItemStack = null;
-        ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
+        ItemStack itemStack = CraftItemStack.asBukkitMirror(nmsItemStack);
         ItemStack clone = itemStack.clone();
         assertThat(clone, is(itemStack));
     }

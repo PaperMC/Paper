@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractCow;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractNautilus;
 import org.bukkit.entity.AbstractSkeleton;
@@ -79,6 +80,7 @@ public class EntityTypesTest {
     private static final List<Class<? extends Entity>> EXCLUDE = Arrays.asList(
             AbstractArrow.class,
             AbstractCow.class,
+            AbstractCubeMob.class,
             AbstractHorse.class,
             AbstractNautilus.class,
             AbstractSkeleton.class,

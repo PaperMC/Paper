@@ -6,14 +6,11 @@ import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Sets whether this item should protect the entity upon death, and what effects should be played.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DeathProtection {
 
@@ -33,7 +30,6 @@ public interface DeathProtection {
     /**
      * Builder for {@link DeathProtection}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DeathProtection> {
 

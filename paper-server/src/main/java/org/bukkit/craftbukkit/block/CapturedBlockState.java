@@ -5,7 +5,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -53,7 +53,7 @@ public final class CapturedBlockState extends CraftBlockState {
             RandomSource random = level.getRandom();
 
             // copied from BeehiveDecorator
-            level.getBlockEntity(pos, BlockEntityType.BEEHIVE).ifPresent(beehive -> {
+            level.getBlockEntity(pos, BlockEntityTypes.BEEHIVE).ifPresent(beehive -> {
                 int numBees = 2 + random.nextInt(2);
 
                 for (int count = 0; count < numBees; count++) {

@@ -95,7 +95,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         // End generate - CatType
 
         @NotNull
-        private static Type getType(@NotNull @KeyPattern.Value String key) {
+        private static Type getType(@NotNull @KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
@@ -136,7 +136,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         // End generate - CatSoundVariant
 
         @NotNull
-        private static SoundVariant getSoundVariant(final @NotNull @KeyPattern.Value String key) {
+        private static SoundVariant getSoundVariant(@KeyPattern.Value final @NotNull String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }

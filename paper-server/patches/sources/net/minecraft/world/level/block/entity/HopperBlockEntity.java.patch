@@ -39,7 +39,7 @@
 +    // CraftBukkit end
 +
      public HopperBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
-         super(BlockEntityType.HOPPER, worldPosition, blockState);
+         super(BlockEntityTypes.HOPPER, worldPosition, blockState);
          this.facing = blockState.getValue(HopperBlock.FACING);
 @@ -99,7 +_,12 @@
          entity.tickedGameTime = level.getGameTime();
@@ -71,9 +71,9 @@
 -                ItemStack result = addItem(self, container, self.removeItem(slot, 1), direction);
 +                // CraftBukkit start - Call event when pushing items into other inventories
 +                ItemStack original = itemStack.copy();
-+                org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(
-+                    self.removeItem(slot, level.spigotConfig.hopperAmount)
-+                ); // Spigot
++                org.bukkit.inventory.ItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(
++                    self.removeItem(slot, level.spigotConfig.hopperAmount) // Spigot
++                );
 +
 +                org.bukkit.inventory.Inventory destinationInventory;
 +                // Have to special case large chests as they work oddly
@@ -134,7 +134,7 @@
 -            ItemStack result = addItem(container, hopper, container.removeItem(slot, 1), null);
 +            // CraftBukkit start - Call event on collection of items from inventories into the hopper
 +            ItemStack original = itemStack.copy();
-+            org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(
++            org.bukkit.inventory.ItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(
 +                container.removeItem(slot, level.spigotConfig.hopperAmount) // Spigot
 +            );
 +
@@ -299,5 +299,5 @@
      private static @Nullable Container getBlockContainer(final Level level, final BlockPos pos, final BlockState state) {
 +        if (!level.spigotConfig.hopperCanLoadChunks && !level.hasChunkAt(pos)) return null; // Spigot
          Block block = state.getBlock();
-         if (block instanceof WorldlyContainerHolder) {
-             return ((WorldlyContainerHolder)block).getContainer(state, level, pos);
+         if (block instanceof WorldlyContainerHolder worldlyContainerHolder) {
+             return worldlyContainerHolder.getContainer(state, level, pos);

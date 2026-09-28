@@ -159,6 +159,26 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * Attribute controlling the range an entity receives other waypoints from.
      */
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
+    /**
+     * The air friction an entity receives when moving.
+     */
+    Attribute AIR_DRAG_MODIFIER = getAttribute("air_drag_modifier");
+    /**
+     * The ground friction an entity receives when moving.
+     */
+    Attribute FRICTION_MODIFIER = getAttribute("friction_modifier");
+    /**
+     * The received motion when landing on the ground.
+     */
+    Attribute BOUNCINESS = getAttribute("bounciness");
+    /**
+     * The minimum distance the scoreboard objective in the below_name display slot become visible for others.
+     */
+    Attribute BELOW_NAME_DISTANCE = getAttribute("below_name_distance");
+    /**
+     * The minimum distance the display name become visible for others.
+     */
+    Attribute NAME_TAG_DISTANCE = getAttribute("name_tag_distance");
 
     @NotNull
     private static Attribute getAttribute(@NotNull @KeyPattern.Value String key) {

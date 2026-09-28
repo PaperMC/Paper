@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
@@ -24,6 +25,7 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private final ItemStack item;
     private final boolean includeData;
 
     private int targetSlot;
@@ -32,11 +34,21 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
     private boolean cancelled;
 
     @ApiStatus.Internal
-    protected PlayerPickItemEvent(final Player player, final boolean includeData, final int targetSlot, final int sourceSlot) {
+    protected PlayerPickItemEvent(final Player player, final ItemStack item, final boolean includeData, final int targetSlot, final int sourceSlot) {
         super(player);
+        this.item = item;
         this.includeData = includeData;
         this.targetSlot = targetSlot;
         this.sourceSlot = sourceSlot;
+    }
+
+    /**
+     * Returns the item that is being picked.
+     *
+     * @return picked item
+     */
+    public ItemStack getItem() {
+        return this.item.clone();
     }
 
     /**

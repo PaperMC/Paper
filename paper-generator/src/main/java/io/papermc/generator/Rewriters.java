@@ -26,8 +26,9 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.item.MapPostProcessing;
+import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -63,6 +64,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import io.papermc.paper.block.pot.PotPatternTypes;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.Boat;
@@ -77,6 +79,7 @@ import org.bukkit.entity.Panda;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sniffer;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
@@ -115,6 +118,12 @@ public final class Rewriters {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
             .register("EntityType", EntityType.class, new EntityTypeRewriter())
+            .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(net.minecraft.world.entity.Entity.RemovalReason.class) {
+                @Override
+                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.Entity.RemovalReason reason) {
+                    return super.rewriteEnumValue(reason).arguments(Boolean.toString(reason.shouldDestroy()), Boolean.toString(reason.shouldSave()));
+                }
+            })
             .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.scores.DisplaySlot slot) {
@@ -219,6 +228,7 @@ public final class Rewriters {
             .register("CatSoundVariant", Cat.SoundVariant.class, new RegistryFieldRewriter<>(Registries.CAT_SOUND_VARIANT, "getSoundVariant"))
             .register("FrogVariant", Frog.Variant.class, new RegistryFieldRewriter<>(Registries.FROG_VARIANT, "getVariant"))
             .register("PatternType", PatternType.class, new RegistryFieldRewriter<>(Registries.BANNER_PATTERN, "getType"))
+            .register("PotPatternTypes", PotPatternTypes.class, new RegistryFieldRewriter<>(Registries.DECORATED_POT_PATTERN, "getType"))
             .register("Biome", Biome.class, new RegistryFieldRewriter<>(Registries.BIOME, "getBiome"))
             .register("Fluid", Fluid.class, new RegistryFieldRewriter<>(Registries.FLUID, "getFluid"))
             // .register("Attribute", Attribute.class, new RegistryFieldRewriter<>(Registries.ATTRIBUTE, "getAttribute")) - disable for now (javadocs)
@@ -231,10 +241,11 @@ public final class Rewriters {
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("PigSoundVariant", Pig.SoundVariant.class, new RegistryFieldRewriter<>(Registries.PIG_SOUND_VARIANT, "getSoundVariant"))
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
+            .register("SulfurCubeArchetype", SulfurCube.Archetype.class, new RegistryFieldRewriter<>(Registries.SULFUR_CUBE_ARCHETYPE, "getArchetype"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
+            // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
