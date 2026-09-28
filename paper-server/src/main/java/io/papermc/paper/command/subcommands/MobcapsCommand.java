@@ -146,7 +146,7 @@ public final class MobcapsCommand implements PaperSubcommand {
             if (sender instanceof Player pl) {
                 player = pl;
             } else {
-                sender.sendMessage(Component.text("Must specify a player! ex: '/paper playermobcount playerName'", NamedTextColor.RED));
+                sender.sendMessage(Component.text("Must specify a player! ex: '/paper playermobcaps playerName'", NamedTextColor.RED));
                 return;
             }
         } else if (args.length == 1) {
@@ -171,7 +171,7 @@ public final class MobcapsCommand implements PaperSubcommand {
 
         sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
         sender.sendMessage(createMobcapsComponent(
-            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
+            category -> level.getChunkSource().chunkMap.getMobCountNear(serverPlayer, category),
             category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
         ));
     }

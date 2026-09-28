@@ -18,6 +18,6 @@ public class CraftPillager extends CraftIllager implements Pillager, com.destroy
 
     @Override
     public Inventory getInventory() {
-        return new CraftInventory(this.getHandle().inventory);
+        return new CraftInventory(this.getHandle().getInventory());
     }
 }

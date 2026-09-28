@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If this event is cancelled, the entity will not spawn.
  */
-@ApiStatus.Experimental
 public class TrialSpawnerSpawnEvent extends EntitySpawnEvent {
 
     private final TrialSpawner spawner;

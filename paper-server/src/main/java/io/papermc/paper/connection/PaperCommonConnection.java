@@ -71,6 +71,11 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
     }
 
     @Override
+    public @Nullable String getClientBrandName() {
+        return this.packetListener.clientBrand;
+    }
+
+    @Override
     public void disconnect(final Component component) {
         this.packetListener.disconnect(PaperAdventure.asVanilla(component), DisconnectionReason.UNKNOWN);
     }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/border/WorldBorder.java
 +++ b/net/minecraft/world/level/border/WorldBorder.java
-@@ -37,6 +_,8 @@
+@@ -36,6 +_,8 @@
      private double centerZ;
      private int absoluteMaxSize = 29999984;
      private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
@@ -9,7 +9,7 @@
  
      public WorldBorder() {
          this(WorldBorder.Settings.DEFAULT);
-@@ -58,6 +_,20 @@
+@@ -57,6 +_,20 @@
          return this.isWithinBounds(pos.getMinBlockX(), pos.getMinBlockZ()) && this.isWithinBounds(pos.getMaxBlockX(), pos.getMaxBlockZ());
      }
  
@@ -30,7 +30,7 @@
      public boolean isWithinBounds(final AABB aabb) {
          return this.isWithinBounds(aabb.minX, aabb.minZ, aabb.maxX - 1.0E-5F, aabb.maxZ - 1.0E-5F);
      }
-@@ -161,7 +_,15 @@
+@@ -160,7 +_,15 @@
          return this.centerZ;
      }
  
@@ -47,7 +47,7 @@
          this.centerX = x;
          this.centerZ = z;
          this.extent.onCenterChange();
-@@ -184,7 +_,18 @@
+@@ -183,7 +_,18 @@
          return this.extent.getLerpTarget();
      }
  
@@ -67,7 +67,7 @@
          this.extent = new WorldBorder.StaticBorderExtent(size);
          this.setDirty();
  
-@@ -193,7 +_,21 @@
+@@ -192,7 +_,21 @@
          }
      }
  
@@ -87,10 +87,10 @@
 +            ticks = event.getDurationTicks();
 +        }
 +        // Paper end - Add worldborder events
-         this.extent = (WorldBorder.BorderExtent)(from == to
-             ? new WorldBorder.StaticBorderExtent(to)
-             : new WorldBorder.MovingBorderExtent(from, to, ticks, gameTime));
-@@ -209,6 +_,7 @@
+         this.extent = from == to ? new WorldBorder.StaticBorderExtent(to) : new WorldBorder.MovingBorderExtent(from, to, ticks, gameTime);
+         this.setDirty();
+ 
+@@ -206,6 +_,7 @@
      }
  
      public void addListener(final BorderChangeListener listener) {
@@ -98,7 +98,7 @@
          this.listeners.add(listener);
      }
  
-@@ -282,6 +_,12 @@
+@@ -279,6 +_,12 @@
      }
  
      public void tick() {
@@ -111,7 +111,7 @@
          this.extent = this.extent.update();
      }
  
-@@ -302,6 +_,22 @@
+@@ -299,6 +_,22 @@
          }
      }
  
@@ -134,11 +134,18 @@
      private interface BorderExtent {
          double getMinX(final float deltaPartialTick);
  
-@@ -438,6 +_,7 @@
+@@ -433,7 +_,13 @@
              this.previousSize = this.size;
              this.size = this.calculateSize();
-             if (this.lerpProgress <= 0L) {
-+                if (WorldBorder.this.world != null) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(WorldBorder.this.world.getWorld(), WorldBorder.this.world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
-                 WorldBorder.this.setDirty();
-                 return WorldBorder.this.new StaticBorderExtent(this.to);
-             } else {
+             WorldBorder.this.setDirty();
+-            return this.lerpProgress <= 0L ? WorldBorder.this.new StaticBorderExtent(this.to) : this;
++            // Paper start
++            boolean finished = this.lerpProgress <= 0L;
++            if (finished && WorldBorder.this.world != null) {
++                new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(WorldBorder.this.world.getWorld(), WorldBorder.this.world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
++            }
++            return finished ? WorldBorder.this.new StaticBorderExtent(this.to) : this;
++            // Paper end
+         }
+ 
+         @Override

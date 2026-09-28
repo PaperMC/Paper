@@ -1,0 +1,29 @@
+--- a/net/minecraft/world/entity/decoration/Cushion.java
++++ b/net/minecraft/world/entity/decoration/Cushion.java
+@@ -99,11 +_,16 @@
+     }
+ 
+     @Override
+-    protected void removePassenger(final Entity passenger) {
+-        super.removePassenger(passenger);
++    // Paper start - Force entity dismount during teleportation
++    protected boolean removePassenger(final Entity passenger, final boolean suppressCancellation) {
++        if (!super.removePassenger(passenger, suppressCancellation)) {
++            return false;
++        }
++        // Paper end - Force entity dismount during teleportation
+         if (!this.level().isClientSide() && this.getRemovalReason() == null) {
+             this.playSound(SoundEvents.CUSHION_GET_UP, 1.0F, 1.0F);
+         }
++        return true; // Paper
+     }
+ 
+     @Override
+@@ -117,6 +_,7 @@
+             BlockPos blockPos = this.blockPosition();
+             FluidState fluidState = level.getBlockState(blockPos).getFluidState();
+             if (this.collidedWithFluid(fluidState, blockPos, this.position(), this.position())) {
++                this.insideEffectCollector.advanceStep(0, blockPos); // Paper - track position inside effect was triggered on
+                 fluidState.entityInside(level, blockPos, this, this.insideEffectCollector);
+                 this.insideEffectCollector.applyAndClear(this);
+             }

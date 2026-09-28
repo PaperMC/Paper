@@ -213,7 +213,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public String getWorldType();
@@ -995,7 +995,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public PluginCommand getPluginCommand(@NotNull String name);
 
@@ -1380,7 +1384,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
@@ -1600,7 +1603,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the level directory
      */
-    @ApiStatus.Experimental
     @NotNull
     Path getLevelDirectory();
 
@@ -1942,7 +1944,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the server's links
      */
     @NotNull
-    @ApiStatus.Experimental
     ServerLinks getServerLinks();
 
     /**
@@ -2210,7 +2211,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     org.bukkit.command.CommandMap getCommandMap();
 
@@ -2410,9 +2415,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         // Paper start
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-        {
-            throw new UnsupportedOperationException( "Not supported yet." );
+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         /**
@@ -2424,8 +2428,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -2438,8 +2441,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
@@ -2627,7 +2629,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
 

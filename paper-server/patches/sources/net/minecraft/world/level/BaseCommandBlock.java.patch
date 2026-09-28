@@ -11,23 +11,23 @@
  
      public int getSuccessCount() {
          return this.successCount;
-@@ -107,7 +_,13 @@
-                                     this.successCount++;
-                                 }
-                             });
--                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, this.command);
-+                        // Paper start - ServerCommandEvent
-+                        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
-+                        if (!event.callEvent()) {
-+                            return true;
-+                        }
-+                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, event.getCommand());
-+                        // Paper end - ServerCommandEvent
-                     }
-                 } catch (Throwable var7) {
-                     CrashReport report = CrashReport.forThrowable(var7, "Executing command block");
-@@ -128,8 +_,8 @@
-         }
+@@ -109,7 +_,13 @@
+                             this.successCount++;
+                         }
+                     });
+-                    level.getServer().getCommands().performPrefixedCommand(commandSourceStack, this.command);
++                    // Paper start - ServerCommandEvent
++                    org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
++                    if (!event.callEvent()) {
++                        return true;
++                    }
++                    level.getServer().getCommands().performPrefixedCommand(commandSourceStack, event.getCommand());
++                    // Paper end - ServerCommandEvent
+                 }
+             } catch (Throwable t) {
+                 CrashReport report = CrashReport.forThrowable(t, "Executing command block");
+@@ -129,8 +_,8 @@
+         return true;
      }
  
 -    private BaseCommandBlock.@Nullable CloseableCommandBlockSource createSource(final ServerLevel level) {
@@ -37,7 +37,7 @@
      }
  
      public Component getName() {
-@@ -162,15 +_,23 @@
+@@ -163,13 +_,21 @@
  
      public abstract boolean isValid();
  
@@ -51,8 +51,6 @@
 +        // Paper start - add back source when output disabled
 +        private final boolean trackOutput;
 +        public CloseableCommandBlockSource(final ServerLevel level, final boolean trackOutput) {
-             Objects.requireNonNull(BaseCommandBlock.this);
-             super();
              this.level = level;
 +            this.trackOutput = trackOutput;
 +        }
@@ -63,7 +61,7 @@
          }
  
          @Override
-@@ -180,7 +_,7 @@
+@@ -179,7 +_,7 @@
  
          @Override
          public boolean acceptsFailure() {
@@ -72,7 +70,7 @@
          }
  
          @Override
-@@ -190,7 +_,8 @@
+@@ -189,7 +_,8 @@
  
          @Override
          public void sendSystemMessage(final Component message) {
@@ -82,7 +80,7 @@
                  BaseCommandBlock.this.lastOutput = Component.literal("[" + TIME_FORMAT.format(ZonedDateTime.now()) + "] ").append(message);
                  BaseCommandBlock.this.onUpdated(this.level);
              }
-@@ -200,5 +_,12 @@
+@@ -199,5 +_,12 @@
          public void close() throws Exception {
              this.closed = true;
          }

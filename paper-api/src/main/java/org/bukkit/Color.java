@@ -201,10 +201,10 @@ public final class Color implements ConfigurationSerializable {
     }
 
     private Color(int alpha, int red, int green, int blue) {
-        Preconditions.checkArgument(alpha >= 0 && alpha <= BIT_MASK, "Alpha[%s] is not between 0-255", alpha);
-        Preconditions.checkArgument(red >= 0 && red <= BIT_MASK, "Red[%s] is not between 0-255", red);
-        Preconditions.checkArgument(green >= 0 && green <= BIT_MASK, "Green[%s] is not between 0-255", green);
-        Preconditions.checkArgument(blue >= 0 && blue <= BIT_MASK, "Blue[%s] is not between 0-255", blue);
+        Preconditions.checkArgument(alpha >= 0 && alpha <= 0xff, "Alpha[%s] is not between 0-255", alpha);
+        Preconditions.checkArgument(red >= 0 && red <= 0xff, "Red[%s] is not between 0-255", red);
+        Preconditions.checkArgument(green >= 0 && green <= 0xff, "Green[%s] is not between 0-255", green);
+        Preconditions.checkArgument(blue >= 0 && blue <= 0xff, "Blue[%s] is not between 0-255", blue);
 
         this.alpha = (byte) alpha;
         this.red = (byte) red;
@@ -401,7 +401,6 @@ public final class Color implements ConfigurationSerializable {
         );
     }
 
-    @SuppressWarnings("javadoc")
     @NotNull
     public static Color deserialize(@NotNull Map<String, Object> map) {
         return fromARGB(

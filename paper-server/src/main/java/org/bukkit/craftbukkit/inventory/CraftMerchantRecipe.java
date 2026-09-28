@@ -16,10 +16,10 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     private final net.minecraft.world.item.trading.MerchantOffer handle;
 
     public CraftMerchantRecipe(net.minecraft.world.item.trading.MerchantOffer merchantRecipe) {
-        super(CraftItemStack.asBukkitCopy(merchantRecipe.result), 0);
+        super(CraftItemStack.asBukkitCopy(merchantRecipe.getResult()), 0);
         this.handle = merchantRecipe;
-        this.addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.baseCostA.itemStack()));
-        merchantRecipe.costB.ifPresent((costB) -> this.addIngredient(CraftItemStack.asBukkitCopy(costB.itemStack())));
+        this.addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.getItemCostA().itemStack()));
+        merchantRecipe.getItemCostB().ifPresent((costB) -> this.addIngredient(CraftItemStack.asBukkitCopy(costB.itemStack())));
     }
 
     @Deprecated
@@ -60,12 +60,12 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public void setSpecialPrice(int specialPrice) {
-        this.handle.specialPriceDiff = specialPrice;
+        this.handle.setSpecialPriceDiff(specialPrice);
     }
 
     @Override
     public int getDemand() {
-        return this.handle.demand;
+        return this.handle.getDemand();
     }
 
     @Override
@@ -75,7 +75,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getUses() {
-        return this.handle.uses;
+        return this.handle.getUses();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getMaxUses() {
-        return this.handle.maxUses;
+        return this.handle.getMaxUses();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public boolean hasExperienceReward() {
-        return this.handle.rewardExp;
+        return this.handle.shouldRewardExp();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getVillagerExperience() {
-        return this.handle.xp;
+        return this.handle.getXp();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public float getPriceMultiplier() {
-        return this.handle.priceMultiplier;
+        return this.handle.getPriceMultiplier();
     }
 
     @Override

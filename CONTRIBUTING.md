@@ -191,6 +191,31 @@ and your server.
 While we will fix minor formatting issues, you should stick to the guide below
 when making and submitting changes.
 
+### Contribution Ownership and AI Assistance
+
+Tools that generate code or text can be useful while working on a contribution,
+but they are not a substitute for the contributor. You are responsible for every
+part of what you submit. Only submit changes that you understand, have personally
+reviewed, and have verified to the best of your ability. You should be able to
+explain why the change is needed, how it works, and what tradeoffs it makes.
+
+Issues, discussion posts, pull request descriptions, comments, and review
+responses should be written by you, in your own words. Do not pass generated
+responses on to maintainers or use an AI tool as a proxy for the conversation.
+If a tool helped you investigate or implement something, read and validate its
+output, then communicate the relevant conclusions yourself.
+
+Do not conceal or misrepresent meaningful AI involvement; be transparent about
+how these tools contributed to your work. Transparency does not excuse
+submitting work you do not understand, review, verify, and take responsibility
+for.
+
+Review is a collaborative process, not a way to outsource completion of a
+generated change to maintainers. Be prepared to answer questions about your
+reasoning and to remain involved until the contribution is complete. We may
+close contributions when the author cannot explain or take responsibility for
+the submitted work.
+
 ### Branches and Minecraft Versions
 
 Generally, PRs should be targeted at the `main` branch, where active development for
@@ -420,12 +445,18 @@ int maxPlayers = GlobalConfiguration.get().misc.maxNumOfPlayers;
 Generally for global config values you will use the fully qualified class name,
 `io.papermc.paper.configuration.GlobalConfiguration` since it's not imported in
 most places.
----
+
 If you are adding a new world config value, you must have access to an instance
 of the `net.minecraft.world.level.Level` which you can then access the config by doing
 ```java
 int maxPlayers = level.paperConfig().misc.maxNumOfPlayers;
 ```
+
+#### Documentation
+When adding or removing a config option, you should open a pull request in our [documentation repository](https://github.com/PaperMC/docs)
+to keep it in sync and accurate. If you're unsure whether your original change will be accepted, then it's fine to wait with making the documentation
+pull request until a maintainer has reviewed your changes. Once everything is done, the documentation pull request will be merged at the same time
+that your original pull request is.
 
 ## Testing API changes
 
@@ -470,10 +501,13 @@ If you use Maven to build your plugin:
 
 ### My commit doesn't need a build, what do I do?
 
-Quite simple: You add `[ci skip]` to the start of your commit subject.
+Quite simple: You add `[ci skip]` to the start of your pull request title.
 
 This case most often applies to changes to files like `README.md`, this very
-file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
+file (`CONTRIBUTING.md`), the `LICENSE.md` file, and also small updates to Javadocs or other documentation.
+
+Do *not* add [ci skip] to the start of your individual commit subjects, as your
+pull request will not be mergeable until a new commit is added due to status check requirements.
 
 ### Patching and building is *really* slow, what can I do?
 

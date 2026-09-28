@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/net/minecraft/world/level/material/FlowingFluid.java
-@@ -121,6 +_,15 @@
+@@ -119,6 +_,15 @@
                  Fluid newBelowFluidType = newBelowFluid.getType();
                  if (belowFluid.canBeReplacedWith(level, belowPos, newBelowFluidType, Direction.DOWN)
                      && canHoldSpecificFluid(level, belowPos, belowState, newBelowFluidType)) {
@@ -16,7 +16,7 @@
                      this.spreadTo(level, belowPos, belowState, Direction.DOWN, newBelowFluid);
                      if (this.sourceNeighborCount(level, pos) >= 3) {
                          this.spreadToSides(level, pos, fluidState, state);
-@@ -149,7 +_,18 @@
+@@ -147,7 +_,18 @@
                  Direction spread = entry.getKey();
                  FluidState newNeighborFluid = entry.getValue();
                  BlockPos neighborPos = pos.relative(spread);
@@ -36,7 +36,7 @@
              }
          }
      }
-@@ -161,7 +_,8 @@
+@@ -159,7 +_,8 @@
  
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos relativePos = mutablePos.setWithOffset(pos, direction);
@@ -54,7 +54,7 @@
 +                this.beforeDestroyingBlock(level, pos, state, pos.relative(direction.getOpposite())); // Paper - Add BlockBreakBlockEvent
              }
  
-             level.setBlock(pos, target.createLegacyBlock(), Block.UPDATE_ALL);
+             level.setBlockAndUpdate(pos, target.createLegacyBlock());
          }
      }
  
@@ -83,7 +83,7 @@
              FluidState testFluidState = testState.getFluidState();
              if (this.canMaybePassThrough(level, pos, state, direction, testPos, testState, testFluidState)) {
                  FluidState newFluid = this.getNewLiquid(level, testPos, testState);
-@@ -434,10 +_,24 @@
+@@ -424,10 +_,24 @@
              if (newFluidState.isEmpty()) {
                  fluidState = newFluidState;
                  blockState = Blocks.AIR.defaultBlockState();
@@ -94,10 +94,10 @@
 +                }
 +                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
 +                // CraftBukkit end
-                 level.setBlock(pos, blockState, Block.UPDATE_ALL);
+                 level.setBlockAndUpdate(pos, blockState);
              } else if (newFluidState != fluidState) {
                  fluidState = newFluidState;
-                 blockState = newFluidState.createLegacyBlock();
+                 blockState = fluidState.createLegacyBlock();
 +                // CraftBukkit start
 +                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, blockState);
 +                if (event.isCancelled()) {
@@ -105,10 +105,10 @@
 +                }
 +                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
 +                // CraftBukkit end
-                 level.setBlock(pos, blockState, Block.UPDATE_ALL);
-                 level.scheduleTick(pos, newFluidState.getType(), tickDelay);
+                 level.setBlockAndUpdate(pos, blockState);
+                 level.scheduleTick(pos, fluidState.getType(), tickDelay);
              }
-@@ -510,8 +_,27 @@
+@@ -496,8 +_,27 @@
              return this.getBlockState(pos, this.getCacheKey(pos));
          }
  

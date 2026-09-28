@@ -18,7 +18,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.material.Attachable;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -28,8 +27,7 @@ public class CraftBlockState implements BlockState {
     protected final CraftWorld world;
     private final BlockPos position;
     protected net.minecraft.world.level.block.state.BlockState block;
-    @net.minecraft.world.level.block.Block.UpdateFlags
-    protected int capturedFlags; // todo move out of this class
+    protected @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags; // todo move out of this class
     private WeakReference<LevelAccessor> weakLevel;
 
     protected CraftBlockState(final Block block) {
@@ -215,31 +213,15 @@ public class CraftBlockState implements BlockState {
         if (!this.isPlaced()) {
             return true;
         }
-        LevelAccessor access = this.getWorldHandle();
-        CraftBlock block = this.getBlock();
 
+        CraftBlock block = this.getBlock();
         if (block.getType() != this.getType()) {
             if (!force) {
                 return false;
             }
         }
 
-        net.minecraft.world.level.block.state.BlockState newBlock = this.block;
-        block.setBlockState(newBlock, applyPhysics);
-        if (access instanceof net.minecraft.world.level.Level) {
-            this.world.getHandle().sendBlockUpdated(
-                this.position,
-                block.getBlockState(),
-                newBlock,
-                net.minecraft.world.level.block.Block.UPDATE_ALL
-            );
-        }
-
-        // Update levers etc
-        if (false && applyPhysics && this.getData() instanceof Attachable) { // Call does not map to new API
-            this.world.getHandle().updateNeighborsAt(this.position.relative(CraftBlock.blockFaceToNotch(((Attachable) this.getData()).getAttachedFace())), newBlock.getBlock());
-        }
-
+        block.setBlockState(this.block, applyPhysics);
         return true;
     }
 
@@ -253,13 +235,15 @@ public class CraftBlockState implements BlockState {
     }
 
     // used to revert a block placement due to an event being cancelled for example
-    public boolean revertPlace() {
+    public boolean revertPlace(boolean ignorePoi) {
+        int extraFlags = ignorePoi ? net.minecraft.world.level.block.Block.UPDATE_SKIP_POI : 0;
         return this.place(
             net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
             net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
             net.minecraft.world.level.block.Block.UPDATE_SUPPRESS_DROPS |
             net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE |
-            net.minecraft.world.level.block.Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS
+            net.minecraft.world.level.block.Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS |
+            extraFlags
         );
     }
 

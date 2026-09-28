@@ -273,4 +273,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     final class InvalidHolderOwner implements HolderOwner<M> {
     }
+
+    @Override
+    public String toString() {
+        return "CraftRegistry{" +
+            "minecraftRegistry=" + minecraftRegistry.key() +
+            '}';
+    }
 }

@@ -1,33 +1,50 @@
 --- a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
 +++ b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
-@@ -327,7 +_,10 @@
-             } else {
-                 boolean isValidTarget = this.isWantedBlock(body, transportItemTarget.state)
-                     && !this.isPositionAlreadyVisited(visitedPositions, unreachablePositions, transportItemTarget, level)
--                    && !this.isContainerLocked(transportItemTarget);
-+                    // Paper start - ItemTransportingEntityValidateTargetEvent
-+                    && !this.isContainerLocked(transportItemTarget)
-+                    && org.bukkit.craftbukkit.event.CraftEventFactory.callTransporterValidateTarget(body, level, transportItemTarget.pos);
-+                    // Paper end - ItemTransportingEntityValidateTargetEvent
-                 return isValidTarget ? transportItemTarget : null;
-             }
-         }
-@@ -505,7 +_,17 @@
+@@ -329,7 +_,10 @@
+ 
+         boolean isValidTarget = this.isWantedBlock(body, transportItemTarget.state)
+             && !this.isPositionAlreadyVisited(visitedPositions, unreachablePositions, transportItemTarget, level)
+-            && !this.isContainerLocked(transportItemTarget);
++            // Paper start - ItemTransportingEntityValidateTargetEvent
++            && !this.isContainerLocked(transportItemTarget)
++            && org.bukkit.craftbukkit.event.CraftEventFactory.callTransporterValidateTarget(body, level, transportItemTarget.pos);
++            // Paper end - ItemTransportingEntityValidateTargetEvent
+         return isValidTarget ? transportItemTarget : null;
+     }
+ 
+@@ -377,8 +_,17 @@
+     }
+ 
+     private boolean targetHasNotChanged(final Level level, final TransportItemsBetweenContainers.TransportItemTarget target) {
+-        return target.blockEntity.equals(level.getBlockEntity(target.pos));
+-    }
++        // Paper start
++        return target.blockEntity.equals(level.getBlockEntity(target.pos)) && !isContainerRemoved(target.container);
++    }
++
++    private static boolean isContainerRemoved(final Container container) {
++        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++            return isContainerRemoved(compoundContainer.container1) || isContainerRemoved(compoundContainer.container2);
++        }
++        return container instanceof BlockEntity blockEntity && blockEntity.isRemoved();
++    }
++    // Paper end
+ 
+     private Stream<TransportItemsBetweenContainers.TransportItemTarget> getConnectedTargets(
+         final TransportItemsBetweenContainers.TransportItemTarget target, final Level level
+@@ -505,6 +_,15 @@
      }
  
      private static boolean matchesLeavingItemsRequirement(final PathfinderMob body, final Container container) {
--        return container.isEmpty() || hasItemMatchingHandItem(body, container);
 +        // Paper start - Add event for container assessment
-+        io.papermc.paper.event.entity.ItemTransportingEntitySortEvent sortEvent = org.bukkit.craftbukkit.event.CraftEventFactory.createItemTransportingEntitySortEvent(body, container);
++        final io.papermc.paper.event.entity.ItemTransportingEntitySortEvent sortEvent = org.bukkit.craftbukkit.event.CraftEventFactory.createItemTransportingEntitySortEvent(body, container);
 +        sortEvent.callEvent();
 +        if (sortEvent.getDecision() !=
 +            io.papermc.paper.event.entity.ItemTransportingEntitySortEvent.ItemTransportingEntityDecision.DEFAULT) {
 +            return sortEvent.getDecision()
 +                == io.papermc.paper.event.entity.ItemTransportingEntitySortEvent.ItemTransportingEntityDecision.ALLOW_DESTINATION;
-+        } else {
-+            return container.isEmpty() || hasItemMatchingHandItem(body, container);
 +        }
 +        // Paper end - Add event for container assessment
+         return container.isEmpty() || hasItemMatchingHandItem(body, container);
      }
  
-     private static boolean hasItemMatchingHandItem(final PathfinderMob body, final Container container) {
