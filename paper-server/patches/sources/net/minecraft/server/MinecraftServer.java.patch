@@ -58,7 +58,12 @@
      private final ServerFunctionManager functionManager;
      private boolean enforceWhitelist;
      private boolean usingWhitelist;
-@@ -286,13 +_,14 @@
+@@ -282,17 +_,19 @@
+     protected WorldData worldData;
+     private LevelData.RespawnData effectiveRespawnData = LevelData.RespawnData.DEFAULT;
+     private int emptyTicks;
++    private boolean ranGcOnEmptyServerPause; // Paper - flush memory caches when paused
+     private volatile boolean isSaving;
      private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
@@ -965,7 +970,7 @@
      }
  
      @Override
-@@ -947,26 +_,44 @@
+@@ -947,26 +_,57 @@
      }
  
      protected void tickServer(final BooleanSupplier haveTime) {
@@ -979,6 +984,7 @@
                  this.emptyTicks++;
              } else {
                  this.emptyTicks = 0;
++                this.ranGcOnEmptyServerPause = false; // Paper - flush memory caches when paused
              }
  
              if (this.emptyTicks >= emptyTickThreshold) {
@@ -998,6 +1004,18 @@
 +                    // process unloads
 +                    level.getChunkSource().tick(() -> true, false);
 +                }
++
++                // Paper start - flush memory caches when paused
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.runGcOnEmptyServerPause
++                    && !this.ranGcOnEmptyServerPause
++                    && this.levels.values().stream().noneMatch(level ->
++                        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) level)
++                            .moonrise$getChunkTaskScheduler().chunkHolderManager.hasChunksToUnload())) {
++                    System.gc();
++                    this.ranGcOnEmptyServerPause = true;
++                }
++                // Paper end - flush memory caches when paused
++
 +                // Paper end - avoid issues with certain tasks not processing during sleep
 +                this.server.spark.executeMainThreadTasks(); // Paper - spark
                  this.tickConnection();
