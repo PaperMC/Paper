@@ -21,15 +21,9 @@ import org.jspecify.annotations.NullMarked;
 public class ItemTransportingEntitySortEvent extends EntityEvent {
     protected static final HandlerList HANDLER_LIST = new HandlerList();
 
-    public enum ItemTransportingEntityDecision {
-        ALLOW_DESTINATION,
-        REJECT_DESTINATION,
-        DEFAULT
-    }
-
     private final ItemStack itemStack;
     private final Inventory containerInventory;
-    private ItemTransportingEntityDecision decision;
+    private Result result;
 
     @ApiStatus.Internal
     public ItemTransportingEntitySortEvent(
@@ -40,51 +34,61 @@ public class ItemTransportingEntitySortEvent extends EntityEvent {
         super(entity);
         this.containerInventory = containerInventory;
         this.itemStack = itemStack;
-        this.decision = ItemTransportingEntityDecision.DEFAULT;
+        this.result = Result.DEFAULT;
     }
 
     /**
-     * Sets if the item belongs in the container.
+     * Sets the sorting decision for the held item and the inspected container.
+     * <ul>
+     *   <li>{@link Result#ALLOW}: the item belongs in the container.</li>
+     *   <li>{@link Result#DENY}: the item does not belong in the container.</li>
+     *   <li>{@link Result#DEFAULT}: use the vanilla sorting logic.</li>
+     * </ul>
      *
-     * @param d Whether the item belongs in the chest.
+     * @param result the sorting decision
+     * @see Result
      */
-    public void setDecision(boolean d) {
-        this.decision = d ? ItemTransportingEntityDecision.ALLOW_DESTINATION : ItemTransportingEntityDecision.REJECT_DESTINATION;
+    public void setResult(final Result result) {
+        this.result = result;
     }
 
     /**
-     * Gets if the held item stack belongs in the container.
+     * Gets the current sorting decision. Starts as {@link Result#DEFAULT}
+     * and may have been modified by other plugins.
      *
-     * @return Whether the item stack belongs in the chest.
+     * @return the current sorting decision
+     * @see #setResult(Result)
      */
-    public ItemTransportingEntityDecision getDecision() {
-        return this.decision;
+    public Result getResult() {
+        return this.result;
     }
 
     /**
-     * Gets the container the entity is comparing to the held item.
+     * Gets the inventory of the container the entity is comparing
+     * against the held item.
      *
-     * @return The potential destination container
+     * @return the inventory of the potential destination container
      */
     public Inventory getContainerInventory() {
         return this.containerInventory;
     }
 
     /**
-     * Gets the held item stack being compared against the container.
+     * Gets the item stack held by the entity that is being compared
+     * against the container.
      *
-     * @return The held item stack
+     * @return the held item stack
      */
-    public ItemStack getHeldItemStack() {
+    public ItemStack getItemStack() {
         return this.itemStack;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
     }
 
     @Override
     public HandlerList getHandlers() {
+        return HANDLER_LIST;
+    }
+
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 }
