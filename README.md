@@ -91,6 +91,8 @@ You can find our collective [here](https://opencollective.com/papermc), or you c
 Special Thanks To:
 -------------
 
+[![CI powered by namespace badge](https://assets.papermc.io/sponsors/namespace-oss-badge.svg)](https://namespace.so/github-actions/?utm_source=oss&utm_campaign=papermc)
+
 [![YourKit-Logo](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com/)
 
 [YourKit](https://www.yourkit.com/), makers of the outstanding java profiler, support open source projects of all kinds with their full featured [Java](https://www.yourkit.com/java/profiler) and [.NET](https://www.yourkit.com/.net/profiler) application profilers. We thank them for granting Paper an OSS license so that we can make our software the best it can be.
