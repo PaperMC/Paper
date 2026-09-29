@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/inventory/CrafterMenu.java
 +++ b/net/minecraft/world/inventory/CrafterMenu.java
-@@ -1,5 +_,8 @@
- package net.minecraft.world.inventory;
- 
-+import java.util.Optional;
-+import net.minecraft.world.item.crafting.CraftingRecipe;
-+import net.minecraft.world.item.crafting.RecipeHolder;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.Container;
 @@ -19,6 +_,20 @@
      private final ContainerData containerData;
      private final Player player;
@@ -38,14 +29,11 @@
          return this.container.stillValid(player);
      }
  
-@@ -107,7 +_,9 @@
-         if (this.player instanceof ServerPlayer serverPlayer) {
+@@ -108,6 +_,7 @@
              ServerLevel level = serverPlayer.level();
              CraftingInput craftInput = this.container.asCraftInput();
--            ItemStack result = CrafterBlock.getPotentialResults(level, craftInput).map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY);
-+            Optional<RecipeHolder<CraftingRecipe>> recipe = CrafterBlock.getPotentialResults(level, craftInput);
-+            ItemStack result = recipe.map(recipeHolder -> recipeHolder.value().assemble(craftInput)).orElse(ItemStack.EMPTY);
-+            result = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(this.container, this.resultContainer, result, this.getBukkitView(), false);
+             ItemStack result = CrafterBlock.getPotentialResults(level, craftInput).map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY);
++            result = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(this.container, this.resultContainer, result, this.getBukkitView(), false); // Paper - Fire PrepareItemCraftEvent for Crafter preview
              this.resultContainer.setItem(0, result);
          }
      }
