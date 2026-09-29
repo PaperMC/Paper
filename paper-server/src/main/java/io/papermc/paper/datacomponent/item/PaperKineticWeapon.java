@@ -1,13 +1,15 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public record PaperKineticWeapon(
     net.minecraft.world.item.component.KineticWeapon impl
@@ -125,16 +127,14 @@ public record PaperKineticWeapon(
         private float forwardMovement = 0.0F;
 
         @Override
-        public KineticWeapon.Builder contactCooldownTicks(final int ticks) {
-            Preconditions.checkArgument(ticks >= 0, "contactCooldownTicks must be non-negative");
-            this.contactCooldownTicks = ticks;
+        public KineticWeapon.Builder contactCooldownTicks(final @NonNegative int ticks) {
+            this.contactCooldownTicks = requireNonNegative(ticks, "contactCooldownTicks");
             return this;
         }
 
         @Override
-        public KineticWeapon.Builder delayTicks(final int ticks) {
-            Preconditions.checkArgument(ticks >= 0, "delayTicks must be non-negative");
-            this.delayTicks = ticks;
+        public KineticWeapon.Builder delayTicks(final @NonNegative int ticks) {
+            this.delayTicks = requireNonNegative(ticks, "delayTicks");
             return this;
         }
 

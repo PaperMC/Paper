@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -68,6 +_,11 @@
+@@ -67,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -12,15 +12,16 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -81,6 +_,43 @@
+@@ -79,6 +_,44 @@
      private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
-     @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
+     private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
 +    public String hostname = ""; // CraftBukkit - add field
++    public boolean handleConnectionDisconnectOnNextTick = false; // Paper - Force kill connection ticking
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
 +    public java.net.InetSocketAddress virtualHost;
-+    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
++    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit connection flushing
 +    // Paper end
 +    // Paper start - add utility methods
 +    public final net.minecraft.server.level.ServerPlayer getPlayer() {
@@ -54,9 +55,9 @@
 +    public net.minecraft.server.level.@Nullable ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
 +    public org.bukkit.event.player.PlayerResourcePackStatusEvent.@Nullable Status resourcePackStatus; // Paper
  
-     public Connection(PacketFlow receiving) {
+     public Connection(final PacketFlow receiving) {
          this.receiving = receiving;
-@@ -91,6 +_,7 @@
+@@ -89,6 +_,7 @@
          super.channelActive(ctx);
          this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
@@ -64,121 +65,185 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -103,14 +_,31 @@
+@@ -100,15 +_,45 @@
+     }
  
      @Override
-     public void exceptionCaught(ChannelHandlerContext ctx, Throwable exception) {
-+        // Paper start - Handle large packets disconnecting client
-+        if (exception instanceof io.netty.handler.codec.EncoderException && exception.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
+-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
++    // Paper start - Handle large packets disconnecting client
++    public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
++        if (cause instanceof io.netty.handler.codec.EncoderException && cause.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            if (packet.packetTooLarge(this)) {
 +                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else if (packet.isSkippable()) {
-+                Connection.LOGGER.debug("Skipping packet due to errors", exception.getCause());
++                Connection.LOGGER.debug("Skipping packet due to errors", cause.getCause());
 +                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else {
-+                exception = exception.getCause();
++                cause = cause.getCause();
 +            }
 +        }
 +        // Paper end - Handle large packets disconnecting client
-         if (exception instanceof SkipPacketException) {
-             LOGGER.debug("Skipping packet due to errors", exception.getCause());
+         if (cause instanceof SkipPacketException) {
++            // Paper start - packet limiter
++            if (cause instanceof SkipPacketDecoderException && !this.stopReadingPackets) {
++                this.receivedPackets++;
++                if (this.allPacketCounts != null) {
++                    synchronized (this.PACKET_LIMIT_LOCK) {
++                        this.allPacketCounts.updateAndAdd(1, System.nanoTime());
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
++                            this.killForPacketSpam();
++                        }
++                    }
++                }
++            }
++            // Paper end - packet limiter
+             LOGGER.debug("Skipping packet due to errors", cause.getCause());
          } else {
-             boolean flag = !this.handlingFault;
+             boolean isFirstFault = !this.handlingFault;
              this.handlingFault = true;
              if (this.channel.isOpen()) {
 +                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
-                 if (exception instanceof TimeoutException) {
-                     LOGGER.debug("Timeout", exception);
+                 if (cause instanceof TimeoutException) {
+                     LOGGER.debug("Timeout", cause);
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
-                     Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + exception);
-@@ -122,9 +_,11 @@
-                         disconnectionDetails = new DisconnectionDetails(component);
+                     Component reason = Component.translatable("disconnect.genericReason", "Internal Exception: " + cause);
+@@ -120,9 +_,11 @@
+                         details = new DisconnectionDetails(reason);
                      }
  
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
-                     if (flag) {
-                         LOGGER.debug("Failed to sent packet", exception);
+                     if (isFirstFault) {
+                         LOGGER.debug("Failed to sent packet", cause);
 -                        if (this.getSending() == PacketFlow.CLIENTBOUND) {
 +                        boolean doesDisconnectExist = this.packetListener.protocol() != ConnectionProtocol.STATUS && this.packetListener.protocol() != ConnectionProtocol.HANDSHAKING; // Paper
 +                        if (this.getSending() == PacketFlow.CLIENTBOUND && doesDisconnectExist) { // Paper
-                             Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
-                                 ? new ClientboundLoginDisconnectPacket(component)
-                                 : new ClientboundDisconnectPacket(component));
-@@ -141,6 +_,7 @@
+                             Packet<?> packet = this.sendLoginDisconnect
+                                 ? new ClientboundLoginDisconnectPacket(reason)
+                                 : new ClientboundDisconnectPacket(reason);
+@@ -139,6 +_,7 @@
                  }
              }
          }
-+        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Spigot // Paper
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(cause); // Spigot // Paper
      }
  
      @Override
-@@ -150,10 +_,60 @@
+@@ -148,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
-             } else {
-+                // Paper start - packet limiter
-+                if (this.stopReadingPackets) {
-+                    return;
-+                }
-+                if (this.allPacketCounts != null ||
-+                    io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
-+                    long time = System.nanoTime();
-+                    synchronized (PACKET_LIMIT_LOCK) {
-+                        if (this.allPacketCounts != null) {
-+                            this.allPacketCounts.updateAndAdd(1, time);
-+                            if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
-+                                this.killForPacketSpam();
-+                                return;
-+                            }
+             }
+-
++            // Paper start - packet limiter
++            if (this.stopReadingPackets) {
++                return;
++            }
++            if (this.allPacketCounts != null ||
++                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
++                long time = System.nanoTime();
++                synchronized (PACKET_LIMIT_LOCK) {
++                    if (this.allPacketCounts != null) {
++                        this.allPacketCounts.updateAndAdd(1, time);
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
++                            this.killForPacketSpam();
++                            return;
 +                        }
++                    }
 +
-+                        for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
-+                            io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
-+                                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
-+                            if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
-+                                continue;
-+                            }
-+                            io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
-+                                return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
-+                            });
-+                            counter.updateAndAdd(1, time);
-+                            if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
-+                                switch (packetSpecificLimit.action()) {
-+                                    case DROP:
-+                                        return;
-+                                    case KICK:
-+                                        String deobfedPacketName = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(check.getName());
++                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
++                        io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
++                            io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
++                        if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
++                            continue;
++                        }
++                        io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
++                            return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
++                        });
++                        counter.updateAndAdd(1, time);
++                        if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
++                            switch (packetSpecificLimit.action()) {
++                                case DROP:
++                                    return;
++                                case KICK:
++                                    String deobfedPacketName = check.getName();
 +
-+                                        String playerName;
-+                                        if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
-+                                            playerName = impl.getOwner().name();
-+                                        } else {
-+                                            playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
-+                                        }
++                                    String playerName;
++                                    if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
++                                        playerName = impl.getOwner().name();
++                                    } else {
++                                        playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
++                                    }
 +
-+                                        Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
-+                                        this.killForPacketSpam();
-+                                        return;
-+                                }
++                                    Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
++                                    this.killForPacketSpam();
++                                    return;
 +                            }
 +                        }
 +                    }
 +                }
-+                // Paper end - packet limiter
-                 if (packetListener.shouldHandleMessage(packet)) {
-                     try {
-                         genericsFtw(packet, packetListener);
-                     } catch (RunningOnDifferentThreadException var5) {
-+                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
-                     } catch (RejectedExecutionException var6) {
-                         this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
-                     } catch (ClassCastException var7) {
-@@ -346,10 +_,30 @@
++            }
++            // Paper end - packet limiter
+             if (packetListener.shouldHandleMessage(packet)) {
+                 try {
+                     genericsFtw(packet, packetListener);
+                 } catch (RunningOnDifferentThreadException var5) {
++                } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
+                 } catch (RejectedExecutionException ignored) {
+                     this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
+                 } catch (ClassCastException exception) {
+@@ -295,6 +_,47 @@
+         }
+     }
+ 
++    // Paper start - Add netty task scheduling helper
++    /**
++     * Schedules a task on the channel's event loop after all currently queued packets have been submitted for writing.
++     * This allows the compression packet to be written and compression to be enabled in the same event-loop task.
++     * Vanilla enables compression from a write-future listener, which may run after another packet has already been
++     * queued without compression.
++     *
++     * @see <a href="https://mojira.dev/MC-308621">MC-308621</a>
++     */
++    private void scheduleNettyTask(final Runnable task) {
++        final boolean connected = this.isConnected();
++        if (!connected && !this.preparing) {
++            return;
++        }
++
++        if (connected && this.pendingActions.isEmpty()) {
++            this.channel.eventLoop().execute(task);
++        } else {
++            this.pendingActions.add(connection -> connection.channel.eventLoop().execute(task));
++            this.flushQueue();
++        }
++    }
++
++    /**
++     * Schedules a task on the channel's event loop after all currently queued packets have been submitted for writing.
++     * This allows the compression packet to be written and compression to be enabled in the same event-loop task.
++     * Vanilla enables compression from a write-future listener, which may run after another packet has already been
++     * queued without compression.
++     *
++     * @see <a href="https://mojira.dev/MC-308621">MC-308621</a>
++     */
++    public void sendPacketAndScheduleNettyTask(final Packet<?> packet, final boolean flush, final Runnable after) {
++        this.scheduleNettyTask(() -> {
++            Connection.this.sendPacket(packet, null, flush);
++            if (after != null) {
++                after.run();
++            }
++        });
++    }
++    // Paper end - Add netty task scheduling helper
++
+     private void sendPacket(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
+         this.sentPackets++;
+         if (this.channel.eventLoop().inEventLoop()) {
+@@ -342,10 +_,30 @@
          }
      }
  
@@ -193,7 +258,7 @@
 +            Connection.joinAttemptsThisTick = 0;
 +        }
 +        // Paper end - Buffer joins to world
-         if (this.packetListener instanceof TickablePacketListener tickablePacketListener) {
+         if (this.packetListener instanceof TickablePacketListener tickable) {
 +            // Paper start - Buffer joins to world
 +            if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
 +                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
@@ -201,7 +266,7 @@
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.PacketProcessor.packetProcessing.push(this.packetListener);
 +            try {
-             tickablePacketListener.tick();
+             tickable.tick();
 +            } finally {
 +                net.minecraft.network.PacketProcessor.packetProcessing.pop();
 +            } // Paper end - detailed watchdog information
@@ -209,31 +274,24 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -357,7 +_,7 @@
+@@ -353,7 +_,7 @@
          }
  
          if (this.channel != null) {
 -            this.channel.flush();
-+            if (enableExplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - Disable explicit network manager flushing; we don't need to explicit flush here, but allow opt in incase issues are found to a better version
++            if (enableExplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - Disable explicit connection flushing; we don't need to explicit flush here, but allow opt in incase issues are found to a better version
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -393,12 +_,13 @@
+@@ -389,6 +_,7 @@
      }
  
-     public void disconnect(DisconnectionDetails disconnectionDetails) {
+     public void disconnect(final DisconnectionDetails details) {
 +        this.preparing = false; // Spigot
          if (this.channel == null) {
-             this.delayedDisconnect = disconnectionDetails;
+             this.delayedDisconnect = details;
          }
- 
-         if (this.isConnected()) {
--            this.channel.close().awaitUninterruptibly();
-+            this.channel.close(); // We can't wait as this may be called from an event loop.
-             this.disconnectionDetails = disconnectionDetails;
-         }
-     }
-@@ -533,6 +_,13 @@
+@@ -541,6 +_,14 @@
          }
      }
  
@@ -244,28 +302,29 @@
 +        }
 +    }
 +    // Paper end - add proper async disconnect
-     public void setupCompression(int threshold, boolean validateDecompressed) {
++
+     public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
-             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -546,6 +_,7 @@
+             if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder compressionDecoder) {
+@@ -554,6 +_,7 @@
              } else {
-                 this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
+                 this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(threshold));
              }
 +            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
-             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
-                 this.channel.pipeline().remove("decompress");
-@@ -554,6 +_,7 @@
-             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
-                 this.channel.pipeline().remove("compress");
+             if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove(HandlerNames.DECOMPRESS);
+@@ -562,6 +_,7 @@
+             if (this.channel.pipeline().get(HandlerNames.COMPRESS) instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove(HandlerNames.COMPRESS);
              }
 +            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper - Add Channel initialization listeners
          }
      }
  
-@@ -571,6 +_,26 @@
+@@ -579,6 +_,26 @@
                      );
-                     packetListener1.onDisconnect(disconnectionDetails);
+                     disconnectListener.onDisconnect(details);
                  }
 +                this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent

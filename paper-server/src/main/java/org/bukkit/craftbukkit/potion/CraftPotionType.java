@@ -94,7 +94,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
 
     @Override
     public PotionEffectType getEffectType() {
-        return this.getPotionEffects().isEmpty() ? null : this.getPotionEffects().get(0).getType();
+        return this.getPotionEffects().isEmpty() ? null : this.getPotionEffects().getFirst().getType();
     }
 
     @Override

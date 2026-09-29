@@ -3,14 +3,13 @@ package io.papermc.paper.datacomponent.item;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -18,8 +17,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlocksAttacks {
 
@@ -68,7 +65,7 @@ public interface BlocksAttacks {
      * @return a damage type tag key, or null if there is no such tag key
      */
     @Contract(pure = true)
-    @Nullable TagKey<DamageType> bypassedBy();
+    @Nullable RegistryKeySet<DamageType> bypassedBy();
 
     /**
      * Gets the key sound to play when an attack is successfully blocked.
@@ -89,7 +86,6 @@ public interface BlocksAttacks {
     /**
      * Builder for {@link BlocksAttacks}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlocksAttacks> {
 
@@ -109,7 +105,7 @@ public interface BlocksAttacks {
         Builder itemDamage(ItemDamageFunction function);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder bypassedBy(@Nullable TagKey<DamageType> bypassedBy);
+        Builder bypassedBy(@Nullable RegistryKeySet<DamageType> bypassedBy);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder blockSound(@Nullable Key sound);

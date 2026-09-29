@@ -22,7 +22,7 @@ class InstrumentSoundTest {
     @ParameterizedTest
     @MethodSource("bukkitInstruments")
     void checkInstrumentSound(final Instrument bukkit) {
-        final NoteBlockInstrument nms = CraftBlockData.toNMS(bukkit, NoteBlockInstrument.class);
+        final NoteBlockInstrument nms = CraftBlockData.toVanilla(bukkit, NoteBlockInstrument.class);
         assertEquals(nms.getSoundEvent(), CraftSound.bukkitToMinecraftHolder(bukkit.getSound()));
     }
 }

@@ -37,16 +37,12 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
     @Override
     public void open() {
         this.requirePlaced();
-        if (!this.getBlockEntity().openersCounter.opened) {
-            BlockState state = this.getBlockEntity().getBlockState();
-            boolean open = state.getValue(BarrelBlock.OPEN);
+        if (!this.getBlockEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level level) {
+            BlockState block = this.getBlockEntity().getBlockState();
+            int openCount = this.getBlockEntity().openersCounter.getOpenerCount();
 
-            if (!open) {
-                this.getBlockEntity().updateBlockState(state, true);
-                if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-                    this.getBlockEntity().playSound(state, SoundEvents.BARREL_OPEN);
-                }
-            }
+            this.getBlockEntity().openersCounter.onOpenAPI(level, this.getPosition(), block);
+            this.getBlockEntity().openersCounter.openerCountChangedAPI(level, this.getPosition(), block, openCount, openCount + 1);
         }
         this.getBlockEntity().openersCounter.opened = true;
     }
@@ -54,12 +50,12 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
     @Override
     public void close() {
         this.requirePlaced();
-        if (this.getBlockEntity().openersCounter.opened) {
-            BlockState state = this.getBlockEntity().getBlockState();
-            this.getBlockEntity().updateBlockState(state, false);
-            if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-                this.getBlockEntity().playSound(state, SoundEvents.BARREL_CLOSE);
-            }
+        if (this.getBlockEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level level) {
+            BlockState block = this.getBlockEntity().getBlockState();
+            int openCount = this.getBlockEntity().openersCounter.getOpenerCount();
+
+            this.getBlockEntity().openersCounter.onCloseAPI(level, this.getPosition(), block);
+            this.getBlockEntity().openersCounter.openerCountChangedAPI(level, this.getPosition(), block, openCount, 0);
         }
         this.getBlockEntity().openersCounter.opened = false;
     }

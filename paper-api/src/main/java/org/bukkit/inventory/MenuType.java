@@ -1,8 +1,9 @@
 package org.bukkit.inventory;
 
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.view.AnvilView;
@@ -18,7 +19,6 @@ import org.bukkit.inventory.view.StonecutterView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -27,7 +27,6 @@ import org.jspecify.annotations.Nullable;
  * created and viewed by the player.
  */
 @NullMarked
-@ApiStatus.Experimental
 public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - make FeatureDependant
 
     /**
@@ -234,7 +233,8 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
      */
     Class<? extends InventoryView> getInventoryViewClass();
 
-    private static <T extends MenuType> T get(final String key) {
-        return (T) Registry.MENU.getOrThrow(NamespacedKey.minecraft(key));
+    @SuppressWarnings("unchecked")
+    private static <T extends MenuType> T get(@KeyPattern.Value final String key) {
+        return (T) Registry.MENU.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }

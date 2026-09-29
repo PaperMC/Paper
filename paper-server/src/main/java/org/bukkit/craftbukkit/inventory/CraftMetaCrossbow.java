@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.ItemStack;
@@ -33,18 +34,18 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
         }
     }
 
-    CraftMetaCrossbow(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaCrossbow(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((p) -> {
-            List<net.minecraft.world.item.ItemStack> items = p.getItems();
+        getOrEmpty(patch, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((chargedProjectiles) -> {
+            List<ItemStackTemplate> items = chargedProjectiles.items();
             if (items.isEmpty()) {
                 return;
             }
 
             this.chargedProjectiles = new ArrayList<>(items.size());
-            for (net.minecraft.world.item.ItemStack item : items) {
-                this.chargedProjectiles.add(CraftItemStack.asCraftMirror(item));
+            for (ItemStackTemplate item : items) {
+                this.chargedProjectiles.add(CraftItemStack.asBukkitCopy(item));
             }
         });
     }
@@ -73,7 +74,7 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
                 items.add(CraftItemStack.asNMSCopy(item));
             }
 
-            tag.put(CraftMetaCrossbow.CHARGED_PROJECTILES, ChargedProjectiles.of(items));
+            tag.put(CraftMetaCrossbow.CHARGED_PROJECTILES, ChargedProjectiles.ofNonEmpty(items));
         }
     }
 

@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * Additionally, this event causes the full player entity to be created much earlier than it would be in Vanilla,
  * leaving it with mostly dysfunctional methods and state.
  */
-@Warning(reason = "Listening to this event causes the player to be created early.")
+@Warning(reason = "Listening to this event causes the player to be created early.", propagate = false) // don't nag yet given permission are not managable yet on the other events
 @Deprecated(since = "1.21.6")
 public class PlayerLoginEvent extends PlayerEvent {
 

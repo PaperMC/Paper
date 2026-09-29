@@ -1,14 +1,16 @@
 package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
+import org.bukkit.entity.EntityType;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -157,10 +159,30 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * Attribute controlling the range an entity receives other waypoints from.
      */
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
+    /**
+     * The air friction an entity receives when moving.
+     */
+    Attribute AIR_DRAG_MODIFIER = getAttribute("air_drag_modifier");
+    /**
+     * The ground friction an entity receives when moving.
+     */
+    Attribute FRICTION_MODIFIER = getAttribute("friction_modifier");
+    /**
+     * The received motion when landing on the ground.
+     */
+    Attribute BOUNCINESS = getAttribute("bounciness");
+    /**
+     * The minimum distance the scoreboard objective in the below_name display slot become visible for others.
+     */
+    Attribute BELOW_NAME_DISTANCE = getAttribute("below_name_distance");
+    /**
+     * The minimum distance the display name become visible for others.
+     */
+    Attribute NAME_TAG_DISTANCE = getAttribute("name_tag_distance");
 
     @NotNull
-    private static Attribute getAttribute(@NotNull String key) {
-        return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
+    private static Attribute getAttribute(@NotNull @KeyPattern.Value String key) {
+        return Registry.ATTRIBUTE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -170,6 +192,13 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     Sentiment getSentiment();
 
     /**
+     * {@return the default value of this attribute}
+     * <p>
+     * Default attribute values may differ between entity types, use {@link EntityType#getDefaultAttributes()} to get default attribute values for a specific entity type.
+     */
+    double getDefaultValue();
+
+    /**
      * @param name of the attribute.
      * @return the attribute with the given name.
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
@@ -177,19 +206,20 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
-        Attribute attribute = Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Attribute attribute = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, key);
         Preconditions.checkArgument(attribute != null, "No attribute found with the name %s", name);
         return attribute;
     }
 
     /**
      * @return an array of all known attributes.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
-        return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
+        return Registry.ATTRIBUTE.stream().toArray(Attribute[]::new);
     }
 
     /**

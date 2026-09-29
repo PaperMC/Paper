@@ -1,13 +1,14 @@
 package org.bukkit.generator.structure;
 
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represent a StructureType of a {@link Structure}.
- *
+ * <p>
  * Listed structure types are present in the default server. Depending on the
  * server there might be additional structure types present (for example
  * structure types added by data packs), which can be received via
@@ -50,7 +51,7 @@ public abstract class StructureType implements Keyed {
     // End generate - StructureType
 
     @NotNull
-    private static StructureType getStructureType(@NotNull String name) {
-        return Registry.STRUCTURE_TYPE.getOrThrow(NamespacedKey.minecraft(name));
+    private static StructureType getStructureType(@NotNull @KeyPattern.Value String key) {
+        return Registry.STRUCTURE_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }

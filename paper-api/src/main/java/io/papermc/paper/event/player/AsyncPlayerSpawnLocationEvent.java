@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -15,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>The player will be kept in the configuration phase until all event handlers return and
  * the spawn location is loaded.</p>
  */
-@ApiStatus.Experimental
 @NullMarked
 public class AsyncPlayerSpawnLocationEvent extends Event {
 
@@ -52,7 +52,7 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
      * @return the spawn location
      */
     public Location getSpawnLocation() {
-        return this.spawnLocation;
+        return this.spawnLocation.clone();
     }
 
     /**
@@ -61,6 +61,8 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
      * @param location the spawn location
      */
     public void setSpawnLocation(final Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");
         this.spawnLocation = location.clone();
     }
 
