@@ -34,19 +34,20 @@
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> TRUSTED_OPTIONAL_STREAM_CODEC = TRUSTED_STREAM_CODEC.apply(
          ByteBufCodecs::optional
      );
-@@ -93,7 +_,25 @@
+@@ -93,7 +_,26 @@
          return ExtraCodecs.orCompressed(contentsCodec, discriminatorCodec);
      }
  
 +    // Paper start - adventure; create separate codec for each locale
-+    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
++    private static final com.google.common.cache.LoadingCache<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = com.google.common.cache.CacheBuilder.newBuilder()
++        .maximumSize(256)
++        .build(com.google.common.cache.CacheLoader.from(loc -> Codec.recursive("Component", selfCodec -> createCodec(selfCodec, loc))));
 +
 +    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
 +        if (locale == null) {
 +            return CODEC;
 +        }
-+        return LOCALIZED_CODECS.computeIfAbsent(locale,
-+            loc -> Codec.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
++        return LOCALIZED_CODECS.getUnchecked(locale);
 +    }
 +    // Paper end - adventure; create separate codec for each locale
 +

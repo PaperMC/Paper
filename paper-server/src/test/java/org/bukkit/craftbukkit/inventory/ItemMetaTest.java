@@ -22,9 +22,8 @@ import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
+import org.bukkit.craftbukkit.inventory.ItemStackTest.ItemProvider;
+import org.bukkit.craftbukkit.inventory.ItemStackTest.ItemWrapper;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.TropicalFish;
@@ -146,15 +145,6 @@ public class ItemMetaTest {
         return ((FireworkMeta) Bukkit.getItemFactory().getItemMeta(Material.FIREWORK_ROCKET));
     }
 
-    @Test
-    public void testCrazyEquality() {
-        CraftItemStack craft = CraftItemStack.asCraftCopy(new ItemStack(Material.STONE));
-        craft.setItemMeta(craft.getItemMeta());
-        ItemStack bukkit = new ItemStack(craft);
-        assertThat(craft, is(bukkit));
-        assertThat(bukkit, is(craft));
-    }
-
     // Paper start - check entity tag metas
     private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
         CraftMetaEntityTag.class,
@@ -165,11 +155,12 @@ public class ItemMetaTest {
     public void testEntityTagMeta() {
         for (final Item item : BuiltInRegistries.ITEM) {
             if (item instanceof net.minecraft.world.item.HangingEntityItem || item instanceof net.minecraft.world.item.MobBucketItem) {
-                ItemStack stack = new ItemStack(CraftItemType.minecraftToBukkit(item));
+                Material type = CraftItemType.minecraftToBukkit(item);
+                ItemStack stack = new ItemStack(type);
                 assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
-                stack = CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.STONE);
+                stack = ItemStack.of(Material.STONE);
                 stack.editMeta(meta -> meta.displayName(net.kyori.adventure.text.Component.text("hello")));
-                stack.setType(CraftItemType.minecraftToBukkit(item));
+                stack.setType(type);
                 assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
             }
         }
@@ -178,8 +169,8 @@ public class ItemMetaTest {
 
     @Test
     public void testEachExtraData() {
-        final List<StackProvider> providers = Arrays.asList(
-            new StackProvider(Material.WRITABLE_BOOK) {
+        final List<ItemProvider> providers = Arrays.asList(
+            new ItemProvider(Material.WRITABLE_BOOK) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                     meta.setAuthor("Some author");
@@ -189,7 +180,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.WRITTEN_BOOK) {
+            new ItemProvider(Material.WRITTEN_BOOK) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                     meta.setAuthor("Some author");
@@ -200,7 +191,7 @@ public class ItemMetaTest {
                 }
             },
             /* Skulls rely on a running server instance
-            new StackProvider(Material.SKULL_ITEM) {
+            new ItemProvider(Material.SKULL_ITEM) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                     meta.setOwner("Notch");
@@ -209,7 +200,7 @@ public class ItemMetaTest {
                 }
             },
             */
-            new StackProvider(Material.FILLED_MAP) {
+            new ItemProvider(Material.FILLED_MAP) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                     meta.setScaling(true);
@@ -217,7 +208,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.DIAMOND_CHESTPLATE) {
+            new ItemProvider(Material.DIAMOND_CHESTPLATE) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final ArmorMeta meta = (ArmorMeta) cleanStack.getItemMeta();
                     meta.setTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.COAST));
@@ -225,7 +216,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.LEATHER_HORSE_ARMOR) {
+            new ItemProvider(Material.LEATHER_HORSE_ARMOR) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                     meta.setColor(Color.FUCHSIA);
@@ -233,7 +224,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.LEATHER_CHESTPLATE) {
+            new ItemProvider(Material.LEATHER_CHESTPLATE) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final ColorableArmorMeta meta = (ColorableArmorMeta) cleanStack.getItemMeta();
                     meta.setTrim(new ArmorTrim(TrimMaterial.COPPER, TrimPattern.DUNE));
@@ -242,7 +233,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.POTION) {
+            new ItemProvider(Material.POTION) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                     meta.setBasePotionType(PotionType.WATER);
@@ -251,7 +242,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.FIREWORK_ROCKET) {
+            new ItemProvider(Material.FIREWORK_ROCKET) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                     meta.addEffect(FireworkEffect.builder().withColor(Color.GREEN).withFade(Color.OLIVE).with(Type.BALL_LARGE).build());
@@ -259,7 +250,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.ENCHANTED_BOOK) {
+            new ItemProvider(Material.ENCHANTED_BOOK) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
                     meta.addStoredEnchant(Enchantment.FLAME, 1, true);
@@ -267,7 +258,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.FIREWORK_STAR) {
+            new ItemProvider(Material.FIREWORK_STAR) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final FireworkEffectMeta meta = (FireworkEffectMeta) cleanStack.getItemMeta();
                     meta.setEffect(FireworkEffect.builder().withColor(Color.MAROON, Color.BLACK).with(Type.CREEPER).withFlicker().build());
@@ -275,7 +266,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.WHITE_BANNER) {
+            new ItemProvider(Material.WHITE_BANNER) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
                     meta.addPattern(new Pattern(DyeColor.WHITE, PatternType.BRICKS));
@@ -284,7 +275,7 @@ public class ItemMetaTest {
                 }
             },
             /* No distinguishing features, add back with virtual entity API
-            new StackProvider(Material.ZOMBIE_SPAWN_EGG) {
+            new ItemProvider(Material.ZOMBIE_SPAWN_EGG) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final SpawnEggMeta meta = (SpawnEggMeta) cleanStack.getItemMeta();
                     meta.setSpawnedType(EntityType.ZOMBIE);
@@ -293,7 +284,7 @@ public class ItemMetaTest {
                 }
             },
             */
-            new StackProvider(Material.KNOWLEDGE_BOOK) {
+            new ItemProvider(Material.KNOWLEDGE_BOOK) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final KnowledgeBookMeta meta = (KnowledgeBookMeta) cleanStack.getItemMeta();
                     meta.addRecipe(new NamespacedKey("minecraft", "test"), new NamespacedKey("plugin", "test"));
@@ -301,7 +292,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.TROPICAL_FISH_BUCKET) {
+            new ItemProvider(Material.TROPICAL_FISH_BUCKET) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final TropicalFishBucketMeta meta = (TropicalFishBucketMeta) cleanStack.getItemMeta();
                     meta.setBodyColor(DyeColor.ORANGE);
@@ -311,7 +302,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.AXOLOTL_BUCKET) {
+            new ItemProvider(Material.AXOLOTL_BUCKET) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                      final AxolotlBucketMeta meta = (AxolotlBucketMeta) cleanStack.getItemMeta();
                      meta.setVariant(Axolotl.Variant.BLUE);
@@ -319,7 +310,7 @@ public class ItemMetaTest {
                      return cleanStack;
                 }
             },
-            new StackProvider(Material.CROSSBOW) {
+            new ItemProvider(Material.CROSSBOW) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CrossbowMeta meta = (CrossbowMeta) cleanStack.getItemMeta();
                     meta.addChargedProjectile(new ItemStack(Material.ARROW));
@@ -327,7 +318,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.ARMOR_STAND) {
+            new ItemProvider(Material.ARMOR_STAND) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new CompoundTag();
@@ -338,7 +329,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.SUSPICIOUS_STEW) {
+            new ItemProvider(Material.SUSPICIOUS_STEW) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaSuspiciousStew meta = ((CraftMetaSuspiciousStew) cleanStack.getItemMeta());
                     meta.addCustomEffect(PotionEffectType.NAUSEA.createEffect(1, 0), false);
@@ -346,7 +337,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.ITEM_FRAME) {
+            new ItemProvider(Material.ITEM_FRAME) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
                     meta.entityTag = new CompoundTag();
@@ -356,7 +347,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.COMPASS) {
+            new ItemProvider(Material.COMPASS) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
                     meta.setLodestoneTracked(false);
@@ -364,7 +355,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.BUNDLE) {
+            new ItemProvider(Material.BUNDLE) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BundleMeta meta = (BundleMeta) cleanStack.getItemMeta();
                     meta.addItem(new ItemStack(Material.STONE));
@@ -372,7 +363,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.GOAT_HORN) {
+            new ItemProvider(Material.GOAT_HORN) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaMusicInstrument meta = (CraftMetaMusicInstrument) cleanStack.getItemMeta();
                     meta.setInstrument(MusicInstrument.ADMIRE_GOAT_HORN);
@@ -380,7 +371,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.OMINOUS_BOTTLE) {
+            new ItemProvider(Material.OMINOUS_BOTTLE) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaOminousBottle meta = (CraftMetaOminousBottle) cleanStack.getItemMeta();
                     meta.setAmplifier(3);
@@ -388,7 +379,7 @@ public class ItemMetaTest {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.SHIELD) {
+            new ItemProvider(Material.SHIELD) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaShield meta = (CraftMetaShield) cleanStack.getItemMeta();
                     meta.setBaseColor(DyeColor.ORANGE);
@@ -400,9 +391,8 @@ public class ItemMetaTest {
 
         assertThat(providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 4/* Normal item meta, skulls, eggs and tile entities */), "Forgotten test?");
 
-        for (final StackProvider provider : providers) {
+        for (final ItemProvider provider : providers) {
             this.downCastTest(new BukkitWrapper(provider));
-            this.downCastTest(new CraftWrapper(provider));
         }
     }
 
@@ -456,10 +446,9 @@ public class ItemMetaTest {
         });
     }
 
-    private void downCastTest(final StackWrapper provider) {
+    private void downCastTest(final ItemWrapper provider) {
         final String name = provider.toString();
         final ItemStack blank = new ItemStack(Material.STONE);
-        final ItemStack craftBlank = CraftItemStack.asCraftCopy(blank);
 
         // Check that equality and similarity works for each meta implementation
         assertThat(provider.stack(), is(provider.stack()), name);
@@ -468,10 +457,6 @@ public class ItemMetaTest {
         this.downCastTest(name, provider.stack(), blank);
         blank.setItemMeta(blank.getItemMeta());
         this.downCastTest(name, provider.stack(), blank);
-
-        this.downCastTest(name, provider.stack(), craftBlank);
-        craftBlank.setItemMeta(craftBlank.getItemMeta());
-        this.downCastTest(name, provider.stack(), craftBlank);
     }
 
     private void downCastTest(final String name, final ItemStack stack, final ItemStack blank) {

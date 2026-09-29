@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.CampfireBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -28,7 +27,7 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
     @Override
     public ItemStack getItem(int index) {
         net.minecraft.world.item.ItemStack item = this.getSnapshot().getItems().get(index);
-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
     }
 
     @Override

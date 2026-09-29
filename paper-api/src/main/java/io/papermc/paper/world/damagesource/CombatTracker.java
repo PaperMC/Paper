@@ -12,7 +12,6 @@ import java.util.List;
  * Represents entity's combat tracker
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CombatTracker {
 
@@ -107,4 +106,11 @@ public interface CombatTracker {
      * @return the fall location type
      */
     @Nullable FallLocationType calculateFallLocationType();
+
+    /**
+     * Returns time since last damage in ticks.
+     *
+     * @return ticks since last damage
+     */
+    int getLastDamageTime();
 }

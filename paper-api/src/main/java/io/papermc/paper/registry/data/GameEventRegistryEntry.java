@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link GameEvent} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface GameEventRegistryEntry {
 
@@ -29,7 +28,6 @@ public interface GameEventRegistryEntry {
      *     <li>{@link #range(int)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends GameEventRegistryEntry, RegistryBuilder<GameEvent> {
 

@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.RemovalReason;
+import io.papermc.paper.math.Angle;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -22,6 +24,7 @@ import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
@@ -135,8 +138,19 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
     public void setRotation(float yaw, float pitch);
+
+    /**
+     * Sets the entity's rotation.
+     * <p>
+     * Note that if the entity is affected by AI, it may override this rotation.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(@NotNull Angle yaw, @NotNull Angle pitch);
 
     // Paper start - Teleport API
     /**
@@ -487,6 +501,19 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kick(net.kyori.adventure.text.Component)} in this case instead
      */
     public void remove();
+
+    /**
+     * Gets the cause used for this entity's remove event.
+     *
+     * @return the remove event cause, or null if this entity has not been removed or no event cause was supplied
+     */
+    @Nullable
+    EntityRemoveEvent.Cause getRemoveEventCause();
+
+    /**
+     * {@return the reason this entity was removed}
+     */
+    @Nullable RemovalReason getRemovalReason();
 
     /**
      * Returns true if this entity has been marked for removal.

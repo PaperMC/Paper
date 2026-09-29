@@ -42,6 +42,8 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
 
     Biome CRIMSON_FOREST = getBiome("crimson_forest");
 
+    Biome DAPPLED_FOREST = getBiome("dappled_forest");
+
     Biome DARK_FOREST = getBiome("dark_forest");
 
     Biome DEEP_COLD_OCEAN = getBiome("deep_cold_ocean");

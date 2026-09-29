@@ -88,7 +88,7 @@
      protected void updateFutures(final ChunkMap scheduler, final Executor mainThreadExecutor) {
          FullChunkStatus oldFullStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
          FullChunkStatus newFullStatus = ChunkLevel.fullStatus(this.ticketLevel);
-@@ -277,12 +_,28 @@
+@@ -277,13 +_,29 @@
          boolean isAccessible = newFullStatus.isOrAfter(FullChunkStatus.FULL);
          this.wasAccessibleSinceLastSave |= isAccessible;
          if (!wasAccessible && isAccessible) {
@@ -109,14 +109,16 @@
          }
  
          if (wasAccessible && !isAccessible) {
+-            this.fullChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
 +            // Paper start
 +            if (this.isFullChunkReady) {
 +                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotBorder(this.fullChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
-             this.fullChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
++            this.fullChunkFuture.complete(UNLOADED_LEVEL_CHUNK); this.isFullChunkReady = false; // Paper - cache chunk ticking stage
              this.fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
          }
+ 
 @@ -292,11 +_,25 @@
          if (!wasTicking && isTicking) {
              this.tickingChunkFuture = scheduler.prepareTickingChunk(this);
@@ -140,7 +142,7 @@
 +                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotTicking(this.tickingChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
 +            }
 +            // Paper end
-+            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
++            this.tickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
              this.tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
@@ -166,7 +168,7 @@
 +                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotEntityTicking(this.entityTickingChunkFuture.join().orElseThrow(IllegalStateException::new), this);
 +            }
 +            // Paper end
-+            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
++            this.entityTickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
              this.entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  

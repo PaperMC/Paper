@@ -28,6 +28,8 @@ import org.bukkit.entity.boat.OakBoat;
 import org.bukkit.entity.boat.OakChestBoat;
 import org.bukkit.entity.boat.PaleOakBoat;
 import org.bukkit.entity.boat.PaleOakChestBoat;
+import org.bukkit.entity.boat.PoplarBoat;
+import org.bukkit.entity.boat.PoplarChestBoat;
 import org.bukkit.entity.boat.SpruceBoat;
 import org.bukkit.entity.boat.SpruceChestBoat;
 import org.bukkit.entity.minecart.CommandMinecart;
@@ -77,6 +79,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     COW("cow", Cow.class, 92),
     CREAKING("creaking", Creaking.class, -1),
     CREEPER("creeper", Creeper.class, 50),
+    CUSHION("cushion", Cushion.class, -1),
     DARK_OAK_BOAT("dark_oak_boat", DarkOakBoat.class, -1),
     DARK_OAK_CHEST_BOAT("dark_oak_chest_boat", DarkOakChestBoat.class, -1),
     DOLPHIN("dolphin", Dolphin.class, -1),
@@ -152,6 +155,8 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     PILLAGER("pillager", Pillager.class, -1),
     PLAYER("player", Player.class, -1, false),
     POLAR_BEAR("polar_bear", PolarBear.class, 102),
+    POPLAR_BOAT("poplar_boat", PoplarBoat.class, -1),
+    POPLAR_CHEST_BOAT("poplar_chest_boat", PoplarChestBoat.class, -1),
     PUFFERFISH("pufferfish", PufferFish.class, -1),
     RABBIT("rabbit", Rabbit.class, 101),
     RAVAGER("ravager", Ravager.class, -1),
@@ -335,7 +340,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
 
     // Paper start
     /**
-     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
+     * @throws IllegalArgumentException if the entity does not have a translation key
      */
     @Override
     public @NotNull String translationKey() {
@@ -344,7 +349,18 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     /**
-     * Checks if the entity has default attributes.
+     * Gets the spawn category of this entity type.
+     *
+     * @return the spawn category
+     * @throws IllegalArgumentException if the entity does not have a spawn category
+     */
+    public @NotNull SpawnCategory getSpawnCategory() {
+        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have a spawn category");
+        return InternalAPIBridge.get().getSpawnCategory(this);
+    }
+
+    /**
+     * Checks if the entity type has default attributes.
      *
      * @return true if it has default attributes
      */
@@ -356,10 +372,10 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     /**
-     * Gets the default attributes for the entity.
+     * Gets the default attributes for the entity type.
      *
      * @return an unmodifiable instance of Attributable for reading default attributes.
-     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultAttributes()} first)
+     * @throws IllegalArgumentException if it doesn't have default attributes (use {@link #hasDefaultAttributes()} first)
      */
     public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
         Preconditions.checkArgument(this.hasDefaultAttributes(), this.key + " doesn't have default attributes");

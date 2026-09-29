@@ -2,6 +2,7 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -17,8 +18,8 @@ public class PlayerPickBlockEvent extends PlayerPickItemEvent {
     private final Block block;
 
     @ApiStatus.Internal
-    public PlayerPickBlockEvent(final Player player, final Block block, final boolean includeData, final int targetSlot, final int sourceSlot) {
-        super(player, includeData, targetSlot, sourceSlot);
+    public PlayerPickBlockEvent(final Player player, final Block block, final ItemStack item, final boolean includeData, final int targetSlot, final int sourceSlot) {
+        super(player, item, includeData, targetSlot, sourceSlot);
         this.block = block;
     }
 

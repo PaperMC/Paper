@@ -1,5 +1,6 @@
 package com.destroystokyo.paper.event.player;
 
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated Not used
  */
 @Deprecated(since = "1.16.4", forRemoval = true)
+@Warning(value = true, propagate = false)
 public class IllegalPacketEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

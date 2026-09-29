@@ -2,21 +2,19 @@ package com.destroystokyo.paper.profile;
 
 import com.destroystokyo.paper.event.profile.FillProfileEvent;
 import com.destroystokyo.paper.event.profile.PreFillProfileEvent;
-import com.mojang.authlib.Environment;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.yggdrasil.ProfileResult;
-import com.mojang.authlib.yggdrasil.ServicesKeySet;
-import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
-
+import com.mojang.authlib.services.MinecraftServicesSessionService;
+import com.mojang.authlib.services.ProfileResult;
+import com.mojang.authlib.services.ServicesKeySet;
 import java.net.Proxy;
 import java.util.Collections;
 import java.util.UUID;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionService {
+public class PaperMinecraftSessionService extends MinecraftServicesSessionService {
 
-    protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, Environment environment) {
-        super(servicesKeySet, proxy, environment);
+    protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, PaperServicesDiscoveryService discoveryService) {
+        super(servicesKeySet, proxy, discoveryService);
     }
 
     public @Nullable ProfileResult fetchProfile(GameProfile profile, final boolean requireSecure) {

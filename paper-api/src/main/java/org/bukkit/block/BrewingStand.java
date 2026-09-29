@@ -22,7 +22,6 @@ public interface BrewingStand extends Container {
      */
     void setBrewingTime(int brewTime);
 
-    // Paper start - Add recipeBrewTime
     /**
      * Sets the recipe time for the brewing process which is
      * used to compute the progress of the brewing process with
@@ -31,7 +30,6 @@ public interface BrewingStand extends Container {
      * @param recipeBrewTime recipe brew time (in ticks)
      * @throws IllegalArgumentException if the recipe brew time is non-positive
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
 
     /**
@@ -41,9 +39,7 @@ public interface BrewingStand extends Container {
      *
      * @return recipe brew time (in ticks)
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
-    // Paper end - Add recipeBrewTime
 
     /**
      * Get the level of current fuel for brewing.

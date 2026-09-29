@@ -995,7 +995,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public PluginCommand getPluginCommand(@NotNull String name);
 
@@ -1599,7 +1603,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the level directory
      */
-    @ApiStatus.Experimental
     @NotNull
     Path getLevelDirectory();
 
@@ -1941,7 +1944,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the server's links
      */
     @NotNull
-    @ApiStatus.Experimental
     ServerLinks getServerLinks();
 
     /**
@@ -2209,7 +2211,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     org.bukkit.command.CommandMap getCommandMap();
 
@@ -2623,7 +2629,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
 

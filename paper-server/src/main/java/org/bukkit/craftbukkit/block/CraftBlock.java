@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BoneMealItem;
@@ -19,9 +20,11 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.LevelEvent;
-import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
+import net.minecraft.world.level.block.state.pattern.BlockPattern;
 import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -277,6 +280,17 @@ public class CraftBlock implements Block {
         };
     }
 
+    public static List<Block> getMatchingBlocks(LevelAccessor level, BlockPattern.BlockPatternMatch match) {
+        List<Block> blocks = new ArrayList<>(match.getWidth() * match.getHeight());
+        for (int x = 0; x < match.getWidth(); x++) {
+            for (int y = 0; y < match.getHeight(); y++) {
+                BlockInWorld block = match.getBlock(x, y, 0);
+                blocks.add(at(level, block.getPos()));
+            }
+        }
+        return blocks;
+    }
+
     @Override
     public org.bukkit.block.BlockState getState() {
         return CraftBlockStates.getBlockState(this);
@@ -355,8 +369,8 @@ public class CraftBlock implements Block {
         }
 
         BlockState neighborState = this.level.getBlockState(this.position.relative(direction));
-        if (neighborState.hasProperty(RedStoneWireBlock.POWER)) {
-            return neighborState.getValue(RedStoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
+        if (neighborState.hasProperty(RedstoneWireBlock.POWER)) {
+            return neighborState.getValue(RedstoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
         }
 
         return false;
@@ -379,8 +393,8 @@ public class CraftBlock implements Block {
             BlockPos neighborPos = this.position.relative(direction);
             if (level.hasSignal(neighborPos, direction)) {
                 BlockState state = level.getBlockState(neighborPos);
-                if (state.hasProperty(RedStoneWireBlock.POWER)) {
-                    power = Math.max(state.getValue(RedStoneWireBlock.POWER), power);
+                if (state.hasProperty(RedstoneWireBlock.POWER)) {
+                    power = Math.max(state.getValue(RedstoneWireBlock.POWER), power);
                     if (power == Redstone.SIGNAL_MAX) {
                         return power;
                     }
@@ -425,7 +439,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isSolid() {
-        return this.getBlockState().blocksMotion();
+        return this.getBlockState().is(BlockTags.BLOCKS_MOTION);
     }
 
     @Override

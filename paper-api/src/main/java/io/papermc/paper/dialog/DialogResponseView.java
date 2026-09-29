@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
  * dialog form. It is on the plugin to validate that the response
  * is valid.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DialogResponseView {
 

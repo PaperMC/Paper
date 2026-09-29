@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.advancement;
 
 import java.util.Collection;
 import java.util.Collections;
+import io.papermc.paper.advancement.PaperAdvancementDisplay;
 import net.minecraft.advancements.AdvancementHolder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.advancement.AdvancementDisplay;
@@ -37,7 +38,7 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
 
     @Override
     public io.papermc.paper.advancement.AdvancementDisplay getDisplay() {
-        return this.handle.value().display().map(d -> d.paper).orElse(null);
+        return this.handle.value().display().map(PaperAdvancementDisplay::new).orElse(null);
     }
 
     @Deprecated
