@@ -7,14 +7,11 @@ import net.kyori.adventure.inventory.BookLike;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the pages for a writable book.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface WritableBookContent extends BookLike {
 
@@ -34,7 +31,6 @@ public interface WritableBookContent extends BookLike {
     /**
      * Builder for {@link WritableBookContent}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<WritableBookContent> {
 

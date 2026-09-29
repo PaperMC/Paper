@@ -4,56 +4,57 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class TestServerBuildInfo implements ServerBuildInfo {
     @Override
-    public @NotNull Key brandId() {
+    public Key brandId() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean isBrandCompatible(final @NotNull Key brandId) {
+    public boolean isBrandCompatible(final Key brandId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull String brandName() {
+    public String brandName() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull String minecraftVersionId() {
+    public String minecraftVersionId() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull String minecraftVersionName() {
+    public String minecraftVersionName() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull OptionalInt buildNumber() {
+    public OptionalInt buildNumber() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull Instant buildTime() {
+    public Instant buildTime() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull Optional<String> gitBranch() {
+    public Optional<String> gitBranch() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull Optional<String> gitCommit() {
+    public Optional<String> gitCommit() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public @NotNull String asString(final @NotNull StringRepresentation representation) {
+    public String asString(final StringRepresentation representation) {
         return "";
     }
 }

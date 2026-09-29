@@ -197,12 +197,6 @@ public enum EntityEffect {
      */
     SHEEP_EAT_GRASS(10, Sheep.class),
     /**
-     * Causes the TNT minecart to ignite, does not play the ignition sound
-     * <p>
-     * <b>This will cause client-glitches!</b>
-     */
-    TNT_MINECART_IGNITE(70, ExplosiveMinecart.class),
-    /**
      * When an Iron Golem gives a rose.
      */
     IRON_GOLEM_ROSE(11, IronGolem.class),
@@ -485,6 +479,20 @@ public enum EntityEffect {
      * Ravager roars.
      */
     RAVAGER_ROARED(69, Ravager.class),
+    /**
+     * Causes the TNT minecart to ignite, does not play the ignition sound
+     * <p>
+     * <b>This will cause client-glitches!</b>
+     */
+    TNT_MINECART_IGNITE(70, ExplosiveMinecart.class),
+    /**
+     * Causes the boat to sink, does not play the splash sound
+     */
+    BOAT_SINK(71, org.bukkit.entity.Boat.class),
+    /**
+     * Causes the boat to launch, does not play the launch sound
+     */
+    BOAT_LAUNCH(72, org.bukkit.entity.Boat.class),
     ;
 
     private final byte data;

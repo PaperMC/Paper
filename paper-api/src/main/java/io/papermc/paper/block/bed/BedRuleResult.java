@@ -1,13 +1,11 @@
 package io.papermc.paper.block.bed;
 
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents the result of a bed rule during {@link org.bukkit.event.player.PlayerBedEnterEvent}
  * and {@link io.papermc.paper.event.player.PlayerBedFailEnterEvent}. Bed rules are responsible
  * for allowing players to sleep and to set their spawn point
  */
-@ApiStatus.Experimental
 public sealed interface BedRuleResult permits BedRuleResultImpl {
 
     /**

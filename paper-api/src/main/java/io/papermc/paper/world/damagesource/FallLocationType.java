@@ -1,14 +1,12 @@
 package io.papermc.paper.world.damagesource;
 
 import net.kyori.adventure.translation.Translatable;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a type of location from which the entity fell.
  */
 @NullMarked
-@ApiStatus.Experimental
 public sealed interface FallLocationType extends Translatable permits FallLocationTypeImpl {
 
     /**

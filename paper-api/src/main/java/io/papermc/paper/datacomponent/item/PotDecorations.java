@@ -4,15 +4,12 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the item types for the decorations on a flower pot.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POT_DECORATIONS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PotDecorations {
 
@@ -61,7 +58,6 @@ public interface PotDecorations {
     /**
      * Builder for {@link PotDecorations}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PotDecorations> {
 

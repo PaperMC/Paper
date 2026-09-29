@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/FarmlandBlock.java
 +++ b/net/minecraft/world/level/block/FarmlandBlock.java
-@@ -94,31 +_,59 @@
+@@ -89,32 +_,57 @@
      @Override
      protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
          int moisture = state.getValue(MOISTURE);
@@ -11,7 +11,7 @@
 -                level.setBlock(pos, state.setValue(MOISTURE, moisture - 1), Block.UPDATE_CLIENTS);
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(MOISTURE, moisture - 1), Block.UPDATE_CLIENTS); // CraftBukkit
              } else if (!shouldMaintainFarmland(level, pos)) {
-                 turnToDirt(null, state, level, pos);
+                 this.turnToBaseBlock(null, state, level, pos);
              }
          } else if (moisture < 7) {
 -            level.setBlock(pos, state.setValue(MOISTURE, 7), Block.UPDATE_CLIENTS);
@@ -22,54 +22,50 @@
      @Override
      public void fallOn(final Level level, final BlockState state, final BlockPos pos, final Entity entity, final double fallDistance) {
 +        super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-         if (level instanceof ServerLevel serverLevel
-             && level.getRandom().nextFloat() < fallDistance - 0.5
-             && entity instanceof LivingEntity
-             && (entity instanceof Player || serverLevel.getGameRules().get(GameRules.MOB_GRIEFING))
-             && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
-+            // CraftBukkit start - Interact soil
-+            org.bukkit.event.Cancellable cancellable;
-+            if (entity instanceof Player) {
-+                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((Player) entity, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
-+            } else {
-+                cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
-+                level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
-+            }
+         if (level instanceof ServerLevel serverLevel && level.getRandom().nextFloat() < fallDistance - 0.5 && entity instanceof LivingEntity) {
+             boolean canTrample = entity instanceof Player player
+                 ? !level.getServer().isUnderSpawnProtection(serverLevel, pos, player)
+                 : serverLevel.getGameRules().get(GameRules.MOB_GRIEFING);
+             if (canTrample && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
++                // CraftBukkit start - Interact soil
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof Player) {
++                    cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((Player) entity, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
++                } else {
++                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
++                    level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
++                }
 +
-+            if (cancellable.isCancelled()) {
-+                return;
-+            }
++                if (cancellable.isCancelled()) {
++                    return;
++                }
 +
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.DIRT.defaultBlockState())) {
-+                return;
-+            }
-+            // CraftBukkit end
-             turnToDirt(entity, state, level, pos);
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, this.baseBlock.defaultBlockState())) {
++                    return;
++                }
++                // CraftBukkit end
+                 this.turnToBaseBlock(entity, state, level, pos);
+             }
          }
  
 -        super.fallOn(level, state, pos, entity, fallDistance);
 +        // super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved up
      }
  
-     public static void turnToDirt(final @Nullable Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
+     public void turnToBaseBlock(final @Nullable Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
 +        // CraftBukkit start
-+        if (sourceEntity == null) {
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory
-+                .callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
-+                return;
-+            }
++        if (sourceEntity == null && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, this.baseBlock.defaultBlockState()).isCancelled()) {
++            return;
 +        }
 +        // CraftBukkit end
-         BlockState newState = pushEntitiesUp(state, Blocks.DIRT.defaultBlockState(), level, pos);
+         BlockState newState = pushEntitiesUp(state, this.baseBlock.defaultBlockState(), level, pos);
          level.setBlockAndUpdate(pos, newState);
          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
-@@ -129,13 +_,27 @@
+@@ -125,7 +_,27 @@
      }
  
      private static boolean isNearWater(final LevelReader level, final BlockPos pos) {
--        for (BlockPos blockPos : BlockPos.betweenClosed(pos.offset(-4, 0, -4), pos.offset(4, 1, 4))) {
--            if (level.getFluidState(blockPos).is(FluidTags.WATER)) {
--                return true;
+-        return level.findBlocksIn(pos.offset(-4, 0, -4), pos.offset(4, 1, 4)).filterState(state -> state.getFluidState().is(FluidTags.WATER)).anyMatched();
 +        // Paper start - Perf: remove abstract block iteration
 +        int xOff = pos.getX();
 +        int yOff = pos.getY();
@@ -86,10 +82,10 @@
 +                        return true;
 +                    }
 +                }
-             }
-         }
- 
-         return false;
++            }
++        }
++
++        return false;
 +        // Paper end - Perf: remove abstract block iteration
      }
  
