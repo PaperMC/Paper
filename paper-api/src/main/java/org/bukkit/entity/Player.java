@@ -1,9 +1,12 @@
 package org.bukkit.entity;
 
 import com.destroystokyo.paper.ClientOption;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -16,6 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
@@ -60,7 +65,6 @@ import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -68,7 +72,7 @@ import org.jspecify.annotations.Nullable;
  * Represents a player, connected or not
  */
 @NullMarked
-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
 
     // Paper start
     @Override
@@ -628,7 +632,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return collection of entities corresponding to current pearls.
      */
-    @ApiStatus.Experimental
     public Collection<EnderPearl> getEnderPearls();
 
     /**
@@ -840,6 +843,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param seed The seed for the sound
      */
     public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
 
     /**
      * Stop the specified sound from playing.
@@ -1112,7 +1125,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines) {
         this.sendSignChange(loc, lines, DyeColor.BLACK);
     }
 
@@ -1128,17 +1141,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param loc the location of the sign
      * @param lines the new text on the sign or null to clear it
-     * @param dyeColor the color of the sign
+     * @param color the color of the sign
      * @throws IllegalArgumentException if location is null
-     * @throws IllegalArgumentException if dyeColor is null
+     * @throws IllegalArgumentException if color is null
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      * @deprecated Use {@link #sendBlockUpdate(Location, TileState)} by creating a new virtual
      * {@link org.bukkit.block.Sign} block state via {@link BlockData#createBlockState()}
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor dyeColor) throws IllegalArgumentException {
-        this.sendSignChange(loc, lines, dyeColor, false);
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor color) {
+        this.sendSignChange(loc, lines, color, false);
     }
 
     /**
@@ -1162,7 +1175,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, boolean hasGlowingText) {
         this.sendSignChange(loc, lines, DyeColor.BLACK, hasGlowingText);
     }
 
@@ -1178,18 +1191,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param loc the location of the sign
      * @param lines the new text on the sign or null to clear it
-     * @param dyeColor the color of the sign
+     * @param color the color of the sign
      * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
      * @throws IllegalArgumentException if location is null
-     * @throws IllegalArgumentException if dyeColor is null
+     * @throws IllegalArgumentException if color is null
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      * @deprecated Use {@link #sendBlockUpdate(Location, TileState)} by creating a new virtual
      * {@link org.bukkit.block.Sign} block state via {@link BlockData#createBlockState()}
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor dyeColor, boolean hasGlowingText)
-        throws IllegalArgumentException;
+    void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor color, boolean hasGlowingText);
     // Paper end
 
     /**
@@ -1214,7 +1226,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines) throws IllegalArgumentException;
+    default void sendSignChange(Location loc, @Nullable String @Nullable [] lines) {
+        this.sendSignChange(loc, lines, DyeColor.BLACK);
+    }
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1231,16 +1245,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param loc the location of the sign
      * @param lines the new text on the sign or null to clear it
-     * @param dyeColor the color of the sign
+     * @param color the color of the sign
      * @throws IllegalArgumentException if location is null
-     * @throws IllegalArgumentException if dyeColor is null
+     * @throws IllegalArgumentException if color is null
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      * @deprecated Use {@link #sendBlockUpdate(Location, TileState)} by creating a new virtual
      * {@link org.bukkit.block.Sign} block state via {@link BlockData#createBlockState()}
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor) throws IllegalArgumentException;
+    default void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor color) {
+        this.sendSignChange(loc, lines, color, false);
+    }
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1257,17 +1273,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param loc the location of the sign
      * @param lines the new text on the sign or null to clear it
-     * @param dyeColor the color of the sign
+     * @param color the color of the sign
      * @param hasGlowingText if the sign's text should be glowing
      * @throws IllegalArgumentException if location is null
-     * @throws IllegalArgumentException if dyeColor is null
+     * @throws IllegalArgumentException if color is null
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      * @deprecated Use {@link #sendBlockUpdate(Location, TileState)} by creating a new virtual
      * {@link org.bukkit.block.Sign} block state via {@link BlockData#createBlockState()}
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor color, boolean hasGlowingText);
 
     /**
      * Send a TileState change. This fakes a TileState change for a user at
@@ -2062,6 +2078,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public net.kyori.adventure.util.TriState hasFlyingFallDamage();
     // Paper end
+
+    /**
+
+     * Resets the player's flying tick counter used for flight checks.
+     * <p>
+     * Only valid once the player's connection is initialized.
+     */
+    public void resetFlyingTicks();
 
     /**
      * Hides a player from this player
@@ -3214,11 +3238,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      */
-    default void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
+    default void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed);
     }
 
     /**
@@ -3235,11 +3258,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      */
-    default void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
+    default void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, null);
     }
 
     /**
@@ -3255,13 +3277,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    default <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
+    default <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed, data);
     }
 
     /**
@@ -3279,13 +3300,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, false);
+    default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, false);
     }
 
     /**
@@ -3301,16 +3321,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      * @param force whether to send the particle to the player in an extended
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    default <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data, force);
+    default <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data, boolean force) {
+        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, speed, data, force);
     }
 
     /**
@@ -3328,15 +3347,44 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetX the maximum random offset on the X axis
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
-     * @param extra the extra data for this particle, depends on the
-     *              particle used (normally speed)
+     * @param speed the speed of the particle on both axes
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      * @param force whether to send the particle to the player in an extended
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data, boolean force) {
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, speed, speed, data, force, Particle.RandomizationType.DEFAULT);
+    }
+
+    /**
+     * Spawns the particle (the number of times specified by count)
+     * at the target location. The position of each particle will be
+     * randomized positively and negatively by the offset parameters
+     * on each axis.
+     *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
+     * @param particle the particle to spawn
+     * @param x the position on the x axis to spawn at
+     * @param y the position on the y axis to spawn at
+     * @param z the position on the z axis to spawn at
+     * @param count the number of particles
+     * @param offsetX the maximum random offset on the X axis
+     * @param offsetY the maximum random offset on the Y axis
+     * @param offsetZ the maximum random offset on the Z axis
+     * @param speedX the speed of the particle on the X axis
+     * @param speedY the speed of the particle on the Y axis
+     * @param speedZ the speed of the particle on the Z axis
+     *              particle used (normally speed)
+     * @param data the data to use for the particle or null,
+     *             the type of this depends on {@link Particle#getDataType()}
+     * @param force whether to send the particle to the player in an extended
+     *              range and encourage their client to render it regardless of
+     *              settings
+     * @param randomizationType the type of randomization to use for the particle offsets
+     */
+    <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, @Nullable T data, boolean force, Particle.RandomizationType randomizationType);
 
     /**
      * Return the player's progression on the specified advancement.
@@ -3536,7 +3584,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param side The side to edit
      * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
      */
-    @ApiStatus.Experimental
     void openVirtualSign(Position block, Side side);
 
     /**
@@ -3557,7 +3604,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper start
     @Override
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
+        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.showEntity(this.getType().getKey(), this.getUniqueId(), this.displayName())));
     }
     // Paper end
 
@@ -3616,24 +3663,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     <T> T getClientOption(ClientOption<T> option);
     // Paper end - client option API
 
-    // Paper start - elytra boost API
     /**
      * Boost a Player that's {@link #isGliding()} using a {@link Firework}.
      * If the creation of the entity is cancelled, no boosting is done.
      * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param firework The {@link Material#FIREWORK_ROCKET} to boost the player with
+     * @param boosterItem The itemstack to boost the player with
      * @return The {@link Firework} boosting the Player or null if the spawning of the entity was cancelled
-     * @throws IllegalArgumentException if {@link #isGliding()} is false
-     * or if the {@code firework} isn't a {@link Material#FIREWORK_ROCKET}
+     * @throws IllegalStateException if {@link #isGliding()} is false
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
      * check if the player is gliding or not.
      */
-    default @Nullable Firework boostElytra(final ItemStack firework) {
-        com.google.common.base.Preconditions.checkState(this.isGliding(), "Player must be gliding");
-        return this.fireworkBoost(firework);
+    @Deprecated(since = "1.20.5")
+    default @Nullable Firework boostElytra(final ItemStack boosterItem) {
+        Preconditions.checkState(this.isGliding(), "Player must be gliding");
+        return this.fireworkBoost(boosterItem);
     }
-    // Paper end - elytra boost API
 
     // Paper start - sendOpLevel API
     /**
@@ -3772,20 +3817,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          */
         @Deprecated
         public int getPing() {
-            throw new UnsupportedOperationException( "Not supported yet." );
+            throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
     }
 
-    // Paper start - brand support
     /**
-     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.<br>
-     * For the Notchian client this name defaults to <code>vanilla</code>. Some modified clients report other names such as <code>forge</code>.<br>
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.
+     * <p>
+     * For the Notchian client this name defaults to {@code vanilla}. Some modified clients report other names such as {@code neoforge}.
+     *
      * @return client brand name
+     * @see io.papermc.paper.connection.PlayerCommonConnection#getClientBrandName()
      */
-    @Nullable
-    String getClientBrandName();
-    // Paper end
+    @Nullable String getClientBrandName();
 
     // Paper start - Teleport API
     /**
@@ -3793,8 +3838,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
     void setRotation(float yaw, float pitch);
+
+    /**
+     * Set the player's rotation.
+     * <p>
+     * Note: When using relative angles, client will add corresponding value
+     * to its yaw/pitch client side, avoiding jitter while the player
+     * is actively moving their view, it's different from just send
+     * new absolute angle with only yaw or pitch addition.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(Angle yaw, Angle pitch);
 
     /**
      * Causes the player to look towards the given entity.
@@ -3905,20 +3964,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the set of chunk keys for all chunks that have been sent to the player.
      *
      * @return an immutable set of chunk keys
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-     * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
 
     /**
      * Gets the set of chunks that have been sent to the player.
      *
      * @return an immutable set of chunks
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-      * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
 
     /**
@@ -4012,6 +4065,23 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the game connection
      */
-    @ApiStatus.Experimental
     PlayerGameConnection getConnection();
+
+    @Override
+    default ObjectContents asObjectContents() {
+        return this.getPlayerProfile().asObjectContents();
+    }
+
+    /**
+     * Updates the player's pose according to the current game state,
+     * clearing any fixed pose in the process.
+     */
+    void unsetFixedPose();
+
+    /**
+     * Gets the post-effects that can be applied to this player.
+     *
+     * @return the post-effects
+     */
+    PlayerPostEffects postEffects();
 }

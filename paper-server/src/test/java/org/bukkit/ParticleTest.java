@@ -7,6 +7,8 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.GeyserBaseParticleOptions;
+import net.minecraft.core.particles.GeyserParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.PowerParticleOption;
@@ -126,6 +128,16 @@ public class ParticleTest {
 
         if (bukkit.getDataType().equals(Particle.Spell.class)) {
             this.testSpell(bukkit, minecraft);
+            return;
+        }
+
+        if (bukkit.getDataType().equals(Particle.Geyser.class)) {
+            this.testGeyser(bukkit, minecraft);
+            return;
+        }
+
+        if (bukkit.getDataType().equals(Particle.GeyserBase.class)) {
+            this.testGeyserBase(bukkit, minecraft);
             return;
         }
 
@@ -312,6 +324,41 @@ public class ParticleTest {
                 Expected: %s.
                 Got: %s.
                 """, bukkit.getKey(), power, param.getPower()));
+    }
+
+    private <T extends ParticleOptions> void testGeyser(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
+        int waterBlocks = 3;
+        Particle.Geyser geyser = new Particle.Geyser(waterBlocks);
+
+        GeyserParticleOptions param = this.createAndTest(bukkit, minecraft, geyser, GeyserParticleOptions.class);
+
+        assertEquals(waterBlocks, param.waterBlocks(), String.format("""
+                Geyser water blocks for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), waterBlocks, param.waterBlocks()));
+    }
+
+    private <T extends ParticleOptions> void testGeyserBase(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
+        int waterBlocks = 3;
+        float burstImpulse = 2.0F;
+        Particle.GeyserBase geyser = new Particle.GeyserBase(waterBlocks, burstImpulse);
+
+        GeyserBaseParticleOptions param = this.createAndTest(bukkit, minecraft, geyser, GeyserBaseParticleOptions.class);
+
+        assertEquals(waterBlocks, param.waterBlocks(), String.format("""
+                Geyser base water blocks for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), waterBlocks, param.waterBlocks()));
+        assertEquals(burstImpulse, param.burstImpulseBase(), 0.001, String.format("""
+                Geyser base burst impulse for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), burstImpulse, param.burstImpulseBase()));
     }
 
     private <D extends ParticleOptions, T extends ParticleOptions> D createAndTest(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft, Object data, Class<D> paramClass) {

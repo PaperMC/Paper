@@ -1,6 +1,6 @@
 package ca.spottedleaf.moonrise.common.misc;
 
-import ca.spottedleaf.concurrentutil.util.TimeUtil;
+import ca.spottedleaf.common.util.TimeUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

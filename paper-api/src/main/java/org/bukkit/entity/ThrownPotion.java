@@ -1,13 +1,17 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.Collection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a thrown potion bottle
  */
+@NullMarked
 public interface ThrownPotion extends ThrowableProjectile {
 
     /**
@@ -15,8 +19,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      *
      * @return The potion effects
      */
-    @NotNull
-    public Collection<PotionEffect> getEffects();
+    Collection<PotionEffect> getEffects();
 
     /**
      * Returns a copy of the ItemStack for this thrown potion.
@@ -27,25 +30,24 @@ public interface ThrownPotion extends ThrowableProjectile {
      *
      * @return A copy of the ItemStack for this thrown potion.
      */
-    @NotNull
-    public ItemStack getItem();
+    ItemStack getItem();
 
     /**
      * Set the ItemStack for this thrown potion.
      *
      * @param item New ItemStack
      */
-    public void setItem(@NotNull ItemStack item);
+    void setItem(ItemStack item);
 
-    // Paper start - Projectile API
     /**
      * Gets a copy of the PotionMeta for this thrown potion.
      * This includes what effects will be applied by this potion.
      *
      * @return potion meta
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#POTION_CONTENTS} component
      */
-    @NotNull
-    org.bukkit.inventory.meta.PotionMeta getPotionMeta();
+    @ApiStatus.Obsolete
+    PotionMeta getPotionMeta();
 
     /**
      * Sets the PotionMeta of this thrown potion.
@@ -54,12 +56,13 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Note that the type of {@link #getItem()} is irrelevant
      *
      * @param meta potion meta
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#POTION_CONTENTS} component
      */
-    void setPotionMeta(@NotNull org.bukkit.inventory.meta.PotionMeta meta);
+    @ApiStatus.Obsolete
+    void setPotionMeta(PotionMeta meta);
 
     /**
      * Splashes the potion at its current location.
      */
     void splash();
-    // Paper end
 }

@@ -20,7 +20,7 @@ class PaperServerListPingEventImpl extends PaperServerListPingEvent {
 
     @Override
     protected final Object[] getOnlinePlayers() {
-        return this.server.getPlayerList().players.toArray();
+        return this.server.getPlayerList().getPlayers().toArray();
     }
 
     @Override

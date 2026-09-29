@@ -26,6 +26,13 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class AttributeKeys {
     /**
+     * {@code minecraft:air_drag_modifier}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> AIR_DRAG_MODIFIER = create(key("air_drag_modifier"));
+
+    /**
      * {@code minecraft:armor}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -61,6 +68,13 @@ public final class AttributeKeys {
     public static final TypedKey<Attribute> ATTACK_SPEED = create(key("attack_speed"));
 
     /**
+     * {@code minecraft:below_name_distance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> BELOW_NAME_DISTANCE = create(key("below_name_distance"));
+
+    /**
      * {@code minecraft:block_break_speed}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -73,6 +87,13 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> BLOCK_INTERACTION_RANGE = create(key("block_interaction_range"));
+
+    /**
+     * {@code minecraft:bounciness}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> BOUNCINESS = create(key("bounciness"));
 
     /**
      * {@code minecraft:burning_time}
@@ -122,6 +143,13 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> FOLLOW_RANGE = create(key("follow_range"));
+
+    /**
+     * {@code minecraft:friction_modifier}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> FRICTION_MODIFIER = create(key("friction_modifier"));
 
     /**
      * {@code minecraft:gravity}
@@ -185,6 +213,13 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> MOVEMENT_SPEED = create(key("movement_speed"));
+
+    /**
+     * {@code minecraft:name_tag_distance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> NAME_TAG_DISTANCE = create(key("name_tag_distance"));
 
     /**
      * {@code minecraft:oxygen_bonus}

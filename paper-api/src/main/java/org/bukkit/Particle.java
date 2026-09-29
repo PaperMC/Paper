@@ -3,7 +3,11 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.NotNull;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public enum Particle implements Keyed {
     POOF("poof"),
@@ -138,6 +142,9 @@ public enum Particle implements Keyed {
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
+    RED_POPLAR_LEAVES("red_poplar_leaves"),
+    ORANGE_POPLAR_LEAVES("orange_poplar_leaves"),
+    YELLOW_POPLAR_LEAVES("yellow_poplar_leaves"),
     /**
      * Uses {@link Color} as DataType
      */
@@ -177,6 +184,26 @@ public enum Particle implements Keyed {
     COPPER_FIRE_FLAME("copper_fire_flame"),
     PAUSE_MOB_GROWTH("pause_mob_growth"),
     RESET_MOB_GROWTH("reset_mob_growth"),
+    NOXIOUS_GAS("noxious_gas"),
+    NOXIOUS_GAS_CLOUD("noxious_gas_cloud"),
+    SULFUR_CUBE_GOO("sulfur_cube_goo"),
+    SULFUR_BUBBLES("sulfur_bubbles"),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
+    GEYSER("geyser", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
+    GEYSER_BASE("geyser_base", GeyserBase.class),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
+    GEYSER_PLUME("geyser_plume", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
+    GEYSER_POOF("geyser_poof", GeyserBase.class),
     ;
 
     private final NamespacedKey key;
@@ -219,7 +246,6 @@ public enum Particle implements Keyed {
         return key;
     }
 
-    // Paper start - Particle API expansion
     /**
      * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
      *
@@ -229,7 +255,29 @@ public enum Particle implements Keyed {
     public com.destroystokyo.paper.ParticleBuilder builder() {
         return new com.destroystokyo.paper.ParticleBuilder(this);
     }
-    // Paper end
+
+    /**
+     * The randomization type for the particle, which controls how offset and speed are randomized.
+     */
+    public enum RandomizationType {
+        /**
+         * The default randomization type, which multiplies each offset axis and each speed axis independently by its
+         * own Gaussian random value (similar to {@link java.util.Random#nextGaussian()} (mean 0, standard deviation 1).
+         */
+        DEFAULT,
+
+        /**
+         * Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
+         * similar to {@link java.util.Random#nextDouble()}. Speed is left unmodified.
+         */
+        ALTERNATIVE,
+
+        /**
+         * Multiplies each offset axis <b>and</b> each speed axis independently by its own uniform random
+         * value in the range [0, 1) similar to {@link java.util.Random#nextDouble()}.
+         */
+        ALTERNATIVE_WITH_SPEED
+    }
 
     /**
      * Options which can be applied to dust particles - a particle
@@ -243,7 +291,7 @@ public enum Particle implements Keyed {
         public DustOptions(@NotNull Color color, float size) {
             Preconditions.checkArgument(color != null, "color");
             this.color = color;
-            this.size = size;
+            this.size = requireRange(size, "size", 0.01F, 4.0F);
         }
 
         /**
@@ -300,10 +348,10 @@ public enum Particle implements Keyed {
         private final Color color;
         private final int duration;
 
-        public Trail(@NotNull Location target, @NotNull Color color, int duration) {
+        public Trail(@NotNull Location target, @NotNull Color color, @Positive int duration) {
             this.target = target;
             this.color = color;
-            this.duration = duration;
+            this.duration = requirePositive(duration, "duration");
         }
 
         /**
@@ -331,11 +379,14 @@ public enum Particle implements Keyed {
          *
          * @return trail duration
          */
-        public int getDuration() {
+        public @Positive int getDuration() {
             return duration;
         }
     }
 
+    /**
+     * Options which can be applied to effect particles.
+     */
     public static class Spell {
 
         private final Color color;
@@ -362,6 +413,55 @@ public enum Particle implements Keyed {
          */
         public float getPower() {
             return power;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser base particles.
+     */
+    public static class GeyserBase extends AbstractGeyser {
+
+        private final float burstImpulse;
+
+        public GeyserBase(final int waterBlocks, final float burstImpulse) {
+            super(waterBlocks);
+            this.burstImpulse = burstImpulse;
+        }
+
+        /**
+         * {@return the burst impulse}
+         */
+        public float getBurstImpulse() {
+            return this.burstImpulse;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser particles.
+     */
+    public static class Geyser extends AbstractGeyser {
+
+        public Geyser(final int waterBlocks) {
+            super(waterBlocks);
+        }
+    }
+
+    private abstract static class AbstractGeyser {
+
+        private final int waterBlocks;
+
+        protected AbstractGeyser(final @Positive int waterBlocks) {
+            this.waterBlocks = requirePositive(waterBlocks, "waterBlocks");
+        }
+
+        /**
+         * The number of water blocks below the geyser
+         * which scale the particle size and its burst impulse.
+         *
+         * @return the number of water blocks
+         */
+        public @Positive int getWaterBlocks() {
+            return waterBlocks;
         }
     }
 }

@@ -43,7 +43,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
         boolean result = super.update(force, applyPhysics);
 
         if (result && this.isPlaced() && this.getType() == Material.JUKEBOX) {
-            this.getWorldHandle().setBlock(this.getPosition(), this.block, Block.UPDATE_ALL);
+            this.getWorldHandle().setBlockAndUpdate(this.getPosition(), this.block);
 
             BlockEntity blockEntity = this.getBlockEntityFromWorld();
             if (blockEntity instanceof JukeboxBlockEntity jukebox) {

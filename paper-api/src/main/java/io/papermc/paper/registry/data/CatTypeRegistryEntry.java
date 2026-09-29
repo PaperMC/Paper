@@ -9,21 +9,20 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Cat.Type} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CatTypeRegistryEntry {
 
     /**
      * Provides the client texture asset of the cat type, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the client texture asset of the cat type for baby cats.
      *
-     * @return the baby client texture asset.
+     * @return the baby client texture asset
      */
     ClientTextureAsset babyClientTextureAsset();
 
@@ -36,15 +35,14 @@ public interface CatTypeRegistryEntry {
      *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends CatTypeRegistryEntry, RegistryBuilder<Cat.Type> {
 
         /**
          * Sets the client texture asset of the cat type, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see CatTypeRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -53,8 +51,8 @@ public interface CatTypeRegistryEntry {
         /**
          * Sets the client texture asset of the cat type for baby cats.
          *
-         * @param babyClientTextureAsset the baby client texture asset.
-         * @return this builder instance.
+         * @param babyClientTextureAsset the baby client texture asset
+         * @return this builder instance
          * @see CatTypeRegistryEntry#babyClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")

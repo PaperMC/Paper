@@ -1,27 +1,23 @@
 --- a/net/minecraft/world/entity/monster/skeleton/Bogged.java
 +++ b/net/minecraft/world/entity/monster/skeleton/Bogged.java
-@@ -72,7 +_,19 @@
+@@ -72,7 +_,15 @@
          ItemStack itemStack = player.getItemInHand(hand);
          if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
              if (this.level() instanceof ServerLevel level) {
 -                this.shear(level, SoundSource.PLAYERS, itemStack);
-+                // CraftBukkit start
-+                // Paper start - custom shear drops
++                // Paper start - call PlayerShearEntityEvent
 +                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
-+                if (event != null) {
-+                    if (event.isCancelled()) {
-+                        return InteractionResult.PASS;
-+                    }
-+                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                    // Paper end - custom shear drops
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
 +                }
-+                // CraftBukkit end
-+                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                this.shear(level, SoundSource.PLAYERS, itemStack, drops);
++                // Paper end - call PlayerShearEntityEvent
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
              }
-@@ -125,13 +_,33 @@
+@@ -125,13 +_,31 @@
  
      @Override
      public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
@@ -51,9 +47,7 @@
 -        this.dropFromShearingLootTable(level, BuiltInLootTables.BOGGED_SHEAR, tool, (l, drop) -> this.spawnAtLocation(l, drop, this.getBbHeight()));
 +    // Paper start - custom shear drops
 +    private void spawnShearedMushrooms(final ServerLevel level, final ItemStack tool, java.util.List<ItemStack> drops) {
-+        this.forceDrops = true; // Paper - Add missing forceDrop toggles
 +        drops.forEach(drop -> this.spawnAtLocation(level, drop, this.getBbHeight()));
-+        this.forceDrops = false; // Paper - Add missing forceDrop toggles
 +        // Paper end - custom shear drops
      }
  

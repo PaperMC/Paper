@@ -656,6 +656,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> BLACK_CONCRETE_POWDER = create(key("black_concrete_powder"));
 
     /**
+     * {@code minecraft:black_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLACK_CONCRETE_SLAB = create(key("black_concrete_slab"));
+
+    /**
+     * {@code minecraft:black_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLACK_CONCRETE_STAIRS = create(key("black_concrete_stairs"));
+
+    /**
      * {@code minecraft:black_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -703,6 +717,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> BLACK_WOOL = create(key("black_wool"));
+
+    /**
+     * {@code minecraft:black_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLACK_WOOL_SLAB = create(key("black_wool_slab"));
+
+    /**
+     * {@code minecraft:black_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLACK_WOOL_STAIRS = create(key("black_wool_stairs"));
 
     /**
      * {@code minecraft:blackstone}
@@ -789,6 +817,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> BLUE_CONCRETE_POWDER = create(key("blue_concrete_powder"));
 
     /**
+     * {@code minecraft:blue_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLUE_CONCRETE_SLAB = create(key("blue_concrete_slab"));
+
+    /**
+     * {@code minecraft:blue_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLUE_CONCRETE_STAIRS = create(key("blue_concrete_stairs"));
+
+    /**
      * {@code minecraft:blue_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -850,6 +892,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> BLUE_WOOL = create(key("blue_wool"));
+
+    /**
+     * {@code minecraft:blue_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLUE_WOOL_SLAB = create(key("blue_wool_slab"));
+
+    /**
+     * {@code minecraft:blue_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BLUE_WOOL_STAIRS = create(key("blue_wool_stairs"));
 
     /**
      * {@code minecraft:bone_block}
@@ -978,6 +1034,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> BROWN_CONCRETE_POWDER = create(key("brown_concrete_powder"));
 
     /**
+     * {@code minecraft:brown_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BROWN_CONCRETE_SLAB = create(key("brown_concrete_slab"));
+
+    /**
+     * {@code minecraft:brown_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BROWN_CONCRETE_STAIRS = create(key("brown_concrete_stairs"));
+
+    /**
      * {@code minecraft:brown_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1039,6 +1109,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> BROWN_WOOL = create(key("brown_wool"));
+
+    /**
+     * {@code minecraft:brown_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BROWN_WOOL_SLAB = create(key("brown_wool_slab"));
+
+    /**
+     * {@code minecraft:brown_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> BROWN_WOOL_STAIRS = create(key("brown_wool_stairs"));
 
     /**
      * {@code minecraft:bubble_column}
@@ -1349,6 +1433,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CHISELED_BOOKSHELF = create(key("chiseled_bookshelf"));
 
     /**
+     * {@code minecraft:chiseled_cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CHISELED_CINNABAR = create(key("chiseled_cinnabar"));
+
+    /**
      * {@code minecraft:chiseled_copper}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1412,6 +1503,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CHISELED_STONE_BRICKS = create(key("chiseled_stone_bricks"));
 
     /**
+     * {@code minecraft:chiseled_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CHISELED_SULFUR = create(key("chiseled_sulfur"));
+
+    /**
      * {@code minecraft:chiseled_tuff}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1438,6 +1536,62 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> CHORUS_PLANT = create(key("chorus_plant"));
+
+    /**
+     * {@code minecraft:cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR = create(key("cinnabar"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_SLAB = create(key("cinnabar_brick_slab"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_STAIRS = create(key("cinnabar_brick_stairs"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_WALL = create(key("cinnabar_brick_wall"));
+
+    /**
+     * {@code minecraft:cinnabar_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICKS = create(key("cinnabar_bricks"));
+
+    /**
+     * {@code minecraft:cinnabar_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_SLAB = create(key("cinnabar_slab"));
+
+    /**
+     * {@code minecraft:cinnabar_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_STAIRS = create(key("cinnabar_stairs"));
+
+    /**
+     * {@code minecraft:cinnabar_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_WALL = create(key("cinnabar_wall"));
 
     /**
      * {@code minecraft:clay}
@@ -1979,6 +2133,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CYAN_CONCRETE_POWDER = create(key("cyan_concrete_powder"));
 
     /**
+     * {@code minecraft:cyan_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CYAN_CONCRETE_SLAB = create(key("cyan_concrete_slab"));
+
+    /**
+     * {@code minecraft:cyan_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CYAN_CONCRETE_STAIRS = create(key("cyan_concrete_stairs"));
+
+    /**
      * {@code minecraft:cyan_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -2026,6 +2194,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> CYAN_WOOL = create(key("cyan_wool"));
+
+    /**
+     * {@code minecraft:cyan_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CYAN_WOOL_SLAB = create(key("cyan_wool_slab"));
+
+    /**
+     * {@code minecraft:cyan_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CYAN_WOOL_STAIRS = create(key("cyan_wool_stairs"));
 
     /**
      * {@code minecraft:damaged_anvil}
@@ -3036,6 +3218,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> GRAY_CONCRETE_POWDER = create(key("gray_concrete_powder"));
 
     /**
+     * {@code minecraft:gray_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GRAY_CONCRETE_SLAB = create(key("gray_concrete_slab"));
+
+    /**
+     * {@code minecraft:gray_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GRAY_CONCRETE_STAIRS = create(key("gray_concrete_stairs"));
+
+    /**
      * {@code minecraft:gray_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3083,6 +3279,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> GRAY_WOOL = create(key("gray_wool"));
+
+    /**
+     * {@code minecraft:gray_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GRAY_WOOL_SLAB = create(key("gray_wool_slab"));
+
+    /**
+     * {@code minecraft:gray_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GRAY_WOOL_STAIRS = create(key("gray_wool_stairs"));
 
     /**
      * {@code minecraft:green_banner}
@@ -3134,6 +3344,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> GREEN_CONCRETE_POWDER = create(key("green_concrete_powder"));
 
     /**
+     * {@code minecraft:green_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GREEN_CONCRETE_SLAB = create(key("green_concrete_slab"));
+
+    /**
+     * {@code minecraft:green_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GREEN_CONCRETE_STAIRS = create(key("green_concrete_stairs"));
+
+    /**
      * {@code minecraft:green_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3181,6 +3405,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> GREEN_WOOL = create(key("green_wool"));
+
+    /**
+     * {@code minecraft:green_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GREEN_WOOL_SLAB = create(key("green_wool_slab"));
+
+    /**
+     * {@code minecraft:green_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GREEN_WOOL_STAIRS = create(key("green_wool_stairs"));
 
     /**
      * {@code minecraft:grindstone}
@@ -3659,6 +3897,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> LIGHT_BLUE_CONCRETE_POWDER = create(key("light_blue_concrete_powder"));
 
     /**
+     * {@code minecraft:light_blue_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_BLUE_CONCRETE_SLAB = create(key("light_blue_concrete_slab"));
+
+    /**
+     * {@code minecraft:light_blue_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_BLUE_CONCRETE_STAIRS = create(key("light_blue_concrete_stairs"));
+
+    /**
      * {@code minecraft:light_blue_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3706,6 +3958,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> LIGHT_BLUE_WOOL = create(key("light_blue_wool"));
+
+    /**
+     * {@code minecraft:light_blue_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_BLUE_WOOL_SLAB = create(key("light_blue_wool_slab"));
+
+    /**
+     * {@code minecraft:light_blue_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_BLUE_WOOL_STAIRS = create(key("light_blue_wool_stairs"));
 
     /**
      * {@code minecraft:light_gray_banner}
@@ -3757,6 +4023,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> LIGHT_GRAY_CONCRETE_POWDER = create(key("light_gray_concrete_powder"));
 
     /**
+     * {@code minecraft:light_gray_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_GRAY_CONCRETE_SLAB = create(key("light_gray_concrete_slab"));
+
+    /**
+     * {@code minecraft:light_gray_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_GRAY_CONCRETE_STAIRS = create(key("light_gray_concrete_stairs"));
+
+    /**
      * {@code minecraft:light_gray_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3804,6 +4084,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> LIGHT_GRAY_WOOL = create(key("light_gray_wool"));
+
+    /**
+     * {@code minecraft:light_gray_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_GRAY_WOOL_SLAB = create(key("light_gray_wool_slab"));
+
+    /**
+     * {@code minecraft:light_gray_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIGHT_GRAY_WOOL_STAIRS = create(key("light_gray_wool_stairs"));
 
     /**
      * {@code minecraft:light_weighted_pressure_plate}
@@ -3890,6 +4184,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> LIME_CONCRETE_POWDER = create(key("lime_concrete_powder"));
 
     /**
+     * {@code minecraft:lime_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIME_CONCRETE_SLAB = create(key("lime_concrete_slab"));
+
+    /**
+     * {@code minecraft:lime_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIME_CONCRETE_STAIRS = create(key("lime_concrete_stairs"));
+
+    /**
      * {@code minecraft:lime_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3937,6 +4245,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> LIME_WOOL = create(key("lime_wool"));
+
+    /**
+     * {@code minecraft:lime_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIME_WOOL_SLAB = create(key("lime_wool_slab"));
+
+    /**
+     * {@code minecraft:lime_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> LIME_WOOL_STAIRS = create(key("lime_wool_stairs"));
 
     /**
      * {@code minecraft:lodestone}
@@ -4002,6 +4324,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> MAGENTA_CONCRETE_POWDER = create(key("magenta_concrete_powder"));
 
     /**
+     * {@code minecraft:magenta_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> MAGENTA_CONCRETE_SLAB = create(key("magenta_concrete_slab"));
+
+    /**
+     * {@code minecraft:magenta_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> MAGENTA_CONCRETE_STAIRS = create(key("magenta_concrete_stairs"));
+
+    /**
      * {@code minecraft:magenta_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4049,6 +4385,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> MAGENTA_WOOL = create(key("magenta_wool"));
+
+    /**
+     * {@code minecraft:magenta_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> MAGENTA_WOOL_SLAB = create(key("magenta_wool_slab"));
+
+    /**
+     * {@code minecraft:magenta_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> MAGENTA_WOOL_STAIRS = create(key("magenta_wool_stairs"));
 
     /**
      * {@code minecraft:magma_block}
@@ -4646,11 +4996,32 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> ORANGE_CONCRETE_POWDER = create(key("orange_concrete_powder"));
 
     /**
+     * {@code minecraft:orange_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> ORANGE_CONCRETE_SLAB = create(key("orange_concrete_slab"));
+
+    /**
+     * {@code minecraft:orange_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> ORANGE_CONCRETE_STAIRS = create(key("orange_concrete_stairs"));
+
+    /**
      * {@code minecraft:orange_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> ORANGE_GLAZED_TERRACOTTA = create(key("orange_glazed_terracotta"));
+
+    /**
+     * {@code minecraft:orange_poplar_leaves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> ORANGE_POPLAR_LEAVES = create(key("orange_poplar_leaves"));
 
     /**
      * {@code minecraft:orange_shulker_box}
@@ -4700,6 +5071,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> ORANGE_WOOL = create(key("orange_wool"));
+
+    /**
+     * {@code minecraft:orange_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> ORANGE_WOOL_SLAB = create(key("orange_wool_slab"));
+
+    /**
+     * {@code minecraft:orange_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> ORANGE_WOOL_STAIRS = create(key("orange_wool_stairs"));
 
     /**
      * {@code minecraft:oxeye_daisy}
@@ -5059,6 +5444,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> PINK_CONCRETE_POWDER = create(key("pink_concrete_powder"));
 
     /**
+     * {@code minecraft:pink_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PINK_CONCRETE_SLAB = create(key("pink_concrete_slab"));
+
+    /**
+     * {@code minecraft:pink_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PINK_CONCRETE_STAIRS = create(key("pink_concrete_stairs"));
+
+    /**
      * {@code minecraft:pink_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5120,6 +5519,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> PINK_WOOL = create(key("pink_wool"));
+
+    /**
+     * {@code minecraft:pink_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PINK_WOOL_SLAB = create(key("pink_wool_slab"));
+
+    /**
+     * {@code minecraft:pink_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PINK_WOOL_STAIRS = create(key("pink_wool_stairs"));
 
     /**
      * {@code minecraft:piston}
@@ -5276,6 +5689,34 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POLISHED_BLACKSTONE_WALL = create(key("polished_blackstone_wall"));
 
     /**
+     * {@code minecraft:polished_cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR = create(key("polished_cinnabar"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_SLAB = create(key("polished_cinnabar_slab"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_STAIRS = create(key("polished_cinnabar_stairs"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_WALL = create(key("polished_cinnabar_wall"));
+
+    /**
      * {@code minecraft:polished_deepslate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5346,6 +5787,34 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POLISHED_GRANITE_STAIRS = create(key("polished_granite_stairs"));
 
     /**
+     * {@code minecraft:polished_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR = create(key("polished_sulfur"));
+
+    /**
+     * {@code minecraft:polished_sulfur_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_SLAB = create(key("polished_sulfur_slab"));
+
+    /**
+     * {@code minecraft:polished_sulfur_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_STAIRS = create(key("polished_sulfur_stairs"));
+
+    /**
+     * {@code minecraft:polished_sulfur_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_WALL = create(key("polished_sulfur_wall"));
+
+    /**
      * {@code minecraft:polished_tuff}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5374,6 +5843,125 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POLISHED_TUFF_WALL = create(key("polished_tuff_wall"));
 
     /**
+     * {@code minecraft:poplar_button}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_BUTTON = create(key("poplar_button"));
+
+    /**
+     * {@code minecraft:poplar_door}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_DOOR = create(key("poplar_door"));
+
+    /**
+     * {@code minecraft:poplar_fence}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_FENCE = create(key("poplar_fence"));
+
+    /**
+     * {@code minecraft:poplar_fence_gate}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_FENCE_GATE = create(key("poplar_fence_gate"));
+
+    /**
+     * {@code minecraft:poplar_hanging_sign}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_HANGING_SIGN = create(key("poplar_hanging_sign"));
+
+    /**
+     * {@code minecraft:poplar_log}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_LOG = create(key("poplar_log"));
+
+    /**
+     * {@code minecraft:poplar_planks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_PLANKS = create(key("poplar_planks"));
+
+    /**
+     * {@code minecraft:poplar_pressure_plate}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_PRESSURE_PLATE = create(key("poplar_pressure_plate"));
+
+    /**
+     * {@code minecraft:poplar_sapling}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_SAPLING = create(key("poplar_sapling"));
+
+    /**
+     * {@code minecraft:poplar_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_SHELF = create(key("poplar_shelf"));
+
+    /**
+     * {@code minecraft:poplar_sign}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_SIGN = create(key("poplar_sign"));
+
+    /**
+     * {@code minecraft:poplar_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_SLAB = create(key("poplar_slab"));
+
+    /**
+     * {@code minecraft:poplar_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_STAIRS = create(key("poplar_stairs"));
+
+    /**
+     * {@code minecraft:poplar_trapdoor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_TRAPDOOR = create(key("poplar_trapdoor"));
+
+    /**
+     * {@code minecraft:poplar_wall_hanging_sign}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_WALL_HANGING_SIGN = create(key("poplar_wall_hanging_sign"));
+
+    /**
+     * {@code minecraft:poplar_wall_sign}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_WALL_SIGN = create(key("poplar_wall_sign"));
+
+    /**
+     * {@code minecraft:poplar_wood}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POPLAR_WOOD = create(key("poplar_wood"));
+
+    /**
      * {@code minecraft:poppy}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5386,6 +5974,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> POTATOES = create(key("potatoes"));
+
+    /**
+     * {@code minecraft:potent_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTENT_SULFUR = create(key("potent_sulfur"));
 
     /**
      * {@code minecraft:potted_acacia_sapling}
@@ -5591,6 +6186,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POTTED_PINK_TULIP = create(key("potted_pink_tulip"));
 
     /**
+     * {@code minecraft:potted_poplar_sapling}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTTED_POPLAR_SAPLING = create(key("potted_poplar_sapling"));
+
+    /**
      * {@code minecraft:potted_poppy}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5787,6 +6389,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> PURPLE_CONCRETE_POWDER = create(key("purple_concrete_powder"));
 
     /**
+     * {@code minecraft:purple_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PURPLE_CONCRETE_SLAB = create(key("purple_concrete_slab"));
+
+    /**
+     * {@code minecraft:purple_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PURPLE_CONCRETE_STAIRS = create(key("purple_concrete_stairs"));
+
+    /**
      * {@code minecraft:purple_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5834,6 +6450,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> PURPLE_WOOL = create(key("purple_wool"));
+
+    /**
+     * {@code minecraft:purple_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PURPLE_WOOL_SLAB = create(key("purple_wool_slab"));
+
+    /**
+     * {@code minecraft:purple_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> PURPLE_WOOL_STAIRS = create(key("purple_wool_stairs"));
 
     /**
      * {@code minecraft:purpur_block}
@@ -5976,6 +6606,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> RED_CONCRETE_POWDER = create(key("red_concrete_powder"));
 
     /**
+     * {@code minecraft:red_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_CONCRETE_SLAB = create(key("red_concrete_slab"));
+
+    /**
+     * {@code minecraft:red_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_CONCRETE_STAIRS = create(key("red_concrete_stairs"));
+
+    /**
      * {@code minecraft:red_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6025,6 +6669,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> RED_NETHER_BRICKS = create(key("red_nether_bricks"));
 
     /**
+     * {@code minecraft:red_poplar_leaves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_POPLAR_LEAVES = create(key("red_poplar_leaves"));
+
+    /**
      * {@code minecraft:red_sand}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6058,6 +6709,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> RED_SANDSTONE_WALL = create(key("red_sandstone_wall"));
+
+    /**
+     * {@code minecraft:red_shrub}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_SHRUB = create(key("red_shrub"));
 
     /**
      * {@code minecraft:red_shulker_box}
@@ -6107,6 +6765,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> RED_WOOL = create(key("red_wool"));
+
+    /**
+     * {@code minecraft:red_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_WOOL_SLAB = create(key("red_wool_slab"));
+
+    /**
+     * {@code minecraft:red_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RED_WOOL_STAIRS = create(key("red_wool_stairs"));
 
     /**
      * {@code minecraft:redstone_block}
@@ -6331,6 +7003,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> SEAGRASS = create(key("seagrass"));
+
+    /**
+     * {@code minecraft:shelf_mushroom}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SHELF_MUSHROOM = create(key("shelf_mushroom"));
 
     /**
      * {@code minecraft:short_dry_grass}
@@ -6788,6 +7467,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> STONECUTTER = create(key("stonecutter"));
 
     /**
+     * {@code minecraft:straw_bed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> STRAW_BED = create(key("straw_bed"));
+
+    /**
      * {@code minecraft:stripped_acacia_log}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6921,6 +7607,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> STRIPPED_PALE_OAK_WOOD = create(key("stripped_pale_oak_wood"));
 
     /**
+     * {@code minecraft:stripped_poplar_log}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> STRIPPED_POPLAR_LOG = create(key("stripped_poplar_log"));
+
+    /**
+     * {@code minecraft:stripped_poplar_wood}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> STRIPPED_POPLAR_WOOD = create(key("stripped_poplar_wood"));
+
+    /**
      * {@code minecraft:stripped_spruce_log}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6968,6 +7668,69 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> SUGAR_CANE = create(key("sugar_cane"));
+
+    /**
+     * {@code minecraft:sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR = create(key("sulfur"));
+
+    /**
+     * {@code minecraft:sulfur_brick_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_SLAB = create(key("sulfur_brick_slab"));
+
+    /**
+     * {@code minecraft:sulfur_brick_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_STAIRS = create(key("sulfur_brick_stairs"));
+
+    /**
+     * {@code minecraft:sulfur_brick_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_WALL = create(key("sulfur_brick_wall"));
+
+    /**
+     * {@code minecraft:sulfur_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICKS = create(key("sulfur_bricks"));
+
+    /**
+     * {@code minecraft:sulfur_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_SLAB = create(key("sulfur_slab"));
+
+    /**
+     * {@code minecraft:sulfur_spike}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_SPIKE = create(key("sulfur_spike"));
+
+    /**
+     * {@code minecraft:sulfur_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_STAIRS = create(key("sulfur_stairs"));
+
+    /**
+     * {@code minecraft:sulfur_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_WALL = create(key("sulfur_wall"));
 
     /**
      * {@code minecraft:sunflower}
@@ -8006,6 +8769,20 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> WHITE_CONCRETE_POWDER = create(key("white_concrete_powder"));
 
     /**
+     * {@code minecraft:white_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> WHITE_CONCRETE_SLAB = create(key("white_concrete_slab"));
+
+    /**
+     * {@code minecraft:white_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> WHITE_CONCRETE_STAIRS = create(key("white_concrete_stairs"));
+
+    /**
      * {@code minecraft:white_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -8060,6 +8837,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> WHITE_WOOL = create(key("white_wool"));
+
+    /**
+     * {@code minecraft:white_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> WHITE_WOOL_SLAB = create(key("white_wool_slab"));
+
+    /**
+     * {@code minecraft:white_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> WHITE_WOOL_STAIRS = create(key("white_wool_stairs"));
 
     /**
      * {@code minecraft:wildflowers}
@@ -8139,11 +8930,32 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> YELLOW_CONCRETE_POWDER = create(key("yellow_concrete_powder"));
 
     /**
+     * {@code minecraft:yellow_concrete_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> YELLOW_CONCRETE_SLAB = create(key("yellow_concrete_slab"));
+
+    /**
+     * {@code minecraft:yellow_concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> YELLOW_CONCRETE_STAIRS = create(key("yellow_concrete_stairs"));
+
+    /**
      * {@code minecraft:yellow_glazed_terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> YELLOW_GLAZED_TERRACOTTA = create(key("yellow_glazed_terracotta"));
+
+    /**
+     * {@code minecraft:yellow_poplar_leaves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> YELLOW_POPLAR_LEAVES = create(key("yellow_poplar_leaves"));
 
     /**
      * {@code minecraft:yellow_shulker_box}
@@ -8186,6 +8998,20 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> YELLOW_WOOL = create(key("yellow_wool"));
+
+    /**
+     * {@code minecraft:yellow_wool_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> YELLOW_WOOL_SLAB = create(key("yellow_wool_slab"));
+
+    /**
+     * {@code minecraft:yellow_wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> YELLOW_WOOL_STAIRS = create(key("yellow_wool_stairs"));
 
     /**
      * {@code minecraft:zombie_head}

@@ -48,7 +48,7 @@ public class CraftStrider extends CraftAnimals implements Strider {
     public void setBoostTicks(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
 
-        this.getHandle().steering.setBoostTicks(ticks);
+        this.getHandle().steering.boost(ticks);
     }
 
     @Override

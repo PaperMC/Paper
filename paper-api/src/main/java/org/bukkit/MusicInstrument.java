@@ -10,7 +10,6 @@ import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +22,6 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
      * @param value a consumer for the builder factory
      * @return the created music instrument
      */
-    @ApiStatus.Experimental
     public static MusicInstrument create(final Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createInstrument(value);
     }
@@ -46,7 +44,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     public static final MusicInstrument YEARN_GOAT_HORN = getInstrument("yearn_goat_horn");
     // End generate - MusicInstrument
 
-    private static MusicInstrument getInstrument(final @KeyPattern.Value String key) {
+    private static MusicInstrument getInstrument(@KeyPattern.Value final String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
