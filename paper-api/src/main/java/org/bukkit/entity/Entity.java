@@ -877,7 +877,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
      *
-     * @return whether the entity is invulnerable.
+     * @return whether the entity is invulnerable
      * @see #isInvulnerableTo(DamageSource)
      */
     boolean isMarkedInvulnerable();
@@ -885,7 +885,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Determines if the entity is invulnerable to the specified damage source.
      * <p>
-     * {@code #isInvulnerableTo(DamageSource.builder(DamageType.GENERIC).build())} is equivalent to {@code #isInvulnerable()}
+     * Using this method with {@code DamageSource.builder(DamageType.GENERIC).build()} is equivalent to {@link #isInvulnerable()}
      *
      * @param source the damage source to check against
      * @return {@code true} if the entity is invulnerable to the given damage source, {@code false} otherwise
@@ -893,14 +893,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isInvulnerableTo(@NotNull DamageSource source);
 
     /**
-     * Gets whether the entity is invulnerable or not.
+     * Gets whether the entity is invulnerable or not
      *
-     * @return whether the entity is invulnerable.
+     * @return whether the entity is invulnerable
      * @see #isInvulnerableTo(DamageSource)
-     * @deprecated this method does not reflect the invulnerability state set by
-     * {@link #setInvulnerable(boolean)}, use {@link #isMarkedInvulnerable()} instead
+     * @deprecated This method does not reflect the invulnerability state set by
+     *   {@link #setInvulnerable(boolean)}, use {@link #isMarkedInvulnerable()} for that instead.
+     *   Use {@link #isInvulnerableTo(DamageSource)} with {@code DamageSource.builder(DamageType.GENERIC).build()} as a direct replacement to this method.
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.3")
     boolean isInvulnerable();
 
     /**
