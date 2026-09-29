@@ -9,10 +9,12 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -224,24 +_,201 @@
+@@ -223,25 +_,205 @@
+     private final StructureCheck structureCheck;
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
- 
++    private final java.time.format.DateTimeFormatter commandBlockTimeFormat; // Paper - per-world configurable command block time format
++
 +    // CraftBukkit start
 +    private final ResourceKey<LevelStem> typeKey;
 +    public final String bukkitName;
@@ -141,7 +143,7 @@
 +        return player != null && player.level() == this ? player : null;
 +    }
 +    // Paper end - optimise getPlayerByUUID
-+
+ 
      public ServerLevel(
          final MinecraftServer server,
          final Executor executor,
@@ -197,6 +199,8 @@
 +            this.persistentDataContainer.putAll(loadedWorldData.pdc().persistentData().toTagCompound());
 +        }
 +
++        this.commandBlockTimeFormat = java.time.format.DateTimeFormatter.ofPattern(paperConfig().commandBlocks.timeFormatPattern, Locale.ROOT); // Paper - per-world configurable command block time format
++
 +        if (biomeProvider != null) {
 +            net.minecraft.world.level.biome.BiomeSource biomeSource = new org.bukkit.craftbukkit.generator.CustomWorldChunkManager(this.getWorld(), biomeProvider, generator.getBiomeSource()); // Paper - add vanillaBiomeProvider
 +            if (generator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseBased) {
@@ -245,7 +249,7 @@
              this.chunkSource.chunkScanner(),
              this.registryAccess(),
              server.getStructureTemplateManager(),
-@@ -302,11 +_,19 @@
+@@ -302,11 +_,25 @@
  
          this.sleepStatus = new SleepStatus();
          this.gameEventDispatcher = new GameEventDispatcher(this);
@@ -257,6 +261,12 @@
 -    }
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
 +    }
++
++    // Paper start - per-world configurable command block time format
++    public java.time.format.DateTimeFormatter getCommandBlockTimeFormat() {
++        return commandBlockTimeFormat;
++    }
++    // Paper end - per-world configurable command block time format
 +
 +    // Paper start
 +    @Override
