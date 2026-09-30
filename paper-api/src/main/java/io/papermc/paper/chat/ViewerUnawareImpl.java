@@ -26,6 +26,8 @@ sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnawa
     }
 
     static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
+        static final ViewerUnawareImpl.Default INSTANCE = new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
+
         Default(final ViewerUnaware unaware) {
             super(unaware);
         }
