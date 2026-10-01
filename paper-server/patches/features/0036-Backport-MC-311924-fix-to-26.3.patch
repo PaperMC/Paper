@@ -13,10 +13,23 @@ index f332edbc4dad82cbdc02a58aa9ec21faf1f2db89..1c0958da92c5b59d728bbfd02887ba42
      private BlockPos lastPos;
      private Optional<BlockPos> lastClimbablePos = Optional.empty();
 -    private @Nullable DamageSource lastDamageSource;
-+    protected @Nullable DamageSource lastDamageSource; // Paper - Backport MC-311924 fix
++    protected @Nullable DamageSource lastDamageSource; // Paper
      private long lastDamageStamp;
      protected int autoSpinAttackTicks;
      protected float autoSpinAttackDmg;
+diff --git a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index f852126b179dc0c5dab3dbd22d3bfb8b73a5dba8..2176cdf00199bbaf4ab7b34b0a97ff3f810c4083 100644
+--- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -509,7 +509,7 @@ public class EnderDragon extends Mob implements Enemy {
+                     state.getDrops(builder).forEach((item) -> {
+                         net.minecraft.world.level.block.Block.popResource(this.level(), pos, item);
+                     });
+-                    state.spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
++                    state.spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false, this);
+                 }
+                 // Paper start - TNTPrimeEvent
+                 org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), pos);
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
 index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..3b1898eb9f658df048ef67c8f3224d78e8d448bc 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
@@ -30,7 +43,7 @@ index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..3b1898eb9f658df048ef67c8f3224d78
 +        this.lastDamageSource = source;
          this.remove(Entity.RemovalReason.KILLED);
 -        this.gameEvent(GameEvent.ENTITY_DIE, attributedTo != null ? attributedTo : this);
-+        this.gameEvent(GameEvent.ENTITY_DIE); // Paper - Backport MC-311924 fix
++        this.gameEvent(GameEvent.ENTITY_DIE); // Paper
      }
  
      @Override
@@ -42,7 +55,7 @@ index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d12
      private static final int CHECK_INTERVAL = 100;
      private int ticksSinceLastCheck; { this.ticksSinceLastCheck = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
      protected BlockPos pos;
-+    protected @Nullable DamageSource lastDamageSource; // Paper - Backport MC-311924 fix
++    protected @Nullable DamageSource lastDamageSource; // Paper
  
      protected BlockAttachedEntity(final EntityType<? extends BlockAttachedEntity> type, final Level level) {
          super(type, level);
@@ -50,7 +63,7 @@ index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d12
              && (!this.level().mayInteract(player, this.pos) || this.hurtOrSimulate(this.damageSources().playerAttack(player), 0.0F));
      }
  
-+    // Paper start - Backport MC-311924 fix
++    // Paper start
 +    /*
      @Override
      public void kill(final ServerLevel level) {
@@ -69,7 +82,7 @@ index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d12
 +        this.lastDamageSource = source;
 +        this.kill(level);
 +    }
-+    // Paper end - Backport MC-311924 fix
++    // Paper end
  
      @Override
      public boolean hurtClient(final DamageSource source) {
@@ -78,7 +91,7 @@ index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d12
              }
              // CraftBukkit end
 -            this.kill(level, source.getEntity());
-+            this.kill(level, source); // Paper - Backport MC-311924 fix
++            this.kill(level, source); // Paper
              this.markHurt();
              this.dropItem(level, source.getEntity());
          }
@@ -91,7 +104,7 @@ index 5766e5564e5047076c5fd326864a1a2c9ba5c8fd..32970e11d5a49ef039d84d9545625eaf
      public void thunderHit(final ServerLevel level, final LightningBolt lightningBolt) {
          if (!this.isRemoved()) {
 -            this.kill(level, lightningBolt);
-+            this.kill(level, this.damageSources().lightningBolt()); // Paper - Backport MC-311924 fix
++            this.kill(level, this.damageSources().lightningBolt()); // Paper
              this.dropItem(level, lightningBolt);
          }
      }
@@ -104,9 +117,459 @@ index bb8f83b544fba6e7d0db0ca59350e5c924752ffb..6c66abfff5c70122fd9a8abfcbdf59b5
  
      @Override
 -    protected void onKilled() {
-+    public void kill(final ServerLevel level) { // Paper - Backport MC-311924 fix
++    public void kill(final ServerLevel level) { // Paper
          this.removeFramedMap(this.getItem());
-+        super.kill(level); // Paper - Backport MC-311924 fix
++        super.kill(level); // Paper
      }
  
      private boolean shouldDamageDropItem(final DamageSource source) {
+diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
+index 1b89d481168347f8edd078a8ac190b38a4390a6f..1b614e802d1d96ecf360b34397d5c2b677d07357 100644
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -410,7 +410,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
+                 popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
+             }
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false, null); // Paper - Properly handle xp dropping
+             block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
+         }
+         return true;
+@@ -420,14 +420,14 @@ public class Block extends BlockBehaviour implements ItemLike {
+     public static void dropResources(final BlockState state, final Level level, final BlockPos pos) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true, null);
+         }
+     }
+ 
+     public static void dropResources(final BlockState state, final LevelAccessor level, final BlockPos pos, final @Nullable BlockEntity blockEntity) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, blockEntity).forEach(stack -> popResource(serverLevel, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true, null);
+         }
+     }
+ 
+@@ -448,7 +448,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
++            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience, breaker); // Paper - Properly handle xp dropping
+         }
+     }
+ 
+diff --git a/net/minecraft/world/level/block/Blocks.java b/net/minecraft/world/level/block/Blocks.java
+index 71ff3e831bbe4c49e946664c7ca22634a4e9fecc..06e141317abdc76e4c14e9bcf3b2a105869c2101 100644
+--- a/net/minecraft/world/level/block/Blocks.java
++++ b/net/minecraft/world/level/block/Blocks.java
+@@ -2102,7 +2102,7 @@ public class Blocks {
+     );
+     public static final Block REDSTONE_ORE = register(
+         BlockItemIds.REDSTONE_ORE,
+-        RedStoneOreBlock::new,
++        p -> new RedStoneOreBlock(UniformInt.of(1, 5), p), // Paper - Backport MC-311924 fix
+         BlockBehaviour.Properties.of()
+             .mapColor(MapColor.STONE)
+             .instrument(NoteBlockInstrument.BASEDRUM)
+@@ -2113,7 +2113,7 @@ public class Blocks {
+     );
+     public static final Block DEEPSLATE_REDSTONE_ORE = register(
+         BlockItemIds.DEEPSLATE_REDSTONE_ORE,
+-        RedStoneOreBlock::new,
++        p -> new RedStoneOreBlock(UniformInt.of(1, 5), p), // Paper - Backport MC-311924 fix
+         BlockBehaviour.Properties.ofLegacyCopy(REDSTONE_ORE).mapColor(MapColor.DEEPSLATE).strength(4.5F, 3.0F).sound(SoundType.DEEPSLATE)
+     );
+     public static final Block REDSTONE_TORCH = register(
+@@ -5202,7 +5202,7 @@ public class Blocks {
+     );
+     public static final Block SCULK_SENSOR = register(
+         BlockItemIds.SCULK_SENSOR,
+-        SculkSensorBlock::new,
++        p -> new SculkSensorBlock(ConstantInt.of(5), p), // Paper - Backport MC-311924 fix
+         BlockBehaviour.Properties.of()
+             .mapColor(MapColor.COLOR_CYAN)
+             .strength(1.5F)
+@@ -5211,7 +5211,7 @@ public class Blocks {
+             .emissiveRendering(state -> SculkSensorBlock.getPhase(state) == SculkSensorPhase.ACTIVE)
+     );
+     public static final Block CALIBRATED_SCULK_SENSOR = register(
+-        BlockItemIds.CALIBRATED_SCULK_SENSOR, CalibratedSculkSensorBlock::new, BlockBehaviour.Properties.ofLegacyCopy(SCULK_SENSOR)
++        BlockItemIds.CALIBRATED_SCULK_SENSOR, p -> new CalibratedSculkSensorBlock(ConstantInt.of(5), p), BlockBehaviour.Properties.ofLegacyCopy(SCULK_SENSOR) // Paper - Backport MC-311924 fix
+     );
+     public static final Block SCULK = register(
+         BlockItemIds.SCULK, SculkBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(0.2F).sound(SoundType.SCULK)
+@@ -5229,12 +5229,12 @@ public class Blocks {
+     );
+     public static final Block SCULK_CATALYST = register(
+         BlockItemIds.SCULK_CATALYST,
+-        SculkCatalystBlock::new,
++        p -> new SculkCatalystBlock(ConstantInt.of(5), p), // Paper - Backport MC-311924 fix
+         BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(3.0F, 3.0F).sound(SoundType.SCULK_CATALYST).lightLevel(state -> 6)
+     );
+     public static final Block SCULK_SHRIEKER = register(
+         BlockItemIds.SCULK_SHRIEKER,
+-        SculkShriekerBlock::new,
++        p -> new SculkShriekerBlock(ConstantInt.of(5), p), // Paper - Backport MC-311924 fix
+         BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(3.0F, 3.0F).sound(SoundType.SCULK_SHRIEKER)
+     );
+     public static final WeatheringCopperCollection<Block> COPPER_BLOCK = WeatheringCopperCollection.registerBlocks(
+diff --git a/net/minecraft/world/level/block/CalibratedSculkSensorBlock.java b/net/minecraft/world/level/block/CalibratedSculkSensorBlock.java
+index 37fb609443b418baf72c2207b01b4c5daf7721d7..0d0b6ef9595182654eeb7413d8ce7bb90cf3915a 100644
+--- a/net/minecraft/world/level/block/CalibratedSculkSensorBlock.java
++++ b/net/minecraft/world/level/block/CalibratedSculkSensorBlock.java
+@@ -22,8 +22,10 @@ import org.jspecify.annotations.Nullable;
+ public class CalibratedSculkSensorBlock extends SculkSensorBlock {
+     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+ 
+-    public CalibratedSculkSensorBlock(final BlockBehaviour.Properties properties) {
+-        super(properties);
++    // Paper start - Backport MC-311924 fix
++    public CalibratedSculkSensorBlock(final net.minecraft.util.valueproviders.IntProvider xpRange, final Properties properties) {
++        super(xpRange, properties);
++        // Paper end - Backport MC-311924 fix
+         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
+     }
+ 
+diff --git a/net/minecraft/world/level/block/DropExperienceBlock.java b/net/minecraft/world/level/block/DropExperienceBlock.java
+index 5bba19898a7b3bc690f7e4e2889e01275e03fd91..23a4fd6c5c4b15c9571ddc028b409975189e2ceb 100644
+--- a/net/minecraft/world/level/block/DropExperienceBlock.java
++++ b/net/minecraft/world/level/block/DropExperienceBlock.java
+@@ -16,8 +16,12 @@ public class DropExperienceBlock extends Block {
+     }
+ 
+     @Override
+-    protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+-        super.spawnAfterBreak(state, level, pos, tool, dropExperience);
++    // Paper start - Backport MC-311924 fix
++    protected void spawnAfterBreak(
++        final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final net.minecraft.world.entity.@org.jspecify.annotations.Nullable Entity breaker
++    ) {
++        super.spawnAfterBreak(state, level, pos, tool, dropExperience, breaker);
++        // Paper end - Backport MC-311924 fix
+         // CraftBukkit start - Delegate to getExpDrop
+     }
+ 
+diff --git a/net/minecraft/world/level/block/DropExperienceEntityBlock.java b/net/minecraft/world/level/block/DropExperienceEntityBlock.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a21309440920cfe05610f176dd03266e0f5e401
+--- /dev/null
++++ b/net/minecraft/world/level/block/DropExperienceEntityBlock.java
+@@ -0,0 +1,35 @@
++package net.minecraft.world.level.block;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.util.valueproviders.IntProvider;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.block.state.BlockState;
++import org.jspecify.annotations.Nullable;
++
++public abstract class DropExperienceEntityBlock extends BaseEntityBlock {
++    private final IntProvider xpRange;
++
++    protected DropExperienceEntityBlock(final IntProvider xpRange, final Properties properties) {
++        super(properties);
++        this.xpRange = xpRange;
++    }
++
++    protected void spawnAfterBreak(
++        final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final @Nullable Entity breaker
++    ) {
++        super.spawnAfterBreak(state, level, pos, tool, dropExperience, breaker);
++        // CraftBukkit start - Delegate to getExpDrop
++    }
++
++    @Override
++    public int getExpDrop(BlockState state, ServerLevel level, BlockPos pos, ItemStack tool, boolean dropExperience) {
++        if (dropExperience) {
++            return this.tryDropExperience(level, pos, tool, this.xpRange);
++        }
++
++        return 0;
++        // CraftBukkit end
++    }
++}
+diff --git a/net/minecraft/world/level/block/InfestedBlock.java b/net/minecraft/world/level/block/InfestedBlock.java
+index fc8459d98a0992b4c257bdd44937740ba421ba77..e4c155a474e9aea3d245599b7e691a62dffb4e75 100644
+--- a/net/minecraft/world/level/block/InfestedBlock.java
++++ b/net/minecraft/world/level/block/InfestedBlock.java
+@@ -46,8 +46,12 @@ public class InfestedBlock extends Block {
+     }
+ 
+     @Override
+-    protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+-        super.spawnAfterBreak(state, level, pos, tool, dropExperience);
++    // Paper start - Backport MC-311924 fix
++    protected void spawnAfterBreak(
++        final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final net.minecraft.world.entity.@org.jspecify.annotations.Nullable Entity breaker
++    ) {
++        super.spawnAfterBreak(state, level, pos, tool, dropExperience, breaker);
++        // Paper end - Backport MC-311924 fix
+         if (level.getGameRules().get(GameRules.BLOCK_DROPS) && !EnchantmentHelper.hasTag(tool, EnchantmentTags.PREVENTS_INFESTED_SPAWNS)) {
+             this.spawnInfestation(level, pos);
+         }
+diff --git a/net/minecraft/world/level/block/RedStoneOreBlock.java b/net/minecraft/world/level/block/RedStoneOreBlock.java
+index e3d997672f73df19dce794ee4f81e1b9c830f387..2367fd993a53f7a1dd4b1ab4f494353b5efdeff4 100644
+--- a/net/minecraft/world/level/block/RedStoneOreBlock.java
++++ b/net/minecraft/world/level/block/RedStoneOreBlock.java
+@@ -20,11 +20,13 @@ import net.minecraft.world.level.block.state.StateDefinition;
+ import net.minecraft.world.level.block.state.properties.BooleanProperty;
+ import net.minecraft.world.phys.BlockHitResult;
+ 
+-public class RedStoneOreBlock extends Block {
++public class RedStoneOreBlock extends DropExperienceBlock { // Paper - Backport MC-311924 fix
+     public static final BooleanProperty LIT = RedstoneTorchBlock.LIT;
+ 
+-    public RedStoneOreBlock(final BlockBehaviour.Properties properties) {
+-        super(properties);
++    // Paper start - Backport MC-311924 fix
++    public RedStoneOreBlock(final net.minecraft.util.valueproviders.IntProvider xpRange, final Properties properties) {
++        super(xpRange, properties);
++        // Paper end - Backport MC-311924 fix
+         this.registerDefaultState(this.defaultBlockState().setValue(LIT, false));
+     }
+ 
+@@ -105,6 +107,8 @@ public class RedStoneOreBlock extends Block {
+         }
+     }
+ 
++    // Paper start - Backport MC-311924 fix
++    /*
+     @Override
+     protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         super.spawnAfterBreak(state, level, pos, tool, dropExperience);
+@@ -120,6 +124,8 @@ public class RedStoneOreBlock extends Block {
+         return 0;
+         // CraftBukkit end
+     }
++     */
++    // Paper end - Backport MC-311924 fix
+ 
+     @Override
+     public void animateTick(final BlockState state, final Level level, final BlockPos pos, final RandomSource random) {
+diff --git a/net/minecraft/world/level/block/SculkCatalystBlock.java b/net/minecraft/world/level/block/SculkCatalystBlock.java
+index ebea630ec3b3a7ad886e76090f279661ae83b266..2d880ab42d5f1da15c65800a33c2f1955c949281 100644
+--- a/net/minecraft/world/level/block/SculkCatalystBlock.java
++++ b/net/minecraft/world/level/block/SculkCatalystBlock.java
+@@ -19,12 +19,14 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+ import net.minecraft.world.level.block.state.properties.BooleanProperty;
+ import org.jspecify.annotations.Nullable;
+ 
+-public class SculkCatalystBlock extends BaseEntityBlock {
++public class SculkCatalystBlock extends DropExperienceEntityBlock { // Paper - Backport MC-311924 fix
+     public static final BooleanProperty PULSE = BlockStateProperties.BLOOM;
+     private final IntProvider xpRange = ConstantInt.of(5);
+ 
+-    public SculkCatalystBlock(final BlockBehaviour.Properties properties) {
+-        super(properties);
++    // Paper start - Backport MC-311924 fix
++    public SculkCatalystBlock(final IntProvider xpRange, final Properties properties) {
++        super(xpRange, properties);
++        // Paper end - Backport MC-311924 fix
+         this.registerDefaultState(this.stateDefinition.any().setValue(PULSE, false));
+     }
+ 
+@@ -50,19 +52,15 @@ public class SculkCatalystBlock extends BaseEntityBlock {
+         return level.isClientSide() ? null : createTickerHelper(type, BlockEntityTypes.SCULK_CATALYST, SculkCatalystBlockEntity::serverTick);
+     }
+ 
++    // Paper start - Backport MC-311924 fix
++    /*
+     @Override
+     protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         super.spawnAfterBreak(state, level, pos, tool, dropExperience);
+-        // CraftBukkit start - Delegate to getExpDrop
+-    }
+-
+-    @Override
+-    public int getExpDrop(BlockState state, ServerLevel level, BlockPos pos, ItemStack tool, boolean dropExperience) {
+         if (dropExperience) {
+-            return this.tryDropExperience(level, pos, tool, this.xpRange);
++            this.tryDropExperience(level, pos, tool, this.xpRange);
+         }
+-
+-        return 0;
+-        // CraftBukkit end
+     }
++     */
++    // Paper end - Backport MC-311924 fix
+ }
+diff --git a/net/minecraft/world/level/block/SculkSensorBlock.java b/net/minecraft/world/level/block/SculkSensorBlock.java
+index 6e217dea06365d2125b51b8222f49e186fcf6c08..c13efa12594c9e61f8f38ea76a7c6612b6d1d073 100644
+--- a/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -42,7 +42,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.jspecify.annotations.Nullable;
+ 
+-public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
++public class SculkSensorBlock extends DropExperienceEntityBlock implements SimpleWaterloggedBlock { // Paper - Backport MC-311924 fix
+     public static final int ACTIVE_TICKS = 30;
+     public static final int COOLDOWN_TICKS = 10;
+     public static final EnumProperty<SculkSensorPhase> PHASE = BlockStateProperties.SCULK_SENSOR_PHASE;
+@@ -57,8 +57,10 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+         }
+     });
+ 
+-    public SculkSensorBlock(final BlockBehaviour.Properties properties) {
+-        super(properties);
++    // Paper start - Backport MC-311924 fix
++    public SculkSensorBlock(final net.minecraft.util.valueproviders.IntProvider xpRange, final Properties properties) {
++        super(xpRange, properties);
++        // Paper end - Backport MC-311924 fix
+         this.registerDefaultState(this.stateDefinition.any().setValue(PHASE, SculkSensorPhase.INACTIVE).setValue(POWER, 0).setValue(WATERLOGGED, false));
+     }
+ 
+@@ -304,19 +306,15 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+         return true;
+     }
+ 
++    // Paper start - Backport MC-311924 fix
++    /*
+     @Override
+     protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         super.spawnAfterBreak(state, level, pos, tool, dropExperience);
+-        // CraftBukkit start - Delegate to getExpDrop
+-    }
+-
+-    @Override
+-    public int getExpDrop(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         if (dropExperience) {
+-            return this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
++            this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
+         }
+-
+-        return 0;
+-        // CraftBukkit end
+     }
++     */
++    // Paper end - Backport MC-311924 fix
+ }
+diff --git a/net/minecraft/world/level/block/SculkShriekerBlock.java b/net/minecraft/world/level/block/SculkShriekerBlock.java
+index fc3fcb07cec78126c1bf7ae37065db7a5cfa232f..ad5cfbc331a783e8398c6e529dcd3c4749b0c0c2 100644
+--- a/net/minecraft/world/level/block/SculkShriekerBlock.java
++++ b/net/minecraft/world/level/block/SculkShriekerBlock.java
+@@ -30,15 +30,17 @@ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.jspecify.annotations.Nullable;
+ 
+-public class SculkShriekerBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
++public class SculkShriekerBlock extends DropExperienceEntityBlock implements SimpleWaterloggedBlock { // Paper - Backport MC-311924 fix
+     public static final BooleanProperty SHRIEKING = BlockStateProperties.SHRIEKING;
+     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+     public static final BooleanProperty CAN_SUMMON = BlockStateProperties.CAN_SUMMON;
+     private static final VoxelShape SHAPE_COLLISION = Block.column(16.0, 0.0, 8.0);
+     public static final double TOP_Y = SHAPE_COLLISION.max(Direction.Axis.Y);
+ 
+-    public SculkShriekerBlock(final BlockBehaviour.Properties properties) {
+-        super(properties);
++    // Paper start - Backport MC-311924 fix
++    public SculkShriekerBlock(final net.minecraft.util.valueproviders.IntProvider xpRange, final Properties properties) {
++        super(xpRange, properties);
++        // Paper end - Backport MC-311924 fix
+         this.registerDefaultState(this.stateDefinition.any().setValue(SHRIEKING, false).setValue(WATERLOGGED, false).setValue(CAN_SUMMON, false));
+     }
+ 
+@@ -118,20 +120,17 @@ public class SculkShriekerBlock extends BaseEntityBlock implements SimpleWaterlo
+         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+     }
+ 
++    // Paper start - Backport MC-311924 fix
++    /*
+     @Override
+     protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         super.spawnAfterBreak(state, level, pos, tool, dropExperience);
+-        // CraftBukkit start - Delegate to getExpDrop
+-    }
+-
+-    @Override
+-    public int getExpDrop(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         if (dropExperience) {
+-            return this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
++            this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
+         }
+-        return 0;
+-        // CraftBukkit end
+     }
++     */
++    // Paper end - Backport MC-311924 fix
+ 
+     @Override
+     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(final Level level, final BlockState blockState, final BlockEntityType<T> type) {
+diff --git a/net/minecraft/world/level/block/SpawnerBlock.java b/net/minecraft/world/level/block/SpawnerBlock.java
+index d9c4a23c23e316bd4131ac91fcebb2a66c49afc4..d952e3dea0254152263aa2215253652fd3af9058 100644
+--- a/net/minecraft/world/level/block/SpawnerBlock.java
++++ b/net/minecraft/world/level/block/SpawnerBlock.java
+@@ -30,8 +30,12 @@ public class SpawnerBlock extends BaseEntityBlock {
+     }
+ 
+     @Override
+-    protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+-        super.spawnAfterBreak(state, level, pos, tool, dropExperience);
++    // Paper start - Backport MC-311924 fix
++    protected void spawnAfterBreak(
++        final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final net.minecraft.world.entity.@Nullable Entity breaker
++    ) {
++        super.spawnAfterBreak(state, level, pos, tool, dropExperience, breaker);
++        // Paper end - Backport MC-311924 fix
+         // CraftBukkit start - Delegate to getExpDrop
+     }
+ 
+diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
+index bebfe5b72c1dd812c480de3311ad36ca8d96466b..b46cae908c6b580f56b39736f90f5dd200295158 100644
+--- a/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -176,7 +176,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+     ) {
+         if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+             Block block = state.getBlock();
+-            boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player;
++            // boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player; // Paper - Backport MC-311924 fix
+             if (block.dropFromExplosion(explosion)) {
+                 BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+                 LootParams.Builder params = new LootParams.Builder(level)
+@@ -190,7 +190,10 @@ public abstract class BlockBehaviour implements FeatureElement {
+                     // CraftBukkit end
+                 }
+ 
+-                state.spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack);
++                // Paper start - Backport MC-311924 fix
++                boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player;
++                state.spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack, explosion.getDirectSourceEntity());
++                // Paper end - Backport MC-311924 fix
+                 state.getDrops(params).forEach(stack -> onHit.accept(stack, pos));
+             }
+ 
+@@ -361,7 +364,11 @@ public abstract class BlockBehaviour implements FeatureElement {
+         return player.getDestroySpeed(state) / destroySpeed / modifier;
+     }
+ 
+-    protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
++    // Paper start - Backport MC-311924 fix
++    protected void spawnAfterBreak(
++        final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final @Nullable Entity breaker
++    ) {
++        // Paper end - Backport MC-311924 fix
+     }
+ 
+     protected void attack(final BlockState state, final Level level, final BlockPos pos, final Player player) {
+@@ -920,8 +927,12 @@ public abstract class BlockBehaviour implements FeatureElement {
+             this.getBlock().entityInside(this.asState(), level, pos, entity, effectApplier, isPrecise);
+         }
+ 
+-        public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+-            this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience);
++        // Paper start - Backport MC-311924 fix
++        public void spawnAfterBreak(
++            final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final @Nullable Entity breaker
++        ) {
++            this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience, breaker);
++            // Paper end - Backport MC-311924 fix
+             if (dropExperience) this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, tool, true)); // Paper - Properly handle xp dropping
+         }
+ 
