@@ -82,6 +82,13 @@ public final class BiomeKeys {
     public static final TypedKey<Biome> CRIMSON_FOREST = create(key("crimson_forest"));
 
     /**
+     * {@code minecraft:dappled_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Biome> DAPPLED_FOREST = create(key("dappled_forest"));
+
+    /**
      * {@code minecraft:dark_forest}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

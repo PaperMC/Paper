@@ -3,13 +3,11 @@ package io.papermc.paper.datacomponent.item;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the contents of item transformation information when an item is used.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_REMAINDER
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface UseRemainder {
 
