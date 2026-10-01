@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -36,8 +37,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     protected void load(T blockEntity) {
         super.load(blockEntity);
-        this.front = new CraftSignSide(blockEntity.getFrontText());
-        this.back = new CraftSignSide(blockEntity.getBackText());
+        this.front = new CraftSignSide(blockEntity.getText(SignTextSlot.FRONT));
+        this.back = new CraftSignSide(blockEntity.getText(SignTextSlot.BACK));
     }
 
     // Paper start
@@ -122,7 +123,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         this.ensureNoWorldGeneration();
         Preconditions.checkArgument(player != null, "player cannot be null");
 
-        if (this.getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
+        if (this.getSnapshot().getSlotPlayerIsFacing(((CraftPlayer) player).getHandle()) == SignTextSlot.FRONT) {
             return this.front;
         }
 
@@ -150,8 +151,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     @Override
     public void applyTo(T blockEntity) {
-        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), true);
-        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), false);
+        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), SignTextSlot.FRONT);
+        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), SignTextSlot.BACK);
 
         super.applyTo(blockEntity);
     }
@@ -172,20 +173,18 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
-        // Paper start - Add PlayerOpenSignEvent
-        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent((Player) player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
+        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent(player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
         if (!event.callEvent()) return;
         if (PlayerSignOpenEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            // Paper end - Add PlayerOpenSignEvent
-        if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
-            return;
+            if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
+                return;
+            }
         }
-        } // Paper - Add PlayerOpenSignEvent
 
         SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
         blockEntity.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, Side.FRONT == side);
+        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, CraftSignSide.toVanilla(side));
     }
 
     // Paper start
@@ -218,7 +217,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public Side getInteractableSideFor(final double x, final double z) {
         this.requirePlaced();
-        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
+        return CraftSignSide.fromVanilla(this.getSnapshot().getSlotPlayerIsFacing(x, z));
     }
     // Paper end - More Sign Block API
 

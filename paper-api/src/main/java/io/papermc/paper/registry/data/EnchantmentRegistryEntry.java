@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * A data-centric version-specific registry entry for the {@link Enchantment} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface EnchantmentRegistryEntry {
 
@@ -138,7 +137,6 @@ public interface EnchantmentRegistryEntry {
      *     <li>{@link #activeSlots(Iterable)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends EnchantmentRegistryEntry, RegistryBuilder<Enchantment> {
 
@@ -296,7 +294,6 @@ public interface EnchantmentRegistryEntry {
     /**
      * The enchantment cost interface represents the cost of applying an enchantment, split up into its different components.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface EnchantmentCost {
 

@@ -1,21 +1,33 @@
 package com.destroystokyo.paper.profile;
 
 import com.google.common.base.Preconditions;
-import com.mojang.authlib.yggdrasil.ProfileResult;
-import com.mojang.datafixers.util.Either;
+import com.mojang.authlib.services.ProfileResult;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.papermc.paper.profile.MutablePropertyMap;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.StringUtil;
-import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -25,12 +37,6 @@ import org.bukkit.craftbukkit.profile.CraftPlayerTextures;
 import org.bukkit.craftbukkit.profile.CraftProfileProperty;
 import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @SerializableAs("PlayerProfile")
 public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {

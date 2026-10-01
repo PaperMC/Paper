@@ -2,9 +2,16 @@ package org.bukkit.command;
 
 import java.util.List;
 import org.bukkit.Location;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @apiNote plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
+ */
+@ApiStatus.Obsolete(since = "26.3")
 public interface CommandMap {
 
     /**
