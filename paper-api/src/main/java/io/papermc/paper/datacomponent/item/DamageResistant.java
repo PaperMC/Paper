@@ -4,13 +4,11 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the contents of damage types that the item entity containing this item is invincible to.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DAMAGE_RESISTANT
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface DamageResistant {
 
