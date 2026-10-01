@@ -5,7 +5,7 @@ Subject: [PATCH] Backport MC-311924 fix to 26.3
 
 
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index f332edbc4dad82cbdc02a58aa9ec21faf1f2db89..1c0958da92c5b59d728bbfd02887ba42f310876c 100644
+index f332edbc4dad82cbdc02a58aa9ec21faf1f2db89..d32b58dfd7439f253e48f7a3f059f9154596cc02 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -278,7 +278,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -18,7 +18,7 @@ index f332edbc4dad82cbdc02a58aa9ec21faf1f2db89..1c0958da92c5b59d728bbfd02887ba42
      protected int autoSpinAttackTicks;
      protected float autoSpinAttackDmg;
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..3b1898eb9f658df048ef67c8f3224d78e8d448bc 100644
+index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..93a35a10c5c07533726cdf60412aad1dd5673173 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -571,10 +571,10 @@ public class ArmorStand extends LivingEntity {
@@ -35,7 +35,7 @@ index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..3b1898eb9f658df048ef67c8f3224d78
  
      @Override
 diff --git a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d1285aa7e3a 100644
+index 40f65ee2126a8310f9e289a9da76c8a3bd236894..0526ac2faf920185ec8079d7f5b7969b92a8b2c0 100644
 --- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 +++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 @@ -26,6 +26,7 @@ public abstract class BlockAttachedEntity extends Entity {
@@ -83,7 +83,7 @@ index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d12
              this.dropItem(level, source.getEntity());
          }
 diff --git a/net/minecraft/world/entity/decoration/Cushion.java b/net/minecraft/world/entity/decoration/Cushion.java
-index 5766e5564e5047076c5fd326864a1a2c9ba5c8fd..32970e11d5a49ef039d84d9545625eaf65bad4ce 100644
+index 5766e5564e5047076c5fd326864a1a2c9ba5c8fd..fb1894ac6eb99b60544f6ac2a13de86f045422ef 100644
 --- a/net/minecraft/world/entity/decoration/Cushion.java
 +++ b/net/minecraft/world/entity/decoration/Cushion.java
 @@ -143,7 +143,7 @@ public class Cushion extends BlockAttachedEntity {
@@ -96,7 +96,7 @@ index 5766e5564e5047076c5fd326864a1a2c9ba5c8fd..32970e11d5a49ef039d84d9545625eaf
          }
      }
 diff --git a/net/minecraft/world/entity/decoration/ItemFrame.java b/net/minecraft/world/entity/decoration/ItemFrame.java
-index bb8f83b544fba6e7d0db0ca59350e5c924752ffb..6c66abfff5c70122fd9a8abfcbdf59b55d293ca1 100644
+index bb8f83b544fba6e7d0db0ca59350e5c924752ffb..f395b070ee0bf866895f02018798ecbfbb80f6c8 100644
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -158,8 +158,9 @@ public class ItemFrame extends HangingEntity {
@@ -110,3 +110,30 @@ index bb8f83b544fba6e7d0db0ca59350e5c924752ffb..6c66abfff5c70122fd9a8abfcbdf59b5
      }
  
      private boolean shouldDamageDropItem(final DamageSource source) {
+diff --git a/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java b/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+index 8ad288bfb58d888950c2404ccd287b16d34bf67f..3adfffd3f0a7e6b4867248f6483a36ca9f5f1ee3 100644
+--- a/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+@@ -101,9 +101,21 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
+             return player;
+         } else if (sourceEntity instanceof Projectile projectile && projectile.getOwner() instanceof ServerPlayer player) {
+             return player;
++        // Paper start - Backport MC-311924 fix
++        } else if (sourceEntity instanceof ItemEntity item && item.getOwner() instanceof ServerPlayer player) {
++            return player;
++        } else if (sourceEntity instanceof net.minecraft.world.entity.decoration.BlockAttachedEntity entity
++            && entity.getLastDamageSource() != null
++            && entity.getLastDamageSource().getEntity() instanceof ServerPlayer player) {
++            return player;
+         } else {
+-            return sourceEntity instanceof ItemEntity item && item.getOwner() instanceof ServerPlayer player ? player : null;
++            return sourceEntity instanceof net.minecraft.world.entity.decoration.ArmorStand armorStand
++                && armorStand.getLastDamageSource() != null
++                && armorStand.getLastDamageSource().getEntity() instanceof ServerPlayer player
++                ? player
++                : null;
+         }
++        // Paper end - Backport MC-311924 fix
+     }
+ 
+     public void tryShriek(final ServerLevel level, final @Nullable ServerPlayer player) {
