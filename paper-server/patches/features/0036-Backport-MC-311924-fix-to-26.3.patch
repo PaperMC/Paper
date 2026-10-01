@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <git@mrdoc.dev>
+Date: Wed, 30 Sep 2026 23:14:44 -0300
+Subject: [PATCH] Backport MC-311924 fix to 26.3
+
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index f332edbc4dad82cbdc02a58aa9ec21faf1f2db89..1c0958da92c5b59d728bbfd02887ba42f310876c 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -278,7 +278,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     private long lastKineticHitFeedbackTime = -2147483648L;
+     private BlockPos lastPos;
+     private Optional<BlockPos> lastClimbablePos = Optional.empty();
+-    private @Nullable DamageSource lastDamageSource;
++    protected @Nullable DamageSource lastDamageSource; // Paper - Backport MC-311924 fix
+     private long lastDamageStamp;
+     protected int autoSpinAttackTicks;
+     protected float autoSpinAttackDmg;
+diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
+index 0ebb87ce71cccc73a60945552d0f4ac000291dd6..3b1898eb9f658df048ef67c8f3224d78e8d448bc 100644
+--- a/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -571,10 +571,10 @@ public class ArmorStand extends LivingEntity {
+         if (callEvent && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(level, this, (source == null ? this.damageSources().genericKill() : source))) {
+             return;
+         }
+-        final Entity attributedTo = source == null ? null : source.getEntity();
+         // Paper end - pass damage source for event
++        this.lastDamageSource = source;
+         this.remove(Entity.RemovalReason.KILLED);
+-        this.gameEvent(GameEvent.ENTITY_DIE, attributedTo != null ? attributedTo : this);
++        this.gameEvent(GameEvent.ENTITY_DIE); // Paper - Backport MC-311924 fix
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+index 40f65ee2126a8310f9e289a9da76c8a3bd236894..eef5c52a335a2a8b250518adefb51d1285aa7e3a 100644
+--- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
++++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+@@ -26,6 +26,7 @@ public abstract class BlockAttachedEntity extends Entity {
+     private static final int CHECK_INTERVAL = 100;
+     private int ticksSinceLastCheck; { this.ticksSinceLastCheck = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
+     protected BlockPos pos;
++    protected @Nullable DamageSource lastDamageSource; // Paper - Backport MC-311924 fix
+ 
+     protected BlockAttachedEntity(final EntityType<? extends BlockAttachedEntity> type, final Level level) {
+         super(type, level);
+@@ -92,6 +93,8 @@ public abstract class BlockAttachedEntity extends Entity {
+             && (!this.level().mayInteract(player, this.pos) || this.hurtOrSimulate(this.damageSources().playerAttack(player), 0.0F));
+     }
+ 
++    // Paper start - Backport MC-311924 fix
++    /*
+     @Override
+     public void kill(final ServerLevel level) {
+         this.kill(level, this);
+@@ -105,6 +108,17 @@ public abstract class BlockAttachedEntity extends Entity {
+ 
+     protected void onKilled() {
+     }
++    */
++
++    public @Nullable DamageSource getLastDamageSource() {
++        return this.lastDamageSource;
++    }
++
++    protected void kill(final ServerLevel level, final DamageSource source) {
++        this.lastDamageSource = source;
++        this.kill(level);
++    }
++    // Paper end - Backport MC-311924 fix
+ 
+     @Override
+     public boolean hurtClient(final DamageSource source) {
+@@ -149,7 +163,7 @@ public abstract class BlockAttachedEntity extends Entity {
+                 return true;
+             }
+             // CraftBukkit end
+-            this.kill(level, source.getEntity());
++            this.kill(level, source); // Paper - Backport MC-311924 fix
+             this.markHurt();
+             this.dropItem(level, source.getEntity());
+         }
+diff --git a/net/minecraft/world/entity/decoration/Cushion.java b/net/minecraft/world/entity/decoration/Cushion.java
+index 5766e5564e5047076c5fd326864a1a2c9ba5c8fd..32970e11d5a49ef039d84d9545625eaf65bad4ce 100644
+--- a/net/minecraft/world/entity/decoration/Cushion.java
++++ b/net/minecraft/world/entity/decoration/Cushion.java
+@@ -143,7 +143,7 @@ public class Cushion extends BlockAttachedEntity {
+     @Override
+     public void thunderHit(final ServerLevel level, final LightningBolt lightningBolt) {
+         if (!this.isRemoved()) {
+-            this.kill(level, lightningBolt);
++            this.kill(level, this.damageSources().lightningBolt()); // Paper - Backport MC-311924 fix
+             this.dropItem(level, lightningBolt);
+         }
+     }
+diff --git a/net/minecraft/world/entity/decoration/ItemFrame.java b/net/minecraft/world/entity/decoration/ItemFrame.java
+index bb8f83b544fba6e7d0db0ca59350e5c924752ffb..6c66abfff5c70122fd9a8abfcbdf59b55d293ca1 100644
+--- a/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -158,8 +158,9 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     @Override
+-    protected void onKilled() {
++    public void kill(final ServerLevel level) { // Paper - Backport MC-311924 fix
+         this.removeFramedMap(this.getItem());
++        super.kill(level); // Paper - Backport MC-311924 fix
+     }
+ 
+     private boolean shouldDamageDropItem(final DamageSource source) {
