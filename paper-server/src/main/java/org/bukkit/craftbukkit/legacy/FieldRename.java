@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.legacy;
 
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.function.BiFunction;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -12,7 +13,6 @@ import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodName;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemFlag;

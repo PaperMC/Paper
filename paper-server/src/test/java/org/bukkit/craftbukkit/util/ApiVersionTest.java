@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.util;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
 import org.bukkit.support.environment.VanillaFeature;
@@ -19,7 +21,9 @@ public class ApiVersionTest {
                 Arguments.of("none", "none"),
                 Arguments.of("1.12", "1.12.0"),
                 Arguments.of("1.13.3", "1.13.3"),
-                Arguments.of("1.+20.3", "1.20.3")
+                Arguments.of("1.+20.3", "1.20.3"),
+                Arguments.of("26.1", "26.1.0"),
+                Arguments.of("28.2.3", "28.2.3")
         );
     }
 
@@ -27,7 +31,11 @@ public class ApiVersionTest {
         return Stream.of(
                 Arguments.of("none", "none", CompareResult.SAME),
                 Arguments.of("none", "1.20", CompareResult.SMALLER),
-                Arguments.of("2.20.3", "1.30.4", CompareResult.BIGGER),
+                Arguments.of("1.20.3", "1.19.4", CompareResult.BIGGER),
+                Arguments.of("26.1", "1.21.4", CompareResult.BIGGER),
+                Arguments.of("26.3.2", "1.21.11", CompareResult.BIGGER),
+                Arguments.of("none", "26.1.2", CompareResult.SMALLER),
+                Arguments.of("1.8.9", "26.1.2", CompareResult.SMALLER),
                 Arguments.of("1.13", "1.12", CompareResult.BIGGER),
                 Arguments.of("1.13.2", "1.13.3", CompareResult.SMALLER)
         );
@@ -90,8 +98,8 @@ public class ApiVersionTest {
 
     @Test
     public void testSameInstance() {
-        ApiVersion one = ApiVersion.getOrCreateVersion("1.23.3");
-        ApiVersion second = ApiVersion.getOrCreateVersion("1.+23.3");
+        ApiVersion one = ApiVersion.getOrCreateVersion("1.20.3");
+        ApiVersion second = ApiVersion.getOrCreateVersion("1.+20.3");
 
         assertSame(one, second);
     }
