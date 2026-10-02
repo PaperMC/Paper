@@ -1,7 +1,11 @@
 package com.destroystokyo.paper.inventory.meta;
 
+import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public interface ArmorStandMeta extends ItemMeta {
 
     /**
@@ -75,4 +79,28 @@ public interface ArmorStandMeta extends ItemMeta {
      * @param marker true if a marker
      */
     void setMarker(boolean marker);
+
+    /**
+     * Gets the {@link EntitySnapshot} that will be spawned by this item or null if no entity
+     * has been set.
+     * <p>
+     * All applicable data from the item will be copied, such as pose, custom name,
+     * health, and velocity.
+     *
+     * @return the entity snapshot or null if no entity has been set
+     */
+    @Nullable
+    EntitySnapshot getSpawnedEntity();
+
+    /**
+     * Sets the {@link EntitySnapshot} that will be spawned by this item.
+     * <p>
+     * Must represent an armor stand.
+     * <p>
+     * All applicable data from the entity will be copied, such as pose, custom name,
+     * health, and velocity.
+     *
+     * @param snapshot the snapshot
+     */
+    void setSpawnedEntity(EntitySnapshot snapshot);
 }
