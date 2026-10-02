@@ -15,8 +15,8 @@ public class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
     public PaperPersistentDataKey(final NamespacedKey key, final PersistentDataType<?, C> type) {
         Preconditions.checkState(key != null, "The key cannot be null");
         Preconditions.checkState(type != null, "The type cannot be null");
-        this.key = Objects.requireNonNull(key);
-        this.type = Objects.requireNonNull(type);
+        this.key = key;
+        this.type = type;
     }
 
     @Override
