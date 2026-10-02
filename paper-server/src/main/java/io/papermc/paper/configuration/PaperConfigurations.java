@@ -332,8 +332,8 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     public void reloadConfigs(MinecraftServer server) {
         try {
             this.initializeGlobalConfiguration(server.registryAccess(), reloader(this.globalConfigClass, GlobalConfiguration.get()));
-            if (GlobalConfiguration.get().messages.motd != null) {
-                server.motd(GlobalConfiguration.get().messages.motd);
+            if (!GlobalConfiguration.get().messages.motd.isEmpty()) {
+                server.motd(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(GlobalConfiguration.get().messages.motd));
             }
             this.initializeWorldDefaultsConfiguration(server.registryAccess());
             for (ServerLevel level : server.getAllLevels()) {
