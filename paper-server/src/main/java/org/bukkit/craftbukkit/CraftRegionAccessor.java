@@ -405,18 +405,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             function.accept((T) entity.getBukkitEntity());
         }
 
-        this.lenientAddEntityWithPassengers(entity, reason);
+        this.addEntityWithPassengers(entity, reason);
         return (T) entity.getBukkitEntity();
     }
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
-
-    /**
-     * Adds the entity and any passengers, ignoring any passengers that have already been added to the world.
-     * @param entity entity to add
-     * @param reason reason
-     */
-    public abstract void lenientAddEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(location != null, "Location cannot be null");

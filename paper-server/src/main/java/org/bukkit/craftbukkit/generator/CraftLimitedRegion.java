@@ -276,11 +276,6 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         this.entities.add(entity);
     }
 
-    @Override
-    public void lenientAddEntityWithPassengers(final net.minecraft.world.entity.Entity entity, final CreatureSpawnEvent.SpawnReason reason) {
-        this.addEntityWithPassengers(entity, reason);
-    }
-
     // Paper start - Add more LimitedRegion API
     @Override
     public void setBlockState(int x, int y, int z, BlockState state) { // todo deprecate, this doesn't make sense plugin should use the update method after fetching it from getBlockState
