@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  *     asynchronous.
  */
 @Deprecated(since = "1.3.2")
-@Warning(reason = "This event causes a login thread to synchronize with the main thread")
+@Warning(reason = "This event causes a login thread to synchronize with the main thread", value = true, propagate = false)
 public class PlayerPreLoginEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
