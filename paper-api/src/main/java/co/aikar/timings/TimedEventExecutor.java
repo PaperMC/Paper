@@ -34,23 +34,19 @@ import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public class TimedEventExecutor implements EventExecutor {
 
     private final EventExecutor executor;
     private final Timing timings;
 
-    /**
-     * Wraps an event executor and associates a timing handler to it.
-     *
-     * @param executor Executor to wrap
-     * @param plugin Owning plugin
-     * @param method EventHandler method
-     * @param eventClass Owning class
-     */
+    /// Wraps an event executor and associates a timing handler to it.
+    ///
+    /// @param executor Executor to wrap
+    /// @param plugin Owning plugin
+    /// @param method EventHandler method
+    /// @param eventClass Owning class
     public TimedEventExecutor(@NotNull EventExecutor executor, @NotNull Plugin plugin, @Nullable Method method, @NotNull Class<? extends Event> eventClass) {
         this.executor = executor;
         String id;

@@ -14,15 +14,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a client attempts to modify a sign, but the location at which the sign should be edited
- * has not yet been checked for the existence of a real sign.
- * <p>
- * Cancelling this event will prevent further processing of the sign change, but needs further handling
- * by the plugin as the client's local world might be in an inconsistent state.
- *
- * @see Player#openVirtualSign(Position, Side)
- */
+/// Called when a client attempts to modify a sign, but the location at which the sign should be edited
+/// has not yet been checked for the existence of a real sign.
+///
+/// Cancelling this event will prevent further processing of the sign change, but needs further handling
+/// by the plugin as the client's local world might be in an inconsistent state.
+///
+/// @see Player#openVirtualSign(Position, Side)
 @NullMarked
 public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable {
 
@@ -47,29 +45,23 @@ public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable
         this.lines = lines;
     }
 
-    /**
-     * Gets the location at which a potential sign was edited.
-     *
-     * @return location where the change happened
-     */
+    /// Gets the location at which a potential sign was edited.
+    ///
+    /// @return location where the change happened
     public BlockPosition getEditedBlockPosition() {
         return this.editedBlockPosition;
     }
 
-    /**
-     * Gets which side of the sign was edited.
-     *
-     * @return {@link Side} that was edited
-     */
+    /// Gets which side of the sign was edited.
+    ///
+    /// @return [Side] that was edited
     public Side getSide() {
         return this.side;
     }
 
-    /**
-     * Gets the lines that the player has entered.
-     *
-     * @return the lines
-     */
+    /// Gets the lines that the player has entered.
+    ///
+    /// @return the lines
     public @Unmodifiable List<Component> lines() {
         return Collections.unmodifiableList(this.lines);
     }

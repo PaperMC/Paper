@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity stops riding another entity.
- */
+/// Called when an entity stops riding another entity.
 public class EntityDismountEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -30,11 +28,9 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
         this.isCancellable = isCancellable;
     }
 
-    /**
-     * Gets the entity which will no longer be ridden.
-     *
-     * @return dismounted entity
-     */
+    /// Gets the entity which will no longer be ridden.
+    ///
+    /// @return dismounted entity
     @NotNull
     public Entity getDismounted() {
         return this.dismounted;

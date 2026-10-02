@@ -1,6 +1,4 @@
-/**
- * Root package for the Paper API.
- */
+/// Root package for the Paper API.
 @NullMarked
 package io.papermc.paper;
 

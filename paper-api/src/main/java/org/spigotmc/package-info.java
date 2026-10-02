@@ -1,4 +1,2 @@
-/**
- * Spigot-specific classes.
- */
+/// Spigot-specific classes.
 package org.spigotmc;

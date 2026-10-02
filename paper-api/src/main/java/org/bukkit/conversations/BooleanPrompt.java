@@ -6,15 +6,13 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * BooleanPrompt is the base class for any prompt that requires a boolean
- * response from the user.
- *
- * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
- * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
- * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
- * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
- */
+/// BooleanPrompt is the base class for any prompt that requires a boolean
+/// response from the user.
+///
+/// @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+/// and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+/// It is recommended you instead manually listen to the [io.papermc.paper.event.player.AsyncChatEvent]
+/// or alternatively using [io.papermc.paper.dialog.Dialog] to get user input.
 @Deprecated(forRemoval = true)
 public abstract class BooleanPrompt extends ValidatingPrompt {
 
@@ -37,14 +35,12 @@ public abstract class BooleanPrompt extends ValidatingPrompt {
         return acceptValidatedInput(context, TRUE_INPUTS.contains(input.toLowerCase(Locale.ROOT)));
     }
 
-    /**
-     * Override this method to perform some action with the user's boolean
-     * response.
-     *
-     * @param context Context information about the conversation.
-     * @param input The user's boolean response.
-     * @return The next {@link Prompt} in the prompt graph.
-     */
+    /// Override this method to perform some action with the user's boolean
+    /// response.
+    ///
+    /// @param context Context information about the conversation.
+    /// @param input The user's boolean response.
+    /// @return The next [Prompt] in the prompt graph.
     @Nullable
     protected abstract Prompt acceptValidatedInput(@NotNull ConversationContext context, boolean input);
 }

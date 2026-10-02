@@ -7,9 +7,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a living entity tries to lunge with a spear.
- */
+/// Called when a living entity tries to lunge with a spear.
 @NullMarked
 public class EntityLungeEvent extends EntityEvent implements Cancellable {
 
@@ -24,23 +22,19 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
         this.lungePower = lungePower;
     }
 
-    /**
-     * Gets the lunge power, which when initially passed, matches the enchantment level of the item, but can be higher.
-     *
-     * @return the lunge power
-     */
+    /// Gets the lunge power, which when initially passed, matches the enchantment level of the item, but can be higher.
+    ///
+    /// @return the lunge power
     public int getLungePower() {
         return this.lungePower;
     }
 
-    /**
-     * Sets the lunge power. This commonly matches the enchantment level of the item, and can be set higher.
-     * <p>
-     * If set higher than 3, the power of the lunge will continue to scale like normal, as if the max enchantment
-     * level is higher.
-     *
-     * @param lungePower the new lunge power
-     */
+    /// Sets the lunge power. This commonly matches the enchantment level of the item, and can be set higher.
+    ///
+    /// If set higher than 3, the power of the lunge will continue to scale like normal, as if the max enchantment
+    /// level is higher.
+    ///
+    /// @param lungePower the new lunge power
     public void setLungePower(final int lungePower) {
         this.lungePower = lungePower;
     }
@@ -50,11 +44,9 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
         return this.cancelled;
     }
 
-    /**
-     * Set whether to cancel the lunge. If cancelled, the living entity will not lunge forward.
-     *
-     * @param cancel {@code true} if you wish to cancel this event
-     */
+    /// Set whether to cancel the lunge. If cancelled, the living entity will not lunge forward.
+    ///
+    /// @param cancel`true` if you wish to cancel this event
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

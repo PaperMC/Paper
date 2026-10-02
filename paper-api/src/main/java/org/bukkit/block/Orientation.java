@@ -1,8 +1,6 @@
 package org.bukkit.block;
 
-/**
- * Represents the face and the direction of a block
- */
+/// Represents the face and the direction of a block
 public enum Orientation {
 
     DOWN_EAST,

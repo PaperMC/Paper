@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a bell is being rung.
- */
+/// Called when a bell is being rung.
 public class BellRingEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -28,21 +26,17 @@ public class BellRingEvent extends BlockEvent implements Cancellable {
         this.entity = entity;
     }
 
-    /**
-     * Get the direction in which the bell was rung.
-     *
-     * @return the direction
-     */
+    /// Get the direction in which the bell was rung.
+    ///
+    /// @return the direction
     @NotNull
     public BlockFace getDirection() {
         return this.direction;
     }
 
-    /**
-     * Get the {@link Entity} that rang the bell (if there was one).
-     *
-     * @return the entity
-     */
+    /// Get the [Entity] that rang the bell (if there was one).
+    ///
+    /// @return the entity
     @Nullable
     public Entity getEntity() {
         return this.entity;

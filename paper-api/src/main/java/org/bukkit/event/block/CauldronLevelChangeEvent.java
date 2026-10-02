@@ -31,11 +31,9 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
         this.newState = newBlock;
     }
 
-    /**
-     * Get entity which did this. May be {@code null}.
-     *
-     * @return acting entity
-     */
+    /// Get entity which did this. May be `null`.
+    ///
+    /// @return acting entity
     @Nullable
     public Entity getEntity() {
         return this.entity;
@@ -46,49 +44,41 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
         return this.reason;
     }
 
-    /**
-     * Gets the new state of the cauldron.
-     *
-     * @return The block state of the block that will be changed
-     */
+    /// Gets the new state of the cauldron.
+    ///
+    /// @return The block state of the block that will be changed
     @NotNull
     public BlockState getNewState() {
         return this.newState;
     }
 
-    /**
-     * Gets the old level of the cauldron.
-     *
-     * @return old level
-     * @see #getBlock()
-     * @deprecated not all cauldron contents are Levelled
-     */
+    /// Gets the old level of the cauldron.
+    ///
+    /// @return old level
+    /// @see #getBlock()
+    /// @deprecated not all cauldron contents are Levelled
     @Deprecated(since = "1.17")
     public int getOldLevel() {
         BlockData oldBlock = this.getBlock().getBlockData();
         return (oldBlock instanceof Levelled) ? ((Levelled) oldBlock).getLevel() : ((oldBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
     }
 
-    /**
-     * Gets the new level of the cauldron.
-     *
-     * @return new level
-     * @see #getNewState()
-     * @deprecated not all cauldron contents are Levelled
-     */
+    /// Gets the new level of the cauldron.
+    ///
+    /// @return new level
+    /// @see #getNewState()
+    /// @deprecated not all cauldron contents are Levelled
     @Deprecated(since = "1.17")
     public int getNewLevel() {
         BlockData newBlock = this.newState.getBlockData();
         return (newBlock instanceof Levelled) ? ((Levelled) newBlock).getLevel() : ((newBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
     }
 
-    /**
-     * Sets the new level of the cauldron.
-     *
-     * @param newLevel new level
-     * @see #getNewState()
-     * @deprecated not all cauldron contents are Levelled
-     */
+    /// Sets the new level of the cauldron.
+    ///
+    /// @param newLevel new level
+    /// @see #getNewState()
+    /// @deprecated not all cauldron contents are Levelled
     @Deprecated(since = "1.17")
     public void setNewLevel(int newLevel) {
         Preconditions.checkArgument(0 <= newLevel && newLevel <= 3, "Cauldron level out of bounds 0 <= %s <= 3", newLevel);
@@ -123,49 +113,27 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
     }
 
     public enum ChangeReason {
-        /**
-         * Player emptying the cauldron by filling their bucket.
-         */
+        /// Player emptying the cauldron by filling their bucket.
         BUCKET_FILL,
-        /**
-         * Player filling the cauldron by emptying their bucket.
-         */
+        /// Player filling the cauldron by emptying their bucket.
         BUCKET_EMPTY,
-        /**
-         * Player emptying the cauldron by filling their bottle.
-         */
+        /// Player emptying the cauldron by filling their bottle.
         BOTTLE_FILL,
-        /**
-         * Player filling the cauldron by emptying their bottle.
-         */
+        /// Player filling the cauldron by emptying their bottle.
         BOTTLE_EMPTY,
-        /**
-         * Player cleaning their banner.
-         */
+        /// Player cleaning their banner.
         BANNER_WASH,
-        /**
-         * Player cleaning their armor.
-         */
+        /// Player cleaning their armor.
         ARMOR_WASH,
-        /**
-         * Player cleaning a shulker box.
-         */
+        /// Player cleaning a shulker box.
         SHULKER_WASH,
-        /**
-         * Entity being extinguished.
-         */
+        /// Entity being extinguished.
         EXTINGUISH,
-        /**
-         * Evaporating due to biome dryness.
-         */
+        /// Evaporating due to biome dryness.
         EVAPORATE,
-        /**
-         * Filling due to natural fluid sources, e.g. rain or dripstone.
-         */
+        /// Filling due to natural fluid sources, e.g. rain or dripstone.
         NATURAL_FILL,
-        /**
-         * Unknown.
-         */
+        /// Unknown.
         UNKNOWN
     }
 }

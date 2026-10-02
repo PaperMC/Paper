@@ -7,166 +7,134 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a map that can be scalable.
- */
+/// Represents a map that can be scalable.
 public interface MapMeta extends ItemMeta {
 
-    /**
-     * Checks for existence of a map ID number.
-     *
-     * @return true if this has a map ID number.
-     * @see #hasMapView()
-     */
+    /// Checks for existence of a map ID number.
+    ///
+    /// @return true if this has a map ID number.
+    /// @see #hasMapView()
     boolean hasMapId();
 
-    /**
-     * Gets the map ID that is set. This is used to determine what map is
-     * displayed.
-     * <p>
-     * Plugins should check that hasMapId() returns <code>true</code> before
-     * calling this method.
-     *
-     * @return the map ID that is set
-     * @see #getMapView()
-     */
+    /// Gets the map ID that is set. This is used to determine what map is
+    /// displayed.
+    ///
+    /// Plugins should check that hasMapId() returns `true` before
+    /// calling this method.
+    ///
+    /// @return the map ID that is set
+    /// @see #getMapView()
     int getMapId();
 
-    /**
-     * Sets the map ID. This is used to determine what map is displayed.
-     *
-     * @param id the map id to set
-     * @see #setMapView(org.bukkit.map.MapView)
-     * @deprecated These methods are poor API: They rely on the caller to pass
-     * in an only an integer property, and have poorly defined implementation
-     * behavior if that integer is not a valid map (the current implementation
-     * for example will generate a new map with a different ID). The xxxMapView
-     * family of methods should be used instead.
-     */
+    /// Sets the map ID. This is used to determine what map is displayed.
+    ///
+    /// @param id the map id to set
+    /// @see #setMapView(org.bukkit.map.MapView)
+    /// @deprecated These methods are poor API: They rely on the caller to pass
+    /// in an only an integer property, and have poorly defined implementation
+    /// behavior if that integer is not a valid map (the current implementation
+    /// for example will generate a new map with a different ID). The xxxMapView
+    /// family of methods should be used instead.
     @Deprecated(since = "1.13.2")
     void setMapId(int id);
 
-    /**
-     * Checks for existence of an associated map.
-     *
-     * @return true if this item has an associated map
-     */
+    /// Checks for existence of an associated map.
+    ///
+    /// @return true if this item has an associated map
     boolean hasMapView();
 
-    /**
-     * Gets the map view that is associated with this map item.
-     *
-     * <p>
-     * Plugins should check that hasMapView() returns <code>true</code> before
-     * calling this method.
-     *
-     * @return the map view, or null if the item hasMapView(), but this map does
-     * not exist on the server
-     */
+    /// Gets the map view that is associated with this map item.
+    ///
+    /// Plugins should check that hasMapView() returns `true` before
+    /// calling this method.
+    ///
+    /// @return the map view, or null if the item hasMapView(), but this map does
+    /// not exist on the server
     @Nullable
     MapView getMapView();
 
-    /**
-     * Sets the associated map. This is used to determine what map is displayed.
-     *
-     * <p>
-     * The implementation <b>may</b> allow null to clear the associated map, but
-     * this is not required and is liable to generate a new (undefined) map when
-     * the item is first used.
-     *
-     * @param map the map to set
-     */
+    /// Sets the associated map. This is used to determine what map is displayed.
+    ///
+    /// The implementation **may** allow null to clear the associated map, but
+    /// this is not required and is liable to generate a new (undefined) map when
+    /// the item is first used.
+    ///
+    /// @param map the map to set
     void setMapView(@UndefinedNullability("implementation defined") MapView map);
 
-    /**
-     * Checks to see if this map is scaling.
-     *
-     * @return true if this map is scaling
-     */
+    /// Checks to see if this map is scaling.
+    ///
+    /// @return true if this map is scaling
     boolean isScaling();
 
-    /**
-     * Sets if this map is scaling or not.
-     *
-     * @param value true to scale
-     */
+    /// Sets if this map is scaling or not.
+    ///
+    /// @param value true to scale
     void setScaling(boolean value);
 
-    /**
-     * Checks for existence of a location name.
-     *
-     * @return true if this has a location name
-     * @deprecated This method does not have the expected effect and is
-     * actually an alias for {@link ItemMeta#hasLocalizedName()}.
-     */
+    /// Checks for existence of a location name.
+    ///
+    /// @return true if this has a location name
+    /// @deprecated This method does not have the expected effect and is
+    /// actually an alias for [ItemMeta#hasLocalizedName()].
     @Deprecated(since = "1.19.4")
     default boolean hasLocationName() {
         return this.hasLocalizedName(); // SPIGOT-6308
     }
 
-    /**
-     * Gets the location name that is set.
-     * <p>
-     * Plugins should check that hasLocationName() returns <code>true</code>
-     * before calling this method.
-     *
-     * @return the location name that is set
-     * @deprecated This method does not have the expected effect and is
-     * actually an alias for {@link ItemMeta#getLocalizedName()}.
-     */
+    /// Gets the location name that is set.
+    ///
+    /// Plugins should check that hasLocationName() returns `true`
+    /// before calling this method.
+    ///
+    /// @return the location name that is set
+    /// @deprecated This method does not have the expected effect and is
+    /// actually an alias for [ItemMeta#getLocalizedName()].
     @Deprecated(since = "1.19.4")
     @Nullable
     default String getLocationName() {
         return this.getLocalizedName(); // SPIGOT-6308
     }
 
-    /**
-     * Sets the location name.
-     *
-     * @param name the name to set
-     * @deprecated This method does not have the expected effect and is
-     * actually an alias for {@link ItemMeta#setLocalizedName(String)}.
-     */
+    /// Sets the location name.
+    ///
+    /// @param name the name to set
+    /// @deprecated This method does not have the expected effect and is
+    /// actually an alias for [ItemMeta#setLocalizedName(String)].
     @Deprecated(since = "1.19.4")
     default void setLocationName(@Nullable String name) {
         this.setLocalizedName(name); // SPIGOT-6308
     }
 
-    /**
-     * Checks for existence of a map color.
-     *
-     * @return true if this has a custom map color
-     * @deprecated maps no longer have a color
-     */
+    /// Checks for existence of a map color.
+    ///
+    /// @return true if this has a custom map color
+    /// @deprecated maps no longer have a color
     @Deprecated(since = "26.3")
     @Contract("-> false")
     default boolean hasColor() {
         return false;
     }
 
-    /**
-     * Gets the map color that is set. A custom map color will alter the display
-     * of the map in an inventory slot.
-     * <p>
-     * Plugins should check that hasColor() returns <code>true</code> before
-     * calling this method.
-     *
-     * @return the map color that is set
-     * @deprecated maps no longer have a color
-     */
+    /// Gets the map color that is set. A custom map color will alter the display
+    /// of the map in an inventory slot.
+    ///
+    /// Plugins should check that hasColor() returns `true` before
+    /// calling this method.
+    ///
+    /// @return the map color that is set
+    /// @deprecated maps no longer have a color
     @Deprecated(since = "26.3")
     @Contract("-> null")
     default @Nullable Color getColor() {
         return null;
     }
 
-    /**
-     * Sets the map color. A custom map color will alter the display of the map
-     * in an inventory slot.
-     *
-     * @param color the color to set
-     * @deprecated maps no longer have a color
-     */
+    /// Sets the map color. A custom map color will alter the display of the map
+    /// in an inventory slot.
+    ///
+    /// @param color the color to set
+    /// @deprecated maps no longer have a color
     @Deprecated(since = "26.3")
     default void setColor(@Nullable Color color) {
     }

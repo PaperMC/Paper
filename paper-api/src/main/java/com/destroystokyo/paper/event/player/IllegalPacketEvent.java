@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated Not used
- */
+/// @deprecated Not used
 @Deprecated(since = "1.16.4", forRemoval = true)
 @Warning(value = true, propagate = false)
 public class IllegalPacketEvent extends PlayerEvent {

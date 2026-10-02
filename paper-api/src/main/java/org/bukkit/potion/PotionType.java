@@ -10,10 +10,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This enum reflects and matches each potion state that can be obtained from
- * the Creative mode inventory
- */
+/// This enum reflects and matches each potion state that can be obtained from
+/// the Creative mode inventory
 public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - feature flag API
     // Start generate - PotionType
     AWKWARD("awkward"),
@@ -72,51 +70,41 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
         this.internalPotionDataSupplier = Suppliers.memoize(() -> Bukkit.getUnsafe().getInternalPotionData(this.key));
     }
 
-    /**
-     * @return the potion effect type of this potion type
-     * @deprecated Potions can have multiple effects use {@link #getPotionEffects()}
-     */
+    /// @return the potion effect type of this potion type
+    /// @deprecated Potions can have multiple effects use [#getPotionEffects()]
     @Nullable
     @Deprecated(since = "1.20.2")
     public PotionEffectType getEffectType() {
         return internalPotionDataSupplier.get().getEffectType();
     }
 
-    /**
-     * @return a list of all effects this potion type has
-     */
+    /// @return a list of all effects this potion type has
     @NotNull
     public List<PotionEffect> getPotionEffects() {
         return internalPotionDataSupplier.get().getPotionEffects();
     }
 
-    /**
-     * @return if this potion type is instant
-     * @deprecated PotionType can have multiple effects, some of which can be instant and others not.
-     * Use {@link PotionEffectType#isInstant()} in combination with {@link #getPotionEffects()} and {@link PotionEffect#getType()}
-     */
+    /// @return if this potion type is instant
+    /// @deprecated PotionType can have multiple effects, some of which can be instant and others not.
+    /// Use [PotionEffectType#isInstant()] in combination with [#getPotionEffects()] and [PotionEffect#getType()]
     @Deprecated(since = "1.20.2")
     public boolean isInstant() {
         return internalPotionDataSupplier.get().isInstant();
     }
 
-    /**
-     * Checks if the potion type has an upgraded state.
-     * This refers to whether or not the potion type can be Tier 2,
-     * such as Potion of Fire Resistance II.
-     *
-     * @return true if the potion type can be upgraded;
-     */
+    /// Checks if the potion type has an upgraded state.
+    /// This refers to whether or not the potion type can be Tier 2,
+    /// such as Potion of Fire Resistance II.
+    ///
+    /// @return true if the potion type can be upgraded;
     public boolean isUpgradeable() {
         return internalPotionDataSupplier.get().isUpgradeable();
     }
 
-    /**
-     * Checks if the potion type has an extended state.
-     * This refers to the extended duration potions
-     *
-     * @return true if the potion type can be extended
-     */
+    /// Checks if the potion type has an extended state.
+    /// This refers to the extended duration potions
+    ///
+    /// @return true if the potion type can be extended
     public boolean isExtendable() {
         return internalPotionDataSupplier.get().isExtendable();
     }
@@ -125,11 +113,9 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
         return internalPotionDataSupplier.get().getMaxLevel();
     }
 
-    /**
-     * @param effectType the effect to get by
-     * @return the matching potion type
-     * @deprecated Misleading
-     */
+    /// @param effectType the effect to get by
+    /// @return the matching potion type
+    /// @deprecated Misleading
     @Deprecated(since = "1.9")
     @Nullable
     public static PotionType getByEffect(@Nullable PotionEffectType effectType) {
@@ -148,9 +134,7 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
         return key;
     }
 
-    /**
-     * @deprecated Do not use, interface will get removed, and the plugin won't run
-     */
+    /// @deprecated Do not use, interface will get removed, and the plugin won't run
     @Deprecated(since = "1.20.2", forRemoval = true)
     @ApiStatus.Internal
     public interface InternalPotionData {

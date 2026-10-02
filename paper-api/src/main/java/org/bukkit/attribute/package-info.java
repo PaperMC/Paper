@@ -1,4 +1,2 @@
-/**
- * Classes relevant to attributes.
- */
+/// Classes relevant to attributes.
 package org.bukkit.attribute;

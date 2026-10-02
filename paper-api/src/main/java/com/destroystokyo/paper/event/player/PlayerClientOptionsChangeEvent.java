@@ -12,9 +12,7 @@ import org.bukkit.inventory.MainHand;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when the player changes their client settings
- */
+/// Called when the player changes their client settings
 @NullMarked
 public class PlayerClientOptionsChangeEvent extends PlayerEvent {
 

@@ -8,13 +8,10 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Villager} is about to restock one of its trades.
- * <p>
- * If this event passes, the villager will reset the
- * {@link MerchantRecipe#getUses() uses} of the affected {@link #getRecipe()
- * MerchantRecipe} to <code>0</code>.
- */
+/// Called when a [Villager] is about to restock one of its trades.
+///
+/// If this event passes, the villager will reset the
+/// [`uses`][MerchantRecipe#getUses()] of the affected [`MerchantRecipe`][#getRecipe()] to `0`.
 public class VillagerReplenishTradeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -34,44 +31,36 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
         return (AbstractVillager) super.getEntity();
     }
 
-    /**
-     * Get the recipe to replenish.
-     *
-     * @return the replenished recipe
-     */
+    /// Get the recipe to replenish.
+    ///
+    /// @return the replenished recipe
     @NotNull
     public MerchantRecipe getRecipe() {
         return this.recipe;
     }
 
-    /**
-     * Set the recipe to replenish.
-     *
-     * @param recipe the replenished recipe
-     */
+    /// Set the recipe to replenish.
+    ///
+    /// @param recipe the replenished recipe
     public void setRecipe(@NotNull MerchantRecipe recipe) {
         this.recipe = recipe;
     }
 
-    /**
-     * Get the bonus uses added.
-     *
-     * @return the extra uses added
-     * @deprecated MC 1.14 has changed how villagers restock their trades. Use
-     * {@link MerchantRecipe#getUses()}.
-     */
+    /// Get the bonus uses added.
+    ///
+    /// @return the extra uses added
+    /// @deprecated MC 1.14 has changed how villagers restock their trades. Use
+    /// [MerchantRecipe#getUses()].
     @Deprecated(since = "1.18.1")
     public int getBonus() {
         return this.recipe.getUses();
     }
 
-    /**
-     * Set the bonus uses added.
-     *
-     * @param bonus the extra uses added
-     * @deprecated MC 1.14 has changed how villagers restock their trades. This
-     * has no effect anymore.
-     */
+    /// Set the bonus uses added.
+    ///
+    /// @param bonus the extra uses added
+    /// @deprecated MC 1.14 has changed how villagers restock their trades. This
+    /// has no effect anymore.
     @Deprecated(since = "1.18.1")
     public void setBonus(int bonus) {
     }

@@ -7,11 +7,9 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a shulker duplicates itself by spawning a new shulker.
- * <p>
- * The event is fired prior to the newly created shulker, accessible via {@link #getEntity()}, being added to the world.
- */
+/// Fired when a shulker duplicates itself by spawning a new shulker.
+///
+/// The event is fired prior to the newly created shulker, accessible via [#getEntity()], being added to the world.
 @NullMarked
 public class ShulkerDuplicateEvent extends EntityEvent implements Cancellable {
 
@@ -26,23 +24,19 @@ public class ShulkerDuplicateEvent extends EntityEvent implements Cancellable {
         this.parent = parent;
     }
 
-    /**
-     * Provides the newly created shulker, which did not exist prior to the duplication.
-     * At the point of this event, said shulker is not part of the world yet.
-     *
-     * @return the newly duplicated shulker.
-     */
+    /// Provides the newly created shulker, which did not exist prior to the duplication.
+    /// At the point of this event, said shulker is not part of the world yet.
+    ///
+    /// @return the newly duplicated shulker.
     @Override
     public Shulker getEntity() {
         return (Shulker) super.getEntity();
     }
 
-    /**
-     * Provides the "parent" of the freshly created shulker.
-     * The parent shulker is the one that initiated the duplication.
-     *
-     * @return the previously existing shulker which duplicated.
-     */
+    /// Provides the "parent" of the freshly created shulker.
+    /// The parent shulker is the one that initiated the duplication.
+    ///
+    /// @return the previously existing shulker which duplicated.
     public Shulker getParent() {
         return this.parent;
     }

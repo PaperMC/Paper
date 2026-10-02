@@ -1,7 +1,5 @@
-/**
- * {@link org.bukkit.event.Event Events} relating to when a {@link
- * org.bukkit.block.Block block} is changed or interacts with the {@link
- * org.bukkit.World world}.
- */
+/// [`Events`][org.bukkit.event.Event] relating to when a
+/// [`block`][org.bukkit.block.Block] is changed or interacts with the
+/// [`world`][org.bukkit.World].
 package org.bukkit.event.block;
 

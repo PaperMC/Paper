@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Simple utility class for attachable MaterialData subclasses
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Simple utility class for attachable MaterialData subclasses
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public abstract class SimpleAttachableMaterialData extends MaterialData implements Attachable {
 
@@ -21,11 +19,9 @@ public abstract class SimpleAttachableMaterialData extends MaterialData implemen
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public SimpleAttachableMaterialData(Material type, byte data) {
         super(type, data);

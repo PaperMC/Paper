@@ -1,8 +1,6 @@
 package com.destroystokyo.paper.exception;
 
-/**
- * Wrapper exception for all exceptions that are thrown by the server.
- */
+/// Wrapper exception for all exceptions that are thrown by the server.
 public class ServerException extends Exception {
 
     public ServerException(String message) {

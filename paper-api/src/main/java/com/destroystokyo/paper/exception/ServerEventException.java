@@ -6,9 +6,7 @@ import org.bukkit.plugin.Plugin;
 
 import static com.google.common.base.Preconditions.*;
 
-/**
- * Exception thrown when a server event listener throws an exception
- */
+/// Exception thrown when a server event listener throws an exception
 public class ServerEventException extends ServerPluginException {
 
     private final Listener listener;
@@ -32,20 +30,16 @@ public class ServerEventException extends ServerPluginException {
         this.event = checkNotNull(event, "event");
     }
 
-    /**
-     * Gets the listener which threw the exception
-     *
-     * @return event listener
-     */
+    /// Gets the listener which threw the exception
+    ///
+    /// @return event listener
     public Listener getListener() {
         return listener;
     }
 
-    /**
-     * Gets the event which caused the exception
-     *
-     * @return event
-     */
+    /// Gets the event which caused the exception
+    ///
+    /// @return event
     public Event getEvent() {
         return event;
     }

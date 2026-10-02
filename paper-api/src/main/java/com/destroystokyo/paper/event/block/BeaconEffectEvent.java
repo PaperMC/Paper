@@ -9,9 +9,7 @@ import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a beacon effect is being applied to a player.
- */
+/// Called when a beacon effect is being applied to a player.
 @NullMarked
 public class BeaconEffectEvent extends BlockEvent implements Cancellable {
 
@@ -31,38 +29,30 @@ public class BeaconEffectEvent extends BlockEvent implements Cancellable {
         this.primary = primary;
     }
 
-    /**
-     * Gets the potion effect being applied.
-     *
-     * @return Potion effect
-     */
+    /// Gets the potion effect being applied.
+    ///
+    /// @return Potion effect
     public PotionEffect getEffect() {
         return this.effect;
     }
 
-    /**
-     * Sets the potion effect that will be applied.
-     *
-     * @param effect Potion effect
-     */
+    /// Sets the potion effect that will be applied.
+    ///
+    /// @param effect Potion effect
     public void setEffect(final PotionEffect effect) {
         this.effect = effect;
     }
 
-    /**
-     * Gets the player who the potion effect is being applied to.
-     *
-     * @return Affected player
-     */
+    /// Gets the player who the potion effect is being applied to.
+    ///
+    /// @return Affected player
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets whether the effect is a primary beacon effect.
-     *
-     * @return {@code true} if this event represents a primary effect
-     */
+    /// Gets whether the effect is a primary beacon effect.
+    ///
+    /// @return `true` if this event represents a primary effect
     public boolean isPrimary() {
         return this.primary;
     }

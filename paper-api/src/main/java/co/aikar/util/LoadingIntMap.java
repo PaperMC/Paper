@@ -12,20 +12,14 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Allows you to pass a Loader function that when a key is accessed that doesn't exist,
- * automatically loads the entry into the map by calling the loader Function.
- *
- * .get() Will only return null if the Loader can return null.
- *
- * You may pass any backing Map to use.
- *
- * This class is not thread safe and should be wrapped with Collections.synchronizedMap on the OUTSIDE of the LoadingMap if needed.
- *
- * Do not wrap the backing map with Collections.synchronizedMap.
- *
- * @param <V> Value
- */
+/// Allows you to pass a Loader function that when a key is accessed that doesn't exist,
+/// automatically loads the entry into the map by calling the loader Function.
+/// .get() Will only return null if the Loader can return null.
+/// You may pass any backing Map to use.
+/// This class is not thread safe and should be wrapped with Collections.synchronizedMap on the OUTSIDE of the LoadingMap if needed.
+/// Do not wrap the backing map with Collections.synchronizedMap.
+///
+/// @param <V> Value
 @Deprecated(forRemoval = true)
 public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {
     private final Function<Integer, V> loader;
@@ -59,11 +53,9 @@ public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {
         return res;
     }
 
-    /**
-     * Due to java stuff, you will need to cast it to (Function) for some cases
-     *
-     * @param <T> Type
-     */
+    /// Due to java stuff, you will need to cast it to (Function) for some cases
+    ///
+    /// @param <T> Type
     public abstract static class Feeder <T> implements Function<T, T> {
         @Nullable
         @Override

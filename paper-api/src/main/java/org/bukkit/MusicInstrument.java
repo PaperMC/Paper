@@ -16,12 +16,10 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable {
 
-    /**
-     * Creates an inlined music instrument.
-     *
-     * @param value a consumer for the builder factory
-     * @return the created music instrument
-     */
+    /// Creates an inlined music instrument.
+    ///
+    /// @param value a consumer for the builder factory
+    /// @return the created music instrument
     public static MusicInstrument create(final Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createInstrument(value);
     }
@@ -48,80 +46,62 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * Returns a {@link MusicInstrument} by a {@link NamespacedKey}.
-     *
-     * @param namespacedKey the key
-     * @return the event or null
-     * @deprecated use {@link Registry#get(NamespacedKey)} instead
-     */
+    /// Returns a [MusicInstrument] by a [NamespacedKey].
+    ///
+    /// @param namespacedKey the key
+    /// @return the event or null
+    /// @deprecated use [Registry#get(NamespacedKey)] instead
     @Nullable
     @Deprecated(since = "1.20.1")
     public static MusicInstrument getByKey(final NamespacedKey namespacedKey) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).get(namespacedKey);
     }
 
-    /**
-     * Returns all known music instruments.
-     *
-     * @return the music instruments
-     * @deprecated use {@link Registry#iterator()}
-     */
+    /// Returns all known music instruments.
+    ///
+    /// @return the music instruments
+    /// @deprecated use [Registry#iterator()]
     @Deprecated(since = "1.20.1")
     public static Collection<MusicInstrument> values() {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).stream().toList();
     }
 
-    /**
-     * Gets the use duration of this music instrument.
-     *
-     * @return the duration expressed in seconds
-     */
+    /// Gets the use duration of this music instrument.
+    ///
+    /// @return the duration expressed in seconds
     public abstract float getDuration();
 
-    /**
-     * Gets the range of the sound.
-     *
-     * @return the range of the sound
-     */
+    /// Gets the range of the sound.
+    ///
+    /// @return the range of the sound
     public abstract float getRange();
 
-    /**
-     * Gets the description of this instrument as displayed to the client.
-     *
-     * @return the description component
-     */
+    /// Gets the description of this instrument as displayed to the client.
+    ///
+    /// @return the description component
     public abstract Component description();
 
-    /**
-     * Gets the sound for this instrument.
-     *
-     * @return the sound
-     */
+    /// Gets the sound for this instrument.
+    ///
+    /// @return the sound
     public abstract Sound getSound();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#INSTRUMENT]. MusicInstruments can exist without a key.
     @Deprecated(forRemoval = true, since = "1.20.5")
     @Override
     public abstract NamespacedKey getKey();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#INSTRUMENT]. MusicInstruments can exist without a key.
     @Deprecated(forRemoval = true, since = "1.20.5")
     @Override
     public net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
         return Keyed.super.key();
     }
 
-    /**
-     * @deprecated this method assumes that the instrument description
-     * always be a translatable component which is not guaranteed.
-     */
+    /// @deprecated this method assumes that the instrument description
+    /// always be a translatable component which is not guaranteed.
     @Override
     @Deprecated(forRemoval = true)
     public abstract String translationKey();

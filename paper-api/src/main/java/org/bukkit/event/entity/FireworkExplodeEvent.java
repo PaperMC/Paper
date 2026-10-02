@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a firework explodes.
- */
+/// Called when a firework explodes.
 public class FireworkExplodeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,12 +29,10 @@ public class FireworkExplodeEvent extends EntityEvent implements Cancellable {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If the firework explosion is cancelled, the firework will
-     * still be removed, but no particles will be displayed.
-     */
+    /// {@inheritDoc}
+    ///
+    /// If the firework explosion is cancelled, the firework will
+    /// still be removed, but no particles will be displayed.
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

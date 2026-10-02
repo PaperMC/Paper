@@ -105,46 +105,38 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     // End generate - PatternType
 
     // Paper start - deprecate getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#BANNER_PATTERN]. PatternTypes can exist without a key.
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
     default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
         return org.bukkit.Keyed.super.key();
     }
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#BANNER_PATTERN]. PatternTypes can exist without a key.
     @Deprecated(since = "1.20.5", forRemoval = true)
     // Paper end - deprecate getKey
     @Override
     @NotNull
     public NamespacedKey getKey();
 
-    /**
-     * Returns the identifier used to represent
-     * this pattern type
-     *
-     * @return the pattern's identifier
-     * @see #getKey
-     * @deprecated magic value
-     */
+    /// Returns the identifier used to represent
+    /// this pattern type
+    ///
+    /// @return the pattern's identifier
+    /// @see #getKey
+    /// @deprecated magic value
     @NotNull
     @Deprecated(since = "1.20.4", forRemoval = true)
     public String getIdentifier();
 
-    /**
-     * Returns the pattern type which matches the passed
-     * identifier or null if no matches are found
-     *
-     * @param identifier the identifier
-     * @return the matched pattern type or null
-     * @deprecated magic value, use {@link Registry#get(NamespacedKey)} instead with {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}
-     */
+    /// Returns the pattern type which matches the passed
+    /// identifier or null if no matches are found
+    ///
+    /// @param identifier the identifier
+    /// @return the matched pattern type or null
+    /// @deprecated magic value, use [Registry#get(NamespacedKey)] instead with [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)] and [io.papermc.paper.registry.RegistryKey#BANNER_PATTERN]
     @Contract("null -> null")
     @Nullable
     @Deprecated(since = "1.20.4", forRemoval = true)
@@ -167,11 +159,9 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * @param name of the pattern type.
-     * @return the pattern type with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the pattern type.
+    /// @return the pattern type with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static PatternType valueOf(@NotNull String name) {
@@ -181,10 +171,8 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
         return type;
     }
 
-    /**
-     * @return an array of all known pattern types.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known pattern types.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static PatternType[] values() {

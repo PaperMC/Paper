@@ -10,24 +10,22 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event will sometimes fire synchronously, depending on how it was
- * triggered.
- * <p>
- * The constructor provides a boolean to indicate if the event was fired
- * synchronously or asynchronously. When asynchronous, this event can be
- * called from any thread, sans the main thread, and has limited access to the
- * API.
- * <p>
- * If a player is the direct cause of this event by an incoming packet, this
- * event will be asynchronous. If a plugin triggers this event by compelling a
- * player to chat, this event will be synchronous.
- * <p>
- * Care should be taken to check {@link #isAsynchronous()} and treat the event
- * appropriately.
- *
- * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
- */
+/// This event will sometimes fire synchronously, depending on how it was
+/// triggered.
+///
+/// The constructor provides a boolean to indicate if the event was fired
+/// synchronously or asynchronously. When asynchronous, this event can be
+/// called from any thread, sans the main thread, and has limited access to the
+/// API.
+///
+/// If a player is the direct cause of this event by an incoming packet, this
+/// event will be asynchronous. If a plugin triggers this event by compelling a
+/// player to chat, this event will be synchronous.
+///
+/// Care should be taken to check [#isAsynchronous()] and treat the event
+/// appropriately.
+///
+/// @deprecated use [io.papermc.paper.event.player.AsyncChatEvent] instead
 @Deprecated
 @Warning(propagate = false)
 public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
@@ -47,55 +45,47 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
         this.recipients = players;
     }
 
-    /**
-     * Gets the message that the player is attempting to send. This message
-     * will be used with {@link #getFormat()}.
-     *
-     * @return Message the player is attempting to send
-     */
+    /// Gets the message that the player is attempting to send. This message
+    /// will be used with [#getFormat()].
+    ///
+    /// @return Message the player is attempting to send
     @NotNull
     public String getMessage() {
         return this.message;
     }
 
-    /**
-     * Sets the message that the player will send. This message will be used
-     * with {@link #getFormat()}.
-     *
-     * @param message New message that the player will send
-     */
+    /// Sets the message that the player will send. This message will be used
+    /// with [#getFormat()].
+    ///
+    /// @param message New message that the player will send
     public void setMessage(@NotNull String message) {
         this.message = message;
     }
 
-    /**
-     * Gets the format to use to display this chat message.
-     * <p>
-     * When this event finishes execution, the first format parameter is the
-     * {@link Player#getDisplayName()} and the second parameter is {@link
-     * #getMessage()}
-     *
-     * @return {@link String#format(String, Object...)} compatible format
-     *     string
-     */
+    /// Gets the format to use to display this chat message.
+    ///
+    /// When this event finishes execution, the first format parameter is the
+    /// [Player#getDisplayName()] and the second parameter is
+    /// [#getMessage()]
+    ///
+    /// @return [String#format(String, Object...)] compatible format
+    ///     string
     @NotNull
     public String getFormat() {
         return this.format;
     }
 
-    /**
-     * Sets the format to use to display this chat message.
-     * <p>
-     * When this event finishes execution, the first format parameter is the
-     * {@link Player#getDisplayName()} and the second parameter is {@link
-     * #getMessage()}
-     *
-     * @param format {@link String#format(String, Object...)} compatible
-     *     format string
-     * @throws IllegalFormatException if the underlying API throws the
-     *     exception
-     * @see String#format(String, Object...)
-     */
+    /// Sets the format to use to display this chat message.
+    ///
+    /// When this event finishes execution, the first format parameter is the
+    /// [Player#getDisplayName()] and the second parameter is
+    /// [#getMessage()]
+    ///
+    /// @param format [String#format(String, Object...)] compatible
+    ///     format string
+    /// @throws IllegalFormatException if the underlying API throws the
+    ///     exception
+    /// @see String#format(String, Object...)
     public void setFormat(@NotNull final String format) throws IllegalFormatException, NullPointerException {
         Preconditions.checkArgument(format != null, "format cannot be null");
         // Oh for a better way to do this!
@@ -109,19 +99,17 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
         this.format = format;
     }
 
-    /**
-     * Gets a set of recipients that this chat message will be displayed to.
-     * <p>
-     * The set returned is not guaranteed to be mutable and may auto-populate
-     * on access. Any listener accessing the returned set should be aware that
-     * it may reduce performance for a lazy set implementation.
-     * <p>
-     * Listeners should be aware that modifying the list may throw {@link
-     * UnsupportedOperationException} if the event caller provides an
-     * unmodifiable set.
-     *
-     * @return All Players who will see this chat message
-     */
+    /// Gets a set of recipients that this chat message will be displayed to.
+    ///
+    /// The set returned is not guaranteed to be mutable and may auto-populate
+    /// on access. Any listener accessing the returned set should be aware that
+    /// it may reduce performance for a lazy set implementation.
+    ///
+    /// Listeners should be aware that modifying the list may throw
+    /// [UnsupportedOperationException] if the event caller provides an
+    /// unmodifiable set.
+    ///
+    /// @return All Players who will see this chat message
     @NotNull
     public Set<Player> getRecipients() {
         return this.recipients;

@@ -1,27 +1,17 @@
 package org.bukkit;
 
 // Paper start
-/**
- * @deprecated use {@link org.bukkit.block.data.BlockData} and {@link org.bukkit.block.data.Ageable}
- */
+/// @deprecated use [org.bukkit.block.data.BlockData] and [org.bukkit.block.data.Ageable]
 @Deprecated(forRemoval = true, since = "1.13")
 // Paper end
 public enum NetherWartsState {
 
-    /**
-     * State when first seeded
-     */
+    /// State when first seeded
     SEEDED,
-    /**
-     * First growth stage
-     */
+    /// First growth stage
     STAGE_ONE,
-    /**
-     * Second growth stage
-     */
+    /// Second growth stage
     STAGE_TWO,
-    /**
-     * Ready to harvest
-     */
+    /// Ready to harvest
     RIPE;
 }

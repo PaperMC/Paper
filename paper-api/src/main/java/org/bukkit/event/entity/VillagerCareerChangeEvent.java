@@ -29,30 +29,24 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
         return (Villager) this.entity;
     }
 
-    /**
-     * Gets the future profession of the villager.
-     *
-     * @return The profession the villager will change to
-     */
+    /// Gets the future profession of the villager.
+    ///
+    /// @return The profession the villager will change to
     @NotNull
     public Profession getProfession() {
         return this.profession;
     }
 
-    /**
-     * Sets the profession the villager will become from this event.
-     *
-     * @param profession new profession
-     */
+    /// Sets the profession the villager will become from this event.
+    ///
+    /// @param profession new profession
     public void setProfession(@NotNull Profession profession) {
         this.profession = profession;
     }
 
-    /**
-     * Gets the reason for why the villager's career is changing.
-     *
-     * @return Reason for villager's profession changing
-     */
+    /// Gets the reason for why the villager's career is changing.
+    ///
+    /// @return Reason for villager's profession changing
     @NotNull
     public ChangeReason getReason() {
         return this.reason;
@@ -79,18 +73,12 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
         return HANDLER_LIST;
     }
 
-    /**
-     * Reasons for the villager's profession changing.
-     */
+    /// Reasons for the villager's profession changing.
     public enum ChangeReason {
 
-        /**
-         * Villager lost their job due to too little experience.
-         */
+        /// Villager lost their job due to too little experience.
         LOSING_JOB,
-        /**
-         * Villager gained employment.
-         */
+        /// Villager gained employment.
         EMPLOYED;
     }
 }

@@ -4,9 +4,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when either the server startup or reload has completed.
- */
+/// This event is called when either the server startup or reload has completed.
 public class ServerLoadEvent extends ServerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -18,11 +16,9 @@ public class ServerLoadEvent extends ServerEvent {
         this.type = type;
     }
 
-    /**
-     * Gets the context in which the server was loaded.
-     *
-     * @return the context in which the server was loaded
-     */
+    /// Gets the context in which the server was loaded.
+    ///
+    /// @return the context in which the server was loaded
     @NotNull
     public LoadType getType() {
         return this.type;
@@ -39,9 +35,7 @@ public class ServerLoadEvent extends ServerEvent {
         return HANDLER_LIST;
     }
 
-    /**
-     * Represents the context in which the enclosing event has been completed.
-     */
+    /// Represents the context in which the enclosing event has been completed.
     public enum LoadType {
         STARTUP,
         RELOAD

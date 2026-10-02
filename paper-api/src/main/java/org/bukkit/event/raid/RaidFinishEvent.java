@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * This event is called when a {@link Raid} was complete with a clear result.
- */
+/// This event is called when a [Raid] was complete with a clear result.
 public class RaidFinishEvent extends RaidEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,14 +23,12 @@ public class RaidFinishEvent extends RaidEvent {
         this.winners = winners;
     }
 
-    /**
-     * Returns an immutable list contains all winners.
-     * <br>
-     * <b>Note: Players who are considered as heroes but were not online at the
-     * end would not be included in this list.</b>
-     *
-     * @return the winners
-     */
+    /// Returns an immutable list contains all winners.
+    ///
+    /// **Note: Players who are considered as heroes but were not online at the
+    /// end would not be included in this list.**
+    ///
+    /// @return the winners
     @NotNull
     public @Unmodifiable List<Player> getWinners() {
         return Collections.unmodifiableList(this.winners);

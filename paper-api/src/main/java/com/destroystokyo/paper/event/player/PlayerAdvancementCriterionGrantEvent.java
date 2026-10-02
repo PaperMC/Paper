@@ -9,10 +9,8 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called after a player is granted a criteria in an advancement.
- * If cancelled the criteria will be revoked.
- */
+/// Called after a player is granted a criteria in an advancement.
+/// If cancelled the criteria will be revoked.
 @NullMarked
 public class PlayerAdvancementCriterionGrantEvent extends PlayerEvent implements Cancellable {
 
@@ -32,29 +30,23 @@ public class PlayerAdvancementCriterionGrantEvent extends PlayerEvent implements
         this.advancementProgress = player.getAdvancementProgress(advancement);
     }
 
-    /**
-     * Get the advancement which has been affected.
-     *
-     * @return affected advancement
-     */
+    /// Get the advancement which has been affected.
+    ///
+    /// @return affected advancement
     public Advancement getAdvancement() {
         return this.advancement;
     }
 
-    /**
-     * Get the criterion which has been granted.
-     *
-     * @return granted criterion
-     */
+    /// Get the criterion which has been granted.
+    ///
+    /// @return granted criterion
     public String getCriterion() {
         return this.criterion;
     }
 
-    /**
-     * Gets the current AdvancementProgress.
-     *
-     * @return advancement progress
-     */
+    /// Gets the current AdvancementProgress.
+    ///
+    /// @return advancement progress
     public AdvancementProgress getAdvancementProgress() {
         return this.advancementProgress;
     }

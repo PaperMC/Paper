@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.CoalType;
 import org.bukkit.Material;
 
-/**
- * Represents the different types of coals.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the different types of coals.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Coal extends MaterialData {
     public Coal() {
@@ -24,30 +22,24 @@ public class Coal extends MaterialData {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Coal(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current type of this coal
-     *
-     * @return CoalType of this coal
-     */
+    /// Gets the current type of this coal
+    ///
+    /// @return CoalType of this coal
     public CoalType getType() {
         return CoalType.getByData(getData());
     }
 
-    /**
-     * Sets the type of this coal
-     *
-     * @param type New type of this coal
-     */
+    /// Sets the type of this coal
+    ///
+    /// @param type New type of this coal
     public void setType(CoalType type) {
         setData(type.getData());
     }

@@ -11,14 +11,12 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
 
-/**
- * Called when player is about to spawn in a world after joining the server.
- *
- * @deprecated The spawn location is selected during the configuration phase, before a player entity is normally
- * created. Using the result of {@link #getPlayer()} for anything related to the player entity is unreliable and may
- * cause issues. Retrieving {@link Player#getUniqueId()} and {@link Player#getName()} is safe. Prefer using
- * {@link io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent}.
- */
+/// Called when player is about to spawn in a world after joining the server.
+///
+/// @deprecated The spawn location is selected during the configuration phase, before a player entity is normally
+/// created. Using the result of [#getPlayer()] for anything related to the player entity is unreliable and may
+/// cause issues. Retrieving [Player#getUniqueId()] and [Player#getName()] is safe. Prefer using
+/// [io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent].
 @Deprecated(since = "1.21.9", forRemoval = true)
 @Warning(reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.", value = true, propagate = false)
 public class PlayerSpawnLocationEvent extends PlayerEvent {
@@ -32,24 +30,20 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
         this.spawnLocation = spawnLocation;
     }
 
-    /**
-     * Gets player's spawn location.
-     * If the player {@link Player#hasPlayedBefore()}, it's going to default to the location inside player.dat file.
-     * For new players, the default spawn location is the {@link World#getSpawnLocation() spawn location}
-     * of the {@link Server#getRespawnWorld() respawn world}.
-     *
-     * @return the spawn location
-     */
+    /// Gets player's spawn location.
+    /// If the player [Player#hasPlayedBefore()], it's going to default to the location inside player.dat file.
+    /// For new players, the default spawn location is the [`spawn location`][World#getSpawnLocation()]
+    /// of the [`respawn world`][Server#getRespawnWorld()].
+    ///
+    /// @return the spawn location
     @NotNull
     public Location getSpawnLocation() {
         return spawnLocation;
     }
 
-    /**
-     * Sets player's spawn location.
-     *
-     * @param location the spawn location
-     */
+    /// Sets player's spawn location.
+    ///
+    /// @param location the spawn location
     public void setSpawnLocation(@NotNull Location location) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");

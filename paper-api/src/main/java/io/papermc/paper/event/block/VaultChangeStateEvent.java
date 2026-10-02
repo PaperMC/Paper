@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a vault block changes state.
- */
+/// Called when a vault block changes state.
 @NullMarked
 public class VaultChangeStateEvent extends BlockEvent implements Cancellable {
 
@@ -32,29 +30,23 @@ public class VaultChangeStateEvent extends BlockEvent implements Cancellable {
         this.newState = newState;
     }
 
-    /**
-     * Gets the player associated with this state change, if applicable.
-     *
-     * @return The associated player, or {@code null} if not known.
-     */
+    /// Gets the player associated with this state change, if applicable.
+    ///
+    /// @return The associated player, or `null` if not known.
     public @Nullable Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets the state the vault is currently in.
-     *
-     * @return The current vault state.
-     */
+    /// Gets the state the vault is currently in.
+    ///
+    /// @return The current vault state.
     public Vault.State getCurrentState() {
         return this.currentState;
     }
 
-    /**
-     * Gets the state the vault is attempting to transition to.
-     *
-     * @return The new vault state.
-     */
+    /// Gets the state the vault is attempting to transition to.
+    ///
+    /// @return The new vault state.
     public Vault.State getNewState() {
         return this.newState;
     }

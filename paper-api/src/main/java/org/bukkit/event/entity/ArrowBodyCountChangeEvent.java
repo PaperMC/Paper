@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an arrow enters or exists an entity's body.
- */
+/// Called when an arrow enters or exists an entity's body.
 public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,38 +27,30 @@ public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellabl
         this.reset = reset;
     }
 
-    /**
-     * Whether the event was called because the entity was reset.
-     *
-     * @return was reset
-     */
+    /// Whether the event was called because the entity was reset.
+    ///
+    /// @return was reset
     public boolean isReset() {
         return this.reset;
     }
 
-    /**
-     * Gets the old amount of arrows in the entity's body.
-     *
-     * @return amount of arrows
-     */
+    /// Gets the old amount of arrows in the entity's body.
+    ///
+    /// @return amount of arrows
     public int getOldAmount() {
         return this.oldAmount;
     }
 
-    /**
-     * Get the new amount of arrows in the entity's body.
-     *
-     * @return amount of arrows
-     */
+    /// Get the new amount of arrows in the entity's body.
+    ///
+    /// @return amount of arrows
     public int getNewAmount() {
         return this.newAmount;
     }
 
-    /**
-     * Sets the final amount of arrows in the entity's body.
-     *
-     * @param newAmount amount of arrows
-     */
+    /// Sets the final amount of arrows in the entity's body.
+    ///
+    /// @param newAmount amount of arrows
     public void setNewAmount(int newAmount) {
         Preconditions.checkArgument(newAmount >= 0, "New arrow amount must be >= 0");
         this.newAmount = newAmount;

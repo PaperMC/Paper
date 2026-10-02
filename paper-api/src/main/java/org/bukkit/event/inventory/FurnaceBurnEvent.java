@@ -8,11 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an ItemStack is successfully burned as fuel in a furnace-like block such as a
- * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
- * {@link org.bukkit.block.BlastFurnace}.
- */
+/// Called when an ItemStack is successfully burned as fuel in a furnace-like block such as a
+/// [org.bukkit.block.Furnace], [org.bukkit.block.Smoker], or
+/// [org.bukkit.block.BlastFurnace].
 public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,66 +29,52 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
         this.burnTime = burnTime;
     }
 
-    /**
-     * Gets the fuel ItemStack for this event
-     *
-     * @return the fuel ItemStack
-     */
+    /// Gets the fuel ItemStack for this event
+    ///
+    /// @return the fuel ItemStack
     @NotNull
     public ItemStack getFuel() {
         return this.fuel;
     }
 
-    /**
-     * Gets the burn time for this fuel
-     *
-     * @return the burn time for this fuel
-     */
+    /// Gets the burn time for this fuel
+    ///
+    /// @return the burn time for this fuel
     public int getBurnTime() {
         return this.burnTime;
     }
 
-    /**
-     * Sets the burn time for this fuel
-     *
-     * @param burnTime the burn time for this fuel
-     */
+    /// Sets the burn time for this fuel
+    ///
+    /// @param burnTime the burn time for this fuel
     public void setBurnTime(@org.jetbrains.annotations.Range(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime) {
         this.burnTime = Math.clamp(burnTime, Short.MIN_VALUE, Short.MAX_VALUE);
     }
 
-    /**
-     * Gets whether the furnace's fuel is burning or not.
-     *
-     * @return whether the furnace's fuel is burning or not.
-     */
+    /// Gets whether the furnace's fuel is burning or not.
+    ///
+    /// @return whether the furnace's fuel is burning or not.
     public boolean isBurning() {
         return this.burning;
     }
 
-    /**
-     * Sets whether the furnace's fuel is burning or not.
-     *
-     * @param burning {@code true} if the furnace's fuel is burning
-     */
+    /// Sets whether the furnace's fuel is burning or not.
+    ///
+    /// @param burning`true` if the furnace's fuel is burning
     public void setBurning(boolean burning) {
         this.burning = burning;
     }
 
-    /**
-     * Gets whether the furnace's fuel will be consumed or not.
-     *
-     * @return whether the furnace's fuel will be consumed
-     */
+    /// Gets whether the furnace's fuel will be consumed or not.
+    ///
+    /// @return whether the furnace's fuel will be consumed
     public boolean willConsumeFuel() {
         return this.consumeFuel;
     }
 
-    /**
-     * Sets whether the furnace's fuel will be consumed or not.
-     *
-     * @param consumeFuel {@code true} to consume the fuel
-     */
+    /// Sets whether the furnace's fuel will be consumed or not.
+    ///
+    /// @param consumeFuel`true` to consume the fuel
     public void setConsumeFuel(boolean consumeFuel) {
         this.consumeFuel = consumeFuel;
     }

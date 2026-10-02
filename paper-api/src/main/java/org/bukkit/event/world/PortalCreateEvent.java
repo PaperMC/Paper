@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a portal is created
- */
+/// Called when a portal is created
 public class PortalCreateEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -38,31 +36,25 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
         this.reason = reason;
     }
 
-    /**
-     * Gets an array list of all the blocks associated with the created portal
-     *
-     * @return array list of all the blocks associated with the created portal
-     */
+    /// Gets an array list of all the blocks associated with the created portal
+    ///
+    /// @return array list of all the blocks associated with the created portal
     @NotNull
     public List<BlockState> getBlocks() {
         return this.blocks;
     }
 
-    /**
-     * Returns the Entity that triggered this portal creation (if available)
-     *
-     * @return Entity involved in this event
-     */
+    /// Returns the Entity that triggered this portal creation (if available)
+    ///
+    /// @return Entity involved in this event
     @Nullable
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Gets the reason for the portal's creation
-     *
-     * @return CreateReason for the portal's creation
-     */
+    /// Gets the reason for the portal's creation
+    ///
+    /// @return CreateReason for the portal's creation
     @NotNull
     public CreateReason getReason() {
         return this.reason;
@@ -89,24 +81,16 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the various reasons for a portal's creation
-     */
+    /// An enum to specify the various reasons for a portal's creation
     public enum CreateReason {
-        /**
-         * When the blocks inside a portal are created due to a portal frame
-         * being set on fire.
-         */
+        /// When the blocks inside a portal are created due to a portal frame
+        /// being set on fire.
         FIRE,
-        /**
-         * When a nether portal frame and portal is created at the exit of an
-         * entered nether portal.
-         */
+        /// When a nether portal frame and portal is created at the exit of an
+        /// entered nether portal.
         NETHER_PAIR,
-        /**
-         * When the target end platform is created as a result of a player
-         * entering an end portal.
-         */
+        /// When the target end platform is created as a result of a player
+        /// entering an end portal.
         END_PLATFORM
     }
 }

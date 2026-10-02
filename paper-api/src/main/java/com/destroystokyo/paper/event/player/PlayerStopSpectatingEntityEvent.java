@@ -8,9 +8,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Triggered when a player stops spectating an entity in spectator mode.
- */
+/// Triggered when a player stops spectating an entity in spectator mode.
 @NullMarked
 public class PlayerStopSpectatingEntityEvent extends PlayerEvent implements Cancellable {
 
@@ -25,11 +23,9 @@ public class PlayerStopSpectatingEntityEvent extends PlayerEvent implements Canc
         this.spectatorTarget = spectatorTarget;
     }
 
-    /**
-     * Gets the entity that the player is spectating
-     *
-     * @return The entity the player is currently spectating (before they will stop).
-     */
+    /// Gets the entity that the player is spectating
+    ///
+    /// @return The entity the player is currently spectating (before they will stop).
     public Entity getSpectatorTarget() {
         return this.spectatorTarget;
     }

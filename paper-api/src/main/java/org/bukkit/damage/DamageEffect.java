@@ -4,35 +4,21 @@ import io.papermc.paper.InternalAPIBridge;
 import org.bukkit.Sound;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a type of effect that occurs when damage is inflicted. Currently,
- * effects only determine the sound that plays.
- */
+/// Represents a type of effect that occurs when damage is inflicted. Currently,
+/// effects only determine the sound that plays.
 public interface DamageEffect {
 
-    /**
-     * The default damage effect.
-     */
+    /// The default damage effect.
     public static final DamageEffect HURT = getDamageEffect("hurt");
-    /**
-     * Thorns.
-     */
+    /// Thorns.
     public static final DamageEffect THORNS = getDamageEffect("thorns");
-    /**
-     * Drowning.
-     */
+    /// Drowning.
     public static final DamageEffect DROWNING = getDamageEffect("drowning");
-    /**
-     * A single burn tick (fire, lava, etc.).
-     */
+    /// A single burn tick (fire, lava, etc.).
     public static final DamageEffect BURNING = getDamageEffect("burning");
-    /**
-     * Poked by a berry bush.
-     */
+    /// Poked by a berry bush.
     public static final DamageEffect POKING = getDamageEffect("poking");
-    /**
-     * Freeze tick (powder snow).
-     */
+    /// Freeze tick (powder snow).
     public static final DamageEffect FREEZING = getDamageEffect("freezing");
 
     @NotNull
@@ -40,11 +26,9 @@ public interface DamageEffect {
         return InternalAPIBridge.get().getDamageEffect(key);
     }
 
-    /**
-     * Get the {@link Sound} played for this {@link DamageEffect}.
-     *
-     * @return the sound
-     */
+    /// Get the [Sound] played for this [DamageEffect].
+    ///
+    /// @return the sound
     @NotNull
     public Sound getSound();
 }

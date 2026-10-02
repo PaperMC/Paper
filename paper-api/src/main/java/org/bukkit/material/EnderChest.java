@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents an ender chest
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents an ender chest
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class EnderChest extends DirectionalContainer {
 
@@ -16,11 +14,9 @@ public class EnderChest extends DirectionalContainer {
         super(Material.LEGACY_ENDER_CHEST);
     }
 
-    /**
-     * Instantiate an ender chest facing in a particular direction.
-     *
-     * @param direction the direction the ender chest's lid opens towards
-     */
+    /// Instantiate an ender chest facing in a particular direction.
+    ///
+    /// @param direction the direction the ender chest's lid opens towards
     public EnderChest(BlockFace direction) {
         this();
         setFacingDirection(direction);
@@ -30,11 +26,9 @@ public class EnderChest extends DirectionalContainer {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public EnderChest(final Material type, final byte data) {
         super(type, data);

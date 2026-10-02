@@ -11,12 +11,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called just before an {@link Entity} spawns due to a pattern of blocks being constructed (golems, the wither, etc.)
- * <p>
- * Note: This event is fired before {@link EntitySpawnEvent}, before the entity is added to the world,
- * the success of this event does not guarantee the entity will actually spawn.
- */
+/// Called just before an [Entity] spawns due to a pattern of blocks being constructed (golems, the wither, etc.)
+///
+/// Note: This event is fired before [EntitySpawnEvent], before the entity is added to the world,
+/// the success of this event does not guarantee the entity will actually spawn.
 @NullMarked
 public class EntityConstructEvent extends EntityEvent implements Cancellable {
 
@@ -31,12 +29,10 @@ public class EntityConstructEvent extends EntityEvent implements Cancellable {
         this.blocks = List.copyOf(blocks);
     }
 
-    /**
-     * Get an immutable list of the blocks required for this construction, including
-     * any required air blocks.
-     *
-     * @return the blocks
-     */
+    /// Get an immutable list of the blocks required for this construction, including
+    /// any required air blocks.
+    ///
+    /// @return the blocks
     public @Unmodifiable List<Block> getBlocks() {
         return this.blocks;
     }

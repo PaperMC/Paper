@@ -4,9 +4,7 @@ import org.bukkit.plugin.Plugin;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Wrapper exception for all cases to which a plugin can be immediately blamed for
- */
+/// Wrapper exception for all cases to which a plugin can be immediately blamed for
 public class ServerPluginException extends ServerException {
     public ServerPluginException(String message, Throwable cause, Plugin responsiblePlugin) {
         super(message, cause);
@@ -25,11 +23,9 @@ public class ServerPluginException extends ServerException {
 
     private final Plugin responsiblePlugin;
 
-    /**
-     * Gets the plugin which is directly responsible for the exception being thrown
-     *
-     * @return plugin which is responsible for the exception throw
-     */
+    /// Gets the plugin which is directly responsible for the exception being thrown
+    ///
+    /// @return plugin which is responsible for the exception throw
     public Plugin getResponsiblePlugin() {
         return responsiblePlugin;
     }

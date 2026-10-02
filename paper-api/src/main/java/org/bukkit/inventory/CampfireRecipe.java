@@ -4,9 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a campfire recipe.
- */
+/// Represents a campfire recipe.
 public class CampfireRecipe extends CookingRecipe<CampfireRecipe> {
 
     public CampfireRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source, float experience, int cookingTime) {

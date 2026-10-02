@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a Creeper is struck by lightning.
- * <p>
- * If this event is cancelled, the Creeper will not be powered.
- */
+/// Called when a Creeper is struck by lightning.
+///
+/// If this event is cancelled, the Creeper will not be powered.
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -40,21 +38,17 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         return (Creeper) this.entity;
     }
 
-    /**
-     * Gets the lightning bolt which is striking the Creeper.
-     *
-     * @return The Entity for the lightning bolt which is striking the Creeper
-     */
+    /// Gets the lightning bolt which is striking the Creeper.
+    ///
+    /// @return The Entity for the lightning bolt which is striking the Creeper
     @Nullable
     public LightningStrike getLightning() {
         return this.bolt;
     }
 
-    /**
-     * Gets the cause of the creeper being (un)powered.
-     *
-     * @return A PowerCause value detailing the cause of change in power.
-     */
+    /// Gets the cause of the creeper being (un)powered.
+    ///
+    /// @return A PowerCause value detailing the cause of change in power.
     @NotNull
     public PowerCause getCause() {
         return this.cause;
@@ -81,28 +75,20 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the cause of the change in power
-     */
+    /// An enum to specify the cause of the change in power
     public enum PowerCause {
 
-        /**
-         * Power change caused by a lightning bolt
-         * <p>
-         * Powered state: {@code true}
-         */
+        /// Power change caused by a lightning bolt
+        ///
+        /// Powered state: `true`
         LIGHTNING,
-        /**
-         * Power change caused by something else (probably a plugin)
-         * <p>
-         * Powered state: {@code true}
-         */
+        /// Power change caused by something else (probably a plugin)
+        ///
+        /// Powered state: `true`
         SET_ON,
-        /**
-         * Power change caused by something else (probably a plugin)
-         * <p>
-         * Powered state: {@code false}
-         */
+        /// Power change caused by something else (probably a plugin)
+        ///
+        /// Powered state: `false`
         SET_OFF
     }
 }

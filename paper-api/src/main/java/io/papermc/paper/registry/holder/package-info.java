@@ -1,6 +1,4 @@
-/**
- * Registry holders.
- */
+/// Registry holders.
 @ApiStatus.Experimental
 @NullMarked
 package io.papermc.paper.registry.holder;

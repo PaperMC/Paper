@@ -7,21 +7,18 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a block fades, melts or disappears based on world conditions
- * <p>
- * Examples:
- * <ul>
- * <li>Snow melting due to being near a light source.
- * <li>Ice melting due to being near a light source.
- * <li>Fire burning out after time, without destroying fuel block.
- * <li>Coral fading to dead coral due to lack of water</li>
- * <li>Turtle Egg bursting when a turtle hatches</li>
- * </ul>
- * <p>
- * If this event is cancelled, the block will not fade, melt or
- * disappear.
- */
+/// Called when a block fades, melts or disappears based on world conditions
+///
+/// Examples:
+///
+///   - Snow melting due to being near a light source.
+///   - Ice melting due to being near a light source.
+///   - Fire burning out after time, without destroying fuel block.
+///   - Coral fading to dead coral due to lack of water
+///   - Turtle Egg bursting when a turtle hatches
+///
+/// If this event is cancelled, the block will not fade, melt or
+/// disappear.
 public class BlockFadeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -35,13 +32,11 @@ public class BlockFadeEvent extends BlockEvent implements Cancellable {
         this.newState = newState;
     }
 
-    /**
-     * Gets the state of the new block that will replace the block
-     * fading, melting or disappearing.
-     *
-     * @return The block state of the new block that replaces the block
-     *     fading, melting or disappearing
-     */
+    /// Gets the state of the new block that will replace the block
+    /// fading, melting or disappearing.
+    ///
+    /// @return The block state of the new block that replaces the block
+    ///     fading, melting or disappearing
     @NotNull
     public BlockState getNewState() {
         return this.newState;

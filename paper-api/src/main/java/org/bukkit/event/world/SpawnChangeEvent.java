@@ -6,10 +6,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An event that is called when a world's spawn changes. The world's previous
- * spawn location is included.
- */
+/// An event that is called when a world's spawn changes. The world's previous
+/// spawn location is included.
 public class SpawnChangeEvent extends WorldEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,11 +20,9 @@ public class SpawnChangeEvent extends WorldEvent {
         this.previousLocation = previousLocation;
     }
 
-    /**
-     * Gets the previous spawn location
-     *
-     * @return Location that used to be spawn
-     */
+    /// Gets the previous spawn location
+    ///
+    /// @return Location that used to be spawn
     @NotNull
     public Location getPreviousLocation() {
         return this.previousLocation.clone();

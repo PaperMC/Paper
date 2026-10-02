@@ -7,9 +7,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a phantom is spawned for an exhausted player
- */
+/// Called when a phantom is spawned for an exhausted player
 @NullMarked
 public class PhantomPreSpawnEvent extends PreCreatureSpawnEvent {
 
@@ -21,11 +19,9 @@ public class PhantomPreSpawnEvent extends PreCreatureSpawnEvent {
         this.entity = entity;
     }
 
-    /**
-     * Get the entity this phantom is spawning for
-     *
-     * @return the Entity
-     */
+    /// Get the entity this phantom is spawning for
+    ///
+    /// @return the Entity
     public Entity getSpawningEntity() {
         return this.entity;
     }

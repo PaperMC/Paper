@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Thrown when a player attempts to pick an item up from the ground
- */
+/// Thrown when a player attempts to pick an item up from the ground
 @NullMarked
 public class PlayerAttemptPickupItemEvent extends PlayerEvent implements Cancellable {
 
@@ -34,39 +32,32 @@ public class PlayerAttemptPickupItemEvent extends PlayerEvent implements Cancell
         this.remaining = remaining;
     }
 
-    /**
-     * Gets the Item attempted by the player.
-     *
-     * @return Item
-     */
+    /// Gets the Item attempted by the player.
+    ///
+    /// @return Item
     public Item getItem() {
         return this.item;
     }
 
-    /**
-     * Gets the amount that will remain on the ground, if any
-     *
-     * @return amount that will remain on the ground
-     */
+    /// Gets the amount that will remain on the ground, if any
+    ///
+    /// @return amount that will remain on the ground
     public int getRemaining() {
         return this.remaining;
     }
 
-    /**
-     * Set if the item will fly at the player
-     * <p>Cancelling the event will set this value to {@code false}.</p>
-     *
-     * @param flyAtPlayer {@code true} for item to fly at player
-     */
+    /// Set if the item will fly at the player
+    ///
+    /// Cancelling the event will set this value to `false`.
+    ///
+    /// @param flyAtPlayer`true` for item to fly at player
     public void setFlyAtPlayer(boolean flyAtPlayer) {
         this.flyAtPlayer = flyAtPlayer;
     }
 
-    /**
-     * Gets if the item will fly at the player
-     *
-     * @return {@code true} if the item will fly at the player
-     */
+    /// Gets if the item will fly at the player
+    ///
+    /// @return `true` if the item will fly at the player
     public boolean getFlyAtPlayer() {
         return this.flyAtPlayer;
     }

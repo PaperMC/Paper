@@ -1,4 +1,2 @@
-/**
- * Classes relevant to advancements.
- */
+/// Classes relevant to advancements.
 package org.bukkit.advancement;

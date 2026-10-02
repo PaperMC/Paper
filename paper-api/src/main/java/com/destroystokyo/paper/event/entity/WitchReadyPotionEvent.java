@@ -28,18 +28,14 @@ public class WitchReadyPotionEvent extends EntityEvent implements Cancellable {
         return (Witch) super.getEntity();
     }
 
-    /**
-     * @return the potion the witch is readying to use
-     */
+    /// @return the potion the witch is readying to use
     public @Nullable ItemStack getPotion() {
         return this.potion;
     }
 
-    /**
-     * Sets the potion the which is going to hold and use
-     *
-     * @param potion The potion
-     */
+    /// Sets the potion the which is going to hold and use
+    ///
+    /// @param potion The potion
     public void setPotion(final @Nullable ItemStack potion) {
         this.potion = potion != null ? potion.clone() : null;
     }

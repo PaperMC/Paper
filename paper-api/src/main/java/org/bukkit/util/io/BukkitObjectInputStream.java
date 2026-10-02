@@ -6,41 +6,35 @@ import java.io.ObjectInputStream;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 
-/**
- * This class is designed to be used in conjunction with the {@link
- * ConfigurationSerializable} API. It translates objects back to their
- * original implementation after being serialized by {@link
- * BukkitObjectInputStream}.
- * <p>
- * Behavior of implementations extending this class is not guaranteed across
- * future versions.
- * @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
- * use {@link org.bukkit.inventory.ItemStack#serializeAsBytes()} or
- * {@link org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)}.
- */
+/// This class is designed to be used in conjunction with the
+/// [ConfigurationSerializable] API. It translates objects back to their
+/// original implementation after being serialized by
+/// [BukkitObjectInputStream].
+///
+/// Behavior of implementations extending this class is not guaranteed across
+/// future versions.
+/// @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
+/// use [org.bukkit.inventory.ItemStack#serializeAsBytes()] or
+/// [org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)].
 @Deprecated(since = "1.21") // Paper
 public class BukkitObjectInputStream extends ObjectInputStream {
 
-    /**
-     * Constructor provided to mirror super functionality.
-     *
-     * @throws IOException if an I/O error occurs while creating this stream
-     * @throws SecurityException if a security manager exists and denies
-     * enabling subclassing
-     * @see ObjectInputStream#ObjectInputStream()
-     */
+    /// Constructor provided to mirror super functionality.
+    ///
+    /// @throws IOException if an I/O error occurs while creating this stream
+    /// @throws SecurityException if a security manager exists and denies
+    /// enabling subclassing
+    /// @see ObjectInputStream#ObjectInputStream()
     protected BukkitObjectInputStream() throws IOException, SecurityException {
         super();
         super.enableResolveObject(true);
     }
 
-    /**
-     * Object input stream decoration constructor.
-     *
-     * @param in the input stream to wrap
-     * @throws IOException if an I/O error occurs while reading stream header
-     * @see ObjectInputStream#ObjectInputStream(InputStream)
-     */
+    /// Object input stream decoration constructor.
+    ///
+    /// @param in the input stream to wrap
+    /// @throws IOException if an I/O error occurs while reading stream header
+    /// @see ObjectInputStream#ObjectInputStream(InputStream)
     public BukkitObjectInputStream(InputStream in) throws IOException {
         super(in);
         super.enableResolveObject(true);

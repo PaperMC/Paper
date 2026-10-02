@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a beacon is deactivated, either because its base block(s) or itself were destroyed.
- */
+/// Called when a beacon is deactivated, either because its base block(s) or itself were destroyed.
 @NullMarked
 public class BeaconDeactivatedEvent extends BlockEvent {
 
@@ -22,13 +20,11 @@ public class BeaconDeactivatedEvent extends BlockEvent {
         super(beacon);
     }
 
-    /**
-     * Returns the beacon that was deactivated.
-     * This will return {@code null} if the beacon does not exist.
-     * (which can occur after the deactivation of a now broken beacon)
-     *
-     * @return The beacon that got deactivated, or {@code null} if it does not exist.
-     */
+    /// Returns the beacon that was deactivated.
+    /// This will return `null` if the beacon does not exist.
+    /// (which can occur after the deactivation of a now broken beacon)
+    ///
+    /// @return The beacon that got deactivated, or `null` if it does not exist.
     public @Nullable Beacon getBeacon() {
         return this.block.getType() == Material.BEACON ? (Beacon) this.block.getState() : null;
     }

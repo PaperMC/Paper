@@ -4,24 +4,16 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the different types of grass.
- * @deprecated use {@link org.bukkit.block.data.BlockData}
- */
+/// Represents the different types of grass.
+/// @deprecated use [org.bukkit.block.data.BlockData]
 @Deprecated(forRemoval = true, since = "1.13")
 public enum GrassSpecies {
 
-    /**
-     * Represents the dead looking grass.
-     */
+    /// Represents the dead looking grass.
     DEAD(0x0),
-    /**
-     * Represents the normal grass species.
-     */
+    /// Represents the normal grass species.
     NORMAL(0x1),
-    /**
-     * Represents the fern-looking grass species.
-     */
+    /// Represents the fern-looking grass species.
     FERN_LIKE(0x2);
 
     private final byte data;
@@ -31,25 +23,21 @@ public enum GrassSpecies {
         this.data = (byte) data;
     }
 
-    /**
-     * Gets the associated data value representing this species
-     *
-     * @return A byte containing the data value of this grass species
-     * @deprecated Magic value
-     */
+    /// Gets the associated data value representing this species
+    ///
+    /// @return A byte containing the data value of this grass species
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
 
-    /**
-     * Gets the GrassSpecies with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link GrassSpecies} representing the given value, or null
-     *     if it doesn't exist
-     * @deprecated Magic value
-     */
+    /// Gets the GrassSpecies with the given data value
+    ///
+    /// @param data Data value to fetch
+    /// @return The [GrassSpecies] representing the given value, or null
+    ///     if it doesn't exist
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Nullable
     public static GrassSpecies getByData(final byte data) {

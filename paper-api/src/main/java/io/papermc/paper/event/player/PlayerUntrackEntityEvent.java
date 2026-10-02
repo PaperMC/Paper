@@ -7,12 +7,10 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Is called when a {@link Player} untracks an {@link Entity}.
- * <p>
- * Adding or removing entities from the world at the point in time this event is called is completely
- * unsupported and should be avoided.
- */
+/// Is called when a [Player] untracks an [Entity].
+///
+/// Adding or removing entities from the world at the point in time this event is called is completely
+/// unsupported and should be avoided.
 @NullMarked
 public class PlayerUntrackEntityEvent extends PlayerEvent {
 
@@ -26,11 +24,9 @@ public class PlayerUntrackEntityEvent extends PlayerEvent {
         this.entity = entity;
     }
 
-    /**
-     * Gets the entity that will be untracked
-     *
-     * @return the entity untracked
-     */
+    /// Gets the entity that will be untracked
+    ///
+    /// @return the entity untracked
     public Entity getEntity() {
         return this.entity;
     }

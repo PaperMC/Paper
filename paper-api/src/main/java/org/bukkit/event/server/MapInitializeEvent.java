@@ -5,9 +5,7 @@ import org.bukkit.map.MapView;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a map is initialized.
- */
+/// Called when a map is initialized.
 public class MapInitializeEvent extends ServerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -19,11 +17,9 @@ public class MapInitializeEvent extends ServerEvent {
         this.mapView = mapView;
     }
 
-    /**
-     * Gets the map initialized in this event.
-     *
-     * @return Map for this event
-     */
+    /// Gets the map initialized in this event.
+    ///
+    /// @return Map for this event
     @NotNull
     public MapView getMap() {
         return this.mapView;

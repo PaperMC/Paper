@@ -8,9 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when an EnderDragon shoots a fireball
- */
+/// Fired when an EnderDragon shoots a fireball
 @NullMarked
 public class EnderDragonShootFireballEvent extends EntityEvent implements Cancellable {
 
@@ -25,17 +23,13 @@ public class EnderDragonShootFireballEvent extends EntityEvent implements Cancel
         this.fireball = fireball;
     }
 
-    /**
-     * The enderdragon shooting the fireball
-     */
+    /// The enderdragon shooting the fireball
     @Override
     public EnderDragon getEntity() {
         return (EnderDragon) super.getEntity();
     }
 
-    /**
-     * @return The fireball being shot
-     */
+    /// @return The fireball being shot
     public DragonFireball getFireball() {
         return this.fireball;
     }

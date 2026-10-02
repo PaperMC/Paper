@@ -8,12 +8,10 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity comes into contact with a portal
- * <p>
- * Cancelling this event prevents any further processing of the portal for that tick.
- * @see io.papermc.paper.event.entity.EntityInsideBlockEvent
- */
+/// Called when an entity comes into contact with a portal
+///
+/// Cancelling this event prevents any further processing of the portal for that tick.
+/// @see io.papermc.paper.event.entity.EntityInsideBlockEvent
 public class EntityPortalEnterEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -36,21 +34,17 @@ public class EntityPortalEnterEvent extends EntityEvent implements Cancellable {
         this.portalType = portalType;
     }
 
-    /**
-     * Gets the portal block the entity is touching
-     *
-     * @return The portal block the entity is touching
-     */
+    /// Gets the portal block the entity is touching
+    ///
+    /// @return The portal block the entity is touching
     @NotNull
     public Location getLocation() {
         return location.clone();
     }
 
-    /**
-     * Get the portal type.
-     *
-     * @return the portal type
-     */
+    /// Get the portal type.
+    ///
+    /// @return the portal type
     public org.bukkit.@NotNull PortalType getPortalType() {
         return this.portalType;
     }

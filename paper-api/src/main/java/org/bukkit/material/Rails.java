@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents minecart rails.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents minecart rails.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Rails extends MaterialData {
 
@@ -20,41 +18,33 @@ public class Rails extends MaterialData {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Rails(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * @return the whether this track is set on a slope
-     */
+    /// @return the whether this track is set on a slope
     public boolean isOnSlope() {
         byte d = getConvertedData();
 
         return (d == 0x2 || d == 0x3 || d == 0x4 || d == 0x5);
     }
 
-    /**
-     * @return the whether this track is set as a curve
-     */
+    /// @return the whether this track is set as a curve
     public boolean isCurve() {
         byte d = getConvertedData();
 
         return (d == 0x6 || d == 0x7 || d == 0x8 || d == 0x9);
     }
 
-    /**
-     * @return the direction these tracks are set
-     *     <p>
-     *     Note that tracks are bidirectional and that the direction returned
-     *     is the ascending direction if the track is set on a slope. If it is
-     *     set as a curve, the corner of the track is returned.
-     */
+    /// @return the direction these tracks are set
+    ///
+    /// Note that tracks are bidirectional and that the direction returned
+    ///     is the ascending direction if the track is set on a slope. If it is
+    ///     set as a curve, the corner of the track is returned.
     public BlockFace getDirection() {
         byte d = getConvertedData();
 
@@ -97,29 +87,25 @@ public class Rails extends MaterialData {
         return super.toString() + " facing " + getDirection() + (isCurve() ? " on a curve" : (isOnSlope() ? " on a slope" : ""));
     }
 
-    /**
-     * Return the data without the extended properties used by {@link
-     * PoweredRail} and {@link DetectorRail}. Overridden in {@link
-     * ExtendedRails}
-     *
-     * @return the data without the extended part
-     * @deprecated Magic value
-     */
+    /// Return the data without the extended properties used by
+    /// [PoweredRail] and [DetectorRail]. Overridden in
+    /// [ExtendedRails]
+    ///
+    /// @return the data without the extended part
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     protected byte getConvertedData() {
         return getData();
     }
 
-    /**
-     * Set the direction of these tracks
-     * <p>
-     * Note that tracks are bidirectional and that the direction returned is
-     * the ascending direction if the track is set on a slope. If it is set as
-     * a curve, the corner of the track should be supplied.
-     *
-     * @param face the direction the track should be facing
-     * @param isOnSlope whether or not the track should be on a slope
-     */
+    /// Set the direction of these tracks
+    ///
+    /// Note that tracks are bidirectional and that the direction returned is
+    /// the ascending direction if the track is set on a slope. If it is set as
+    /// a curve, the corner of the track should be supplied.
+    ///
+    /// @param face the direction the track should be facing
+    /// @param isOnSlope whether or not the track should be on a slope
     public void setDirection(BlockFace face, boolean isOnSlope) {
         switch (face) {
         case EAST:

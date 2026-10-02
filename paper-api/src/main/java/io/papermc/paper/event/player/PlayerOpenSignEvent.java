@@ -10,11 +10,9 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player begins editing a sign's text.
- * <p>
- * Cancelling this event stops the sign editing menu from opening.
- */
+/// Called when a player begins editing a sign's text.
+///
+/// Cancelling this event stops the sign editing menu from opening.
 @NullMarked
 public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {
 
@@ -34,30 +32,24 @@ public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {
         this.cause = cause;
     }
 
-    /**
-     * Gets the sign that was clicked.
-     *
-     * @return {@link Sign} that was clicked
-     */
+    /// Gets the sign that was clicked.
+    ///
+    /// @return [Sign] that was clicked
     public Sign getSign() {
         return this.sign;
     }
 
-    /**
-     * Gets which side of the sign was clicked.
-     *
-     * @return {@link Side} that was clicked
-     * @see Sign#getSide(Side)
-     */
+    /// Gets which side of the sign was clicked.
+    ///
+    /// @return [Side] that was clicked
+    /// @see Sign#getSide(Side)
     public Side getSide() {
         return this.side;
     }
 
-    /**
-     * The cause of this sign open.
-     *
-     * @return the cause
-     */
+    /// The cause of this sign open.
+    ///
+    /// @return the cause
     public Cause getCause() {
         return this.cause;
     }
@@ -81,25 +73,15 @@ public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * The cause of the {@link PlayerOpenSignEvent}.
-     */
+    /// The cause of the [PlayerOpenSignEvent].
     public enum Cause {
-        /**
-         * The event was triggered by the placement of a sign.
-         */
+        /// The event was triggered by the placement of a sign.
         PLACE,
-        /**
-         * The event was triggered by an interaction with a sign.
-         */
+        /// The event was triggered by an interaction with a sign.
         INTERACT,
-        /**
-         * The event was triggered via a plugin with {@link HumanEntity#openSign(Sign, Side)}
-         */
+        /// The event was triggered via a plugin with [HumanEntity#openSign(Sign, Side)]
         PLUGIN,
-        /**
-         * Fallback cause for any unknown cause.
-         */
+        /// Fallback cause for any unknown cause.
         UNKNOWN,
     }
 }

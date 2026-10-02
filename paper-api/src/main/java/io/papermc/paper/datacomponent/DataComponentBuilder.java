@@ -4,20 +4,16 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Base builder type for all component builders.
- *
- * @param <C> built component type
- */
+/// Base builder type for all component builders.
+///
+/// @param <C> built component type
 @NullMarked
 @ApiStatus.NonExtendable
 public interface DataComponentBuilder<C> {
 
-    /**
-     * Builds the immutable component value.
-     *
-     * @return a new component value
-     */
+    /// Builds the immutable component value.
+    ///
+    /// @return a new component value
     @Contract(value = "-> new", pure = true)
     C build();
 }

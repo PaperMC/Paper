@@ -5,10 +5,8 @@ import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the contents of damage types that the item entity containing this item is invincible to.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#DAMAGE_RESISTANT
- */
+/// Holds the contents of damage types that the item entity containing this item is invincible to.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#DAMAGE_RESISTANT
 @ApiStatus.NonExtendable
 public interface DamageResistant {
 
@@ -17,11 +15,9 @@ public interface DamageResistant {
         return ItemComponentTypesBridge.bridge().damageResistant(types);
     }
 
-    /**
-     * The types that this damage type is invincible to.
-     *
-     * @return the registry key set holding the respective damage types.
-     */
+    /// The types that this damage type is invincible to.
+    ///
+    /// @return the registry key set holding the respective damage types.
     @Contract(value = "-> new", pure = true)
     RegistryKeySet<DamageType> types();
 }

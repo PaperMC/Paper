@@ -10,9 +10,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a DragonFireball collides with a block/entity and spawns an AreaEffectCloud
- */
+/// Fired when a DragonFireball collides with a block/entity and spawns an AreaEffectCloud
 @NullMarked
 public class EnderDragonFireballHitEvent extends EntityEvent implements Cancellable {
 
@@ -29,26 +27,20 @@ public class EnderDragonFireballHitEvent extends EntityEvent implements Cancella
         this.areaEffectCloud = areaEffectCloud;
     }
 
-    /**
-     * The fireball involved in this event
-     */
+    /// The fireball involved in this event
     @Override
     public DragonFireball getEntity() {
         return (DragonFireball) super.getEntity();
     }
 
-    /**
-     * The living entities hit by fireball
-     *
-     * @return the targets
-     */
+    /// The living entities hit by fireball
+    ///
+    /// @return the targets
     public Collection<LivingEntity> getTargets() {
         return this.targets;
     }
 
-    /**
-     * @return The area effect cloud spawned in this collision
-     */
+    /// @return The area effect cloud spawned in this collision
     public AreaEffectCloud getAreaEffectCloud() {
         return this.areaEffectCloud;
     }

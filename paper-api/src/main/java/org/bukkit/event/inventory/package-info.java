@@ -1,6 +1,4 @@
-/**
- * {@link org.bukkit.event.Event Events} relating to {@link
- * org.bukkit.inventory.Inventory inventory} manipulation.
- */
+/// [`Events`][org.bukkit.event.Event] relating to
+/// [`inventory`][org.bukkit.inventory.Inventory] manipulation.
 package org.bukkit.event.inventory;
 

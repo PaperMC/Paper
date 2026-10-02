@@ -36,61 +36,49 @@ public abstract class AbstractRespawnEvent extends PlayerEvent {
         this.respawnFlags = builder.build();
     }
 
-    /**
-     * Gets the current respawn location.
-     *
-     * @return the current respawn location
-     */
+    /// Gets the current respawn location.
+    ///
+    /// @return the current respawn location
     public Location getRespawnLocation() {
         return this.respawnLocation.clone();
     }
 
-    /**
-     * Gets whether the respawn location is the player's bed.
-     *
-     * @return {@code true} if the respawn location is the player's bed
-     */
+    /// Gets whether the respawn location is the player's bed.
+    ///
+    /// @return `true` if the respawn location is the player's bed
     public boolean isBedSpawn() {
         return this.isBedSpawn;
     }
 
-    /**
-     * Gets whether the respawn location is the player's respawn anchor.
-     *
-     * @return {@code true} if the respawn location is the player's respawn anchor
-     */
+    /// Gets whether the respawn location is the player's respawn anchor.
+    ///
+    /// @return `true` if the respawn location is the player's respawn anchor
     public boolean isAnchorSpawn() {
         return this.isAnchorSpawn;
     }
 
-    /**
-     * Gets whether the player is missing a valid respawn block.
-     * <p>
-     * This will occur if the players respawn block is obstructed,
-     * or it is the first death after it was either destroyed or
-     * in case of a respawn anchor, ran out of charges.
-     *
-     * @return whether the player is missing a valid respawn block
-     */
+    /// Gets whether the player is missing a valid respawn block.
+    ///
+    /// This will occur if the players respawn block is obstructed,
+    /// or it is the first death after it was either destroyed or
+    /// in case of a respawn anchor, ran out of charges.
+    ///
+    /// @return whether the player is missing a valid respawn block
     public boolean isMissingRespawnBlock() {
         return this.missingRespawnBlock;
     }
 
-    /**
-     * Gets the reason this respawn event was called.
-     *
-     * @return the reason the event was called
-     */
+    /// Gets the reason this respawn event was called.
+    ///
+    /// @return the reason the event was called
     public PlayerRespawnEvent.RespawnReason getRespawnReason() {
         return this.respawnReason;
     }
 
-    /**
-     * Gets the set of flags that apply to this respawn.
-     *
-     * @return an immutable set of the flags that apply to this respawn
-     * @deprecated in favour of {@link #getRespawnReason()}/{@link #isBedSpawn}/{@link #isAnchorSpawn()}
-     */
+    /// Gets the set of flags that apply to this respawn.
+    ///
+    /// @return an immutable set of the flags that apply to this respawn
+    /// @deprecated in favour of [#getRespawnReason()]/[#isBedSpawn]/[#isAnchorSpawn()]
     @Deprecated
     public @Unmodifiable Set<PlayerRespawnEvent.RespawnFlag> getRespawnFlags() {
         return this.respawnFlags;

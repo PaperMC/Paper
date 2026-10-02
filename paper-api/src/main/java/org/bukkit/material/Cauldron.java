@@ -2,12 +2,10 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 
-/**
- * Represents a cauldron
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a cauldron
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Cauldron extends MaterialData {
     private static final int CAULDRON_FULL = 3;
@@ -17,39 +15,31 @@ public class Cauldron extends MaterialData {
         super(Material.LEGACY_CAULDRON);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Cauldron(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Cauldron(byte data) {
         super(Material.LEGACY_CAULDRON, data);
     }
 
-    /**
-     * Check if the cauldron is full.
-     *
-     * @return True if it is full.
-     */
+    /// Check if the cauldron is full.
+    ///
+    /// @return True if it is full.
     public boolean isFull() {
         return getData() >= CAULDRON_FULL;
     }
 
-    /**
-     * Check if the cauldron is empty.
-     *
-     * @return True if it is empty.
-     */
+    /// Check if the cauldron is empty.
+    ///
+    /// @return True if it is empty.
     public boolean isEmpty() {
         return getData() <= CAULDRON_EMPTY;
     }

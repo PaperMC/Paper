@@ -7,10 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Sets whether this item should protect the entity upon death, and what effects should be played.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
- */
+/// Sets whether this item should protect the entity upon death, and what effects should be played.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
 @ApiStatus.NonExtendable
 public interface DeathProtection {
 
@@ -27,9 +25,7 @@ public interface DeathProtection {
     @Contract(value = "-> new", pure = true)
     @Unmodifiable List<ConsumeEffect> deathEffects();
 
-    /**
-     * Builder for {@link DeathProtection}.
-     */
+    /// Builder for [DeathProtection].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DeathProtection> {
 

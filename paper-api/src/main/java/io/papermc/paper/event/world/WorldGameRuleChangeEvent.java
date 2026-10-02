@@ -10,10 +10,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a world's gamerule is changed, either by command, world options menu, or by api.
- * @see <a href="https://minecraft.wiki/w/Game_rule#Modifying_game_rules">Modifying game rules - Minecraft wiki</a>
- */
+/// Called when a world's gamerule is changed, either by command, world options menu, or by api.
+/// @see <a href="https://minecraft.wiki/w/Game_rule#Modifying_game_rules">Modifying game rules - Minecraft wiki</a>
 @NullMarked
 public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable {
 
@@ -32,38 +30,30 @@ public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable 
         this.value = value;
     }
 
-    /**
-     * Gets the command sender associated with this event.
-     *
-     * @return {@code null} if the gamerule was changed via api, otherwise the {@link CommandSender}.
-     */
+    /// Gets the command sender associated with this event.
+    ///
+    /// @return `null` if the gamerule was changed via api, otherwise the [CommandSender].
     public @Nullable CommandSender getCommandSender() {
         return this.commandSender;
     }
 
-    /**
-     * Gets the game rule associated with this event.
-     *
-     * @return the gamerule being changed.
-     */
+    /// Gets the game rule associated with this event.
+    ///
+    /// @return the gamerule being changed.
     public GameRule<?> getGameRule() {
         return this.gameRule;
     }
 
-    /**
-     * Gets the new value of the gamerule.
-     *
-     * @return the new value of the gamerule.
-     */
+    /// Gets the new value of the gamerule.
+    ///
+    /// @return the new value of the gamerule.
     public String getValue() {
         return this.value;
     }
 
-    /**
-     * Sets the new value of this gamerule.
-     *
-     * @param value the new value of the gamerule.
-     */
+    /// Sets the new value of this gamerule.
+    ///
+    /// @param value the new value of the gamerule.
     public void setValue(final String value) {
         this.value = value;
     }

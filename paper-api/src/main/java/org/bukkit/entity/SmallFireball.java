@@ -1,8 +1,6 @@
 package org.bukkit.entity;
 
-/**
- * Represents a small {@link Fireball}
- */
+/// Represents a small [Fireball]
 public interface SmallFireball extends SizedFireball {
 
 }

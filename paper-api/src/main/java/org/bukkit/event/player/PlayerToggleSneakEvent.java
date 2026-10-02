@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player toggles their sneaking state
- */
+/// Called when a player toggles their sneaking state
 public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,11 +20,9 @@ public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
         this.isSneaking = isSneaking;
     }
 
-    /**
-     * Returns whether the player is now sneaking or not.
-     *
-     * @return sneaking state
-     */
+    /// Returns whether the player is now sneaking or not.
+    ///
+    /// @return sneaking state
     public boolean isSneaking() {
         return this.isSneaking;
     }

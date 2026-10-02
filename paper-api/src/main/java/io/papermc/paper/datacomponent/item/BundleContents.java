@@ -7,10 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds all items stored inside of a Bundle.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#BUNDLE_CONTENTS
- */
+/// Holds all items stored inside of a Bundle.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#BUNDLE_CONTENTS
 @ApiStatus.NonExtendable
 public interface BundleContents {
 
@@ -24,37 +22,29 @@ public interface BundleContents {
         return ItemComponentTypesBridge.bridge().bundleContents();
     }
 
-    /**
-     * Lists the items that are currently stored inside of this component.
-     *
-     * @return items
-     */
+    /// Lists the items that are currently stored inside of this component.
+    ///
+    /// @return items
     @Contract(pure = true)
     @Unmodifiable List<ItemStack> contents();
 
-    /**
-     * Builder for {@link BundleContents}.
-     */
+    /// Builder for [BundleContents].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BundleContents> {
 
-        /**
-         * Adds an item to this builder.
-         *
-         * @param stack item
-         * @return the builder for chaining
-         * @see #contents()
-         */
+        /// Adds an item to this builder.
+        ///
+        /// @param stack item
+        /// @return the builder for chaining
+        /// @see #contents()
         @Contract(value = "_ -> this", mutates = "this")
         Builder add(ItemStack stack);
 
-        /**
-         * Adds items to this builder.
-         *
-         * @param stacks items
-         * @return the builder for chaining
-         * @see #contents()
-         */
+        /// Adds items to this builder.
+        ///
+        /// @param stacks items
+        /// @return the builder for chaining
+        /// @see #contents()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<ItemStack> stacks);
     }

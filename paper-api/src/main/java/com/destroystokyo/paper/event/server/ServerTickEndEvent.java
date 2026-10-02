@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when the server has finished ticking the main loop
- */
+/// Called when the server has finished ticking the main loop
 @NullMarked
 public class ServerTickEndEvent extends Event {
 
@@ -24,29 +22,23 @@ public class ServerTickEndEvent extends Event {
         this.timeEnd = System.nanoTime() + timeRemaining;
     }
 
-    /**
-     * @return What tick this was since start (first tick = 1)
-     */
+    /// @return What tick this was since start (first tick = 1)
     public int getTickNumber() {
         return this.tickNumber;
     }
 
-    /**
-     * @return Time in milliseconds of how long this tick took
-     */
+    /// @return Time in milliseconds of how long this tick took
     public double getTickDuration() {
         return this.tickDuration;
     }
 
-    /**
-     * Amount of nanoseconds remaining before the next tick should start.
-     * <p>
-     * If this value is negative, then that means the server has exceeded the tick time limit and TPS has been lost.
-     * <p>
-     * Method will continuously return the updated time remaining value. (return value is not static)
-     *
-     * @return Amount of nanoseconds remaining before the next tick should start
-     */
+    /// Amount of nanoseconds remaining before the next tick should start.
+    ///
+    /// If this value is negative, then that means the server has exceeded the tick time limit and TPS has been lost.
+    ///
+    /// Method will continuously return the updated time remaining value. (return value is not static)
+    ///
+    /// @return Amount of nanoseconds remaining before the next tick should start
     public long getTimeRemaining() {
         return this.timeEnd - System.nanoTime();
     }

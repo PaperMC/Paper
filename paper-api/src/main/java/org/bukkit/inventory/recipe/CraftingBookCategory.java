@@ -1,8 +1,6 @@
 package org.bukkit.inventory.recipe;
 
-/**
- * Represents categories within the crafting recipe book.
- */
+/// Represents categories within the crafting recipe book.
 public enum CraftingBookCategory {
 
     // Start generate - CraftingBookCategory

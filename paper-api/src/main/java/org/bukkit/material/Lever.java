@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a lever
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a lever
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Lever extends SimpleAttachableMaterialData implements Redstone {
     public Lever() {
@@ -19,41 +17,33 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Lever(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current state of this Material, indicating if it's powered or
-     * unpowered
-     *
-     * @return true if powered, otherwise false
-     */
+    /// Gets the current state of this Material, indicating if it's powered or
+    /// unpowered
+    ///
+    /// @return true if powered, otherwise false
     @Override
     public boolean isPowered() {
         return (getData() & 0x8) == 0x8;
     }
 
-    /**
-     * Set this lever to be powered or not.
-     *
-     * @param isPowered whether the lever should be powered or not
-     */
+    /// Set this lever to be powered or not.
+    ///
+    /// @param isPowered whether the lever should be powered or not
     public void setPowered(boolean isPowered) {
         setData((byte) (isPowered ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
-    /**
-     * Gets the face that this block is attached on
-     *
-     * @return BlockFace attached to
-     */
+    /// Gets the face that this block is attached on
+    ///
+    /// @return BlockFace attached to
     @Override
     public BlockFace getAttachedFace() {
         byte data = (byte) (getData() & 0x7);
@@ -84,9 +74,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
         return null;
     }
 
-    /**
-     * Sets the direction this lever is pointing in
-     */
+    /// Sets the direction this lever is pointing in
     @Override
     public void setFacingDirection(BlockFace face) {
         byte data = (byte) (getData() & 0x8);

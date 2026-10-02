@@ -7,13 +7,11 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an equippable item is dispensed from a block and equipped on a
- * nearby entity.
- * <p>
- * If this event is cancelled, the equipment will not be
- * equipped on the target entity.
- */
+/// Called when an equippable item is dispensed from a block and equipped on a
+/// nearby entity.
+///
+/// If this event is cancelled, the equipment will not be
+/// equipped on the target entity.
 public class BlockDispenseArmorEvent extends BlockDispenseEvent {
 
     private final LivingEntity target;
@@ -24,11 +22,9 @@ public class BlockDispenseArmorEvent extends BlockDispenseEvent {
         this.target = target;
     }
 
-    /**
-     * Get the living entity on which the armor was dispensed.
-     *
-     * @return the target entity
-     */
+    /// Get the living entity on which the armor was dispensed.
+    ///
+    /// @return the target entity
     @NotNull
     public LivingEntity getTargetEntity() {
         return this.target;

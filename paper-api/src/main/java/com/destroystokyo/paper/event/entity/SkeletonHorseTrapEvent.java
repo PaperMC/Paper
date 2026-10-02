@@ -9,9 +9,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Event called when a player gets close to a skeleton horse and triggers the lightning trap
- */
+/// Event called when a player gets close to a skeleton horse and triggers the lightning trap
 @NullMarked
 public class SkeletonHorseTrapEvent extends EntityEvent implements Cancellable {
 

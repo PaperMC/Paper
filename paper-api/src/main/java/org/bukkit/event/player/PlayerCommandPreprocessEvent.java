@@ -9,43 +9,39 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called whenever a player runs a command (by placing a slash
- * at the start of their message). It is called early in the command handling
- * process, and modifications in this event (via {@link #setMessage(String)})
- * will be shown in the behavior.
- * <p>
- * Many plugins will have <b>no use for this event</b>, and you should
- * attempt to avoid using it if it is not necessary.
- * <p>
- * Some examples of valid uses for this event are:
- * <ul>
- * <li>Logging executed commands to a separate file
- * <li>Variable substitution. For example, replacing
- *     <code>${nearbyPlayer}</code> with the name of the nearest other
- *     player, or simulating the <code>@a</code> and <code>@p</code>
- *     decorators used by Command Blocks in plugins that do not handle it.
- * <li>Conditionally blocking commands belonging to other plugins. For
- *     example, blocking the use of the <code>/home</code> command in a
- *     combat arena.
- * <li>Per-sender command aliases. For example, after a player runs the
- *     command <code>/calias cr gamemode creative</code>, the next time they
- *     run <code>/cr</code>, it gets replaced into
- *     <code>/gamemode creative</code>. (Global command aliases should be
- *     done by registering the alias.)
- * </ul>
- * <p>
- * Examples of incorrect uses are:
- * <ul>
- * <li>Using this event to run command logic
- * </ul>
- * <p>
- * If the event is cancelled, processing of the command will halt.
- * <p>
- * The state of whether there is a slash (<code>/</code>) at the
- * beginning of the message should be preserved. If a slash is added or
- * removed, unexpected behavior may result.
- */
+/// This event is called whenever a player runs a command (by placing a slash
+/// at the start of their message). It is called early in the command handling
+/// process, and modifications in this event (via [#setMessage(String)])
+/// will be shown in the behavior.
+///
+/// Many plugins will have **no use for this event**, and you should
+/// attempt to avoid using it if it is not necessary.
+///
+/// Some examples of valid uses for this event are:
+///
+///   - Logging executed commands to a separate file
+///   - Variable substitution. For example, replacing
+///     `${nearbyPlayer}` with the name of the nearest other
+///     player, or simulating the `@a` and `@p`
+///     decorators used by Command Blocks in plugins that do not handle it.
+///   - Conditionally blocking commands belonging to other plugins. For
+///     example, blocking the use of the `/home` command in a
+///     combat arena.
+///   - Per-sender command aliases. For example, after a player runs the
+///     command `/calias cr gamemode creative`, the next time they
+///     run `/cr`, it gets replaced into
+///     `/gamemode creative`. (Global command aliases should be
+///     done by registering the alias.)
+///
+/// Examples of incorrect uses are:
+///
+///   - Using this event to run command logic
+///
+/// If the event is cancelled, processing of the command will halt.
+///
+/// The state of whether there is a slash (`/`) at the
+/// beginning of the message should be preserved. If a slash is added or
+/// removed, unexpected behavior may result.
 public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -69,60 +65,52 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
         this.message = message;
     }
 
-    /**
-     * Gets the command that the player is attempting to send.
-     * <p>
-     * All commands begin with a special character; implementations do not
-     * consider the first character when executing the content.
-     *
-     * @return Message the player is attempting to send
-     */
+    /// Gets the command that the player is attempting to send.
+    ///
+    /// All commands begin with a special character; implementations do not
+    /// consider the first character when executing the content.
+    ///
+    /// @return Message the player is attempting to send
     @NotNull
     public String getMessage() {
         return this.message;
     }
 
-    /**
-     * Sets the command that the player will send.
-     * <p>
-     * All commands begin with a special character; implementations do not
-     * consider the first character when executing the content.
-     *
-     * @param command New message that the player will send
-     * @throws IllegalArgumentException if command is {@code null} or empty
-     */
+    /// Sets the command that the player will send.
+    ///
+    /// All commands begin with a special character; implementations do not
+    /// consider the first character when executing the content.
+    ///
+    /// @param command New message that the player will send
+    /// @throws IllegalArgumentException if command is `null` or empty
     public void setMessage(@NotNull String command) throws IllegalArgumentException {
         Preconditions.checkArgument(command != null, "Command cannot be null");
         Preconditions.checkArgument(!command.isEmpty(), "Command cannot be empty");
         this.message = command;
     }
 
-    /**
-     * Gets a set of recipients that this chat message will be displayed to.
-     * <p>
-     * The set returned is not guaranteed to be mutable and may auto-populate
-     * on access. Any listener accessing the returned set should be aware that
-     * it may reduce performance for a lazy set implementation. Listeners
-     * should be aware that modifying the list may throw {@link
-     * UnsupportedOperationException} if the event caller provides an
-     * unmodifiable set.
-     *
-     * @return All Players who will see this chat message
-     * @deprecated This is simply the online players. Modifications have no effect
-     */
+    /// Gets a set of recipients that this chat message will be displayed to.
+    ///
+    /// The set returned is not guaranteed to be mutable and may auto-populate
+    /// on access. Any listener accessing the returned set should be aware that
+    /// it may reduce performance for a lazy set implementation. Listeners
+    /// should be aware that modifying the list may throw
+    /// [UnsupportedOperationException] if the event caller provides an
+    /// unmodifiable set.
+    ///
+    /// @return All Players who will see this chat message
+    /// @deprecated This is simply the online players. Modifications have no effect
     @NotNull
     @Deprecated(since = "1.3.1", forRemoval = true)
     public Set<Player> getRecipients() {
         return this.recipients;
     }
 
-    /**
-     * Sets the player that this command will be executed as.
-     *
-     * @param player New player which this event will execute as
-     * @throws IllegalArgumentException if the player provided is null
-     * @deprecated Only works for sign commands; use {@link Player#performCommand(String)}, including those cases
-     */
+    /// Sets the player that this command will be executed as.
+    ///
+    /// @param player New player which this event will execute as
+    /// @throws IllegalArgumentException if the player provided is null
+    /// @deprecated Only works for sign commands; use [Player#performCommand(String)], including those cases
     @Deprecated(forRemoval = true)
     public void setPlayer(@NotNull final Player player) throws IllegalArgumentException {
         Preconditions.checkArgument(player != null, "Player cannot be null");

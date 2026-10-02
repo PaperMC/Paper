@@ -32,57 +32,45 @@ public class PlayerLecternPageChangeEvent extends PlayerEvent implements Cancell
         this.newPage = newPage;
     }
 
-    /**
-     * Gets the lectern involved.
-     *
-     * @return the Lectern
-     */
+    /// Gets the lectern involved.
+    ///
+    /// @return the Lectern
     public Lectern getLectern() {
         return this.lectern;
     }
 
-    /**
-     * Gets the current ItemStack on the lectern.
-     *
-     * @return the ItemStack on the Lectern
-     */
+    /// Gets the current ItemStack on the lectern.
+    ///
+    /// @return the ItemStack on the Lectern
     public ItemStack getBook() {
         return this.book;
     }
 
-    /**
-     * Gets the page change direction. This is essentially returns which button the player clicked, left or right.
-     *
-     * @return the page change direction
-     */
+    /// Gets the page change direction. This is essentially returns which button the player clicked, left or right.
+    ///
+    /// @return the page change direction
     public PageChangeDirection getPageChangeDirection() {
         return this.pageChangeDirection;
     }
 
-    /**
-     * Gets the page changed from. <i>Pages are 0-indexed.</i>
-     *
-     * @return the page changed from
-     */
+    /// Gets the page changed from. _Pages are 0-indexed._
+    ///
+    /// @return the page changed from
     public int getOldPage() {
         return this.oldPage;
     }
 
-    /**
-     * Gets the page changed to. <i>Pages are 0-indexed.</i>
-     *
-     * @return the page changed to
-     */
+    /// Gets the page changed to. _Pages are 0-indexed._
+    ///
+    /// @return the page changed to
     public int getNewPage() {
         return this.newPage;
     }
 
-    /**
-     * Sets the page changed to. <i>Pages are 0-indexed.</i>
-     * Page indices that are greater than the number of pages will show the last page.
-     *
-     * @param newPage the new paged changed to
-     */
+    /// Sets the page changed to. _Pages are 0-indexed._
+    /// Page indices that are greater than the number of pages will show the last page.
+    ///
+    /// @param newPage the new paged changed to
     public void setNewPage(final int newPage) {
         this.newPage = newPage;
     }

@@ -12,12 +12,10 @@ import org.jspecify.annotations.NullMarked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Modified version of the Guava class with the same name to support add operations.
- *
- * @param <F> backing list element type
- * @param <T> transformed list element type
- */
+/// Modified version of the Guava class with the same name to support add operations.
+///
+/// @param <F> backing list element type
+/// @param <T> transformed list element type
 @NullMarked
 @ApiStatus.Internal
 public final class TransformingRandomAccessList<F, T> extends AbstractList<T> implements RandomAccess {
@@ -26,13 +24,11 @@ public final class TransformingRandomAccessList<F, T> extends AbstractList<T> im
     final Function<? super F, ? extends T> toFunction;
     final Function<? super T, ? extends F> fromFunction;
 
-    /**
-     * Create a new {@link TransformingRandomAccessList}.
-     *
-     * @param fromList backing list
-     * @param toFunction function mapping backing list element type to transformed list element type
-     * @param fromFunction function mapping transformed list element type to backing list element type
-     */
+    /// Create a new [TransformingRandomAccessList].
+    ///
+    /// @param fromList backing list
+    /// @param toFunction function mapping backing list element type to transformed list element type
+    /// @param fromFunction function mapping transformed list element type to backing list element type
     public TransformingRandomAccessList(
         final List<F> fromList,
         final Function<? super F, ? extends T> toFunction,

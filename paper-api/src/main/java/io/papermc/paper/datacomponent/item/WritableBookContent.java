@@ -8,10 +8,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds the pages for a writable book.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
- */
+/// Holds the pages for a writable book.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
 @ApiStatus.NonExtendable
 public interface WritableBookContent extends BookLike {
 
@@ -20,57 +18,45 @@ public interface WritableBookContent extends BookLike {
         return ItemComponentTypesBridge.bridge().writeableBookContent();
     }
 
-    /**
-     * Holds the pages that can be written to for this component.
-     *
-     * @return pages, as filtered objects
-     */
+    /// Holds the pages that can be written to for this component.
+    ///
+    /// @return pages, as filtered objects
     @Contract(pure = true)
     @Unmodifiable List<Filtered<String>> pages();
 
-    /**
-     * Builder for {@link WritableBookContent}.
-     */
+    /// Builder for [WritableBookContent].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<WritableBookContent> {
 
-        /**
-         * Adds a page that can be written to for this builder.
-         *
-         * @param page page
-         * @return the builder for chaining
-         * @see #pages()
-         */
+        /// Adds a page that can be written to for this builder.
+        ///
+        /// @param page page
+        /// @return the builder for chaining
+        /// @see #pages()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addPage(String page);
 
-        /**
-         * Adds pages that can be written to for this builder.
-         *
-         * @param pages pages
-         * @return the builder for chaining
-         * @see #pages()
-         */
+        /// Adds pages that can be written to for this builder.
+        ///
+        /// @param pages pages
+        /// @return the builder for chaining
+        /// @see #pages()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addPages(List<String> pages);
 
-        /**
-         * Adds a filterable page that can be written to for this builder.
-         *
-         * @param page page
-         * @return the builder for chaining
-         * @see #pages()
-         */
+        /// Adds a filterable page that can be written to for this builder.
+        ///
+        /// @param page page
+        /// @return the builder for chaining
+        /// @see #pages()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addFilteredPage(Filtered<String> page);
 
-        /**
-         * Adds filterable pages that can be written to for this builder.
-         *
-         * @param pages pages
-         * @return the builder for chaining
-         * @see #pages()
-         */
+        /// Adds filterable pages that can be written to for this builder.
+        ///
+        /// @param pages pages
+        /// @return the builder for chaining
+        /// @see #pages()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addFilteredPages(List<Filtered<String>> pages);
     }

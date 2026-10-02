@@ -14,9 +14,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 public class YamlConstructor extends SafeConstructor {
 
-    /**
-     * @deprecated options required
-     */
+    /// @deprecated options required
     @Deprecated(since = "1.19.4")
     public YamlConstructor() {
         this(new LoaderOptions());

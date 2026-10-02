@@ -8,10 +8,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Event that gets called each time a Hopper attempts to find its
- * source/attached containers.
- */
+/// Event that gets called each time a Hopper attempts to find its
+/// source/attached containers.
 public class HopperInventorySearchEvent extends BlockEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,17 +20,11 @@ public class HopperInventorySearchEvent extends BlockEvent {
 
     public enum ContainerType {
 
-        /**
-         * The source container the hopper is looking for.
-         *
-         * This is the Inventory above the Hopper where it extracts items from.
-         */
+        /// The source container the hopper is looking for.
+        /// This is the Inventory above the Hopper where it extracts items from.
         SOURCE,
-        /**
-         * The container the hopper is attached to.
-         *
-         * This is the Inventory the Hopper pushes items into.
-         */
+        /// The container the hopper is attached to.
+        /// This is the Inventory the Hopper pushes items into.
         DESTINATION;
     }
 
@@ -44,42 +36,34 @@ public class HopperInventorySearchEvent extends BlockEvent {
         this.searchBlock = searchBlock;
     }
 
-    /**
-     * Set the {@link Inventory} that the Hopper will use for its
-     * source/attached Container.
-     *
-     * @param inventory the inventory to use
-     */
+    /// Set the [Inventory] that the Hopper will use for its
+    /// source/attached Container.
+    ///
+    /// @param inventory the inventory to use
     public void setInventory(@Nullable Inventory inventory) {
         this.inventory = inventory;
     }
 
-    /**
-     * Gets the {@link Inventory} that the Hopper will use for its
-     * source/attached Container.
-     *
-     * @return the inventory which will be used
-     */
+    /// Gets the [Inventory] that the Hopper will use for its
+    /// source/attached Container.
+    ///
+    /// @return the inventory which will be used
     @Nullable
     public Inventory getInventory() {
         return this.inventory;
     }
 
-    /**
-     * Gets the Container type the Hopper is searching for.
-     *
-     * @return the container type being searched for
-     */
+    /// Gets the Container type the Hopper is searching for.
+    ///
+    /// @return the container type being searched for
     @NotNull
     public ContainerType getContainerType() {
         return this.containerType;
     }
 
-    /**
-     * Gets the Block that is being searched for an inventory.
-     *
-     * @return block being searched for an inventory
-     */
+    /// Gets the Block that is being searched for an inventory.
+    ///
+    /// @return block being searched for an inventory
     @NotNull
     public Block getSearchBlock() {
         return this.searchBlock;

@@ -5,10 +5,8 @@ import org.bukkit.JukeboxSong;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the jukebox song for an item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
- */
+/// Holds the jukebox song for an item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
 @ApiStatus.NonExtendable
 public interface JukeboxPlayable  {
 
@@ -20,19 +18,15 @@ public interface JukeboxPlayable  {
     @Contract(pure = true)
     JukeboxSong jukeboxSong();
 
-    /**
-     * Builder for {@link JukeboxPlayable}.
-     */
+    /// Builder for [JukeboxPlayable].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<JukeboxPlayable> {
 
-        /**
-         * Sets the jukebox song.
-         *
-         * @param song the song
-         * @return the builder for chaining
-         * @see #jukeboxSong()
-         */
+        /// Sets the jukebox song.
+        ///
+        /// @param song the song
+        /// @return the builder for chaining
+        /// @see #jukeboxSong()
         @Contract(value = "_ -> this", mutates = "this")
         Builder jukeboxSong(JukeboxSong song);
     }

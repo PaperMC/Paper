@@ -8,13 +8,11 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when two entities collide with each other.
- * If cancelled, the entities won't get pushed away from each other.
- * <p>
- * Note that even if cancelled, the client may still run its own collision unless
- * disabled via player teams.
- */
+/// Fired when two entities collide with each other.
+/// If cancelled, the entities won't get pushed away from each other.
+///
+/// Note that even if cancelled, the client may still run its own collision unless
+/// disabled via player teams.
 @NullMarked
 public class EntityCollideWithEntityEvent extends Event implements Cancellable {
 
@@ -27,11 +25,9 @@ public class EntityCollideWithEntityEvent extends Event implements Cancellable {
         this.entities = List.of(entity1, entity2);
     }
 
-    /**
-     * Returns the entities involved in this event
-     *
-     * @return entities that are involved in this event
-     */
+    /// Returns the entities involved in this event
+    ///
+    /// @return entities that are involved in this event
     public List<Entity> getEntities() {
         return this.entities;
     }

@@ -8,9 +8,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a world border's center is changed.
- */
+/// Called when a world border's center is changed.
 @NullMarked
 public class WorldBorderCenterChangeEvent extends WorldBorderEvent implements Cancellable {
 
@@ -28,29 +26,23 @@ public class WorldBorderCenterChangeEvent extends WorldBorderEvent implements Ca
         this.newCenter = newCenter;
     }
 
-    /**
-     * Gets the original center location of the world border.
-     *
-     * @return the old center
-     */
+    /// Gets the original center location of the world border.
+    ///
+    /// @return the old center
     public Location getOldCenter() {
         return this.oldCenter.clone();
     }
 
-    /**
-     * Gets the new center location for the world border.
-     *
-     * @return the new center
-     */
+    /// Gets the new center location for the world border.
+    ///
+    /// @return the new center
     public Location getNewCenter() {
         return this.newCenter;
     }
 
-    /**
-     * Sets the new center location for the world border. Y coordinate is ignored.
-     *
-     * @param newCenter the new center
-     */
+    /// Sets the new center location for the world border. Y coordinate is ignored.
+    ///
+    /// @param newCenter the new center
     public void setNewCenter(final Location newCenter) {
         this.newCenter = newCenter.clone();
     }

@@ -8,9 +8,7 @@ import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a weighted spawn potential that can be added to a monster spawner.
- */
+/// Represents a weighted spawn potential that can be added to a monster spawner.
 public class SpawnerEntry {
 
     private EntitySnapshot snapshot;
@@ -31,89 +29,71 @@ public class SpawnerEntry {
         this.equipment = equipment;
     }
 
-    /**
-     * Gets the {@link EntitySnapshot} for this SpawnerEntry.
-     *
-     * @return the snapshot
-     */
+    /// Gets the [EntitySnapshot] for this SpawnerEntry.
+    ///
+    /// @return the snapshot
     @NotNull
     public EntitySnapshot getSnapshot() {
         return snapshot;
     }
 
-    /**
-     * Sets the {@link EntitySnapshot} for this SpawnerEntry.
-     *
-     * @param snapshot the snapshot
-     */
+    /// Sets the [EntitySnapshot] for this SpawnerEntry.
+    ///
+    /// @param snapshot the snapshot
     public void setSnapshot(@NotNull EntitySnapshot snapshot) {
         Preconditions.checkArgument(snapshot != null, "Snapshot cannot be null");
         this.snapshot = snapshot;
     }
 
-    /**
-     * Gets the weight for this SpawnerEntry, when added to a spawner entries
-     * with higher weight will spawn more often.
-     *
-     * @return the weight
-     */
+    /// Gets the weight for this SpawnerEntry, when added to a spawner entries
+    /// with higher weight will spawn more often.
+    ///
+    /// @return the weight
     public int getSpawnWeight() {
         return spawnWeight;
     }
 
-    /**
-     * Sets the weight for this SpawnerEntry, when added to a spawner entries
-     * with higher weight will spawn more often.
-     *
-     * @param spawnWeight the new spawn weight
-     */
+    /// Sets the weight for this SpawnerEntry, when added to a spawner entries
+    /// with higher weight will spawn more often.
+    ///
+    /// @param spawnWeight the new spawn weight
     public void setSpawnWeight(int spawnWeight) {
         this.spawnWeight = spawnWeight;
     }
 
-    /**
-     * Gets a copy of the {@link SpawnRule} for this SpawnerEntry, or null if
-     * none has been set.
-     *
-     * @return a copy of the spawn rule or null
-     */
+    /// Gets a copy of the [SpawnRule] for this SpawnerEntry, or null if
+    /// none has been set.
+    ///
+    /// @return a copy of the spawn rule or null
     @Nullable
     public SpawnRule getSpawnRule() {
         return spawnRule == null ? null : spawnRule.clone();
     }
 
-    /**
-     * Sets the {@link SpawnRule} for this SpawnerEntry, null may be used to
-     * clear the current spawn rule.
-     *
-     * @param spawnRule the new spawn rule to use or null
-     */
+    /// Sets the [SpawnRule] for this SpawnerEntry, null may be used to
+    /// clear the current spawn rule.
+    ///
+    /// @param spawnRule the new spawn rule to use or null
     public void setSpawnRule(@Nullable SpawnRule spawnRule) {
         this.spawnRule = spawnRule;
     }
 
-    /**
-     * Gets the equipment which will be applied to the spawned entity.
-     *
-     * @return the equipment, or null
-     */
+    /// Gets the equipment which will be applied to the spawned entity.
+    ///
+    /// @return the equipment, or null
     @Nullable
     public Equipment getEquipment() {
         return equipment;
     }
 
-    /**
-     * Sets the equipment which will be applied to the spawned entity.
-     *
-     * @param equipment new equipment, or null
-     */
+    /// Sets the equipment which will be applied to the spawned entity.
+    ///
+    /// @param equipment new equipment, or null
     public void setEquipment(@Nullable Equipment equipment) {
         this.equipment = equipment;
     }
 
-    /**
-     * Represents the equipment loot table applied to a spawned entity.
-     */
+    /// Represents the equipment loot table applied to a spawned entity.
     public static class Equipment {
 
         private LootTable equipmentLootTable;
@@ -125,39 +105,32 @@ public class SpawnerEntry {
             this.dropChances = dropChances;
         }
 
-        /**
-         * Set the loot table for the spawned entity's equipment slots.
-         * <br>
-         * To remove a loot table use the empty loot table.
-         *
-         * @param table this {@link org.bukkit.entity.Mob} will have.
-         */
+        /// Set the loot table for the spawned entity's equipment slots.
+        ///
+        /// To remove a loot table use the empty loot table.
+        ///
+        /// @param table this [org.bukkit.entity.Mob] will have.
         public void setEquipmentLootTable(@NotNull LootTable table) {
             Preconditions.checkArgument(table != null, "table cannot be null"); // Paper
             this.equipmentLootTable = table;
         }
 
-        /**
-         * Gets the loot table for the spawned entity's equipment.
-         * <br>
-         *
-         * If an entity does not have a loot table, this will return an
-         * empty loot table.
-         *
-         * @return the loot table for this entity.
-         */
+        /// Gets the loot table for the spawned entity's equipment.
+        ///
+        /// If an entity does not have a loot table, this will return an
+        /// empty loot table.
+        ///
+        /// @return the loot table for this entity.
         @NotNull
         public LootTable getEquipmentLootTable() {
             return this.equipmentLootTable;
         }
 
-        /**
-         * Gets a mutable map of the drop chances for each slot of the entity.
-         * If non-null, the entity's drop chances will be overridden with the
-         * given value.
-         *
-         * @return mutable map of drop chances
-         */
+        /// Gets a mutable map of the drop chances for each slot of the entity.
+        /// If non-null, the entity's drop chances will be overridden with the
+        /// given value.
+        ///
+        /// @return mutable map of drop chances
         @NotNull
         public Map<EquipmentSlot, Float> getDropChances() {
             return this.dropChances;

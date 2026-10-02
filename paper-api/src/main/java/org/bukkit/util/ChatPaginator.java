@@ -7,11 +7,9 @@ import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * The ChatPaginator takes a raw string of arbitrary length and breaks it down
- * into an array of strings appropriate for displaying on the Minecraft player
- * console.
- */
+/// The ChatPaginator takes a raw string of arbitrary length and breaks it down
+/// into an array of strings appropriate for displaying on the Minecraft player
+/// console.
 public class ChatPaginator {
     public static final int GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH = 55; // Will never wrap, even with the largest characters
     public static final int AVERAGE_CHAT_PAGE_WIDTH = 65; // Will typically not wrap using an average character distribution
@@ -20,27 +18,23 @@ public class ChatPaginator {
     public static final int CLOSED_CHAT_PAGE_HEIGHT = 10; // The height of the default chat window
     public static final int UNBOUNDED_PAGE_HEIGHT = Integer.MAX_VALUE;
 
-    /**
-     * Breaks a raw string up into pages using the default width and height.
-     *
-     * @param unpaginatedString The raw string to break.
-     * @param pageNumber The page number to fetch.
-     * @return A single chat page.
-     */
+    /// Breaks a raw string up into pages using the default width and height.
+    ///
+    /// @param unpaginatedString The raw string to break.
+    /// @param pageNumber The page number to fetch.
+    /// @return A single chat page.
     @NotNull
     public static ChatPage paginate(@Nullable String unpaginatedString, int pageNumber) {
         return paginate(unpaginatedString, pageNumber, GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH, CLOSED_CHAT_PAGE_HEIGHT);
     }
 
-    /**
-     * Breaks a raw string up into pages using a provided width and height.
-     *
-     * @param unpaginatedString The raw string to break.
-     * @param pageNumber The page number to fetch.
-     * @param lineLength The desired width of a chat line.
-     * @param pageHeight The desired number of lines in a page.
-     * @return A single chat page.
-     */
+    /// Breaks a raw string up into pages using a provided width and height.
+    ///
+    /// @param unpaginatedString The raw string to break.
+    /// @param pageNumber The page number to fetch.
+    /// @param lineLength The desired width of a chat line.
+    /// @param pageHeight The desired number of lines in a page.
+    /// @return A single chat page.
     @NotNull
     public static ChatPage paginate(@Nullable String unpaginatedString, int pageNumber, int lineLength, int pageHeight) {
         String[] lines = wordWrap(unpaginatedString, lineLength);
@@ -55,14 +49,12 @@ public class ChatPaginator {
         return new ChatPage(selectedLines, actualPageNumber, totalPages);
     }
 
-    /**
-     * Breaks a raw string up into a series of lines. Words are wrapped using
-     * spaces as decimeters and the newline character is respected.
-     *
-     * @param rawString The raw string to break.
-     * @param lineLength The length of a line of text.
-     * @return An array of word-wrapped lines.
-     */
+    /// Breaks a raw string up into a series of lines. Words are wrapped using
+    /// spaces as decimeters and the newline character is respected.
+    ///
+    /// @param rawString The raw string to break.
+    /// @param lineLength The length of a line of text.
+    /// @return An array of word-wrapped lines.
     @NotNull
     public static String[] wordWrap(@Nullable String rawString, int lineLength) {
         // A null string is a single line

@@ -39,9 +39,7 @@ import java.util.logging.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public final class TimingsManager {
     static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
@@ -65,17 +63,13 @@ public final class TimingsManager {
 
     private TimingsManager() {}
 
-    /**
-     * Resets all timing data on the next tick
-     */
+    /// Resets all timing data on the next tick
     static void reset() {
         needsFullReset = true;
     }
 
-    /**
-     * Ticked every tick by CraftBukkit to count the number of times a timer
-     * caused TPS loss.
-     */
+    /// Ticked every tick by CraftBukkit to count the number of times a timer
+    /// caused TPS loss.
     static void tick() {
         if (Timings.timingsEnabled) {
             boolean violated = FULL_SERVER_TICK.isViolated();
@@ -140,15 +134,13 @@ public final class TimingsManager {
     }
 
 
-    /**
-     * <p>Due to access restrictions, we need a helper method to get a Command TimingHandler with String group</p>
-     *
-     * Plugins should never call this
-     *
-     * @param pluginName Plugin this command is associated with
-     * @param command    Command to get timings for
-     * @return TimingHandler
-     */
+    /// Due to access restrictions, we need a helper method to get a Command TimingHandler with String group
+    ///
+    /// Plugins should never call this
+    ///
+    /// @param pluginName Plugin this command is associated with
+    /// @param command    Command to get timings for
+    /// @return TimingHandler
     @NotNull
     public static Timing getCommandTiming(@Nullable String pluginName, @NotNull Command command) {
         Plugin plugin = null;
@@ -170,13 +162,11 @@ public final class TimingsManager {
         return Timings.ofSafe(plugin, "Command: " + pluginName + ":" + command.getTimingName());
     }
 
-    /**
-     * Looks up the class loader for the specified class, and if it is a PluginClassLoader, return the
-     * Plugin that created this class.
-     *
-     * @param clazz Class to check
-     * @return Plugin if created by a plugin
-     */
+    /// Looks up the class loader for the specified class, and if it is a PluginClassLoader, return the
+    /// Plugin that created this class.
+    ///
+    /// @param clazz Class to check
+    /// @return Plugin if created by a plugin
     @Nullable
     public static Plugin getPluginByClassloader(@Nullable Class<?> clazz) {
         if (clazz == null) {

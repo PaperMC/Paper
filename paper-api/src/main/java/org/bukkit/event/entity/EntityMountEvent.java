@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity attempts to ride another entity.
- */
+/// Called when an entity attempts to ride another entity.
 public class EntityMountEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class EntityMountEvent extends EntityEvent implements Cancellable {
         this.mount = mount;
     }
 
-    /**
-     * Gets the entity which will be ridden.
-     *
-     * @return mounted entity
-     */
+    /// Gets the entity which will be ridden.
+    ///
+    /// @return mounted entity
     @NotNull
     public Entity getMount() {
         return this.mount;

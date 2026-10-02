@@ -30,9 +30,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired anytime the server is about to merge 2 experience orbs into one
- */
+/// Fired anytime the server is about to merge 2 experience orbs into one
 @NullMarked
 public class ExperienceOrbMergeEvent extends EntityEvent implements Cancellable {
 
@@ -50,16 +48,12 @@ public class ExperienceOrbMergeEvent extends EntityEvent implements Cancellable 
         this.mergeSource = mergeSource;
     }
 
-    /**
-     * @return The orb that will absorb the other experience orb
-     */
+    /// @return The orb that will absorb the other experience orb
     public ExperienceOrb getMergeTarget() {
         return this.mergeTarget;
     }
 
-    /**
-     * @return The orb that is subject to being removed and merged into the target orb
-     */
+    /// @return The orb that is subject to being removed and merged into the target orb
     public ExperienceOrb getMergeSource() {
         return this.mergeSource;
     }
@@ -69,9 +63,7 @@ public class ExperienceOrbMergeEvent extends EntityEvent implements Cancellable 
         return this.cancelled;
     }
 
-    /**
-     * @param cancel {@code true} if you wish to cancel this event, and prevent the orbs from merging
-     */
+    /// @param cancel`true` if you wish to cancel this event, and prevent the orbs from merging
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

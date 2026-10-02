@@ -8,9 +8,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when an entity is about to be replaced by another entity.
- */
+/// Called when an entity is about to be replaced by another entity.
 @NullMarked
 public class EntityTransformEvent extends EntityEvent implements Cancellable {
 
@@ -30,32 +28,26 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
         this.transformReason = transformReason;
     }
 
-    /**
-     * Gets the entities that the original entity was transformed to.
-     *
-     * @return The transformed entities.
-     */
+    /// Gets the entities that the original entity was transformed to.
+    ///
+    /// @return The transformed entities.
     public List<Entity> getTransformedEntities() {
         return this.transformedEntities;
     }
 
-    /**
-     * Gets the entity that the original entity was transformed to.
-     * <br>
-     * This returns the first entity in the transformed entity list.
-     *
-     * @return The transformed entity.
-     * @see #getTransformedEntities()
-     */
+    /// Gets the entity that the original entity was transformed to.
+    ///
+    /// This returns the first entity in the transformed entity list.
+    ///
+    /// @return The transformed entity.
+    /// @see #getTransformedEntities()
     public Entity getTransformedEntity() {
         return this.converted;
     }
 
-    /**
-     * Gets the reason for the conversion that has occurred.
-     *
-     * @return The reason for conversion that has occurred.
-     */
+    /// Gets the reason for the conversion that has occurred.
+    ///
+    /// @return The reason for conversion that has occurred.
     public TransformReason getTransformReason() {
         return this.transformReason;
     }
@@ -80,45 +72,25 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
     }
 
     public enum TransformReason {
-        /**
-         * When a zombie gets cured and a villager is spawned.
-         */
+        /// When a zombie gets cured and a villager is spawned.
         CURED,
-        /**
-         * When an entity is shaking in Powder Snow and a new entity spawns.
-         */
+        /// When an entity is shaking in Powder Snow and a new entity spawns.
         FROZEN,
-        /**
-         * When a villager gets infected and a zombie villager spawns.
-         */
+        /// When a villager gets infected and a zombie villager spawns.
         INFECTION,
-        /**
-         * When an entity drowns in water and a new entity spawns.
-         */
+        /// When an entity drowns in water and a new entity spawns.
         DROWNED,
-        /**
-         * When a mooshroom (or MUSHROOM_COW) is sheared and a cow spawns.
-         */
+        /// When a mooshroom (or MUSHROOM\_COW) is sheared and a cow spawns.
         SHEARED,
-        /**
-         * When lightning strikes a entity.
-         */
+        /// When lightning strikes a entity.
         LIGHTNING,
-        /**
-         * When a slime splits into multiple smaller slimes.
-         */
+        /// When a slime splits into multiple smaller slimes.
         SPLIT,
-        /**
-         * When a piglin (or hoglin) converts to a zombified version from overworld presence.
-         */
+        /// When a piglin (or hoglin) converts to a zombified version from overworld presence.
         PIGLIN_ZOMBIFIED,
-        /**
-         * When a tadpole converts to a frog
-         */
+        /// When a tadpole converts to a frog
         METAMORPHOSIS,
-        /**
-         * When reason is unknown.
-         */
+        /// When reason is unknown.
         UNKNOWN
     }
 }

@@ -8,9 +8,7 @@ import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Vanilla {@link DamageType} {@link Tag tags}.
- */
+/// Vanilla [DamageType] [`tags`][Tag].
 @MinecraftVersionDependent
 public final class DamageTypeTags {
 
@@ -87,16 +85,12 @@ public final class DamageTypeTags {
 
     public static final Tag<DamageType> WITHER_IMMUNE_TO = getTag("wither_immune_to");
     // End generate - DamageTypeTags
-    /**
-     * Vanilla tag representing damage types which originate from mace smashes.
-     *
-     * @deprecated use {@link #MACE_SMASH}
-     */
+    /// Vanilla tag representing damage types which originate from mace smashes.
+    ///
+    /// @deprecated use [#MACE_SMASH]
     @Deprecated(since = "1.21.4", forRemoval = true)
     public static final Tag<DamageType> IS_MACE_SMASH = MACE_SMASH;
-    /**
-     * Internal use only.
-     */
+    /// Internal use only.
     @ApiStatus.Internal
     public static final String REGISTRY_DAMAGE_TYPES = "damage_types";
 

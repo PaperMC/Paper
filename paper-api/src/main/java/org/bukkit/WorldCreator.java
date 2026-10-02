@@ -11,9 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents various types of options that may be used to create a world.
- */
+/// Represents various types of options that may be used to create a world.
 public class WorldCreator {
     private final NamespacedKey key; // Paper
     private final String name;
@@ -31,13 +29,11 @@ public class WorldCreator {
     private @Nullable Float spawnYawOverride;
     private @Nullable Float spawnPitchOverride;
 
-    /**
-     * Creates an empty WorldCreationOptions for the given world name.
-     *
-     * <p>Prefer {@link #ofKey(NamespacedKey)} for new or already-migrated worlds.</p>
-     *
-     * @param name Name of the world that will be created
-     */
+    /// Creates an empty WorldCreationOptions for the given world name.
+    ///
+    /// Prefer [#ofKey(NamespacedKey)] for new or already-migrated worlds.
+    ///
+    /// @param name Name of the world that will be created
     @ApiStatus.Obsolete
     public WorldCreator(@NotNull String name) {
         this(name, null);
@@ -64,14 +60,12 @@ public class WorldCreator {
         return key.getNamespace() + "_" + key.getKey();
     }
 
-    /**
-     * Creates an empty WorldCreator for the given world name or key.
-     *
-     * @param levelName LevelName of the world that will be created
-     * @param worldKey NamespacedKey of the world that will be created
-     * @deprecated To load unconverted pre-26.1 worlds identified by their name (custom key was never persisted), use
-     * {@link #WorldCreator(String)}. For new worlds and already-converted worlds, prefer {@link #ofKey(NamespacedKey)}.
-     */
+    /// Creates an empty WorldCreator for the given world name or key.
+    ///
+    /// @param levelName LevelName of the world that will be created
+    /// @param worldKey NamespacedKey of the world that will be created
+    /// @deprecated To load unconverted pre-26.1 worlds identified by their name (custom key was never persisted), use
+    /// [#WorldCreator(String)]. For new worlds and already-converted worlds, prefer [#ofKey(NamespacedKey)].
     @Deprecated(since = "26.1")
     public WorldCreator(@Nullable String levelName, @Nullable NamespacedKey worldKey) {
         if (levelName == null && worldKey == null) {
@@ -85,37 +79,31 @@ public class WorldCreator {
         this.key = worldKey == null ? defaultWorldKey(levelName) : worldKey;
     }
 
-    /**
-     * Creates an empty WorldCreator for the given key.
-     *
-     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
-     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
-     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
-     *
-     * @param worldKey NamespacedKey of the world that will be created
-     */
+    /// Creates an empty WorldCreator for the given key.
+    ///
+    /// Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+    /// with this method, use [#WorldCreator(String)] with [NamespacedKey#getKey()], or use this method
+    /// with [NamespacedKey#minecraft(String)] and [NamespacedKey#getKey()].
+    ///
+    /// @param worldKey NamespacedKey of the world that will be created
     public WorldCreator(@NotNull NamespacedKey worldKey) {
         this(null, worldKey);
     }
 
-    /**
-     * Gets the key for this WorldCreator
-     *
-     * @return the key
-     */
+    /// Gets the key for this WorldCreator
+    ///
+    /// @return the key
     @NotNull
     public NamespacedKey key() {
         return key;
     }
 
-    /**
-     * Creates an empty WorldCreator for the given world name and key
-     *
-     * @param levelName LevelName of the world that will be created
-     * @param worldKey NamespacedKey of the world that will be created
-     * @deprecated Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
-     * with this method, use {@link #WorldCreator(String)} with the name.
-     */
+    /// Creates an empty WorldCreator for the given world name and key
+    ///
+    /// @param levelName LevelName of the world that will be created
+    /// @param worldKey NamespacedKey of the world that will be created
+    /// @deprecated Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+    /// with this method, use [#WorldCreator(String)] with the name.
     @Deprecated(since = "26.1")
     @NotNull
     public static WorldCreator ofNameAndKey(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
@@ -125,26 +113,22 @@ public class WorldCreator {
         return new WorldCreator(levelName, null);
     }
 
-    /**
-     * Creates an empty WorldCreator for the given key.
-     *
-     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
-     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
-     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
-     *
-     * @param worldKey NamespacedKey of the world that will be created
-     */
+    /// Creates an empty WorldCreator for the given key.
+    ///
+    /// Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+    /// with this method, use [#WorldCreator(String)] with [NamespacedKey#getKey()], or use this method
+    /// with [NamespacedKey#minecraft(String)] and [NamespacedKey#getKey()].
+    ///
+    /// @param worldKey NamespacedKey of the world that will be created
     @NotNull
     public static WorldCreator ofKey(@NotNull NamespacedKey worldKey) {
         return new WorldCreator(worldKey);
     }
 
-    /**
-     * Copies the options from the specified world
-     *
-     * @param world World to copy options from
-     * @return This object, for chaining
-     */
+    /// Copies the options from the specified world
+    ///
+    /// @param world World to copy options from
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator copy(@NotNull World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
@@ -161,12 +145,10 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Copies the options from the specified {@link WorldCreator}
-     *
-     * @param creator World creator to copy options from
-     * @return This object, for chaining
-     */
+    /// Copies the options from the specified [WorldCreator]
+    ///
+    /// @param creator World creator to copy options from
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator copy(@NotNull WorldCreator creator) {
         Preconditions.checkArgument(creator != null, "Creator cannot be null");
@@ -184,35 +166,29 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the legacy Bukkit name of the world that is to be loaded or created.
-     *
-     * <p>This method is considered obsolete and is a candidate for future deprecation.
-     * Prefer using {@link #key()}.</p>
-     *
-     * @return legacy Bukkit world name
-     */
+    /// Gets the legacy Bukkit name of the world that is to be loaded or created.
+    ///
+    /// This method is considered obsolete and is a candidate for future deprecation.
+    /// Prefer using [#key()].
+    ///
+    /// @return legacy Bukkit world name
     @ApiStatus.Obsolete
     @NotNull
     public String name() {
         return name;
     }
 
-    /**
-     * Gets the seed that will be used to create this world
-     *
-     * @return World seed
-     */
+    /// Gets the seed that will be used to create this world
+    ///
+    /// @return World seed
     public long seed() {
         return seed;
     }
 
-    /**
-     * Sets the seed that will be used to create this world
-     *
-     * @param seed World seed
-     * @return This object, for chaining
-     */
+    /// Sets the seed that will be used to create this world
+    ///
+    /// @param seed World seed
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator seed(long seed) {
         this.seed = seed;
@@ -220,22 +196,18 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the environment that will be used to create or load the world
-     *
-     * @return World environment
-     */
+    /// Gets the environment that will be used to create or load the world
+    ///
+    /// @return World environment
     @NotNull
     public World.Environment environment() {
         return environment;
     }
 
-    /**
-     * Sets the environment that will be used to create or load the world
-     *
-     * @param env World environment
-     * @return This object, for chaining
-     */
+    /// Sets the environment that will be used to create or load the world
+    ///
+    /// @param env World environment
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator environment(@NotNull World.Environment env) {
         this.environment = env;
@@ -243,22 +215,18 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the type of the world that will be created or loaded
-     *
-     * @return World type
-     */
+    /// Gets the type of the world that will be created or loaded
+    ///
+    /// @return World type
     @NotNull
     public WorldType type() {
         return type;
     }
 
-    /**
-     * Sets the type of the world that will be created or loaded
-     *
-     * @param type World type
-     * @return This object, for chaining
-     */
+    /// Sets the type of the world that will be created or loaded
+    ///
+    /// @param type World type
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator type(@NotNull WorldType type) {
         this.type = type;
@@ -266,17 +234,15 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the forced spawn position for the world created by this {@link WorldCreator}.
-     * <p>
-     * This overrides vanilla and custom generator behavior without loading any chunks.
-     * When a forced spawn is specified, the bonus chest will not be generated.
-     *
-     * @param position the spawn position
-     * @param yaw      the yaw rotation at spawn
-     * @param pitch    the pitch rotation at spawn
-     * @return this object, for chaining
-     */
+    /// Sets the forced spawn position for the world created by this [WorldCreator].
+    ///
+    /// This overrides vanilla and custom generator behavior without loading any chunks.
+    /// When a forced spawn is specified, the bonus chest will not be generated.
+    ///
+    /// @param position the spawn position
+    /// @param yaw      the yaw rotation at spawn
+    /// @param pitch    the pitch rotation at spawn
+    /// @return this object, for chaining
     @NotNull
     public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
         this.spawnPositionOverride = position; // If you set this to null, it wont do anything!
@@ -285,13 +251,11 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Clears any previously forced spawn position.
-     * <p>
-     * After calling this, vanilla spawn selection behavior is used.
-     *
-     * @return this object, for chaining
-     */
+    /// Clears any previously forced spawn position.
+    ///
+    /// After calling this, vanilla spawn selection behavior is used.
+    ///
+    /// @return this object, for chaining
     @NotNull
     public WorldCreator clearForcedSpawnPosition() {
         this.spawnPositionOverride = null;
@@ -300,68 +264,58 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the forced spawn position that will be applied when this world is created.
-     * <p>
-     * If this returns {@code null}, vanilla or custom generator behavior will be used
-     * to determine the spawn position.
-     *
-     * @return the forced spawn position, or {@code null} for the vanilla behavior
-     */
+    /// Gets the forced spawn position that will be applied when this world is created.
+    ///
+    /// If this returns `null`, vanilla or custom generator behavior will be used
+    /// to determine the spawn position.
+    ///
+    /// @return the forced spawn position, or `null` for the vanilla behavior
     public @Nullable Position forcedSpawnPosition() {
         return this.spawnPositionOverride;
     }
 
-    /**
-     * Gets the forced spawn yaw that will be applied when this world is created.
-     * <p>
-     * If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
-     * or the world generator.
-     * <p>
-     * This value is only meaningful if a forced spawn position is present.
-     *
-     * @return the forced spawn yaw, or {@code null} for the vanilla behavior
-     */
+    /// Gets the forced spawn yaw that will be applied when this world is created.
+    ///
+    /// If this returns `null`, the spawn yaw will be determined by vanilla behavior
+    /// or the world generator.
+    ///
+    /// This value is only meaningful if a forced spawn position is present.
+    ///
+    /// @return the forced spawn yaw, or `null` for the vanilla behavior
     public @Nullable Float forcedSpawnYaw() {
         return this.spawnYawOverride;
     }
 
-    /**
-     * Gets the forced spawn pitch that will be applied when this world is created.
-     * <p>
-     * If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
-     * or the world generator.
-     * <p>
-     * This value is only meaningful if a forced spawn position is present.
-     *
-     * @return the forced spawn pitch, or {@code null} for the vanilla behavior
-     */
+    /// Gets the forced spawn pitch that will be applied when this world is created.
+    ///
+    /// If this returns `null`, the spawn pitch will be determined by vanilla behavior
+    /// or the world generator.
+    ///
+    /// This value is only meaningful if a forced spawn position is present.
+    ///
+    /// @return the forced spawn pitch, or `null` for the vanilla behavior
     public @Nullable Float forcedSpawnPitch() {
         return this.spawnPitchOverride;
     }
 
-    /**
-     * Gets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     *
-     * @return Chunk generator
-     */
+    /// Gets the generator that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the "natural" generator for this
+    /// environment will be used.
+    ///
+    /// @return Chunk generator
     @Nullable
     public ChunkGenerator generator() {
         return generator;
     }
 
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     *
-     * @param generator Chunk generator
-     * @return This object, for chaining
-     */
+    /// Sets the generator that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the "natural" generator for this
+    /// environment will be used.
+    ///
+    /// @param generator Chunk generator
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator generator(@Nullable ChunkGenerator generator) {
         this.generator = generator;
@@ -369,19 +323,17 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     * <p>
-     * If the generator cannot be found for the given name, the natural
-     * environment generator will be used instead and a warning will be
-     * printed to the console.
-     *
-     * @param generator Name of the generator to use, in "plugin:id" notation
-     * @return This object, for chaining
-     */
+    /// Sets the generator that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the "natural" generator for this
+    /// environment will be used.
+    ///
+    /// If the generator cannot be found for the given name, the natural
+    /// environment generator will be used instead and a warning will be
+    /// printed to the console.
+    ///
+    /// @param generator Name of the generator to use, in "plugin:id" notation
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator generator(@Nullable String generator) {
         this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
@@ -389,21 +341,19 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     * <p>
-     * If the generator cannot be found for the given name, the natural
-     * environment generator will be used instead and a warning will be
-     * printed to the specified output
-     *
-     * @param generator Name of the generator to use, in "plugin:id" notation
-     * @param output {@link CommandSender} that will receive any error
-     *     messages
-     * @return This object, for chaining
-     */
+    /// Sets the generator that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the "natural" generator for this
+    /// environment will be used.
+    ///
+    /// If the generator cannot be found for the given name, the natural
+    /// environment generator will be used instead and a warning will be
+    /// printed to the specified output
+    ///
+    /// @param generator Name of the generator to use, in "plugin:id" notation
+    /// @param output [CommandSender] that will receive any error
+    ///     messages
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator generator(@Nullable String generator, @Nullable CommandSender output) {
         this.generator = getGeneratorForName(name, generator, output);
@@ -411,30 +361,26 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the biome provider that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the biome provider from the {@link ChunkGenerator}
-     * will be used. If no {@link ChunkGenerator} is specific the "natural" biome provider
-     * for this environment will be used.
-     *
-     * @return Biome provider
-     */
+    /// Gets the biome provider that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the biome provider from the [ChunkGenerator]
+    /// will be used. If no [ChunkGenerator] is specific the "natural" biome provider
+    /// for this environment will be used.
+    ///
+    /// @return Biome provider
     @Nullable
     public BiomeProvider biomeProvider() {
         return biomeProvider;
     }
 
-    /**
-     * Sets the biome provider that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the biome provider from the
-     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
-     * specific the "natural" biome provider for this environment will be used.
-     *
-     * @param biomeProvider Biome provider
-     * @return This object, for chaining
-     */
+    /// Sets the biome provider that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the biome provider from the
+    /// [ChunkGenerator] will be used. If no [ChunkGenerator] is
+    /// specific the "natural" biome provider for this environment will be used.
+    ///
+    /// @param biomeProvider Biome provider
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator biomeProvider(@Nullable BiomeProvider biomeProvider) {
         this.biomeProvider = biomeProvider;
@@ -442,22 +388,20 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the biome provider that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the biome provider from the
-     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
-     * specific the "natural" biome provider for this environment will be used.
-     * <p>
-     * If the biome provider cannot be found for the given name and no
-     * {@link ChunkGenerator} is specific, the natural environment biome
-     * provider will be used instead and a warning will be printed to the
-     * specified output
-     *
-     * @param biomeProvider Name of the biome provider to use, in "plugin:id"
-     * notation
-     * @return This object, for chaining
-     */
+    /// Sets the biome provider that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the biome provider from the
+    /// [ChunkGenerator] will be used. If no [ChunkGenerator] is
+    /// specific the "natural" biome provider for this environment will be used.
+    ///
+    /// If the biome provider cannot be found for the given name and no
+    /// [ChunkGenerator] is specific, the natural environment biome
+    /// provider will be used instead and a warning will be printed to the
+    /// specified output
+    ///
+    /// @param biomeProvider Name of the biome provider to use, in "plugin:id"
+    /// notation
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, Bukkit.getConsoleSender());
@@ -465,23 +409,21 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the biome provider that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the biome provider from the
-     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
-     * specific the "natural" biome provider for this environment will be used.
-     * <p>
-     * If the biome provider cannot be found for the given name and no
-     * {@link ChunkGenerator} is specific, the natural environment biome
-     * provider will be used instead and a warning will be printed to the
-     * specified output
-     *
-     * @param biomeProvider Name of the biome provider to use, in "plugin:id"
-     * notation
-     * @param output {@link CommandSender} that will receive any error messages
-     * @return This object, for chaining
-     */
+    /// Sets the biome provider that will be used to create or load the world.
+    ///
+    /// This may be null, in which case the biome provider from the
+    /// [ChunkGenerator] will be used. If no [ChunkGenerator] is
+    /// specific the "natural" biome provider for this environment will be used.
+    ///
+    /// If the biome provider cannot be found for the given name and no
+    /// [ChunkGenerator] is specific, the natural environment biome
+    /// provider will be used instead and a warning will be printed to the
+    /// specified output
+    ///
+    /// @param biomeProvider Name of the biome provider to use, in "plugin:id"
+    /// notation
+    /// @param output [CommandSender] that will receive any error messages
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider, @Nullable CommandSender output) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, output);
@@ -489,21 +431,19 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Sets the generator settings of the world that will be created or loaded.
-     * <p>
-     * Currently only {@link WorldType#FLAT} uses these settings, and expects
-     * them to be in JSON format with a valid biome (1.18.2 and
-     * above) defined. An example valid configuration is as follows:
-     * <code>{"layers": [{"block": "stone", "height": 1}, {"block": "grass_block", "height": 1}], "biome":"plains"}</code>
-     *
-     * @param generatorSettings The settings that should be used by the
-     * generator
-     * @return This object, for chaining
-     * @see <a href="https://minecraft.wiki/w/Custom_dimension">Custom
-     * dimension</a> (scroll to "When the generator ID type is
-     * <code>minecraft:flat</code>)"
-     */
+    /// Sets the generator settings of the world that will be created or loaded.
+    ///
+    /// Currently only [WorldType#FLAT] uses these settings, and expects
+    /// them to be in JSON format with a valid biome (1.18.2 and
+    /// above) defined. An example valid configuration is as follows:
+    /// `{"layers": [{"block": "stone", "height": 1}, {"block": "grass\_block", "height": 1}], "biome":"plains"}`
+    ///
+    /// @param generatorSettings The settings that should be used by the
+    /// generator
+    /// @return This object, for chaining
+    /// @see <a href="https://minecraft.wiki/w/Custom_dimension">Custom
+    /// dimension</a> (scroll to "When the generator ID type is
+    /// `minecraft:flat`)"
     @NotNull
     public WorldCreator generatorSettings(@NotNull String generatorSettings) {
         this.generatorSettings = generatorSettings;
@@ -511,24 +451,20 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets the generator settings of the world that will be created or loaded.
-     *
-     * @return The settings that should be used by the generator
-     * @see #generatorSettings(java.lang.String)
-     */
+    /// Gets the generator settings of the world that will be created or loaded.
+    ///
+    /// @return The settings that should be used by the generator
+    /// @see #generatorSettings(java.lang.String)
     @NotNull
     public String generatorSettings() {
         return generatorSettings;
     }
 
-    /**
-     * Sets whether or not worlds created or loaded with this creator will
-     * have structures.
-     *
-     * @param generate Whether to generate structures
-     * @return This object, for chaining
-     */
+    /// Sets whether or not worlds created or loaded with this creator will
+    /// have structures.
+    ///
+    /// @param generate Whether to generate structures
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator generateStructures(boolean generate) {
         this.generateStructures = generate;
@@ -536,23 +472,18 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets whether or not structures will be generated in the world.
-     *
-     * @return True if structures will be generated
-     */
+    /// Gets whether or not structures will be generated in the world.
+    ///
+    /// @return True if structures will be generated
     public boolean generateStructures() {
         return generateStructures;
     }
 
-    /**
-     * Sets whether the world will be hardcore or not.
-     *
-     * In a hardcore world the difficulty will be locked to hard.
-     *
-     * @param hardcore Whether the world will be hardcore
-     * @return This object, for chaining
-     */
+    /// Sets whether the world will be hardcore or not.
+    /// In a hardcore world the difficulty will be locked to hard.
+    ///
+    /// @param hardcore Whether the world will be hardcore
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator hardcore(boolean hardcore) {
         this.hardcore = hardcore;
@@ -560,78 +491,66 @@ public class WorldCreator {
         return this;
     }
 
-    /**
-     * Gets whether the world will be hardcore or not.
-     * <p>
-     * In a hardcore world the difficulty will be locked to hard.
-     *
-     * @return hardcore status
-     */
+    /// Gets whether the world will be hardcore or not.
+    ///
+    /// In a hardcore world the difficulty will be locked to hard.
+    ///
+    /// @return hardcore status
     public boolean hardcore() {
         return hardcore;
     }
 
-    /**
-     * Sets whether a bonus chest should be generated or not.
-     *
-     * @param bonusChest indicating whether the bonus chest should be generated
-     * @return This object, for chaining
-     */
+    /// Sets whether a bonus chest should be generated or not.
+    ///
+    /// @param bonusChest indicating whether the bonus chest should be generated
+    /// @return This object, for chaining
     @NotNull
     public WorldCreator bonusChest(final boolean bonusChest) {
         this.bonusChest = bonusChest;
         return this;
     }
 
-    /**
-     * Gets whether the bonus chest feature is enabled.
-     *
-     * @return true if the bonus chest is enabled, false otherwise.
-     */
+    /// Gets whether the bonus chest feature is enabled.
+    ///
+    /// @return true if the bonus chest is enabled, false otherwise.
     public boolean bonusChest() {
         return bonusChest;
     }
 
-    /**
-     * Creates a world with the specified options.
-     * <p>
-     * If the world already exists, it will be loaded from disk and some
-     * options may be ignored.
-     *
-     * @return Newly created or loaded world
-     */
+    /// Creates a world with the specified options.
+    ///
+    /// If the world already exists, it will be loaded from disk and some
+    /// options may be ignored.
+    ///
+    /// @return Newly created or loaded world
     @Nullable
     public World createWorld() {
         return Bukkit.createWorld(this);
     }
 
-    /**
-     * Creates a new {@link WorldCreator} for the given world name
-     *
-     * @param name Name of the world to load or create
-     * @return Resulting WorldCreator
-     */
+    /// Creates a new [WorldCreator] for the given world name
+    ///
+    /// @param name Name of the world to load or create
+    /// @return Resulting WorldCreator
     @NotNull
     public static WorldCreator name(@NotNull String name) {
         return new WorldCreator(name);
     }
 
-    /**
-     * Attempts to get the {@link ChunkGenerator} with the given name.
-     * <p>
-     * If the generator is not found, null will be returned and a message will
-     * be printed to the specified {@link CommandSender} explaining why.
-     * <p>
-     * The name must be in the "plugin:id" notation, or optionally just
-     * "plugin", where "plugin" is the safe-name of a plugin and "id" is an
-     * optional unique identifier for the generator you wish to request from
-     * the plugin.
-     *
-     * @param world Name of the world this will be used for
-     * @param name Name of the generator to retrieve
-     * @param output Where to output if errors are present
-     * @return Resulting generator, or null
-     */
+    /// Attempts to get the [ChunkGenerator] with the given name.
+    ///
+    /// If the generator is not found, null will be returned and a message will
+    /// be printed to the specified [CommandSender] explaining why.
+    ///
+    /// The name must be in the "plugin:id" notation, or optionally just
+    /// "plugin", where "plugin" is the safe-name of a plugin and "id" is an
+    /// optional unique identifier for the generator you wish to request from
+    /// the plugin.
+    ///
+    /// @param world Name of the world this will be used for
+    /// @param name Name of the generator to retrieve
+    /// @param output Where to output if errors are present
+    /// @return Resulting generator, or null
     @Nullable
     public static ChunkGenerator getGeneratorForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
@@ -658,22 +577,20 @@ public class WorldCreator {
         return result;
     }
 
-    /**
-     * Attempts to get the {@link BiomeProvider} with the given name.
-     * <p>
-     * If the biome provider is not found, null will be returned and a message
-     * will be printed to the specified {@link CommandSender} explaining why.
-     * <p>
-     * The name must be in the "plugin:id" notation, or optionally just
-     * "plugin", where "plugin" is the safe-name of a plugin and "id" is an
-     * optional unique identifier for the biome provider you wish to request
-     * from the plugin.
-     *
-     * @param world Name of the world this will be used for
-     * @param name Name of the biome provider to retrieve
-     * @param output Where to output if errors are present
-     * @return Resulting biome provider, or null
-     */
+    /// Attempts to get the [BiomeProvider] with the given name.
+    ///
+    /// If the biome provider is not found, null will be returned and a message
+    /// will be printed to the specified [CommandSender] explaining why.
+    ///
+    /// The name must be in the "plugin:id" notation, or optionally just
+    /// "plugin", where "plugin" is the safe-name of a plugin and "id" is an
+    /// optional unique identifier for the biome provider you wish to request
+    /// from the plugin.
+    ///
+    /// @param world Name of the world this will be used for
+    /// @param name Name of the biome provider to retrieve
+    /// @param output Where to output if errors are present
+    /// @return Resulting biome provider, or null
     @Nullable
     public static BiomeProvider getBiomeProviderForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
@@ -700,26 +617,22 @@ public class WorldCreator {
         return result;
     }
 
-    /**
-     * Returns the current intent to keep the world loaded, @see {@link WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)}
-     *
-     * @return the current tristate value
-     * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
-     */
+    /// Returns the current intent to keep the world loaded, @see [WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)]
+    ///
+    /// @return the current tristate value
+    /// @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
     @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
     public net.kyori.adventure.util.TriState keepSpawnLoaded() {
         return net.kyori.adventure.util.TriState.FALSE;
     }
 
-    /**
-     * Controls if a world should be kept loaded or not, default (NOT_SET) will use the servers standard
-     * configuration, otherwise, will act as an override towards this setting
-     *
-     * @param keepSpawnLoaded the new value
-     * @return This object, for chaining
-     * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
-     */
+    /// Controls if a world should be kept loaded or not, default (NOT\_SET) will use the servers standard
+    /// configuration, otherwise, will act as an override towards this setting
+    ///
+    /// @param keepSpawnLoaded the new value
+    /// @return This object, for chaining
+    /// @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
     @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
     public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {

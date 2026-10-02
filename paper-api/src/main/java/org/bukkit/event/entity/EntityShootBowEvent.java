@@ -11,9 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a LivingEntity shoots a bow firing an arrow
- */
+/// Called when a LivingEntity shoots a bow firing an arrow
 public class EntityShootBowEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -56,114 +54,92 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets the bow ItemStack used to fire the arrow.
-     *
-     * @return the bow involved in this event
-     */
+    /// Gets the bow ItemStack used to fire the arrow.
+    ///
+    /// @return the bow involved in this event
     @Nullable
     public ItemStack getBow() {
         return this.bow;
     }
 
-    /**
-     * Get the ItemStack to be consumed in this event (if any).
-     * <br>
-     * For instance, bows will consume an arrow ItemStack in a player's
-     * inventory.
-     *
-     * @return the consumable item
-     */
+    /// Get the ItemStack to be consumed in this event (if any).
+    ///
+    /// For instance, bows will consume an arrow ItemStack in a player's
+    /// inventory.
+    ///
+    /// @return the consumable item
     @Nullable
     public ItemStack getConsumable() {
         return this.consumable;
     }
 
-    /**
-     * Gets the projectile which will be launched by this event
-     *
-     * @return the launched projectile
-     */
+    /// Gets the projectile which will be launched by this event
+    ///
+    /// @return the launched projectile
     @NotNull
     public Entity getProjectile() {
         return this.projectile;
     }
 
-    /**
-     * Replaces the projectile which will be launched
-     *
-     * @param projectile the new projectile
-     */
+    /// Replaces the projectile which will be launched
+    ///
+    /// @param projectile the new projectile
     public void setProjectile(@NotNull Entity projectile) {
         this.projectile = projectile;
     }
 
-    /**
-     * Get the hand from which the bow was shot.
-     *
-     * @return the hand
-     */
+    /// Get the hand from which the bow was shot.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Gets the force the arrow was launched with
-     *
-     * @return bow shooting force, up to 1.0
-     */
+    /// Gets the force the arrow was launched with
+    ///
+    /// @return bow shooting force, up to 1.0
     public float getForce() {
         return this.force;
     }
 
-    /**
-     * Set whether the consumable item should be consumed in this event.
-     * <p>
-     * If set to {@code false}, it is recommended that a call to
-     * {@link Player#updateInventory()} is made as the client may disagree with
-     * the server's decision to not consume a consumable item.
-     * <p>
-     * This value is ignored for entities where items are not required
-     * (skeletons, pillagers, etc.) or with crossbows (as no item is being
-     * consumed).
-     *
-     * @param consumeItem whether to consume the item
-     * @deprecated not currently functional
-     */
+    /// Set whether the consumable item should be consumed in this event.
+    ///
+    /// If set to `false`, it is recommended that a call to
+    /// [Player#updateInventory()] is made as the client may disagree with
+    /// the server's decision to not consume a consumable item.
+    ///
+    /// This value is ignored for entities where items are not required
+    /// (skeletons, pillagers, etc.) or with crossbows (as no item is being
+    /// consumed).
+    ///
+    /// @param consumeItem whether to consume the item
+    /// @deprecated not currently functional
     @Deprecated(since = "1.20.5")
     public void setConsumeItem(boolean consumeItem) {
         this.consumeItem = consumeItem;
     }
 
-    /**
-     * Get whether the consumable item should be consumed in this event.
-     *
-     * @return {@code true} if consumed, {@code false} otherwise
-     */
+    /// Get whether the consumable item should be consumed in this event.
+    ///
+    /// @return `true` if consumed, `false` otherwise
     public boolean shouldConsumeItem() {
         return this.consumeItem;
     }
 
-    /**
-     * @deprecated use {@link #getConsumable()}
-     */
+    /// @deprecated use [#getConsumable()]
     @Nullable @Deprecated
     public ItemStack getArrowItem() {
         return this.getConsumable();
     }
 
-    /**
-     * @deprecated not currently functional
-     */
+    /// @deprecated not currently functional
     @Deprecated
     public void setConsumeArrow(boolean consumeArrow) {
         this.setConsumeItem(consumeArrow);
     }
 
-    /**
-     * @deprecated use {@link #shouldConsumeItem()}
-     */
+    /// @deprecated use [#shouldConsumeItem()]
     @Deprecated
     public boolean getConsumeArrow() {
         return this.shouldConsumeItem();

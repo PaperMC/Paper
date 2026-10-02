@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a button
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a button
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(forRemoval = true, since = "1.13")
 public class Button extends SimpleAttachableMaterialData implements Redstone {
     public Button() {
@@ -19,42 +17,34 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Button(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current state of this Material, indicating if it's powered or
-     * unpowered
-     *
-     * @return true if powered, otherwise false
-     */
+    /// Gets the current state of this Material, indicating if it's powered or
+    /// unpowered
+    ///
+    /// @return true if powered, otherwise false
     @Override
     public boolean isPowered() {
         return (getData() & 0x8) == 0x8;
     }
 
-    /**
-     * Sets the current state of this button
-     *
-     * @param bool
-     *            whether or not the button is powered
-     */
+    /// Sets the current state of this button
+    ///
+    /// @param bool
+    ///            whether or not the button is powered
     public void setPowered(boolean bool) {
         setData((byte) (bool ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
-    /**
-     * Gets the face that this block is attached on
-     *
-     * @return BlockFace attached to
-     */
+    /// Gets the face that this block is attached on
+    ///
+    /// @return BlockFace attached to
     @Override
     public BlockFace getAttachedFace() {
         byte data = (byte) (getData() & 0x7);
@@ -82,9 +72,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
         return null;
     }
 
-    /**
-     * Sets the direction this button is pointing toward
-     */
+    /// Sets the direction this button is pointing toward
     @Override
     public void setFacingDirection(BlockFace face) {
         byte data = (byte) (getData() & 0x8);

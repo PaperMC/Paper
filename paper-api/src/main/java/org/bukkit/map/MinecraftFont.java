@@ -2,9 +2,7 @@ package org.bukkit.map;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents the built-in Minecraft font.
- */
+/// Represents the built-in Minecraft font.
 public class MinecraftFont extends MapFont {
 
     private static final int spaceSize = 3;
@@ -281,15 +279,11 @@ public class MinecraftFont extends MapFont {
     };
     // CHECKSTYLE:ON
 
-    /**
-     * A static non-malleable MinecraftFont.
-     */
+    /// A static non-malleable MinecraftFont.
     @NotNull
     public static final MinecraftFont Font = new MinecraftFont(false);
 
-    /**
-     * Initialize a new MinecraftFont.
-     */
+    /// Initialize a new MinecraftFont.
     public MinecraftFont() {
         this(true);
     }

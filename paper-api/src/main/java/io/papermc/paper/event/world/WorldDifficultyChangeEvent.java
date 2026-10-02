@@ -9,12 +9,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a world's difficulty is changed, either by command or by api.
- * <p>
- * If the world is in {@link World#isHardcore() hardcore}
- * the resulting difficulty will always be {@link Difficulty#HARD}
- */
+/// Called when a world's difficulty is changed, either by command or by api.
+///
+/// If the world is in [`hardcore`][World#isHardcore()]
+/// the resulting difficulty will always be [Difficulty#HARD]
 @NullMarked
 public class WorldDifficultyChangeEvent extends WorldEvent {
 
@@ -30,20 +28,16 @@ public class WorldDifficultyChangeEvent extends WorldEvent {
         this.difficulty = difficulty;
     }
 
-    /**
-     * Gets the command source associated with this event.
-     *
-     * @return {@code null} if the difficulty was changed via api, otherwise the {@link CommandSourceStack}.
-     */
+    /// Gets the command source associated with this event.
+    ///
+    /// @return `null` if the difficulty was changed via api, otherwise the [CommandSourceStack].
     public @Nullable CommandSourceStack getCommandSource() {
         return this.commandSource;
     }
 
-    /**
-     * Gets the new difficulty of the world.
-     *
-     * @return the new difficulty.
-     */
+    /// Gets the new difficulty of the world.
+    ///
+    /// @return the new difficulty.
     public Difficulty getDifficulty() {
         return this.difficulty;
     }

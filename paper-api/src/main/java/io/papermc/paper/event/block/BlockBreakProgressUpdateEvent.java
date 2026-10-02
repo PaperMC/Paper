@@ -7,9 +7,7 @@ import org.bukkit.event.block.BlockEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when the progress of a block break is updated.
- */
+/// Called when the progress of a block break is updated.
 @NullMarked
 public class BlockBreakProgressUpdateEvent extends BlockEvent {
 
@@ -25,23 +23,19 @@ public class BlockBreakProgressUpdateEvent extends BlockEvent {
         this.entity = entity;
     }
 
-    /**
-     * The progress of the block break
-     * <p>
-     * The progress ranges from 0.0 - 1.0, where 0 is no damage and
-     * 1.0 is the most damaged
-     *
-     * @return The progress of the block break
-     */
+    /// The progress of the block break
+    ///
+    /// The progress ranges from 0.0 - 1.0, where 0 is no damage and
+    /// 1.0 is the most damaged
+    ///
+    /// @return The progress of the block break
     public float getProgress() {
         return this.progress;
     }
 
-    /**
-     * The entity breaking the block.
-     *
-     * @return The entity breaking the block
-     */
+    /// The entity breaking the block.
+    ///
+    /// @return The entity breaking the block
     public Entity getEntity() {
         return this.entity;
     }

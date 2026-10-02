@@ -5,13 +5,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * An event that allows you to configure the player.
- * This is async and allows you to run configuration code on the player.
- * Once this event has finished execution, the player connection will continue.
- * <p>
- * This occurs after configuration, but before the player has entered the world.
- */
+/// An event that allows you to configure the player.
+/// This is async and allows you to run configuration code on the player.
+/// Once this event has finished execution, the player connection will continue.
+///
+/// This occurs after configuration, but before the player has entered the world.
 public class AsyncPlayerConnectionConfigureEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

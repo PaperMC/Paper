@@ -22,33 +22,27 @@ public class PrepareItemCraftEvent extends InventoryEvent {
         this.repair = isRepair;
     }
 
-    /**
-     * Get the recipe that has been formed. If this event was triggered by a
-     * tool repair, this will be a temporary shapeless recipe representing the
-     * repair.
-     *
-     * @return The recipe being crafted.
-     */
+    /// Get the recipe that has been formed. If this event was triggered by a
+    /// tool repair, this will be a temporary shapeless recipe representing the
+    /// repair.
+    ///
+    /// @return The recipe being crafted.
     @Nullable
     public Recipe getRecipe() {
         return this.matrix.getRecipe();
     }
 
-    /**
-     * @return The crafting inventory on which the recipe was formed.
-     */
+    /// @return The crafting inventory on which the recipe was formed.
     @NotNull
     @Override
     public CraftingInventory getInventory() {
         return this.matrix;
     }
 
-    /**
-     * Check if this event was triggered by a tool repair operation rather
-     * than a crafting recipe.
-     *
-     * @return {@code true} if this is a repair.
-     */
+    /// Check if this event was triggered by a tool repair operation rather
+    /// than a crafting recipe.
+    ///
+    /// @return `true` if this is a repair.
     public boolean isRepair() {
         return this.repair;
     }

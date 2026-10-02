@@ -41,9 +41,7 @@ import org.bukkit.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Handles all plugin management from the Server
- */
+/// Handles all plugin management from the Server
 @Deprecated(forRemoval = true) // Paper - This implementation may be replaced in a future version of Paper.
 // Plugins may still reflect into this class to modify permission logic for the time being.
 public final class SimplePluginManager implements PluginManager {
@@ -70,13 +68,11 @@ public final class SimplePluginManager implements PluginManager {
         defaultPerms.put(false, new LinkedHashSet<Permission>());
     }
 
-    /**
-     * Registers the specified plugin loader
-     *
-     * @param loader Class name of the PluginLoader to register
-     * @throws IllegalArgumentException Thrown when the given Class is not a
-     *     valid PluginLoader
-     */
+    /// Registers the specified plugin loader
+    ///
+    /// @param loader Class name of the PluginLoader to register
+    /// @throws IllegalArgumentException Thrown when the given Class is not a
+    ///     valid PluginLoader
     @Override
     public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {
         PluginLoader instance;
@@ -107,12 +103,10 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    /**
-     * Loads the plugins contained within the specified directory
-     *
-     * @param directory Directory to check for plugins
-     * @return A list of all plugins loaded
-     */
+    /// Loads the plugins contained within the specified directory
+    ///
+    /// @param directory Directory to check for plugins
+    /// @return A list of all plugins loaded
     @Override
     @NotNull
     public Plugin[] loadPlugins(@NotNull File directory) {
@@ -144,12 +138,10 @@ public final class SimplePluginManager implements PluginManager {
         return loadPlugins(directory.listFiles());
     }
 
-    /**
-     * Loads the plugins in the list of the files
-     *
-     * @param files List of files containing plugins to load
-     * @return A list of all plugins loaded
-     */
+    /// Loads the plugins in the list of the files
+    ///
+    /// @param files List of files containing plugins to load
+    /// @return A list of all plugins loaded
     @NotNull
     public Plugin[] loadPlugins(@NotNull File[] files) {
         // TODO Replace with Paper plugin loader
@@ -396,18 +388,16 @@ public final class SimplePluginManager implements PluginManager {
         return result.toArray(new Plugin[result.size()]);
     }
 
-    /**
-     * Loads the plugin in the specified file
-     * <p>
-     * File must be valid according to the current enabled Plugin interfaces
-     *
-     * @param file File containing the plugin to load
-     * @return The Plugin loaded, or null if it was invalid
-     * @throws InvalidPluginException Thrown when the specified file is not a
-     *     valid plugin
-     * @throws UnknownDependencyException If a required dependency could not
-     *     be found
-     */
+    /// Loads the plugin in the specified file
+    ///
+    /// File must be valid according to the current enabled Plugin interfaces
+    ///
+    /// @param file File containing the plugin to load
+    /// @return The Plugin loaded, or null if it was invalid
+    /// @throws InvalidPluginException Thrown when the specified file is not a
+    ///     valid plugin
+    /// @throws UnknownDependencyException If a required dependency could not
+    ///     be found
     @Override
     @Nullable
     public synchronized Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
@@ -460,14 +450,12 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    /**
-     * Checks if the given plugin is loaded and returns it when applicable
-     * <p>
-     * Please note that the name of the plugin is case-insensitive
-     *
-     * @param name Name of the plugin to check
-     * @return Plugin if it exists, otherwise null
-     */
+    /// Checks if the given plugin is loaded and returns it when applicable
+    ///
+    /// Please note that the name of the plugin is case-insensitive
+    ///
+    /// @param name Name of the plugin to check
+    /// @return Plugin if it exists, otherwise null
     @Override
     @Nullable
     public synchronized Plugin getPlugin(@NotNull String name) {
@@ -482,14 +470,12 @@ public final class SimplePluginManager implements PluginManager {
         return plugins.toArray(new Plugin[plugins.size()]);
     }
 
-    /**
-     * Checks if the given plugin is enabled or not
-     * <p>
-     * Please note that the name of the plugin is case-insensitive.
-     *
-     * @param name Name of the plugin to check
-     * @return true if the plugin is enabled, otherwise false
-     */
+    /// Checks if the given plugin is enabled or not
+    ///
+    /// Please note that the name of the plugin is case-insensitive.
+    ///
+    /// @param name Name of the plugin to check
+    /// @return true if the plugin is enabled, otherwise false
     @Override
     public boolean isPluginEnabled(@NotNull String name) {
         if (true) {return this.paperPluginManager.isPluginEnabled(name);} // Paper
@@ -498,12 +484,10 @@ public final class SimplePluginManager implements PluginManager {
         return isPluginEnabled(plugin);
     }
 
-    /**
-     * Checks if the given plugin is enabled or not
-     *
-     * @param plugin Plugin to check
-     * @return true if the plugin is enabled, otherwise false
-     */
+    /// Checks if the given plugin is enabled or not
+    ///
+    /// @param plugin Plugin to check
+    /// @return true if the plugin is enabled, otherwise false
     @Override
     public boolean isPluginEnabled(@Nullable Plugin plugin) {
         if (true) {return this.paperPluginManager.isPluginEnabled(plugin);} // Paper
@@ -617,11 +601,9 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    /**
-     * Calls an event with the given details.
-     *
-     * @param event Event details
-     */
+    /// Calls an event with the given details.
+    ///
+    /// @param event Event details
     @Override
     public void callEvent(@NotNull Event event) {
         if (true) {this.paperPluginManager.callEvent(event); return;} // Paper
@@ -695,18 +677,16 @@ public final class SimplePluginManager implements PluginManager {
         registerEvent(event, listener, priority, executor, plugin, false);
     }
 
-    /**
-     * Registers the given event to the specified listener using a directly
-     * passed EventExecutor
-     *
-     * @param event Event class to register
-     * @param listener PlayerListener to register
-     * @param priority Priority of this event
-     * @param executor EventExecutor to register
-     * @param plugin Plugin to register
-     * @param ignoreCancelled Do not call executor if event was already
-     *     cancelled
-     */
+    /// Registers the given event to the specified listener using a directly
+    /// passed EventExecutor
+    ///
+    /// @param event Event class to register
+    /// @param listener PlayerListener to register
+    /// @param priority Priority of this event
+    /// @param executor EventExecutor to register
+    /// @param plugin Plugin to register
+    /// @param ignoreCancelled Do not call executor if event was already
+    ///     cancelled
     @Override
     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled) {
         Preconditions.checkArgument(listener != null, "Listener cannot be null");
@@ -953,11 +933,9 @@ public final class SimplePluginManager implements PluginManager {
         return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
     }
 
-    /**
-     * Sets whether or not per event timing code should be used
-     *
-     * @param use True if per event timing code should be used
-     */
+    /// Sets whether or not per event timing code should be used
+    ///
+    /// @param use True if per event timing code should be used
     @Deprecated(forRemoval = true)
     public void useTimings(boolean use) {
         co.aikar.timings.Timings.setTimingsEnabled(use); // Paper

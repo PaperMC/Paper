@@ -8,10 +8,8 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents an event that is called when a player right clicks an entity that
- * also contains the location where the entity was clicked.
- */
+/// Represents an event that is called when a player right clicks an entity that
+/// also contains the location where the entity was clicked.
 public class PlayerInteractAtEntityEvent extends PlayerInteractEntityEvent {
 
     private final Vector position;

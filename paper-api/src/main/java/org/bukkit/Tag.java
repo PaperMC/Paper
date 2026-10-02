@@ -4,19 +4,16 @@ import java.util.Set;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a tag that may be defined by the server or a resource pack to
- * group like things together.
- *
- * Note that whilst all tags defined within this interface must be present in
- * implementations, their existence is not guaranteed across future versions.
- *
- * <p>Custom tags defined by Paper are not present (as constants) in this class.
- * To access them please refer to {@link com.destroystokyo.paper.MaterialTags}
- * and {@link io.papermc.paper.tag.EntityTags}.</p>
- *
- * @param <T> the type of things grouped by this tag
- */
+/// Represents a tag that may be defined by the server or a resource pack to
+/// group like things together.
+/// Note that whilst all tags defined within this interface must be present in
+/// implementations, their existence is not guaranteed across future versions.
+///
+/// Custom tags defined by Paper are not present (as constants) in this class.
+/// To access them please refer to [com.destroystokyo.paper.MaterialTags]
+/// and [io.papermc.paper.tag.EntityTags].
+///
+/// @param <T> the type of things grouped by this tag
 public interface Tag<T extends Keyed> extends Keyed {
 
     // Start generate - Tag
@@ -1231,142 +1228,98 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<GameEvent> GAME_EVENT_WARDEN_CAN_LISTEN = Bukkit.getTag(REGISTRY_GAME_EVENTS, NamespacedKey.minecraft("warden_can_listen"), GameEvent.class);
     // End generate - Tag
     //<editor-fold desc="deprecated tags" defaultstate="collapsed">
-    /**
-     * @deprecated replaced by {@link #WOOL_CARPETS}.
-     */
+    /// @deprecated replaced by [#WOOL_CARPETS].
     @Deprecated(since = "1.19", forRemoval = true)
     Tag<Material> CARPETS = WOOL_CARPETS;
-    /**
-     * @deprecated replaced by {@link #CANNOT_SUPPORT_SNOW_LAYER}
-     */
+    /// @deprecated replaced by [#CANNOT_SUPPORT_SNOW_LAYER]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> SNOW_LAYER_CANNOT_SURVIVE_ON = CANNOT_SUPPORT_SNOW_LAYER;
-    /**
-     * @deprecated replaced by {@link #SUPPORT_OVERRIDE_SNOW_LAYER}
-     */
+    /// @deprecated replaced by [#SUPPORT_OVERRIDE_SNOW_LAYER]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> SNOW_LAYER_CAN_SURVIVE_ON = SUPPORT_OVERRIDE_SNOW_LAYER;
-    /**
-     * @deprecated partially replaced by {@link #OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT}
-     */
+    /// @deprecated partially replaced by [#OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> MUSHROOM_GROW_BLOCK = OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT;
-    /**
-     * @deprecated replaced by {@link #SUPPORTS_SMALL_DRIPLEAF}
-     */
+    /// @deprecated replaced by [#SUPPORTS_SMALL_DRIPLEAF]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> SMALL_DRIPLEAF_PLACEABLE = SUPPORTS_SMALL_DRIPLEAF;
-    /**
-     * @deprecated replaced by {@link #SUPPORTS_BIG_DRIPLEAF}
-     */
+    /// @deprecated replaced by [#SUPPORTS_BIG_DRIPLEAF]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> BIG_DRIPLEAF_PLACEABLE = SUPPORTS_BIG_DRIPLEAF;
-    /**
-     * @deprecated replaced by {@link #SUPPORTS_BAMBOO}
-     */
+    /// @deprecated replaced by [#SUPPORTS_BAMBOO]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> BAMBOO_PLANTABLE_ON = SUPPORTS_BAMBOO;
-    /**
-     * @deprecated replaced by {@link #SUPPORTS_DRY_VEGETATION}
-     */
+    /// @deprecated replaced by [#SUPPORTS_DRY_VEGETATION]
     @Deprecated(since = "26.1", forRemoval = true)
     Tag<Material> DRY_VEGETATION_MAY_PLACE_ON = SUPPORTS_DRY_VEGETATION;
-    /**
-     * Vanilla block tag representing all blocks which dead bushes may be placed on.
-     *
-     * @deprecated partially replaced by {@link #SUPPORTS_DRY_VEGETATION}
-     */
+    /// Vanilla block tag representing all blocks which dead bushes may be placed on.
+    ///
+    /// @deprecated partially replaced by [#SUPPORTS_DRY_VEGETATION]
     @Deprecated(since = "1.21.5", forRemoval = true)
     Tag<Material> DEAD_BUSH_MAY_PLACE_ON = SUPPORTS_DRY_VEGETATION;
-    /**
-     * @deprecated replaced by {@link #TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS}
-     */
+    /// @deprecated replaced by [#TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS]
     @Deprecated(since = "1.21.6", forRemoval = true)
     Tag<Material> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS;
-    /**
-     * Vanilla block tag representing all blocks that are replaceable by
-     * dripstone.
-     *
-     * @deprecated replaced by {@link #DRIPSTONE_REPLACEABLE_BLOCKS}
-     */
+    /// Vanilla block tag representing all blocks that are replaceable by
+    /// dripstone.
+    ///
+    /// @deprecated replaced by [#DRIPSTONE_REPLACEABLE_BLOCKS]
     @Deprecated(since = "1.21.4", forRemoval = true)
     Tag<Material> DRIPSTONE_REPLACEABLE = DRIPSTONE_REPLACEABLE_BLOCKS;
-    /**
-     * @deprecated replaced by {@link #CONCRETE_POWDERS}
-     */
+    /// @deprecated replaced by [#CONCRETE_POWDERS]
     @Deprecated(since = "26.2", forRemoval = true)
     Tag<Material> CONCRETE_POWDER = CONCRETE_POWDERS;
-    /**
-     * @deprecated replaced by {@link #CONVERTIBLE_TO_MUD}
-     */
+    /// @deprecated replaced by [#CONVERTIBLE_TO_MUD]
     @Deprecated(since = "26.3", forRemoval = true)
     Tag<Material> CONVERTABLE_TO_MUD = CONVERTIBLE_TO_MUD;
-    /**
-     * Vanilla item tag representing all piglin food.
-     *
-     * @deprecated replaced by {@link #ITEMS_PIGLIN_FOOD}
-     */
+    /// Vanilla item tag representing all piglin food.
+    ///
+    /// @deprecated replaced by [#ITEMS_PIGLIN_FOOD]
     @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> PIGLIN_FOOD = ITEMS_PIGLIN_FOOD;
-    /**
-     * Vanilla item tag representing all fox food.
-     *
-     * @deprecated replaced by {@link #ITEMS_FOX_FOOD}
-     */
+    /// Vanilla item tag representing all fox food.
+    ///
+    /// @deprecated replaced by [#ITEMS_FOX_FOOD]
     @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> FOX_FOOD = ITEMS_FOX_FOOD;
-    /**
-     * Vanilla item tag representing all furnace materials.
-     *
-     * @deprecated partially replaced by {@link #ITEMS_STONE_CRAFTING_MATERIALS}
-     */
+    /// Vanilla item tag representing all furnace materials.
+    ///
+    /// @deprecated partially replaced by [#ITEMS_STONE_CRAFTING_MATERIALS]
     @Deprecated(since = "1.16.2", forRemoval = true)
     Tag<Material> ITEMS_FURNACE_MATERIALS = ITEMS_STONE_CRAFTING_MATERIALS;
-    /**
-     * Vanilla item tag representing all items which modify note block sounds when placed on top.
-     *
-     * @deprecated replaced by {@link #ITEMS_NOTEBLOCK_TOP_INSTRUMENTS}
-     */
+    /// Vanilla item tag representing all items which modify note block sounds when placed on top.
+    ///
+    /// @deprecated replaced by [#ITEMS_NOTEBLOCK_TOP_INSTRUMENTS]
     @Deprecated(since = "1.21.4", forRemoval = true)
     Tag<Material> ITEMS_NOTE_BLOCK_TOP_INSTRUMENTS = ITEMS_NOTEBLOCK_TOP_INSTRUMENTS;
-    /**
-     * Vanilla item tag representing all tools.
-     *
-     * @deprecated removed in Minecraft 1.20.5. Do not use. Will be removed at a later date. Until then,
-     * this constant now acts as a reference to {@link #ITEMS_BREAKS_DECORATED_POTS} which largely shares
-     * the same contents of the old "minecraft:tools" tag.
-     */
+    /// Vanilla item tag representing all tools.
+    ///
+    /// @deprecated removed in Minecraft 1.20.5. Do not use. Will be removed at a later date. Until then,
+    /// this constant now acts as a reference to [#ITEMS_BREAKS_DECORATED_POTS] which largely shares
+    /// the same contents of the old "minecraft:tools" tag.
     @Deprecated(since = "1.20.6", forRemoval = true)
     Tag<Material> ITEMS_TOOLS = ITEMS_BREAKS_DECORATED_POTS;
-    /**
-     * Vanilla item tag representing all items which tempt axolotls.
-     *
-     * @deprecated replaced by {@link #ITEMS_AXOLOTL_FOOD}
-     */
+    /// Vanilla item tag representing all items which tempt axolotls.
+    ///
+    /// @deprecated replaced by [#ITEMS_AXOLOTL_FOOD]
     @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> AXOLOTL_TEMPT_ITEMS = ITEMS_AXOLOTL_FOOD;
-    /**
-     * Vanilla tag representing entities which deflect arrows.
-     *
-     * @deprecated replaced by {@link #ENTITY_TYPES_DEFLECTS_PROJECTILES}
-     */
+    /// Vanilla tag representing entities which deflect arrows.
+    ///
+    /// @deprecated replaced by [#ENTITY_TYPES_DEFLECTS_PROJECTILES]
     @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<EntityType> ENTITY_TYPES_DEFLECTS_ARROWS = ENTITY_TYPES_DEFLECTS_PROJECTILES;
     //</editor-fold>
 
-    /**
-     * Returns whether or not this tag has an entry for the specified item.
-     *
-     * @param item to check
-     * @return if it is tagged
-     */
+    /// Returns whether or not this tag has an entry for the specified item.
+    ///
+    /// @param item to check
+    /// @return if it is tagged
     boolean isTagged(@NotNull T item);
 
-    /**
-     * Gets an immutable set of all tagged items.
-     *
-     * @return set of tagged items
-     */
+    /// Gets an immutable set of all tagged items.
+    ///
+    /// @return set of tagged items
     @NotNull
     Set<T> getValues();
 

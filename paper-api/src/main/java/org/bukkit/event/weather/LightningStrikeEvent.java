@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores data for lightning striking
- */
+/// Stores data for lightning striking
 public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,21 +30,17 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
         this.cause = cause;
     }
 
-    /**
-     * Gets the bolt which is striking the earth.
-     *
-     * @return lightning entity
-     */
+    /// Gets the bolt which is striking the earth.
+    ///
+    /// @return lightning entity
     @NotNull
     public LightningStrike getLightning() {
         return this.bolt;
     }
 
-    /**
-     * Gets the cause of this lightning strike.
-     *
-     * @return strike cause
-     */
+    /// Gets the cause of this lightning strike.
+    ///
+    /// @return strike cause
     @NotNull
     public Cause getCause() {
         return this.cause;
@@ -74,37 +68,21 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     }
 
     public enum Cause {
-        /**
-         * Triggered by the /summon command.
-         */
+        /// Triggered by the /summon command.
         COMMAND,
-        /**
-         * Triggered by a Plugin.
-         */
+        /// Triggered by a Plugin.
         CUSTOM,
-        /**
-         * Triggered by a Spawner.
-         */
+        /// Triggered by a Spawner.
         SPAWNER,
-        /**
-         * Triggered by an enchanted trident.
-         */
+        /// Triggered by an enchanted trident.
         TRIDENT,
-        /**
-         * Triggered by a skeleton horse trap.
-         */
+        /// Triggered by a skeleton horse trap.
         TRAP,
-        /**
-         * Triggered by weather.
-         */
+        /// Triggered by weather.
         WEATHER,
-        /**
-         * Triggered by an enchantment but not a trident.
-         */
+        /// Triggered by an enchantment but not a trident.
         ENCHANTMENT,
-        /**
-         * Unknown trigger.
-         */
+        /// Unknown trigger.
         UNKNOWN
     }
 }

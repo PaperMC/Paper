@@ -17,9 +17,7 @@ public class ServerTickStartEvent extends Event {
         this.tickNumber = tickNumber;
     }
 
-    /**
-     * @return What tick this is going be since start (first tick = 1)
-     */
+    /// @return What tick this is going be since start (first tick = 1)
     public int getTickNumber() {
         return this.tickNumber;
     }

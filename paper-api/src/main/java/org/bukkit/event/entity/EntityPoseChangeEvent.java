@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity changes its pose.
- *
- * @see Entity#getPose()
- */
+/// Called when an entity changes its pose.
+///
+/// @see Entity#getPose()
 public class EntityPoseChangeEvent extends EntityEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class EntityPoseChangeEvent extends EntityEvent {
         this.pose = pose;
     }
 
-    /**
-     * Gets the entity's new pose.
-     *
-     * @return the new pose
-     */
+    /// Gets the entity's new pose.
+    ///
+    /// @return the new pose
     @NotNull
     public Pose getPose() {
         return this.pose;

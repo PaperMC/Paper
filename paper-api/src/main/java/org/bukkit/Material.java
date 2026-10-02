@@ -141,9 +141,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * An enum of all material IDs accepted by the official server and client
- */
+/// An enum of all material IDs accepted by the official server and client
 @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
@@ -2680,9 +2678,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     LEGACY_DIODE(356),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKIE(357),
-    /**
-     * @see org.bukkit.map.MapView
-     */
+    /// @see org.bukkit.map.MapView
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAP(358, org.bukkit.material.MaterialData.class),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2962,13 +2958,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     // Paper end - add Translatable
 
     // Paper start - item rarity API
-    /**
-     * Returns the item rarity for the item. The Material <b>MUST</b> be an Item not a block.
-     * Use {@link #isItem()} before this.
-     *
-     * @return the item rarity
-     * @deprecated use {@link org.bukkit.inventory.meta.ItemMeta#hasRarity()} and {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
-     */
+    /// Returns the item rarity for the item. The Material **MUST** be an Item not a block.
+    /// Use [#isItem()] before this.
+    ///
+    /// @return the item rarity
+    /// @deprecated use [org.bukkit.inventory.meta.ItemMeta#hasRarity()] and [org.bukkit.inventory.meta.ItemMeta#getRarity()]
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.5")
     public io.papermc.paper.inventory.ItemRarity getItemRarity() {
@@ -2977,15 +2971,13 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     // Paper end - item rarity API
 
     // Paper start - item default attributes API
-    /**
-     * Returns an immutable multimap of attributes for the slot.
-     * {@link #isItem()} must be true for this material.
-     *
-     * @param equipmentSlot the slot to get the attributes for
-     * @throws IllegalArgumentException if {@link #isItem()} is false
-     * @return an immutable multimap of attributes
-     * @deprecated use {@link #getDefaultAttributeModifiers(EquipmentSlot)}
-     */
+    /// Returns an immutable multimap of attributes for the slot.
+    /// [#isItem()] must be true for this material.
+    ///
+    /// @param equipmentSlot the slot to get the attributes for
+    /// @throws IllegalArgumentException if [#isItem()] is false
+    /// @return an immutable multimap of attributes
+    /// @deprecated use [#getDefaultAttributeModifiers(EquipmentSlot)]
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.5")
     public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
@@ -2994,12 +2986,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     // Paper end - item default attributes API
 
     // Paper start - isCollidable API
-    /**
-     * Checks if this material is collidable.
-     *
-     * @return true if collidable
-     * @throws IllegalArgumentException if {@link #isBlock()} is false
-     */
+    /// Checks if this material is collidable.
+    ///
+    /// @return true if collidable
+    /// @throws IllegalArgumentException if [#isBlock()] is false
     public boolean isCollidable() {
         if (this.isBlock()) {
             return this.asBlockType().hasCollision();
@@ -3008,23 +2998,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
     // Paper end - isCollidable API
 
-    /**
-     * Do not use for any reason.
-     *
-     * @return ID of this material
-     * @apiNote Internal Use Only
-     */
+    /// Do not use for any reason.
+    ///
+    /// @return ID of this material
+    /// @apiNote Internal Use Only
     @ApiStatus.Internal // Paper
     public int getId() {
         Preconditions.checkArgument(legacy, "Cannot get ID of Modern Material");
         return id;
     }
 
-    /**
-     * Checks if this constant is a legacy material.
-     *
-     * @return legacy status
-     */
+    /// Checks if this constant is a legacy material.
+    ///
+    /// @return legacy status
     // @Deprecated(since = "1.13", forRemoval = true) // Paper - this is useful, don't deprecate
     public boolean isLegacy() {
         return legacy;
@@ -3037,16 +3023,14 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return key;
     }
 
-    /**
-     * Gets the maximum amount of this material that can be held in a stack.
-     * <p>
-     * Note that this is the <strong>default</strong> maximum size for this Material.
-     * {@link ItemStack ItemStacks} are able to change their maximum stack size per
-     * stack with {@link ItemMeta#setMaxStackSize(Integer)}. If an ItemStack instance
-     * is available, {@link ItemStack#getMaxStackSize()} may be preferred.
-     *
-     * @return Maximum stack size for this material
-     */
+    /// Gets the maximum amount of this material that can be held in a stack.
+    ///
+    /// Note that this is the **default** maximum size for this Material.
+    /// [`ItemStacks`][ItemStack] are able to change their maximum stack size per
+    /// stack with [ItemMeta#setMaxStackSize(Integer)]. If an ItemStack instance
+    /// is available, [ItemStack#getMaxStackSize()] may be preferred.
+    ///
+    /// @return Maximum stack size for this material
     public int getMaxStackSize() {
         if (this == LEGACY_AIR) {
             return 0;
@@ -3055,59 +3039,49 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return type == null ? 64 : type.getMaxStackSize();
     }
 
-    /**
-     * Gets the maximum durability of this material
-     *
-     * @return Maximum durability for this material
-     */
+    /// Gets the maximum durability of this material
+    ///
+    /// @return Maximum durability for this material
     public short getMaxDurability() {
         ItemType type = asItemType();
         return type == null ? 0 : type.getMaxDurability();
     }
 
-    /**
-     * Creates a new {@link BlockData} instance for this Material, with all
-     * properties initialized to unspecified defaults.
-     *
-     * @return new data instance
-     */
+    /// Creates a new [BlockData] instance for this Material, with all
+    /// properties initialized to unspecified defaults.
+    ///
+    /// @return new data instance
     @NotNull
     public BlockData createBlockData() {
         return Bukkit.createBlockData(this);
     }
 
-    /**
-     * Creates a new {@link BlockData} instance for this Material, with
-     * all properties initialized to unspecified defaults.
-     *
-     * @param consumer consumer to run on new instance before returning
-     * @return new data instance
-     */
+    /// Creates a new [BlockData] instance for this Material, with
+    /// all properties initialized to unspecified defaults.
+    ///
+    /// @param consumer consumer to run on new instance before returning
+    /// @return new data instance
     @NotNull
     public BlockData createBlockData(@Nullable Consumer<? super BlockData> consumer) {
         return Bukkit.createBlockData(this, consumer);
     }
 
-    /**
-     * Creates a new {@link BlockData} instance for this Material, with all
-     * properties initialized to unspecified defaults, except for those provided
-     * in data.
-     *
-     * @param data data string
-     * @return new data instance
-     * @throws IllegalArgumentException if the specified data is not valid
-     */
+    /// Creates a new [BlockData] instance for this Material, with all
+    /// properties initialized to unspecified defaults, except for those provided
+    /// in data.
+    ///
+    /// @param data data string
+    /// @return new data instance
+    /// @throws IllegalArgumentException if the specified data is not valid
     @NotNull
     public BlockData createBlockData(@Nullable String data) throws IllegalArgumentException {
         return Bukkit.createBlockData(this, data);
     }
 
-    /**
-     * Gets the MaterialData class associated with this Material
-     *
-     * @return MaterialData associated with this Material
-     * @deprecated use {@link #createBlockData()}
-     */
+    /// Gets the MaterialData class associated with this Material
+    ///
+    /// @return MaterialData associated with this Material
+    /// @deprecated use [#createBlockData()]
     @NotNull
     @Deprecated // Paper
     public Class<? extends MaterialData> getData() {
@@ -3115,14 +3089,12 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return ctor.getDeclaringClass();
     }
 
-    /**
-     * Constructs a new MaterialData relevant for this Material, with the
-     * given initial data
-     *
-     * @param raw Initial data to construct the MaterialData with
-     * @return New MaterialData with the given data
-     * @deprecated Magic value
-     */
+    /// Constructs a new MaterialData relevant for this Material, with the
+    /// given initial data
+    ///
+    /// @param raw Initial data to construct the MaterialData with
+    /// @return New MaterialData with the given data
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @NotNull
     public MaterialData getNewData(final byte raw) {
@@ -3143,55 +3115,47 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         }
     }
 
-    /**
-     * Checks if this Material is a placable block
-     *
-     * @return true if this material is a block
-     */
+    /// Checks if this Material is a placable block
+    ///
+    /// @return true if this material is a block
     public boolean isBlock() {
         return asBlockType() != null;
     }
 
-    /**
-     * Checks if this Material provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
-     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
-     *
-     * @return true if this Material is edible.
-     */
+    /// Checks if this Material provides the [io.papermc.paper.datacomponent.DataComponentTypes#FOOD] and
+    /// [io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE] and, thereby, is edible by a player.
+    ///
+    /// @return true if this Material is edible.
     public boolean isEdible() {
         ItemType type = asItemType();
         return type != null && type.isEdible();
     }
 
-    /**
-     * Attempts to get the Material with the given name.
-     * <p>
-     * This is a normal lookup, names must be the precise name they are given
-     * in the enum.
-     *
-     * @param name Name of the material to get
-     * @return Material if found, or null
-     */
+    /// Attempts to get the Material with the given name.
+    ///
+    /// This is a normal lookup, names must be the precise name they are given
+    /// in the enum.
+    ///
+    /// @param name Name of the material to get
+    /// @return Material if found, or null
     @Nullable
     public static Material getMaterial(@NotNull final String name) {
         return getMaterial(name, false);
     }
 
-    /**
-     * Attempts to get the Material with the given name.
-     * <p>
-     * This is a normal lookup, names must be the precise name they are given in
-     * the enum (but optionally including the LEGACY_PREFIX if legacyName is
-     * true).
-     * <p>
-     * If legacyName is true, then the lookup will be against legacy materials,
-     * but the returned Material will be a modern material (ie this method is
-     * useful for updating stored data).
-     *
-     * @param name Name of the material to get
-     * @param legacyName whether this is a legacy name lookup
-     * @return Material if found, or null
-     */
+    /// Attempts to get the Material with the given name.
+    ///
+    /// This is a normal lookup, names must be the precise name they are given in
+    /// the enum (but optionally including the LEGACY\_PREFIX if legacyName is
+    /// true).
+    ///
+    /// If legacyName is true, then the lookup will be against legacy materials,
+    /// but the returned Material will be a modern material (ie this method is
+    /// useful for updating stored data).
+    ///
+    /// @param name Name of the material to get
+    /// @param legacyName whether this is a legacy name lookup
+    /// @return Material if found, or null
     @Nullable
     public static Material getMaterial(@NotNull String name, boolean legacyName) {
         if (legacyName) {
@@ -3206,33 +3170,29 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return BY_NAME.get(name);
     }
 
-    /**
-     * Attempts to match the Material with the given name.
-     * <p>
-     * This is a match lookup; names will be stripped of the "minecraft:"
-     * namespace, converted to uppercase, then stripped of special characters in
-     * an attempt to format it like the enum.
-     *
-     * @param name Name of the material to get
-     * @return Material if found, or null
-     */
+    /// Attempts to match the Material with the given name.
+    ///
+    /// This is a match lookup; names will be stripped of the "minecraft:"
+    /// namespace, converted to uppercase, then stripped of special characters in
+    /// an attempt to format it like the enum.
+    ///
+    /// @param name Name of the material to get
+    /// @return Material if found, or null
     @Nullable
     public static Material matchMaterial(@NotNull final String name) {
         return matchMaterial(name, false);
     }
 
-    /**
-     * Attempts to match the Material with the given name.
-     * <p>
-     * This is a match lookup; names will be stripped of the "minecraft:"
-     * namespace, converted to uppercase, then stripped of special characters in
-     * an attempt to format it like the enum.
-     *
-     * @param name Name of the material to get
-     * @param legacyName whether this is a legacy name (see
-     * {@link #getMaterial(java.lang.String, boolean)}
-     * @return Material if found, or null
-     */
+    /// Attempts to match the Material with the given name.
+    ///
+    /// This is a match lookup; names will be stripped of the "minecraft:"
+    /// namespace, converted to uppercase, then stripped of special characters in
+    /// an attempt to format it like the enum.
+    ///
+    /// @param name Name of the material to get
+    /// @param legacyName whether this is a legacy name (see
+    /// [#getMaterial(java.lang.String, boolean)]
+    /// @return Material if found, or null
     @Nullable
     public static Material matchMaterial(@NotNull final String name, boolean legacyName) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
@@ -3254,50 +3214,40 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         }
     }
 
-    /**
-     * @return True if this material represents a playable music disk.
-     */
+    /// @return True if this material represents a playable music disk.
     public boolean isRecord() {
         ItemType type = asItemType();
         return type != null && type.isRecord();
     }
 
-    /**
-     * Check if the material is a block and solid (can be built upon)
-     *
-     * @return True if this material is a block and solid
-     */
+    /// Check if the material is a block and solid (can be built upon)
+    ///
+    /// @return True if this material is a block and solid
     public boolean isSolid() {
         BlockType type = asBlockType();
         return type != null && type.isSolid();
     }
 
-    /**
-     * Check if the material is an air block.
-     *
-     * @return True if this material is an air block.
-     */
+    /// Check if the material is an air block.
+    ///
+    /// @return True if this material is an air block.
     public boolean isAir() {
         BlockType type = asBlockType();
         return type != null && type.isAir();
     }
 
-    /**
-     * @return If the type is either AIR, CAVE_AIR or VOID_AIR
-     * @deprecated use {@link #isAir()}
-     */
+    /// @return If the type is either AIR, CAVE\_AIR or VOID\_AIR
+    /// @deprecated use [#isAir()]
     @Deprecated(since = "1.21.5")
     public boolean isEmpty() {
         return this.isAir();
     }
 
-    /**
-     * Check if the material is a block and does not block any light
-     *
-     * @return True if this material is a block and does not block any light
-     * @deprecated currently does not have an implementation which is well
-     * linked to the underlying server. Contributions welcome.
-     */
+    /// Check if the material is a block and does not block any light
+    ///
+    /// @return True if this material is a block and does not block any light
+    /// @deprecated currently does not have an implementation which is well
+    /// linked to the underlying server. Contributions welcome.
     @Deprecated(since = "1.13", forRemoval = true)
     public boolean isTransparent() {
         if (!isBlock()) {
@@ -3493,110 +3443,91 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         }
     }
 
-    /**
-     * Check if the material is a block and can catch fire
-     *
-     * @return True if this material is a block and can catch fire
-     */
+    /// Check if the material is a block and can catch fire
+    ///
+    /// @return True if this material is a block and can catch fire
     public boolean isFlammable() {
         BlockType type = asBlockType();
         return type != null && type.isFlammable();
     }
 
-    /**
-     * Check if the material is a block and can burn away
-     *
-     * @return True if this material is a block and can burn away
-     */
+    /// Check if the material is a block and can burn away
+    ///
+    /// @return True if this material is a block and can burn away
     public boolean isBurnable() {
         BlockType type = asBlockType();
         return type != null && type.isBurnable();
     }
 
-    /**
-     * Checks if this Material can be used as fuel in a Furnace
-     *
-     * @return true if this Material can be used as fuel.
-     */
+    /// Checks if this Material can be used as fuel in a Furnace
+    ///
+    /// @return true if this Material can be used as fuel.
     public boolean isFuel() {
         ItemType type = asItemType();
         return type != null && type.isFuel();
     }
 
-    /**
-     * Check if the material is a block and occludes light in the lighting engine.
-     * <p>
-     * Generally speaking, most full blocks will occlude light. Non-full blocks are
-     * not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific
-     * full blocks such as barriers or spawners which block light despite their texture.
-     * <p>
-     * An occluding block will have the following effects:
-     * <ul>
-     *   <li>Chests cannot be opened if an occluding block is above it.
-     *   <li>Mobs cannot spawn inside of occluding blocks.
-     *   <li>Only occluding blocks can be "powered" ({@link Block#isBlockPowered()}).
-     * </ul>
-     * This list may be inconclusive. For a full list of the side effects of an occluding
-     * block, see the <a href="https://minecraft.wiki/w/Opacity">Minecraft Wiki</a>.
-     *
-     * @return True if this material is a block and occludes light
-     */
+    /// Check if the material is a block and occludes light in the lighting engine.
+    ///
+    /// Generally speaking, most full blocks will occlude light. Non-full blocks are
+    /// not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific
+    /// full blocks such as barriers or spawners which block light despite their texture.
+    ///
+    /// An occluding block will have the following effects:
+    ///
+    ///   - Chests cannot be opened if an occluding block is above it.
+    ///   - Mobs cannot spawn inside of occluding blocks.
+    ///   - Only occluding blocks can be "powered" ([Block#isBlockPowered()]).
+    ///
+    /// This list may be inconclusive. For a full list of the side effects of an occluding
+    /// block, see the [Minecraft Wiki](https://minecraft.wiki/w/Opacity).
+    ///
+    /// @return True if this material is a block and occludes light
     public boolean isOccluding() {
         BlockType type = asBlockType();
         return type != null && type.isOccluding();
     }
 
-    /**
-     * @return True if this material is affected by gravity.
-     */
+    /// @return True if this material is affected by gravity.
     public boolean hasGravity() {
         BlockType type = asBlockType();
         return type != null && type.hasGravity();
     }
 
-    /**
-     * Checks if this Material is an obtainable item.
-     *
-     * @return true if this material is an item
-     */
+    /// Checks if this Material is an obtainable item.
+    ///
+    /// @return true if this material is an item
     public boolean isItem() {
         return asItemType() != null;
     }
 
-    /**
-     * Checks if this Material can be interacted with.
-     *
-     * Interactable materials include those with functionality when they are
-     * interacted with by a player such as chests, furnaces, etc.
-     *
-     * Some blocks such as piston heads and stairs are considered interactable
-     * though may not perform any additional functionality.
-     *
-     * Note that the interactability of some materials may be dependant on their
-     * state as well. This method will return true if there is at least one
-     * state in which additional interact handling is performed for the
-     * material.
-     *
-     * @return true if this material can be interacted with.
-     * @deprecated This method is not comprehensive and does not accurately reflect what block types are
-     * interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
-     * checks being true.
-     */
+    /// Checks if this Material can be interacted with.
+    /// Interactable materials include those with functionality when they are
+    /// interacted with by a player such as chests, furnaces, etc.
+    /// Some blocks such as piston heads and stairs are considered interactable
+    /// though may not perform any additional functionality.
+    /// Note that the interactability of some materials may be dependant on their
+    /// state as well. This method will return true if there is at least one
+    /// state in which additional interact handling is performed for the
+    /// material.
+    ///
+    /// @return true if this material can be interacted with.
+    /// @deprecated This method is not comprehensive and does not accurately reflect what block types are
+    /// interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
+    /// checks being true.
     @Deprecated // Paper
     public boolean isInteractable() {
         BlockType type = asBlockType();
         return type != null && type.isInteractable();
     }
 
-    /**
-     * Obtains the block's hardness level (also known as "strength").
-     * <br>
-     * This number is used to calculate the time required to break each block.
-     * <br>
-     * Only available when {@link #isBlock()} is true.
-     *
-     * @return the hardness of that material.
-     */
+    /// Obtains the block's hardness level (also known as "strength").
+    ///
+    /// This number is used to calculate the time required to break each block.
+    ///
+    /// Only available when [#isBlock()] is true.
+    ///
+    /// @return the hardness of that material.
     public float getHardness() {
         BlockType type = asBlockType();
         Preconditions.checkArgument(type != null, "The Material is not a block!");
@@ -3604,48 +3535,39 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
 
     }
 
-    /**
-     * Obtains the blast resistance value (also known as block "durability").
-     * <br>
-     * This value is used in explosions to calculate whether a block should be
-     * broken or not.
-     * <br>
-     * Only available when {@link #isBlock()} is true.
-     *
-     * @return the blast resistance of that material.
-     */
+    /// Obtains the blast resistance value (also known as block "durability").
+    ///
+    /// This value is used in explosions to calculate whether a block should be
+    /// broken or not.
+    ///
+    /// Only available when [#isBlock()] is true.
+    ///
+    /// @return the blast resistance of that material.
     public float getBlastResistance() {
         BlockType type = asBlockType();
         Preconditions.checkArgument(type != null, "The Material is not a block!");
         return type.getBlastResistance();
     }
 
-    /**
-     * Returns a value that represents how 'slippery' the block is.
-     *
-     * Blocks with higher slipperiness, like {@link Material#ICE} can be slid on
-     * further by the player and other entities.
-     *
-     * Most blocks have a default slipperiness of {@code 0.6f}.
-     *
-     * Only available when {@link #isBlock()} is true.
-     *
-     * @return the slipperiness of this block
-     */
+    /// Returns a value that represents how 'slippery' the block is.
+    /// Blocks with higher slipperiness, like [Material#ICE] can be slid on
+    /// further by the player and other entities.
+    /// Most blocks have a default slipperiness of `0.6f`.
+    /// Only available when [#isBlock()] is true.
+    ///
+    /// @return the slipperiness of this block
     public float getSlipperiness() {
         BlockType type = asBlockType();
         Preconditions.checkArgument(type != null, "The Material is not a block!");
         return type.getSlipperiness();
     }
 
-    /**
-     * Determines the remaining item in a crafting grid after crafting with this
-     * ingredient.
-     * <br>
-     * Only available when {@link #isItem()} is true.
-     *
-     * @return the item left behind when crafting, or null if nothing is.
-     */
+    /// Determines the remaining item in a crafting grid after crafting with this
+    /// ingredient.
+    ///
+    /// Only available when [#isItem()] is true.
+    ///
+    /// @return the item left behind when crafting, or null if nothing is.
     @Nullable
     public Material getCraftingRemainingItem() {
         ItemType type = asItemType();
@@ -3653,13 +3575,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return type.getCraftingRemainingItem() == null ? null : type.getCraftingRemainingItem().asMaterial();
     }
 
-    /**
-     * Get the best suitable slot for this Material.
-     *
-     * For most items this will be {@link EquipmentSlot#HAND}.
-     *
-     * @return the best EquipmentSlot for this Material
-     */
+    /// Get the best suitable slot for this Material.
+    /// For most items this will be [EquipmentSlot#HAND].
+    ///
+    /// @return the best EquipmentSlot for this Material
     @NotNull
     public EquipmentSlot getEquipmentSlot() {
         ItemType type = asItemType();
@@ -3669,18 +3588,16 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
 
     // Paper start - improve default item attribute API
-    /**
-     * Return an immutable copy of all default {@link Attribute}s and their {@link AttributeModifier}s.
-     * <p>
-     * Default attributes are those that are always preset on some items, unless
-     * they are specifically overridden on that {@link ItemStack}. Examples include
-     * the attack damage on weapons or the armor value on armor.
-     * <p>
-     * Only available when {@link #isItem()} is true.
-     *
-     * @return the immutable {@link Multimap} with the respective default
-     * Attributes and modifiers, or an empty map if no attributes are set.
-     */
+    /// Return an immutable copy of all default [Attribute]s and their [AttributeModifier]s.
+    ///
+    /// Default attributes are those that are always preset on some items, unless
+    /// they are specifically overridden on that [ItemStack]. Examples include
+    /// the attack damage on weapons or the armor value on armor.
+    ///
+    /// Only available when [#isItem()] is true.
+    ///
+    /// @return the immutable [Multimap] with the respective default
+    /// Attributes and modifiers, or an empty map if no attributes are set.
     public @NotNull @org.jetbrains.annotations.Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
         final ItemType type = this.asItemType();
         Preconditions.checkArgument(type != null, "The Material is not an item!");
@@ -3688,20 +3605,18 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
     // Paper end - improve default item attribute API
 
-    /**
-     * Return an immutable copy of all default {@link Attribute}s and their
-     * {@link AttributeModifier}s for a given {@link EquipmentSlot}.
-     * <p>
-     * Default attributes are those that are always preset on some items, unless
-     * they are specifically overridden on that {@link ItemStack}. Examples include
-     * the attack damage on weapons or the armor value on armor.
-     * <p>
-     * Only available when {@link #isItem()} is true.
-     *
-     * @param slot the {@link EquipmentSlot} to check
-     * @return the immutable {@link Multimap} with the respective default
-     * Attributes and modifiers, or an empty map if no attributes are set.
-     */
+    /// Return an immutable copy of all default [Attribute]s and their
+    /// [AttributeModifier]s for a given [EquipmentSlot].
+    ///
+    /// Default attributes are those that are always preset on some items, unless
+    /// they are specifically overridden on that [ItemStack]. Examples include
+    /// the attack damage on weapons or the armor value on armor.
+    ///
+    /// Only available when [#isItem()] is true.
+    ///
+    /// @param slot the [EquipmentSlot] to check
+    /// @return the immutable [Multimap] with the respective default
+    /// Attributes and modifiers, or an empty map if no attributes are set.
     @NotNull
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(@NotNull EquipmentSlot slot) {
         ItemType type = asItemType();
@@ -3709,32 +3624,27 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         return type.getDefaultAttributeModifiers(slot);
     }
 
-    /**
-     * Get the {@link CreativeCategory} to which this material belongs.
-     *
-     * @return the creative category. null if it does not belong to a category
-     * @deprecated items can belong to multiple creative categories and this is no
-     * longer implemented, will always be {@link CreativeCategory#BUILDING_BLOCKS} if not null
-     */
+    /// Get the [CreativeCategory] to which this material belongs.
+    ///
+    /// @return the creative category. null if it does not belong to a category
+    /// @deprecated items can belong to multiple creative categories and this is no
+    /// longer implemented, will always be [CreativeCategory#BUILDING_BLOCKS] if not null
     @Deprecated(since = "1.20.6", forRemoval = true)
     public @Nullable CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
         return type == null ? null : type.getCreativeCategory();
     }
 
-    /**
-     * Get the translation key of the item or block associated with this
-     * material.
-     *
-     * If this material has both an item and a block form, the item form is
-     * used.
-     *
-     * @return the translation key of the item or block associated with this
-     * material
-     * @see #getBlockTranslationKey()
-     * @see #getItemTranslationKey()
-     * @deprecated use {@link #translationKey()}
-     */
+    /// Get the translation key of the item or block associated with this
+    /// material.
+    /// If this material has both an item and a block form, the item form is
+    /// used.
+    ///
+    /// @return the translation key of the item or block associated with this
+    /// material
+    /// @see #getBlockTranslationKey()
+    /// @see #getItemTranslationKey()
+    /// @deprecated use [#translationKey()]
     @Override
     @NotNull
     @Deprecated(forRemoval = true) // Paper
@@ -3746,79 +3656,65 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         }
     }
 
-    /**
-     * Get the translation key of the block associated with this material, or
-     * null if this material does not have an associated block.
-     *
-     * @return the translation key of the block associated with this material,
-     * or null if this material does not have an associated block
-     */
+    /// Get the translation key of the block associated with this material, or
+    /// null if this material does not have an associated block.
+    ///
+    /// @return the translation key of the block associated with this material,
+    /// or null if this material does not have an associated block
     @Nullable
     public String getBlockTranslationKey() {
         BlockType type = asBlockType();
         return type == null ? null : type.getTranslationKey();
     }
 
-    /**
-     * Get the translation key of the item associated with this material, or
-     * null if this material does not have an associated item.
-     *
-     * @return the translation key of the item associated with this material, or
-     * null if this material does not have an associated item.
-     */
+    /// Get the translation key of the item associated with this material, or
+    /// null if this material does not have an associated item.
+    ///
+    /// @return the translation key of the item associated with this material, or
+    /// null if this material does not have an associated item.
     @Nullable
     public String getItemTranslationKey() {
         ItemType type = asItemType();
         return type == null ? null : type.getTranslationKey();
     }
 
-    /**
-     * Checks whether this material is compostable (can be inserted into a
-     * composter).
-     *
-     * @return true if this material is compostable
-     * @see #getCompostChance()
-     */
+    /// Checks whether this material is compostable (can be inserted into a
+    /// composter).
+    ///
+    /// @return true if this material is compostable
+    /// @see #getCompostChance()
     public boolean isCompostable() {
         return isItem() && asItemType().isCompostable();
     }
 
-    /**
-     * Get the chance that this material will successfully compost. The returned
-     * value is between 0 and 1 (inclusive).
-     *
-     * Materials with a compost chance of 1 will always raise the composter's
-     * level, while materials with a compost chance of 0 will never raise it.
-     *
-     * Plugins should check that {@link #isCompostable} returns true before
-     * calling this method.
-     *
-     * @return the chance that this material will successfully compost
-     * @throws IllegalArgumentException if the material is not compostable
-     * @see #isCompostable()
-     */
+    /// Get the chance that this material will successfully compost. The returned
+    /// value is between 0 and 1 (inclusive).
+    /// Materials with a compost chance of 1 will always raise the composter's
+    /// level, while materials with a compost chance of 0 will never raise it.
+    /// Plugins should check that [#isCompostable] returns true before
+    /// calling this method.
+    ///
+    /// @return the chance that this material will successfully compost
+    /// @throws IllegalArgumentException if the material is not compostable
+    /// @see #isCompostable()
     public float getCompostChance() {
         ItemType type = asItemType();
         Preconditions.checkArgument(type != null, "The Material is not an item!");
         return type.getCompostChance();
     }
 
-    /**
-     * Tries to convert this Material to an item type
-     *
-     * @return the converted item type or null
-     */
+    /// Tries to convert this Material to an item type
+    ///
+    /// @return the converted item type or null
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public ItemType asItemType() {
         return itemType.get();
     }
 
-    /**
-     * Tries to convert this Material to a block type
-     *
-     * @return the converted block type or null
-     */
+    /// Tries to convert this Material to a block type
+    ///
+    /// @return the converted block type or null
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public BlockType asBlockType() {
@@ -3826,38 +3722,32 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
 
     // Paper start - data component API
-    /**
-     * Gets the default value of the data component type for this item type.
-     *
-     * @param type the data component type
-     * @param <T> the value type
-     * @return the default value or {@code null} if there is none
-     * @see #hasDefaultData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
-     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
-     */
+    /// Gets the default value of the data component type for this item type.
+    ///
+    /// @param type the data component type
+    /// @param <T> the value type
+    /// @return the default value or `null` if there is none
+    /// @see #hasDefaultData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
+    /// @throws IllegalArgumentException if [#isItem()] is `false`
     public @Nullable <T> T getDefaultData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type) {
         Preconditions.checkArgument(this.asItemType() != null);
         return this.asItemType().getDefaultData(type);
     }
 
-    /**
-     * Checks if the data component type has a default value for this item type.
-     *
-     * @param type the data component type
-     * @return {@code true} if there is a default value
-     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
-     */
+    /// Checks if the data component type has a default value for this item type.
+    ///
+    /// @param type the data component type
+    /// @return `true` if there is a default value
+    /// @throws IllegalArgumentException if [#isItem()] is `false`
     public boolean hasDefaultData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         Preconditions.checkArgument(this.asItemType() != null);
         return this.asItemType().hasDefaultData(type);
     }
 
-    /**
-     * Gets the default data component types for this item type.
-     *
-     * @return an immutable set of data component types
-     * @throws IllegalArgumentException if {@link #isItem()} is {@code false}
-     */
+    /// Gets the default data component types for this item type.
+    ///
+    /// @return an immutable set of data component types
+    /// @throws IllegalArgumentException if [#isItem()] is `false`
     public java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes() {
         Preconditions.checkArgument(this.asItemType() != null);
         return this.asItemType().getDefaultDataTypes();

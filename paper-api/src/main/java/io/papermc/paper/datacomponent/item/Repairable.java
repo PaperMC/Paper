@@ -5,10 +5,8 @@ import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds if this item is repairable, and what item types it can be repaired with.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#REPAIRABLE
- */
+/// Holds if this item is repairable, and what item types it can be repaired with.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#REPAIRABLE
 @ApiStatus.NonExtendable
 public interface Repairable {
 
@@ -17,11 +15,9 @@ public interface Repairable {
         return ItemComponentTypesBridge.bridge().repairable(types);
     }
 
-    /**
-     * The types that this item is repairable to.
-     *
-     * @return item
-     */
+    /// The types that this item is repairable to.
+    ///
+    /// @return item
     @Contract(value = "-> new", pure = true)
     RegistryKeySet<ItemType> types();
 }

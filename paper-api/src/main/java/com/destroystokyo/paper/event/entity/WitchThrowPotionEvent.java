@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Fired when a witch throws a potion at a player
- */
+/// Fired when a witch throws a potion at a player
 @NullMarked
 public class WitchThrowPotionEvent extends EntityEvent implements Cancellable {
 
@@ -34,32 +32,24 @@ public class WitchThrowPotionEvent extends EntityEvent implements Cancellable {
         return (Witch) super.getEntity();
     }
 
-    /**
-     * @return The target of the potion
-     */
+    /// @return The target of the potion
     public LivingEntity getTarget() {
         return this.target;
     }
 
-    /**
-     * @return The potion the witch will throw at a player
-     */
+    /// @return The potion the witch will throw at a player
     public @Nullable ItemStack getPotion() {
         return this.potion;
     }
 
-    /**
-     * Sets the potion to be thrown at a player
-     *
-     * @param potion The potion
-     */
+    /// Sets the potion to be thrown at a player
+    ///
+    /// @param potion The potion
     public void setPotion(final @Nullable ItemStack potion) {
         this.potion = potion != null ? potion.clone() : null;
     }
 
-    /**
-     * @return Event was cancelled or potion was {@code null}
-     */
+    /// @return Event was cancelled or potion was `null`
     @Override
     public boolean isCancelled() {
         return this.cancelled || this.potion == null;

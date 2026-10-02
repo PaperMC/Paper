@@ -9,9 +9,7 @@ import org.bukkit.inventory.LoomInventory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player selects a banner pattern in a loom inventory.
- */
+/// Called when a player selects a banner pattern in a loom inventory.
 @NullMarked
 public class PlayerLoomPatternSelectEvent extends PlayerEvent implements Cancellable {
 
@@ -29,29 +27,23 @@ public class PlayerLoomPatternSelectEvent extends PlayerEvent implements Cancell
         this.patternType = patternType;
     }
 
-    /**
-     * Gets the loom inventory involved.
-     *
-     * @return the loom inventory
-     */
+    /// Gets the loom inventory involved.
+    ///
+    /// @return the loom inventory
     public LoomInventory getLoomInventory() {
         return this.loomInventory;
     }
 
-    /**
-     * Gets the pattern type selected.
-     *
-     * @return the pattern type
-     */
+    /// Gets the pattern type selected.
+    ///
+    /// @return the pattern type
     public PatternType getPatternType() {
         return this.patternType;
     }
 
-    /**
-     * Sets the pattern type selected.
-     *
-     * @param patternType the pattern type
-     */
+    /// Sets the pattern type selected.
+    ///
+    /// @param patternType the pattern type
     public void setPatternType(final PatternType patternType) {
         this.patternType = patternType;
     }

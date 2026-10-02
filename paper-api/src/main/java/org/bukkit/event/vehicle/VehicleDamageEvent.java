@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Raised when a vehicle receives damage.
- */
+/// Raised when a vehicle receives damage.
 public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -30,40 +28,32 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
         this.damage = damage;
     }
 
-    /**
-     * Gets the DamageSource that caused the damage.
-     *
-     * @return the DamageSource that caused the damage
-     */
+    /// Gets the DamageSource that caused the damage.
+    ///
+    /// @return the DamageSource that caused the damage
     @NotNull
     public DamageSource getDamageSource() {
         return this.damageSource;
     }
 
-    /**
-     * Gets the Entity that is attacking the vehicle
-     *
-     * @return the Entity that is attacking the vehicle
-     */
+    /// Gets the Entity that is attacking the vehicle
+    ///
+    /// @return the Entity that is attacking the vehicle
     @Nullable
     public Entity getAttacker() {
         return this.attacker;
     }
 
-    /**
-     * Gets the damage done to the vehicle
-     *
-     * @return the damage done to the vehicle
-     */
+    /// Gets the damage done to the vehicle
+    ///
+    /// @return the damage done to the vehicle
     public double getDamage() {
         return this.damage;
     }
 
-    /**
-     * Sets the damage done to the vehicle
-     *
-     * @param damage The damage
-     */
+    /// Sets the damage done to the vehicle
+    ///
+    /// @param damage The damage
     public void setDamage(double damage) {
         this.damage = damage;
     }

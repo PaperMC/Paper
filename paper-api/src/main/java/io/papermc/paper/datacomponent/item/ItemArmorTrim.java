@@ -5,10 +5,8 @@ import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the trims applied to an item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
- */
+/// Holds the trims applied to an item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
 @ApiStatus.NonExtendable
 public interface ItemArmorTrim  {
 
@@ -17,27 +15,21 @@ public interface ItemArmorTrim  {
         return ItemComponentTypesBridge.bridge().itemArmorTrim(armorTrim);
     }
 
-    /**
-     * Armor trim present on this item.
-     *
-     * @return trim
-     */
+    /// Armor trim present on this item.
+    ///
+    /// @return trim
     @Contract(pure = true)
     ArmorTrim armorTrim();
 
-    /**
-     * Builder for {@link ItemArmorTrim}.
-     */
+    /// Builder for [ItemArmorTrim].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemArmorTrim> {
 
-        /**
-         * Sets the armor trim for this builder.
-         *
-         * @param armorTrim trim
-         * @return the builder for chaining
-         * @see #armorTrim()
-         */
+        /// Sets the armor trim for this builder.
+        ///
+        /// @param armorTrim trim
+        /// @return the builder for chaining
+        /// @see #armorTrim()
         @Contract(value = "_ -> this", mutates = "this")
         Builder armorTrim(ArmorTrim armorTrim);
     }

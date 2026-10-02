@@ -7,11 +7,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Controls which blocks a player in Adventure mode can do a certain action with this item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_BREAK
- * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_PLACE_ON
- */
+/// Controls which blocks a player in Adventure mode can do a certain action with this item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_BREAK
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_PLACE_ON
 @ApiStatus.NonExtendable
 public interface ItemAdventurePredicate {
 
@@ -25,36 +23,28 @@ public interface ItemAdventurePredicate {
         return ItemComponentTypesBridge.bridge().itemAdventurePredicate();
     }
 
-    /**
-     * List of block predicates that control if the action is allowed.
-     *
-     * @return predicates
-     */
+    /// List of block predicates that control if the action is allowed.
+    ///
+    /// @return predicates
     @Contract(pure = true)
     @Unmodifiable List<BlockPredicate> predicates();
 
-    /**
-     * Builder for {@link ItemAdventurePredicate}.
-     */
+    /// Builder for [ItemAdventurePredicate].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemAdventurePredicate> {
-        /**
-         * Adds a block predicate to this builder.
-         *
-         * @param predicate predicate
-         * @return the builder for chaining
-         * @see #predicates()
-         */
+        /// Adds a block predicate to this builder.
+        ///
+        /// @param predicate predicate
+        /// @return the builder for chaining
+        /// @see #predicates()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addPredicate(BlockPredicate predicate);
 
-        /**
-         * Adds block predicates to this builder.
-         *
-         * @param predicates predicates
-         * @return the builder for chaining
-         * @see #predicates()
-         */
+        /// Adds block predicates to this builder.
+        ///
+        /// @param predicates predicates
+        /// @return the builder for chaining
+        /// @see #predicates()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addPredicates(List<BlockPredicate> predicates);
     }

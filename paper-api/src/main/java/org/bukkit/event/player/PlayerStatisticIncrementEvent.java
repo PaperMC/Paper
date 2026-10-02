@@ -12,12 +12,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a player statistic is incremented.
- * <p>
- * This event is not called for some high frequency statistics, e.g. movement
- * based statistics.
- */
+/// Called when a player statistic is incremented.
+///
+/// This event is not called for some high frequency statistics, e.g. movement
+/// based statistics.
 public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -70,51 +68,41 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.material = material;
     }
 
-    /**
-     * Gets the statistic that is being incremented.
-     *
-     * @return the incremented statistic
-     */
+    /// Gets the statistic that is being incremented.
+    ///
+    /// @return the incremented statistic
     @NotNull
     public Statistic getStatistic() {
         return this.statistic;
     }
 
-    /**
-     * Gets the previous value of the statistic.
-     *
-     * @return the previous value of the statistic
-     */
+    /// Gets the previous value of the statistic.
+    ///
+    /// @return the previous value of the statistic
     public int getPreviousValue() {
         return this.initialValue;
     }
 
-    /**
-     * Gets the new value of the statistic.
-     *
-     * @return the new value of the statistic
-     */
+    /// Gets the new value of the statistic.
+    ///
+    /// @return the new value of the statistic
     public int getNewValue() {
         return this.newValue;
     }
 
-    /**
-     * Gets the EntityType if {@link #getStatistic()} is an
-     * entity statistic otherwise returns {@code null}.
-     *
-     * @return the EntityType of the statistic
-     */
+    /// Gets the EntityType if [#getStatistic()] is an
+    /// entity statistic otherwise returns `null`.
+    ///
+    /// @return the EntityType of the statistic
     @Nullable
     public EntityType getEntityType() {
         return this.entityType;
     }
 
-    /**
-     * Gets the Material if {@link #getStatistic()} is a block
-     * or item statistic otherwise returns {@code null}.
-     *
-     * @return the Material of the statistic
-     */
+    /// Gets the Material if [#getStatistic()] is a block
+    /// or item statistic otherwise returns `null`.
+    ///
+    /// @return the Material of the statistic
     @Nullable
     public Material getMaterial() {
         return this.material;

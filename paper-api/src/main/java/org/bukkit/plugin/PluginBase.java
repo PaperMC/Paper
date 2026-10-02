@@ -3,12 +3,10 @@ package org.bukkit.plugin;
 import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
-/**
- * Represents a base {@link Plugin}
- * <p>
- * Extend this class if your plugin is not a {@link
- * org.bukkit.plugin.java.JavaPlugin}
- */
+/// Represents a base [Plugin]
+///
+/// Extend this class if your plugin is not a
+/// [org.bukkit.plugin.java.JavaPlugin]
 public abstract class PluginBase implements Plugin {
     @Override
     public final int hashCode() {

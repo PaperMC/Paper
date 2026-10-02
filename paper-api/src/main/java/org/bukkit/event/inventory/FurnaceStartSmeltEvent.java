@@ -8,12 +8,10 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when any of the furnace-like blocks start smelting.
- * <p>
- * Furnace-like blocks are {@link org.bukkit.block.Furnace},
- * {@link org.bukkit.block.Smoker}, and {@link org.bukkit.block.BlastFurnace}.
- */
+/// Called when any of the furnace-like blocks start smelting.
+///
+/// Furnace-like blocks are [org.bukkit.block.Furnace],
+/// [org.bukkit.block.Smoker], and [org.bukkit.block.BlastFurnace].
 public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
 
     private final CookingRecipe<?> recipe;
@@ -32,30 +30,24 @@ public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
         this.totalCookTime = cookingTime;
     }
 
-    /**
-     * Gets the FurnaceRecipe associated with this event
-     *
-     * @return the FurnaceRecipe being cooked
-     */
+    /// Gets the FurnaceRecipe associated with this event
+    ///
+    /// @return the FurnaceRecipe being cooked
     @NotNull
     public CookingRecipe<?> getRecipe() {
         return this.recipe;
     }
 
-    /**
-     * Gets the total cook time associated with this event
-     *
-     * @return the total cook time
-     */
+    /// Gets the total cook time associated with this event
+    ///
+    /// @return the total cook time
     public int getTotalCookTime() {
         return this.totalCookTime;
     }
 
-    /**
-     * Sets the total cook time for this event
-     *
-     * @param cookTime the new total cook time
-     */
+    /// Sets the total cook time for this event
+    ///
+    /// @param cookTime the new total cook time
     public void setTotalCookTime(int cookTime) {
         this.totalCookTime = cookTime;
     }

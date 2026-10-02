@@ -3,15 +3,13 @@ package org.bukkit.conversations;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An InactivityConversationCanceller will cancel a {@link Conversation} after
- * a period of inactivity by the user.
- *
- * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
- * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
- * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
- * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
- */
+/// An InactivityConversationCanceller will cancel a [Conversation] after
+/// a period of inactivity by the user.
+///
+/// @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+/// and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+/// It is recommended you instead manually listen to the [io.papermc.paper.event.player.AsyncChatEvent]
+/// or alternatively using [io.papermc.paper.dialog.Dialog] to get user input.
 @Deprecated(forRemoval = true)
 public class InactivityConversationCanceller implements ConversationCanceller {
     protected Plugin plugin;
@@ -19,12 +17,10 @@ public class InactivityConversationCanceller implements ConversationCanceller {
     protected Conversation conversation;
     private int taskId = -1;
 
-    /**
-     * Creates an InactivityConversationCanceller.
-     *
-     * @param plugin The owning plugin.
-     * @param timeoutSeconds The number of seconds of inactivity to wait.
-     */
+    /// Creates an InactivityConversationCanceller.
+    ///
+    /// @param plugin The owning plugin.
+    /// @param timeoutSeconds The number of seconds of inactivity to wait.
     public InactivityConversationCanceller(@NotNull Plugin plugin, int timeoutSeconds) {
         this.plugin = plugin;
         this.timeoutSeconds = timeoutSeconds;
@@ -50,9 +46,7 @@ public class InactivityConversationCanceller implements ConversationCanceller {
         return new InactivityConversationCanceller(plugin, timeoutSeconds);
     }
 
-    /**
-     * Starts an inactivity timer.
-     */
+    /// Starts an inactivity timer.
     private void startTimer() {
         taskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
@@ -67,9 +61,7 @@ public class InactivityConversationCanceller implements ConversationCanceller {
         }, timeoutSeconds * 20);
     }
 
-    /**
-     * Stops the active inactivity timer.
-     */
+    /// Stops the active inactivity timer.
     private void stopTimer() {
         if (taskId != -1) {
             plugin.getServer().getScheduler().cancelTask(taskId);
@@ -77,13 +69,11 @@ public class InactivityConversationCanceller implements ConversationCanceller {
         }
     }
 
-    /**
-     * Subclasses of InactivityConversationCanceller can override this method
-     * to take additional actions when the inactivity timer abandons the
-     * conversation.
-     *
-     * @param conversation The conversation being abandoned.
-     */
+    /// Subclasses of InactivityConversationCanceller can override this method
+    /// to take additional actions when the inactivity timer abandons the
+    /// conversation.
+    ///
+    /// @param conversation The conversation being abandoned.
     protected void cancelling(@NotNull Conversation conversation) {
 
     }

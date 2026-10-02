@@ -4,9 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a player related event
- */
+/// Represents a player related event
 public abstract class PlayerEvent extends Event {
 
     protected Player player;
@@ -20,11 +18,9 @@ public abstract class PlayerEvent extends Event {
         this.player = player;
     }
 
-    /**
-     * Returns the player involved in this event
-     *
-     * @return Player who is involved in this event
-     */
+    /// Returns the player involved in this event
+    ///
+    /// @return Player who is involved in this event
     @NotNull
     public final Player getPlayer() {
         return this.player;

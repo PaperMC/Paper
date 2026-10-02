@@ -25,20 +25,16 @@ public class BlockPreDispenseEvent extends BlockEvent implements Cancellable {
         this.slot = slot;
     }
 
-    /**
-     * Gets the {@link ItemStack} to be dispensed.
-     *
-     * @return The item to be dispensed
-     */
+    /// Gets the [ItemStack] to be dispensed.
+    ///
+    /// @return The item to be dispensed
     public ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    /**
-     * Gets the inventory slot of the dispenser to dispense from.
-     *
-     * @return The inventory slot
-     */
+    /// Gets the inventory slot of the dispenser to dispense from.
+    ///
+    /// @return The inventory slot
     public int getSlot() {
         return this.slot;
     }

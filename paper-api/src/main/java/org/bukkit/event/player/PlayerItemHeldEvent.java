@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Fired when a player changes their currently held item
- */
+/// Fired when a player changes their currently held item
 public class PlayerItemHeldEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,20 +23,16 @@ public class PlayerItemHeldEvent extends PlayerEvent implements Cancellable {
         this.current = current;
     }
 
-    /**
-     * Gets the previous held slot index
-     *
-     * @return Previous slot index
-     */
+    /// Gets the previous held slot index
+    ///
+    /// @return Previous slot index
     public int getPreviousSlot() {
         return this.previous;
     }
 
-    /**
-     * Gets the new held slot index
-     *
-     * @return New slot index
-     */
+    /// Gets the new held slot index
+    ///
+    /// @return New slot index
     public int getNewSlot() {
         return this.current;
     }

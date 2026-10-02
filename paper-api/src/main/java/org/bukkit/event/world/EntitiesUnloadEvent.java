@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Called when entities are unloaded.
- * <br>
- * The provided chunk may or may not be loaded.
- */
+/// Called when entities are unloaded.
+///
+/// The provided chunk may or may not be loaded.
 public class EntitiesUnloadEvent extends ChunkEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,11 +23,9 @@ public class EntitiesUnloadEvent extends ChunkEvent {
         this.entities = entities;
     }
 
-    /**
-     * Get the entities which are being unloaded.
-     *
-     * @return unmodifiable list of unloaded entities.
-     */
+    /// Get the entities which are being unloaded.
+    ///
+    /// @return unmodifiable list of unloaded entities.
     @NotNull
     public @Unmodifiable List<Entity> getEntities() {
         return this.entities;

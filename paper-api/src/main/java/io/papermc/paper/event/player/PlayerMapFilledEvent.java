@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player creates a filled map by right-clicking an empty map.
- */
+/// Called when a player creates a filled map by right-clicking an empty map.
 @NullMarked
 public class PlayerMapFilledEvent extends PlayerEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,29 +23,23 @@ public class PlayerMapFilledEvent extends PlayerEvent {
         this.createdMap = createdMap;
     }
 
-    /**
-     * Returns a copy of the empty map before it was consumed.
-     *
-     * @return cloned original item
-     */
+    /// Returns a copy of the empty map before it was consumed.
+    ///
+    /// @return cloned original item
     public ItemStack getOriginalItem() {
         return this.originalItem.clone();
     }
 
-    /**
-     * Returns a copy of the filled map which was created.
-     *
-     * @return cloned created map item
-     */
+    /// Returns a copy of the filled map which was created.
+    ///
+    /// @return cloned created map item
     public ItemStack getCreatedMap() {
         return this.createdMap.clone();
     }
 
-    /**
-     * Sets the filled map that will be created.
-     *
-     * @param createdMap map item
-     */
+    /// Sets the filled map that will be created.
+    ///
+    /// @param createdMap map item
     public void setCreatedMap(final ItemStack createdMap) {
         this.createdMap = createdMap.clone();
     }

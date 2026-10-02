@@ -9,11 +9,9 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when an entity receives knockback.
- * @see EntityPushedByEntityAttackEvent
- * @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
- */
+/// Called when an entity receives knockback.
+/// @see EntityPushedByEntityAttackEvent
+/// @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
 @NullMarked
 public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
 
@@ -30,33 +28,27 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
         this.knockback = knockback;
     }
 
-    /**
-     * Gets the cause of the knockback.
-     *
-     * @return the cause of the knockback
-     */
+    /// Gets the cause of the knockback.
+    ///
+    /// @return the cause of the knockback
     public EntityKnockbackEvent.Cause getCause() {
         return this.cause;
     }
 
-    /**
-     * Gets the knockback force that will be applied to the entity.
-     * <br>
-     * This value is read-only, changes made to it <b>will not</b> have any
-     * effect on the final knockback received. Use {@link #setKnockback(Vector)}
-     * to make changes.
-     *
-     * @return the knockback
-     */
+    /// Gets the knockback force that will be applied to the entity.
+    ///
+    /// This value is read-only, changes made to it **will not** have any
+    /// effect on the final knockback received. Use [#setKnockback(Vector)]
+    /// to make changes.
+    ///
+    /// @return the knockback
     public Vector getKnockback() {
         return this.knockback.clone();
     }
 
-    /**
-     * Sets the knockback force that will be applied to the entity.
-     *
-     * @param knockback the knockback
-     */
+    /// Sets the knockback force that will be applied to the entity.
+    ///
+    /// @param knockback the knockback
     public void setKnockback(final Vector knockback) {
         Preconditions.checkArgument(knockback != null, "knockback");
         this.knockback = knockback.clone();
@@ -81,38 +73,22 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the cause of the knockback.
-     */
+    /// An enum to specify the cause of the knockback.
     public enum Cause {
 
-        /**
-         * Knockback caused by non-entity damage.
-         */
+        /// Knockback caused by non-entity damage.
         DAMAGE,
-        /**
-         * Knockback caused by an attacking entity.
-         */
+        /// Knockback caused by an attacking entity.
         ENTITY_ATTACK,
-        /**
-         * Knockback caused by an explosion.
-         */
+        /// Knockback caused by an explosion.
         EXPLOSION,
-        /**
-         * Knockback caused by the target blocking with a shield.
-         */
+        /// Knockback caused by the target blocking with a shield.
         SHIELD_BLOCK,
-        /**
-         * Knockback caused by a sweeping attack.
-         */
+        /// Knockback caused by a sweeping attack.
         SWEEP_ATTACK,
-        /**
-         * A generic push.
-         */
+        /// A generic push.
         PUSH,
-        /**
-         * Knockback with an unknown cause.
-         */
+        /// Knockback with an unknown cause.
         UNKNOWN
     }
 }

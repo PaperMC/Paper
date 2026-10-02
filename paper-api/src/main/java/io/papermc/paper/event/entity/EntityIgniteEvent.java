@@ -10,9 +10,7 @@ import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 
-/**
- * Called when an entity is ignited often by fire or redstone power.
- */
+/// Called when an entity is ignited often by fire or redstone power.
 @NullMarked
 public class EntityIgniteEvent extends EntityEvent implements Cancellable {
 
@@ -27,20 +25,16 @@ public class EntityIgniteEvent extends EntityEvent implements Cancellable {
         this.fuseTime = fuseTime;
     }
 
-    /**
-     * Gets the amount of ticks required for this entity to explode.
-     *
-     * @return the amount of ticks required
-     */
+    /// Gets the amount of ticks required for this entity to explode.
+    ///
+    /// @return the amount of ticks required
     public @Positive int getFuseTime() {
         return this.fuseTime;
     }
 
-    /**
-     * Sets the amount of ticks required for this entity to explode.
-     *
-     * @param ticks the amount of ticks required
-     */
+    /// Sets the amount of ticks required for this entity to explode.
+    ///
+    /// @param ticks the amount of ticks required
     public void setFuseTime(final @Positive int ticks) {
         this.fuseTime = requirePositive(ticks, "ticks");
     }

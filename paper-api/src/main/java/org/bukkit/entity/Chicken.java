@@ -7,71 +7,51 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a Chicken.
- */
+/// Represents a Chicken.
 @NullMarked
 public interface Chicken extends Animals {
 
-    /**
-     * Gets the variant of this chicken.
-     *
-     * @return the chicken variant
-     */
+    /// Gets the variant of this chicken.
+    ///
+    /// @return the chicken variant
     Variant getVariant();
 
-    /**
-     * Sets the variant of this chicken.
-     *
-     * @param variant the chicken variant
-     */
+    /// Sets the variant of this chicken.
+    ///
+    /// @param variant the chicken variant
     void setVariant(Variant variant);
 
-    /**
-     * Get the sound variant of this chicken.
-     *
-     * @return chicken sound variant
-     */
+    /// Get the sound variant of this chicken.
+    ///
+    /// @return chicken sound variant
     SoundVariant getSoundVariant();
 
-    /**
-     * Set the sound variant of this chicken.
-     *
-     * @param variant chicken sound variant
-     */
+    /// Set the sound variant of this chicken.
+    ///
+    /// @param variant chicken sound variant
     void setSoundVariant(SoundVariant variant);
 
-    /**
-     * Gets if this chicken was spawned as a chicken jockey.
-     *
-     * @return is chicken jockey
-     */
+    /// Gets if this chicken was spawned as a chicken jockey.
+    ///
+    /// @return is chicken jockey
     boolean isChickenJockey();
 
-    /**
-     * Sets if this chicken was spawned as a chicken jockey.
-     *
-     * @param isChickenJockey is chicken jockey
-     */
+    /// Sets if this chicken was spawned as a chicken jockey.
+    ///
+    /// @param isChickenJockey is chicken jockey
     void setIsChickenJockey(boolean isChickenJockey);
 
-    /**
-     * Gets the number of ticks till this chicken lays an egg.
-     *
-     * @return ticks till the chicken lays an egg
-     */
+    /// Gets the number of ticks till this chicken lays an egg.
+    ///
+    /// @return ticks till the chicken lays an egg
     int getEggLayTime();
 
-    /**
-     * Sets the number of ticks till this chicken lays an egg.
-     *
-     * @param eggLayTime ticks till the chicken lays an egg
-     */
+    /// Sets the number of ticks till this chicken lays an egg.
+    ///
+    /// @param eggLayTime ticks till the chicken lays an egg
     void setEggLayTime(int eggLayTime);
 
-    /**
-     * Represents the variant of a chicken.
-     */
+    /// Represents the variant of a chicken.
     interface Variant extends Keyed {
 
         // Start generate - ChickenVariant
@@ -87,9 +67,7 @@ public interface Chicken extends Animals {
         }
     }
 
-    /**
-     * Represents the sound variant of a chicken.
-     */
+    /// Represents the sound variant of a chicken.
     interface SoundVariant extends Keyed {
 
         // Start generate - ChickenSoundVariant

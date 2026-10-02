@@ -9,11 +9,9 @@ import org.bukkit.event.block.BlockEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Raider} is revealed by a bell.
- *
- * @deprecated use {@link org.bukkit.event.block.BellResonateEvent}
- */
+/// Called when a [Raider] is revealed by a bell.
+///
+/// @deprecated use [org.bukkit.event.block.BellResonateEvent]
 @Deprecated(since = "1.19.4")
 @Warning(propagate = false)
 public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {
@@ -29,11 +27,9 @@ public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {
         this.raider = raider;
     }
 
-    /**
-     * Gets the raider that the bell revealed.
-     *
-     * @return The raider
-     */
+    /// Gets the raider that the bell revealed.
+    ///
+    /// @return The raider
     @NotNull
     public Raider getEntity() {
         return this.raider;
@@ -44,11 +40,9 @@ public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This does not cancel the particle effects shown on the bell, only the entity.
-     */
+    /// {@inheritDoc}
+    ///
+    /// This does not cancel the particle effects shown on the bell, only the entity.
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

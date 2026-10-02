@@ -6,142 +6,119 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/)
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public interface CommandMap {
 
-    /**
-     * Registers all the commands belonging to a certain plugin.
-     * <p>
-     * Caller can use:-
-     * <ul>
-     * <li>command.getName() to determine the label registered for this
-     *     command
-     * <li>command.getAliases() to determine the aliases which where
-     *     registered
-     * </ul>
-     *
-     * @param fallbackPrefix a prefix which is prepended to each command with
-     *     a ':' one or more times to make the command unique
-     * @param commands a list of commands to register
-     */
+    /// Registers all the commands belonging to a certain plugin.
+    ///
+    /// Caller can use:-
+    ///
+    ///   - command.getName() to determine the label registered for this
+    ///     command
+    ///   - command.getAliases() to determine the aliases which where
+    ///     registered
+    ///
+    /// @param fallbackPrefix a prefix which is prepended to each command with
+    ///     a ':' one or more times to make the command unique
+    /// @param commands a list of commands to register
     public void registerAll(@NotNull String fallbackPrefix, @NotNull List<Command> commands);
 
-    /**
-     * Registers a command. Returns true on success; false if name is already
-     * taken and fallback had to be used.
-     * <p>
-     * Caller can use:-
-     * <ul>
-     * <li>command.getName() to determine the label registered for this
-     *     command
-     * <li>command.getAliases() to determine the aliases which where
-     *     registered
-     * </ul>
-     *
-     * @param label the label of the command, without the '/'-prefix.
-     * @param fallbackPrefix a prefix which is prepended to the command with a
-     *     ':' one or more times to make the command unique
-     * @param command the command to register
-     * @return true if command was registered with the passed in label, false
-     *     otherwise, which indicates the fallbackPrefix was used one or more
-     *     times
-     */
+    /// Registers a command. Returns true on success; false if name is already
+    /// taken and fallback had to be used.
+    ///
+    /// Caller can use:-
+    ///
+    ///   - command.getName() to determine the label registered for this
+    ///     command
+    ///   - command.getAliases() to determine the aliases which where
+    ///     registered
+    ///
+    /// @param label the label of the command, without the '/'-prefix.
+    /// @param fallbackPrefix a prefix which is prepended to the command with a
+    ///     ':' one or more times to make the command unique
+    /// @param command the command to register
+    /// @return true if command was registered with the passed in label, false
+    ///     otherwise, which indicates the fallbackPrefix was used one or more
+    ///     times
     public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command);
 
-    /**
-     * Registers a command. Returns true on success; false if name is already
-     * taken and fallback had to be used.
-     * <p>
-     * Caller can use:-
-     * <ul>
-     * <li>command.getName() to determine the label registered for this
-     *     command
-     * <li>command.getAliases() to determine the aliases which where
-     *     registered
-     * </ul>
-     *
-     * @param fallbackPrefix a prefix which is prepended to the command with a
-     *     ':' one or more times to make the command unique
-     * @param command the command to register, from which label is determined
-     *     from the command name
-     * @return true if command was registered with the passed in label, false
-     *     otherwise, which indicates the fallbackPrefix was used one or more
-     *     times
-     */
+    /// Registers a command. Returns true on success; false if name is already
+    /// taken and fallback had to be used.
+    ///
+    /// Caller can use:-
+    ///
+    ///   - command.getName() to determine the label registered for this
+    ///     command
+    ///   - command.getAliases() to determine the aliases which where
+    ///     registered
+    ///
+    /// @param fallbackPrefix a prefix which is prepended to the command with a
+    ///     ':' one or more times to make the command unique
+    /// @param command the command to register, from which label is determined
+    ///     from the command name
+    /// @return true if command was registered with the passed in label, false
+    ///     otherwise, which indicates the fallbackPrefix was used one or more
+    ///     times
     public boolean register(@NotNull String fallbackPrefix, @NotNull Command command);
 
-    /**
-     * Looks for the requested command and executes it if found.
-     *
-     * @param sender The command's sender
-     * @param cmdLine command + arguments. Example: "/test abc 123"
-     * @return returns false if no target is found, true otherwise.
-     * @throws CommandException Thrown when the executor for the given command
-     *     fails with an unhandled exception
-     */
+    /// Looks for the requested command and executes it if found.
+    ///
+    /// @param sender The command's sender
+    /// @param cmdLine command + arguments. Example: "/test abc 123"
+    /// @return returns false if no target is found, true otherwise.
+    /// @throws CommandException Thrown when the executor for the given command
+    ///     fails with an unhandled exception
     public boolean dispatch(@NotNull CommandSender sender, @NotNull String cmdLine) throws CommandException;
 
-    /**
-     * Clears all registered commands.
-     */
+    /// Clears all registered commands.
     public void clearCommands();
 
-    /**
-     * Gets the command registered to the specified name
-     *
-     * @param name Name of the command to retrieve
-     * @return Command with the specified name or null if a command with that
-     *     label doesn't exist
-     */
+    /// Gets the command registered to the specified name
+    ///
+    /// @param name Name of the command to retrieve
+    /// @return Command with the specified name or null if a command with that
+    ///     label doesn't exist
     @Nullable
     public Command getCommand(@NotNull String name);
 
-    /**
-     * Looks for the requested command and executes an appropriate
-     * tab-completer if found. This method will also tab-complete partial
-     * commands.
-     *
-     * @param sender The command's sender.
-     * @param cmdLine The entire command string to tab-complete, excluding
-     *     initial slash.
-     * @return a list of possible tab-completions. This list may be immutable.
-     *     Will be null if no matching command of which sender has permission.
-     * @throws CommandException Thrown when the tab-completer for the given
-     *     command fails with an unhandled exception
-     * @throws IllegalArgumentException if either sender or cmdLine are null
-     */
+    /// Looks for the requested command and executes an appropriate
+    /// tab-completer if found. This method will also tab-complete partial
+    /// commands.
+    ///
+    /// @param sender The command's sender.
+    /// @param cmdLine The entire command string to tab-complete, excluding
+    ///     initial slash.
+    /// @return a list of possible tab-completions. This list may be immutable.
+    ///     Will be null if no matching command of which sender has permission.
+    /// @throws CommandException Thrown when the tab-completer for the given
+    ///     command fails with an unhandled exception
+    /// @throws IllegalArgumentException if either sender or cmdLine are null
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine) throws IllegalArgumentException;
 
-    /**
-     * Looks for the requested command and executes an appropriate
-     * tab-completer if found. This method will also tab-complete partial
-     * commands.
-     *
-     * @param sender The command's sender.
-     * @param cmdLine The entire command string to tab-complete, excluding
-     *     initial slash.
-     * @param location The position looked at by the sender, or null if none
-     * @return a list of possible tab-completions. This list may be immutable.
-     *     Will be null if no matching command of which sender has permission.
-     * @throws CommandException Thrown when the tab-completer for the given
-     *     command fails with an unhandled exception
-     * @throws IllegalArgumentException if either sender or cmdLine are null
-     */
+    /// Looks for the requested command and executes an appropriate
+    /// tab-completer if found. This method will also tab-complete partial
+    /// commands.
+    ///
+    /// @param sender The command's sender.
+    /// @param cmdLine The entire command string to tab-complete, excluding
+    ///     initial slash.
+    /// @param location The position looked at by the sender, or null if none
+    /// @return a list of possible tab-completions. This list may be immutable.
+    ///     Will be null if no matching command of which sender has permission.
+    /// @throws CommandException Thrown when the tab-completer for the given
+    ///     command fails with an unhandled exception
+    /// @throws IllegalArgumentException if either sender or cmdLine are null
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) throws IllegalArgumentException;
 
     // Paper start - Expose Known Commands
-    /**
-     * Return a Map of known commands
-     *
-     * @return known commands
-     */
+    /// Return a Map of known commands
+    ///
+    /// @return known commands
     @NotNull
     public java.util.Map<String, Command> getKnownCommands();
     // Paper end

@@ -4,10 +4,8 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the three different types of Sandstone
- * @deprecated use {@link org.bukkit.block.data.BlockData}
- */
+/// Represents the three different types of Sandstone
+/// @deprecated use [org.bukkit.block.data.BlockData]
 @Deprecated(forRemoval = true, since = "1.13")
 public enum SandstoneType {
     CRACKED(0x0),
@@ -21,25 +19,21 @@ public enum SandstoneType {
         this.data = (byte) data;
     }
 
-    /**
-     * Gets the associated data value representing this type of sandstone
-     *
-     * @return A byte containing the data value of this sandstone type
-     * @deprecated Magic value
-     */
+    /// Gets the associated data value representing this type of sandstone
+    ///
+    /// @return A byte containing the data value of this sandstone type
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
 
-    /**
-     * Gets the type of sandstone with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link SandstoneType} representing the given value, or null
-     *     if it doesn't exist
-     * @deprecated Magic value
-     */
+    /// Gets the type of sandstone with the given data value
+    ///
+    /// @param data Data value to fetch
+    /// @return The [SandstoneType] representing the given value, or null
+    ///     if it doesn't exist
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Nullable
     public static SandstoneType getByData(final byte data) {

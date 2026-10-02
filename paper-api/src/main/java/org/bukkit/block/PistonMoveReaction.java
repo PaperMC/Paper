@@ -4,34 +4,22 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents how a block or entity will react when interacting with a piston
- * when it is extending or retracting.
- */
+/// Represents how a block or entity will react when interacting with a piston
+/// when it is extending or retracting.
 public enum PistonMoveReaction {
 
-    /**
-     * Indicates that the block can be pushed or pulled.
-     */
+    /// Indicates that the block can be pushed or pulled.
     MOVE(0),
-    /**
-     * Indicates that the block can only be pushed by pistons, not pulled.
-     */
+    /// Indicates that the block can only be pushed by pistons, not pulled.
     PUSH_ONLY(1),
-    /**
-     * Indicates the block is fragile and will break if pushed on.
-     */
+    /// Indicates the block is fragile and will break if pushed on.
     BREAK(2),
-    /**
-     * Indicates that the block will resist being pushed or pulled.
-     */
+    /// Indicates that the block will resist being pushed or pulled.
     BLOCK(3),
-    /**
-     * Indicates that the entity will ignore any interaction(s) with
-     * pistons.
-     * <br>
-     * Blocks should use {@link PistonMoveReaction#BLOCK}.
-     */
+    /// Indicates that the entity will ignore any interaction(s) with
+    /// pistons.
+    ///
+    /// Blocks should use [PistonMoveReaction#BLOCK].
     IGNORE(4),
     ;
 
@@ -47,20 +35,16 @@ public enum PistonMoveReaction {
         this.id = id;
     }
 
-    /**
-     * @return The ID of the move reaction
-     * @apiNote Internal Use Only
-     */
+    /// @return The ID of the move reaction
+    /// @apiNote Internal Use Only
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public int getId() {
         return this.id;
     }
 
-    /**
-     * @param id An ID
-     * @return The move reaction with that ID
-     * @apiNote Internal Use Only
-     */
+    /// @param id An ID
+    /// @return The move reaction with that ID
+    /// @apiNote Internal Use Only
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
     public static PistonMoveReaction getById(int id) {

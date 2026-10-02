@@ -15,18 +15,14 @@ import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a pattern that may be used in an {@link ArmorTrim}.
- */
+/// Represents a pattern that may be used in an [ArmorTrim].
 @NullMarked
 public interface TrimPattern extends Keyed, Translatable {
 
-    /**
-     * Creates an inlined trim pattern.
-     *
-     * @param value a consumer for the builder factory
-     * @return the created trim pattern
-     */
+    /// Creates an inlined trim pattern.
+    ///
+    /// @param value a consumer for the builder factory
+    /// @return the created trim pattern
     static TrimPattern create(final Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createTrimPattern(value);
     }
@@ -74,35 +70,27 @@ public interface TrimPattern extends Keyed, Translatable {
     }
 
     // Paper start - adventure
-    /**
-     * Get the description of this {@link TrimPattern}.
-     *
-     * @return the description
-     */
+    /// Get the description of this [TrimPattern].
+    ///
+    /// @return the description
     Component description();
 
-    /**
-     * @deprecated this method assumes that {@link #description()} will
-     * always be a translatable component which is not guaranteed.
-     */
+    /// @deprecated this method assumes that [#description()] will
+    /// always be a translatable component which is not guaranteed.
     @Override
     @Deprecated(forRemoval = true)
     String getTranslationKey();
     // Paper end - adventure
 
     // Paper start - Registry#getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_PATTERN}. TrimPatterns can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#TRIM_PATTERN]. TrimPatterns can exist without a key.
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
     NamespacedKey getKey();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_PATTERN}. TrimPatterns can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#TRIM_PATTERN]. TrimPatterns can exist without a key.
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
     default Key key() {

@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when leaves are decaying naturally.
- * <p>
- * If this event is cancelled, the leaves will not decay.
- */
+/// Called when leaves are decaying naturally.
+///
+/// If this event is cancelled, the leaves will not decay.
 public class LeavesDecayEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

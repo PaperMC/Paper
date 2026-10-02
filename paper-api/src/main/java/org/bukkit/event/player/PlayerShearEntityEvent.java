@@ -12,9 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 
-/**
- * Called when a player shears an entity
- */
+/// Called when a player shears an entity
 public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -41,51 +39,41 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
         this(player, entity, new ItemStack(Material.SHEARS), EquipmentSlot.HAND, java.util.Collections.emptyList());
     }
 
-    /**
-     * Gets the entity the player is shearing
-     *
-     * @return the entity the player is shearing
-     */
+    /// Gets the entity the player is shearing
+    ///
+    /// @return the entity the player is shearing
     @NotNull
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Gets the item used to shear the entity.
-     *
-     * @return the shears
-     */
+    /// Gets the item used to shear the entity.
+    ///
+    /// @return the shears
     @NotNull
     public ItemStack getItem() {
         return this.item.clone();
     }
 
-    /**
-     * Gets the hand used to shear the entity.
-     *
-     * @return the hand
-     */
+    /// Gets the hand used to shear the entity.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Get an immutable list of drops for this shearing.
-     *
-     * @return the shearing drops
-     * @see #setDrops(java.util.List)
-     */
+    /// Get an immutable list of drops for this shearing.
+    ///
+    /// @return the shearing drops
+    /// @see #setDrops(java.util.List)
     public @NotNull @Unmodifiable List<ItemStack> getDrops() {
         return this.drops;
     }
 
-    /**
-     * Sets the drops for the shearing.
-     *
-     * @param drops the shear drops
-     */
+    /// Sets the drops for the shearing.
+    ///
+    /// @param drops the shear drops
     public void setDrops(final @NotNull List<ItemStack> drops) {
         this.drops = List.copyOf(drops);
     }

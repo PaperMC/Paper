@@ -6,10 +6,8 @@ import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the {@link BlockData} properties of a block item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCK_DATA
- */
+/// Holds the [BlockData] properties of a block item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCK_DATA
 @ApiStatus.NonExtendable
 public interface BlockItemDataProperties {
 
@@ -18,28 +16,22 @@ public interface BlockItemDataProperties {
         return ItemComponentTypesBridge.bridge().blockItemStateProperties();
     }
 
-    /**
-     * Creates a new {@link BlockData} instance for the given {@link BlockType}.
-     *
-     * @param blockType the block type
-     * @return the block data
-     */
+    /// Creates a new [BlockData] instance for the given [BlockType].
+    ///
+    /// @param blockType the block type
+    /// @return the block data
     @Contract(pure = true)
     BlockData createBlockData(BlockType blockType);
 
-    /**
-     * Applies the properties to the given {@link BlockData}. Doesn't
-     * mutate the parameter, but returns a new instance with the properties applied.
-     *
-     * @param blockData the block data to apply the properties to
-     * @return the block data with the properties applied
-     */
+    /// Applies the properties to the given [BlockData]. Doesn't
+    /// mutate the parameter, but returns a new instance with the properties applied.
+    ///
+    /// @param blockData the block data to apply the properties to
+    /// @return the block data with the properties applied
     @Contract(pure = true)
     BlockData applyTo(BlockData blockData);
 
-    /**
-     * Builder for {@link BlockItemDataProperties}.
-     */
+    /// Builder for [BlockItemDataProperties].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlockItemDataProperties> {
         // building this requires BlockProperty API, so an empty builder for now (essentially read-only)

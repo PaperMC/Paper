@@ -13,12 +13,10 @@ import org.jspecify.annotations.Nullable;
 
 import static org.bukkit.Material.*;
 
-/**
- * Called when the player themselves change their armor items
- * <p>
- * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
- * @apiNote Use {@link io.papermc.paper.event.entity.EntityEquipmentChangedEvent} for all entity equipment changes
- */
+/// Called when the player themselves change their armor items
+///
+/// Not currently called for environmental factors though it **MAY BE IN THE FUTURE**
+/// @apiNote Use [io.papermc.paper.event.entity.EntityEquipmentChangedEvent] for all entity equipment changes
 @NullMarked
 @ApiStatus.Obsolete(since = "1.21.4")
 public class PlayerArmorChangeEvent extends PlayerEvent {
@@ -37,22 +35,18 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
         this.newItem = newItem;
     }
 
-    /**
-     * Gets the type of slot being altered.
-     *
-     * @return type of slot being altered
-     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot. Use {@link #getSlot()} instead.
-     */
+    /// Gets the type of slot being altered.
+    ///
+    /// @return type of slot being altered
+    /// @deprecated [SlotType] does not accurately represent what item types are valid in each slot. Use [#getSlot()] instead.
     @Deprecated(since = "1.21.4")
     public SlotType getSlotType() {
         return this.slotType;
     }
 
-    /**
-     * Gets the slot being altered.
-     *
-     * @return slot being altered
-     */
+    /// Gets the slot being altered.
+    ///
+    /// @return slot being altered
     public EquipmentSlot getSlot() {
         return switch (this.slotType) {
             case HEAD -> EquipmentSlot.HEAD;
@@ -62,20 +56,16 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
         };
     }
 
-    /**
-     * Gets the existing item that's being replaced
-     *
-     * @return old item
-     */
+    /// Gets the existing item that's being replaced
+    ///
+    /// @return old item
     public ItemStack getOldItem() {
         return this.oldItem;
     }
 
-    /**
-     * Gets the new item that's replacing the old
-     *
-     * @return new item
-     */
+    /// Gets the new item that's replacing the old
+    ///
+    /// @return new item
     public ItemStack getNewItem() {
         return this.newItem;
     }
@@ -89,9 +79,7 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
         return HANDLER_LIST;
     }
 
-    /**
-     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot.
-     */
+    /// @deprecated [SlotType] does not accurately represent what item types are valid in each slot.
     @Deprecated(since = "1.21.4")
     public enum SlotType {
         HEAD(COPPER_HELMET, NETHERITE_HELMET, DIAMOND_HELMET, GOLDEN_HELMET, IRON_HELMET, CHAINMAIL_HELMET, LEATHER_HELMET, CARVED_PUMPKIN, PLAYER_HEAD, SKELETON_SKULL, ZOMBIE_HEAD, CREEPER_HEAD, WITHER_SKELETON_SKULL, TURTLE_HELMET, DRAGON_HEAD, PIGLIN_HEAD),
@@ -105,22 +93,18 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
             this.types = Set.of(types);
         }
 
-        /**
-         * Gets an immutable set of all allowed material types that can be placed in an
-         * armor slot.
-         *
-         * @return immutable set of material types
-         */
+        /// Gets an immutable set of all allowed material types that can be placed in an
+        /// armor slot.
+        ///
+        /// @return immutable set of material types
         public Set<Material> getTypes() {
             return this.types;
         }
 
-        /**
-         * Gets the type of slot via the specified material
-         *
-         * @param material material to get slot by
-         * @return slot type the material will go in, or {@code null} if it won't
-         */
+        /// Gets the type of slot via the specified material
+        ///
+        /// @param material material to get slot by
+        /// @return slot type the material will go in, or `null` if it won't
         public static @Nullable SlotType getByMaterial(final Material material) {
             for (final SlotType slotType : values()) {
                 if (slotType.getTypes().contains(material)) {
@@ -130,12 +114,10 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
             return null;
         }
 
-        /**
-         * Gets whether this material can be equipped to a slot
-         *
-         * @param material material to check
-         * @return whether this material can be equipped
-         */
+        /// Gets whether this material can be equipped to a slot
+        ///
+        /// @param material material to check
+        /// @return whether this material can be equipped
         public static boolean isEquipable(final Material material) {
             return getByMaterial(material) != null;
         }

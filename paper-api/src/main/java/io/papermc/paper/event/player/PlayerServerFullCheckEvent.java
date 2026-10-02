@@ -31,9 +31,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fires when computing if a server is currently considered full for a player.
- */
+/// Fires when computing if a server is currently considered full for a player.
 @NullMarked
 public class PlayerServerFullCheckEvent extends Event {
 
@@ -50,44 +48,34 @@ public class PlayerServerFullCheckEvent extends Event {
         this.allow = !shouldKick;
     }
 
-    /**
-     * @return the currently planned message to send to the user if they are unable to join the server
-     */
+    /// @return the currently planned message to send to the user if they are unable to join the server
     @Contract(pure = true)
     public Component kickMessage() {
         return this.kickMessage;
     }
 
-    /**
-     * Denies the player access to join this server.
-     *
-     * @param kickMessage The message to send to the player on kick if not able to join.
-     */
+    /// Denies the player access to join this server.
+    ///
+    /// @param kickMessage The message to send to the player on kick if not able to join.
     public void deny(final Component kickMessage) {
         this.kickMessage = kickMessage;
         this.allow = false;
     }
 
-    /**
-     * @return The profile of the player trying to connect
-     */
+    /// @return The profile of the player trying to connect
     public PlayerProfile getPlayerProfile() {
         return this.profile;
     }
 
-    /**
-     * Sets whether the player is able to join this server.
-     * @param allow can join the server
-     */
+    /// Sets whether the player is able to join this server.
+    /// @param allow can join the server
     public void allow(final boolean allow) {
         this.allow = allow;
     }
 
-    /**
-     * Gets if the player is currently able to join the server.
-     *
-     * @return can join the server, or false if the server should be considered full
-     */
+    /// Gets if the player is currently able to join the server.
+    ///
+    /// @return can join the server, or false if the server should be considered full
     public boolean isAllowed() {
         return this.allow;
     }

@@ -13,44 +13,32 @@ import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A Frog.
- */
+/// A Frog.
 public interface Frog extends Animals {
 
-    /**
-     * Gets the tongue target of this frog.
-     *
-     * @return tongue target or null if not set
-     */
+    /// Gets the tongue target of this frog.
+    ///
+    /// @return tongue target or null if not set
     @Nullable
     Entity getTongueTarget();
 
-    /**
-     * Sets the tongue target of this frog.
-     *
-     * @param target tongue target or null to clear
-     */
+    /// Sets the tongue target of this frog.
+    ///
+    /// @param target tongue target or null to clear
     void setTongueTarget(@Nullable Entity target);
 
-    /**
-     * Get the variant of this frog.
-     *
-     * @return frog variant
-     */
+    /// Get the variant of this frog.
+    ///
+    /// @return frog variant
     @NotNull
     Variant getVariant();
 
-    /**
-     * Set the variant of this frog.
-     *
-     * @param variant frog variant
-     */
+    /// Set the variant of this frog.
+    ///
+    /// @param variant frog variant
     void setVariant(@NotNull Variant variant);
 
-    /**
-     * Represents the variant of a frog - ie its color.
-     */
+    /// Represents the variant of a frog - ie its color.
     interface Variant extends OldEnum<Variant>, Keyed {
 
         // Start generate - FrogVariant
@@ -66,11 +54,9 @@ public interface Frog extends Animals {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
-        /**
-         * @param name of the frog variant.
-         * @return the frog variant with the given name.
-         * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-         */
+        /// @param name of the frog variant.
+        /// @return the frog variant with the given name.
+        /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant valueOf(@NotNull String name) {
@@ -80,10 +66,8 @@ public interface Frog extends Animals {
             return variant;
         }
 
-        /**
-         * @return an array of all known frog variants.
-         * @deprecated use {@link Registry#stream()}.
-         */
+        /// @return an array of all known frog variants.
+        /// @deprecated use [Registry#stream()].
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant[] values() {

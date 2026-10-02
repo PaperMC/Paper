@@ -1,4 +1,2 @@
-/**
- * Classes related to entity spawners.
- */
+/// Classes related to entity spawners.
 package org.bukkit.spawner;

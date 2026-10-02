@@ -10,21 +10,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Provides Utility methods that assist with generating JSON Objects
- */
+/// Provides Utility methods that assist with generating JSON Objects
 @SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 @Deprecated(forRemoval = true)
 public final class JSONUtil {
     private JSONUtil() {}
 
-    /**
-     * Creates a key/value "JSONPair" object
-     *
-     * @param key Key to use
-     * @param obj Value to use
-     * @return JSONPair
-     */
+    /// Creates a key/value "JSONPair" object
+    ///
+    /// @param key Key to use
+    /// @param obj Value to use
+    /// @return JSONPair
     @NotNull
     public static JSONPair pair(@NotNull String key, @Nullable Object obj) {
         return new JSONPair(key, obj);
@@ -35,24 +31,20 @@ public final class JSONUtil {
         return new JSONPair(String.valueOf(key), obj);
     }
 
-    /**
-     * Creates a new JSON object from multiple JSONPair key/value pairs
-     *
-     * @param data JSONPairs
-     * @return Map
-     */
+    /// Creates a new JSON object from multiple JSONPair key/value pairs
+    ///
+    /// @param data JSONPairs
+    /// @return Map
     @NotNull
     public static Map<String, Object> createObject(@NotNull JSONPair... data) {
         return appendObjectData(new LinkedHashMap(), data);
     }
 
-    /**
-     * This appends multiple key/value Obj pairs into a JSON Object
-     *
-     * @param parent Map to be appended to
-     * @param data Data to append
-     * @return Map
-     */
+    /// This appends multiple key/value Obj pairs into a JSON Object
+    ///
+    /// @param parent Map to be appended to
+    /// @param data Data to append
+    /// @return Map
     @NotNull
     public static Map<String, Object> appendObjectData(@NotNull Map parent, @NotNull JSONPair... data) {
         for (JSONPair JSONPair : data) {
@@ -61,25 +53,21 @@ public final class JSONUtil {
         return parent;
     }
 
-    /**
-     * This builds a JSON array from a set of data
-     *
-     * @param data Data to build JSON array from
-     * @return List
-     */
+    /// This builds a JSON array from a set of data
+    ///
+    /// @param data Data to build JSON array from
+    /// @return List
     @NotNull
     public static List toArray(@NotNull Object... data) {
         return Lists.newArrayList(data);
     }
 
-    /**
-     * These help build a single JSON array using a mapper function
-     *
-     * @param collection Collection to apply to
-     * @param mapper Mapper to apply
-     * @param <E> Element Type
-     * @return List
-     */
+    /// These help build a single JSON array using a mapper function
+    ///
+    /// @param collection Collection to apply to
+    /// @param mapper Mapper to apply
+    /// @param <E> Element Type
+    /// @return List
     @NotNull
     public static <E> List toArrayMapper(@NotNull E[] collection, @NotNull Function<E, Object> mapper) {
         return toArrayMapper(Lists.newArrayList(collection), mapper);
@@ -97,14 +85,12 @@ public final class JSONUtil {
         return array;
     }
 
-    /**
-     * These help build a single JSON Object from a collection, using a mapper function
-     *
-     * @param collection Collection to apply to
-     * @param mapper Mapper to apply
-     * @param <E> Element Type
-     * @return Map
-     */
+    /// These help build a single JSON Object from a collection, using a mapper function
+    ///
+    /// @param collection Collection to apply to
+    /// @param mapper Mapper to apply
+    /// @param <E> Element Type
+    /// @return Map
     @NotNull
     public static <E> Map toObjectMapper(@NotNull E[] collection, @NotNull Function<E, JSONPair> mapper) {
         return toObjectMapper(Lists.newArrayList(collection), mapper);
@@ -122,9 +108,7 @@ public final class JSONUtil {
         return object;
     }
 
-    /**
-     * Simply stores a key and a value, used internally by many methods below.
-     */
+    /// Simply stores a key and a value, used internally by many methods below.
     @SuppressWarnings("PublicInnerClass")
     public static class JSONPair {
         final String key;

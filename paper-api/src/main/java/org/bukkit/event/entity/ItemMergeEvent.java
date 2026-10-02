@@ -26,11 +26,9 @@ public class ItemMergeEvent extends EntityEvent implements Cancellable {
         return (Item) this.entity;
     }
 
-    /**
-     * Gets the Item entity the main Item is being merged into.
-     *
-     * @return The Item being merged with
-     */
+    /// Gets the Item entity the main Item is being merged into.
+    ///
+    /// @return The Item being merged with
     @NotNull
     public Item getTarget() {
         return this.target;

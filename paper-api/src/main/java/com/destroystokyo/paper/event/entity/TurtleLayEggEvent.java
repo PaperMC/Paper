@@ -8,9 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a Turtle lays eggs
- */
+/// Fired when a Turtle lays eggs
 @NullMarked
 public class TurtleLayEggEvent extends EntityEvent implements Cancellable {
 
@@ -28,39 +26,31 @@ public class TurtleLayEggEvent extends EntityEvent implements Cancellable {
         this.eggCount = eggCount;
     }
 
-    /**
-     * The turtle laying the eggs
-     *
-     * @return The turtle
-     */
+    /// The turtle laying the eggs
+    ///
+    /// @return The turtle
     @Override
     public Turtle getEntity() {
         return (Turtle) super.getEntity();
     }
 
-    /**
-     * Get the location where the eggs are being laid
-     *
-     * @return Location of eggs
-     */
+    /// Get the location where the eggs are being laid
+    ///
+    /// @return Location of eggs
     public Location getLocation() {
         return this.location.clone();
     }
 
-    /**
-     * Get the number of eggs being laid
-     *
-     * @return Number of eggs
-     */
+    /// Get the number of eggs being laid
+    ///
+    /// @return Number of eggs
     public int getEggCount() {
         return this.eggCount;
     }
 
-    /**
-     * Set the number of eggs being laid
-     *
-     * @param eggCount Number of eggs
-     */
+    /// Set the number of eggs being laid
+    ///
+    /// @param eggCount Number of eggs
     public void setEggCount(final int eggCount) {
         if (eggCount < 1) {
             this.cancelled = true;

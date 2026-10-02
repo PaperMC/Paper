@@ -5,14 +5,12 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This enum holds a list of all known {@link LootTable}s offered by Mojang.
- * This list is not guaranteed to be accurate in future versions.
- * <br>
- * See the
- * <a href="https://minecraft.wiki/w/Loot_table#List_of_loot_tables">
- * Minecraft Wiki</a> for more information on loot tables.
- */
+/// This enum holds a list of all known [LootTable]s offered by Mojang.
+/// This list is not guaranteed to be accurate in future versions.
+///
+/// See the
+/// [
+/// Minecraft Wiki](https://minecraft.wiki/w/Loot_table#List_of_loot_tables) for more information on loot tables.
 public enum LootTables implements Keyed {
 
     // Chests/Dispensers/Barrels - treasure chests
@@ -270,12 +268,10 @@ public enum LootTables implements Keyed {
         return NamespacedKey.minecraft(location);
     }
 
-    /**
-     * Get the {@link LootTable} corresponding to this constant. This is
-     * equivalent to calling {@code Bukkit.getLootTable(this.getKey());}.
-     *
-     * @return the associated LootTable
-     */
+    /// Get the [LootTable] corresponding to this constant. This is
+    /// equivalent to calling `Bukkit.getLootTable(this.getKey());`.
+    ///
+    /// @return the associated LootTable
     @NotNull
     public LootTable getLootTable() {
         return Bukkit.getLootTable(getKey());

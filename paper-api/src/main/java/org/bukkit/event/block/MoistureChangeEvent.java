@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when the moisture level of a soil block changes.
- */
+/// Called when the moisture level of a soil block changes.
 public class MoistureChangeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class MoistureChangeEvent extends BlockEvent implements Cancellable {
         this.newState = newState;
     }
 
-    /**
-     * Gets the new state of the affected block.
-     *
-     * @return new block state
-     */
+    /// Gets the new state of the affected block.
+    ///
+    /// @return new block state
     @NotNull
     public BlockState getNewState() {
         return this.newState;

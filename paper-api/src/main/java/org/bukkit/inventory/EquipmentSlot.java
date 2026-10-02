@@ -12,13 +12,9 @@ public enum EquipmentSlot {
     LEGS(() -> EquipmentSlotGroup.LEGS),
     CHEST(() -> EquipmentSlotGroup.CHEST),
     HEAD(() -> EquipmentSlotGroup.HEAD),
-    /**
-     * Only for certain entities such as horses, wolves, happy ghasts, nautiluses and sulfur cubes.
-     */
+    /// Only for certain entities such as horses, wolves, happy ghasts, nautiluses and sulfur cubes.
     BODY(() -> EquipmentSlotGroup.BODY),
-    /**
-     * Only for certain entities such as pigs, horses, striders, copper golems and nautiluses.
-     */
+    /// Only for certain entities such as pigs, horses, striders, copper golems and nautiluses.
     SADDLE(() -> EquipmentSlotGroup.SADDLE);
 
     private final Supplier<EquipmentSlotGroup> group; // Supplier because of class loading order, since EquipmentSlot and EquipmentSlotGroup reference each other on class init
@@ -27,34 +23,28 @@ public enum EquipmentSlot {
         this.group = group;
     }
 
-    /**
-     * Gets the {@link EquipmentSlotGroup} corresponding to this slot.
-     *
-     * @return corresponding {@link EquipmentSlotGroup}
-     */
+    /// Gets the [EquipmentSlotGroup] corresponding to this slot.
+    ///
+    /// @return corresponding [EquipmentSlotGroup]
     @NotNull
     @ApiStatus.Internal
     public EquipmentSlotGroup getGroup() {
         return group.get();
     }
 
-    /**
-     * Checks whether this equipment slot is a hand:
-     * either {@link #HAND} or {@link #OFF_HAND}
-     *
-     * @return whether this is a hand slot
-     */
+    /// Checks whether this equipment slot is a hand:
+    /// either [#HAND] or [#OFF_HAND]
+    ///
+    /// @return whether this is a hand slot
     public boolean isHand() {
         return this == HAND || this == OFF_HAND;
     }
 
-    /**
-     * Gets the opposite hand
-     *
-     * @return the opposite hand
-     * @throws IllegalArgumentException if this equipment slot is not a hand
-     * @see #isHand()
-     */
+    /// Gets the opposite hand
+    ///
+    /// @return the opposite hand
+    /// @throws IllegalArgumentException if this equipment slot is not a hand
+    /// @see #isHand()
     public @NotNull EquipmentSlot getOppositeHand() {
         return switch (this) {
             case HAND -> OFF_HAND;
@@ -63,14 +53,12 @@ public enum EquipmentSlot {
         };
     }
 
-    /**
-     * Checks whether this equipment slot
-     * is one of the armor slots:
-     * {@link #HEAD}, {@link #CHEST},
-     * {@link #LEGS}, {@link #FEET}, or {@link #BODY}
-     *
-     * @return whether this is an armor slot
-     */
+    /// Checks whether this equipment slot
+    /// is one of the armor slots:
+    /// [#HEAD], [#CHEST],
+    /// [#LEGS], [#FEET], or [#BODY]
+    ///
+    /// @return whether this is an armor slot
     public boolean isArmor() {
         return this == HEAD || this == CHEST || this == LEGS || this == FEET || this == BODY;
     }

@@ -5,9 +5,7 @@ import org.bukkit.command.CommandSender;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Thrown when a command throws an exception
- */
+/// Thrown when a command throws an exception
 public class ServerCommandException extends ServerException {
 
     private final Command command;
@@ -35,29 +33,23 @@ public class ServerCommandException extends ServerException {
         this.command = checkNotNull(command, "command");
     }
 
-    /**
-     * Gets the command which threw the exception
-     *
-     * @return exception throwing command
-     */
+    /// Gets the command which threw the exception
+    ///
+    /// @return exception throwing command
     public Command getCommand() {
         return command;
     }
 
-    /**
-     * Gets the command sender which executed the command request
-     *
-     * @return command sender of exception thrown command request
-     */
+    /// Gets the command sender which executed the command request
+    ///
+    /// @return command sender of exception thrown command request
     public CommandSender getCommandSender() {
         return commandSender;
     }
 
-    /**
-     * Gets the arguments which threw the exception for the command
-     *
-     * @return arguments of exception thrown command request
-     */
+    /// Gets the arguments which threw the exception for the command
+    ///
+    /// @return arguments of exception thrown command request
     public String[] getArguments() {
         return arguments;
     }

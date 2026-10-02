@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Raised when a living entity exits a vehicle.
- */
+/// Raised when a living entity exits a vehicle.
 public class VehicleExitEvent extends VehicleEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,11 +29,9 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
         this(vehicle, exited, true);
     }
 
-    /**
-     * Get the living entity that exited the vehicle.
-     *
-     * @return The entity.
-     */
+    /// Get the living entity that exited the vehicle.
+    ///
+    /// @return The entity.
     @NotNull
     public LivingEntity getExited() {
         return this.exited;

@@ -26,9 +26,7 @@ package co.aikar.timings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public final class NullTimingHandler implements Timing {
     public static final Timing NULL = new NullTimingHandler();

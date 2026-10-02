@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Material;
 
-/**
- * Represents the different types of steps.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the different types of steps.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Step extends TexturedMaterial {
     private static final List<Material> textures = new ArrayList<Material>();
@@ -35,11 +33,9 @@ public class Step extends TexturedMaterial {
         }
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Step(final Material type, final byte data) {
         super(type, data);
@@ -50,21 +46,17 @@ public class Step extends TexturedMaterial {
         return textures;
     }
 
-    /**
-     * Test if step is inverted
-     *
-     * @return true if inverted (top half), false if normal (bottom half)
-     */
+    /// Test if step is inverted
+    ///
+    /// @return true if inverted (top half), false if normal (bottom half)
     public boolean isInverted() {
         return ((getData() & 0x8) != 0);
     }
 
-    /**
-     * Set step inverted state
-     *
-     * @param inv - true if step is inverted (top half), false if step is
-     *     normal (bottom half)
-     */
+    /// Set step inverted state
+    ///
+    /// @param inv - true if step is inverted (top half), false if step is
+    ///     normal (bottom half)
     public void setInverted(boolean inv) {
         int dat = getData() & 0x7;
         if (inv) {
@@ -73,22 +65,18 @@ public class Step extends TexturedMaterial {
         setData((byte) dat);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Magic value
-     */
+    /// {@inheritDoc}
+    ///
+    /// @deprecated Magic value
     @Override
     @Deprecated(since = "1.20.5")
     protected int getTextureIndex() {
         return getData() & 0x7;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Magic value
-     */
+    /// {@inheritDoc}
+    ///
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Override
     protected void setTextureIndex(int idx) {

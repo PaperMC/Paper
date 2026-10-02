@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * MaterialData for signs
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// MaterialData for signs
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Sign extends MaterialData implements Attachable {
     public Sign() {
@@ -19,31 +17,25 @@ public class Sign extends MaterialData implements Attachable {
         super(type);
     }
 
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the raw type id
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Sign(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Check if this sign is attached to a wall
-     *
-     * @return true if this sign is attached to a wall, false if set on top of
-     *     a block
-     */
+    /// Check if this sign is attached to a wall
+    ///
+    /// @return true if this sign is attached to a wall, false if set on top of
+    ///     a block
     public boolean isWallSign() {
         return getItemType() == Material.LEGACY_WALL_SIGN;
     }
 
-    /**
-     * Gets the face that this block is attached on
-     *
-     * @return BlockFace attached to
-     */
+    /// Gets the face that this block is attached on
+    ///
+    /// @return BlockFace attached to
     @Override
     public BlockFace getAttachedFace() {
         if (isWallSign()) {
@@ -69,11 +61,9 @@ public class Sign extends MaterialData implements Attachable {
         }
     }
 
-    /**
-     * Gets the direction that this sign is currently facing
-     *
-     * @return BlockFace indicating where this sign is facing
-     */
+    /// Gets the direction that this sign is currently facing
+    ///
+    /// @return BlockFace indicating where this sign is facing
     @Override
     public BlockFace getFacing() {
         byte data = getData();

@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a vault in a trial chamber is about to display an item.
- */
+/// Called when a vault in a trial chamber is about to display an item.
 public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,21 +22,17 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
         this.displayItem = displayItem;
     }
 
-    /**
-     * Gets the item that will be displayed inside the vault.
-     *
-     * @return the item to be displayed
-     */
+    /// Gets the item that will be displayed inside the vault.
+    ///
+    /// @return the item to be displayed
     @Nullable
     public ItemStack getDisplayItem() {
         return this.displayItem;
     }
 
-    /**
-     * Sets the item that will be displayed inside the vault.
-     *
-     * @param displayItem the item to be displayed
-     */
+    /// Sets the item that will be displayed inside the vault.
+    ///
+    /// @param displayItem the item to be displayed
     public void setDisplayItem(@Nullable ItemStack displayItem) {
         this.displayItem = displayItem;
     }

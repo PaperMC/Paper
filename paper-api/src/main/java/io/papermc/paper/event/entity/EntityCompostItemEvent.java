@@ -8,9 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when an item is about to be composted by an entity.
- */
+/// Called when an item is about to be composted by an entity.
 @NullMarked
 public class EntityCompostItemEvent extends CompostItemEvent implements Cancellable {
 
@@ -23,11 +21,9 @@ public class EntityCompostItemEvent extends CompostItemEvent implements Cancella
         this.entity = entity;
     }
 
-    /**
-     * Gets the entity that interacted with the composter.
-     *
-     * @return the entity that composted an item.
-     */
+    /// Gets the entity that interacted with the composter.
+    ///
+    /// @return the entity that composted an item.
     public Entity getEntity() {
         return this.entity;
     }

@@ -43,51 +43,41 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents an item type.
- */
+/// Represents an item type.
 @NullMarked
 public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
 
-    /**
-     * Typed represents a subtype of {@link ItemType}s that have a known item meta type
-     * at compile time.
-     *
-     * @param <M> the generic type of the item meta that represents the item type.
-     * @apiNote Do not use methods exclusive to this interface unless you are
-     * fine with them being possibly removed in the future.
-     */
+    /// Typed represents a subtype of [ItemType]s that have a known item meta type
+    /// at compile time.
+    ///
+    /// @param <M> the generic type of the item meta that represents the item type.
+    /// @apiNote Do not use methods exclusive to this interface unless you are
+    /// fine with them being possibly removed in the future.
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Typed<M extends ItemMeta> extends ItemType {
 
-        /**
-         * Gets the ItemMeta class of this ItemType
-         *
-         * @return the ItemMeta class of this ItemType
-         */
+        /// Gets the ItemMeta class of this ItemType
+        ///
+        /// @return the ItemMeta class of this ItemType
         @Override
         @ApiStatus.Experimental
         Class<M> getItemMetaClass();
 
-        /**
-         * Constructs a new item stack with this item type with the amount 1.
-         *
-         * @param metaConfigurator an optional consumer of the items {@link ItemMeta} that is called.
-         *                         May be null if no intent exists to mutate the item meta at this point.
-         * @return the created and configured item stack.
-         */
+        /// Constructs a new item stack with this item type with the amount 1.
+        ///
+        /// @param metaConfigurator an optional consumer of the items [ItemMeta] that is called.
+        ///                         May be null if no intent exists to mutate the item meta at this point.
+        /// @return the created and configured item stack.
         @ApiStatus.Experimental
         ItemStack createItemStack(@Nullable Consumer<? super M> metaConfigurator);
 
-        /**
-         * Constructs a new item stack with this item type.
-         *
-         * @param amount           the amount of itemstack.
-         * @param metaConfigurator an optional consumer of the items {@link ItemMeta} that is called.
-         *                         May be null if no intent exists to mutate the item meta at this point.
-         * @return the created and configured item stack.
-         */
+        /// Constructs a new item stack with this item type.
+        ///
+        /// @param amount           the amount of itemstack.
+        /// @param metaConfigurator an optional consumer of the items [ItemMeta] that is called.
+        ///                         May be null if no intent exists to mutate the item meta at this point.
+        /// @return the created and configured item stack.
         @ApiStatus.Experimental
         ItemStack createItemStack(int amount, @Nullable Consumer<? super M> metaConfigurator);
     }
@@ -3418,238 +3408,184 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
         return (M) Registry.ITEM.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * Yields this item type as a typed version of itself with a plain {@link ItemMeta} representing it.
-     *
-     * @return the typed item type.
-     * @apiNote The Typed interface is experimental and may be removed in future versions.
-     */
+    /// Yields this item type as a typed version of itself with a plain [ItemMeta] representing it.
+    ///
+    /// @return the typed item type.
+    /// @apiNote The Typed interface is experimental and may be removed in future versions.
     @ApiStatus.Experimental
     Typed<ItemMeta> typed();
 
-    /**
-     * Yields this item type as a typed version of itself with a plain {@link ItemMeta} representing it.
-     *
-     * @param itemMetaType the class type of the {@link ItemMeta} to type this {@link ItemType} with.
-     * @param <M> the generic type of the item meta to type this item type with.
-     * @return the typed item type.
-     * @apiNote The Typed interface is experimental and may be removed in future versions.
-     */
+    /// Yields this item type as a typed version of itself with a plain [ItemMeta] representing it.
+    ///
+    /// @param itemMetaType the class type of the [ItemMeta] to type this [ItemType] with.
+    /// @param <M> the generic type of the item meta to type this item type with.
+    /// @return the typed item type.
+    /// @apiNote The Typed interface is experimental and may be removed in future versions.
     @ApiStatus.Experimental
     <M extends ItemMeta> Typed<M> typed(Class<M> itemMetaType);
 
-    /**
-     * Constructs a new itemstack with this item type that has the amount 1.
-     *
-     * @return the constructed item stack.
-     */
+    /// Constructs a new itemstack with this item type that has the amount 1.
+    ///
+    /// @return the constructed item stack.
     ItemStack createItemStack();
 
-    /**
-     * Constructs a new itemstack with this item type.
-     *
-     * @param amount the amount of the item stack.
-     * @return the constructed item stack.
-     */
+    /// Constructs a new itemstack with this item type.
+    ///
+    /// @param amount the amount of the item stack.
+    /// @return the constructed item stack.
     ItemStack createItemStack(int amount);
 
-    /**
-     * Returns true if this ItemType has a corresponding {@link BlockType}.
-     *
-     * @return true if there is a corresponding BlockType, otherwise false
-     * @see #getBlockType()
-     */
+    /// Returns true if this ItemType has a corresponding [BlockType].
+    ///
+    /// @return true if there is a corresponding BlockType, otherwise false
+    /// @see #getBlockType()
     boolean hasBlockType();
 
-    /**
-     * Returns the corresponding {@link BlockType} for the given ItemType.
-     * <p>
-     * If there is no corresponding {@link BlockType} an error will be thrown.
-     * <p>This is <b>NOT</b> the same as the {@link BlockType} with the same key,
-     * but instead is the block associated with this item if this item represents a block.</p>
-     *
-     * @return the corresponding BlockType
-     * @see #hasBlockType()
-     */
+    /// Returns the corresponding [BlockType] for the given ItemType.
+    ///
+    /// If there is no corresponding [BlockType] an error will be thrown.
+    ///
+    /// This is **NOT** the same as the [BlockType] with the same key,
+    /// but instead is the block associated with this item if this item represents a block.
+    ///
+    /// @return the corresponding BlockType
+    /// @see #hasBlockType()
     BlockType getBlockType();
 
-    /**
-     * Gets the ItemMeta class of this ItemType
-     *
-     * @return the ItemMeta class of this ItemType
-     */
+    /// Gets the ItemMeta class of this ItemType
+    ///
+    /// @return the ItemMeta class of this ItemType
     @ApiStatus.Internal
     Class<? extends ItemMeta> getItemMetaClass();
 
-    /**
-     * Gets the maximum amount of this item type that can be held in a stack
-     *
-     * @return Maximum stack size for this item type
-     */
+    /// Gets the maximum amount of this item type that can be held in a stack
+    ///
+    /// @return Maximum stack size for this item type
     int getMaxStackSize();
 
-    /**
-     * Gets the maximum durability of this item type
-     *
-     * @return Maximum durability for this item type
-     */
+    /// Gets the maximum durability of this item type
+    ///
+    /// @return Maximum durability for this item type
     short getMaxDurability();
 
-    /**
-     * Checks if this item type provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
-     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
-     *
-     * @return true if this item type is edible.
-     */
+    /// Checks if this item type provides the [io.papermc.paper.datacomponent.DataComponentTypes#FOOD] and
+    /// [io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE] and, thereby, is edible by a player.
+    ///
+    /// @return true if this item type is edible.
     boolean isEdible();
 
-    /**
-     * @return True if this item type represents a playable music disk.
-     */
+    /// @return True if this item type represents a playable music disk.
     boolean isRecord();
 
-    /**
-     * Checks if this item type can be used as fuel in a Furnace
-     *
-     * @return true if this item type can be used as fuel.
-     * @see #getBurnDuration()
-     */
+    /// Checks if this item type can be used as fuel in a Furnace
+    ///
+    /// @return true if this item type can be used as fuel.
+    /// @see #getBurnDuration()
     boolean isFuel();
 
-    /**
-     * Retrieve the item's burn duration in a Furnace
-     *
-     * @return the burn duration, in ticks or 0 if the item is not fuel
-     * @see #isFuel()
-     */
+    /// Retrieve the item's burn duration in a Furnace
+    ///
+    /// @return the burn duration, in ticks or 0 if the item is not fuel
+    /// @see #isFuel()
     int getBurnDuration();
 
-    /**
-     * Checks whether this item type is compostable (can be inserted into a
-     * composter).
-     *
-     * @return true if this item type is compostable
-     * @see #getCompostChance()
-     */
+    /// Checks whether this item type is compostable (can be inserted into a
+    /// composter).
+    ///
+    /// @return true if this item type is compostable
+    /// @see #getCompostChance()
     boolean isCompostable();
 
-    /**
-     * Get the chance that this item type will successfully compost. The
-     * returned value is between 0 and 1 (inclusive).
-     *
-     * Items with a compost chance of 1 will always raise the composter's level,
-     * while items with a compost chance of 0 will never raise it.
-     *
-     * Plugins should check that {@link #isCompostable} returns true before
-     * calling this method.
-     *
-     * @return the chance that this item type will successfully compost
-     * @throws IllegalArgumentException if this item type is not compostable
-     * @see #isCompostable()
-     */
+    /// Get the chance that this item type will successfully compost. The
+    /// returned value is between 0 and 1 (inclusive).
+    /// Items with a compost chance of 1 will always raise the composter's level,
+    /// while items with a compost chance of 0 will never raise it.
+    /// Plugins should check that [#isCompostable] returns true before
+    /// calling this method.
+    ///
+    /// @return the chance that this item type will successfully compost
+    /// @throws IllegalArgumentException if this item type is not compostable
+    /// @see #isCompostable()
     float getCompostChance();
 
-    /**
-     * Determines the remaining item in a crafting grid after crafting with this
-     * ingredient.
-     *
-     * @return the item left behind when crafting, or null if nothing is.
-     */
+    /// Determines the remaining item in a crafting grid after crafting with this
+    /// ingredient.
+    ///
+    /// @return the item left behind when crafting, or null if nothing is.
     @Nullable ItemType getCraftingRemainingItem();
 
-    /**
-     * Return an immutable copy of all default {@link Attribute}s and their
-     * {@link AttributeModifier}s.
-     * <p>
-     * Default attributes are those that are always preset on some items, unless
-     * they are specifically overridden on that {@link ItemStack}. Examples include
-     * the attack damage on weapons or the armor value on armor.
-     *
-     * @return the immutable {@link Multimap} with the respective default
-     * Attributes and modifiers, or an empty map if no attributes are set.
-     */
+    /// Return an immutable copy of all default [Attribute]s and their
+    /// [AttributeModifier]s.
+    ///
+    /// Default attributes are those that are always preset on some items, unless
+    /// they are specifically overridden on that [ItemStack]. Examples include
+    /// the attack damage on weapons or the armor value on armor.
+    ///
+    /// @return the immutable [Multimap] with the respective default
+    /// Attributes and modifiers, or an empty map if no attributes are set.
     @Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers();
 
-    /**
-     * Return an immutable copy of all default {@link Attribute}s and their
-     * {@link AttributeModifier}s for a given {@link EquipmentSlot}.
-     *
-     * Default attributes are those that are always preset on some items, such
-     * as the attack damage on weapons or the armor value on armor.
-     *
-     * @param slot the {@link EquipmentSlot} to check
-     * @return the immutable {@link Multimap} with the respective default
-     * Attributes and modifiers, or an empty map if no attributes are set.
-     */
+    /// Return an immutable copy of all default [Attribute]s and their
+    /// [AttributeModifier]s for a given [EquipmentSlot].
+    /// Default attributes are those that are always preset on some items, such
+    /// as the attack damage on weapons or the armor value on armor.
+    ///
+    /// @param slot the [EquipmentSlot] to check
+    /// @return the immutable [Multimap] with the respective default
+    /// Attributes and modifiers, or an empty map if no attributes are set.
     @Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot);
 
-    /**
-     * Get the {@link CreativeCategory} to which this item type belongs.
-     *
-     * @return the creative category. null if it does not belong to a category
-     * @deprecated items can belong to multiple creative categories and this is no
-     * longer implemented, will always be {@link CreativeCategory#BUILDING_BLOCKS}
-     */
+    /// Get the [CreativeCategory] to which this item type belongs.
+    ///
+    /// @return the creative category. null if it does not belong to a category
+    /// @deprecated items can belong to multiple creative categories and this is no
+    /// longer implemented, will always be [CreativeCategory#BUILDING_BLOCKS]
     @Deprecated(since = "1.20.6", forRemoval = true)
     @Nullable CreativeCategory getCreativeCategory();
 
-    /**
-     * Gets if the ItemType is enabled by the features in a world.
-     *
-     * @param world the world to check
-     * @return true if this ItemType can be used in this World.
-     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
-     */
+    /// Gets if the ItemType is enabled by the features in a world.
+    ///
+    /// @param world the world to check
+    /// @return true if this ItemType can be used in this World.
+    /// @deprecated use [io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)]
     @Deprecated(forRemoval = true, since = "1.21.1") // Paper
     boolean isEnabledByFeature(World world);
 
-    /**
-     * Tries to convert this ItemType into a Material
-     *
-     * @return the converted Material or null
-     * @deprecated only for internal use
-     */
+    /// Tries to convert this ItemType into a Material
+    ///
+    /// @return the converted Material or null
+    /// @deprecated only for internal use
     @Deprecated(since = "1.20.6")
     @Nullable Material asMaterial();
 
-    /**
-     * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
-     */
+    /// @deprecated use [#translationKey()] and [net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)]
     @Deprecated(forRemoval = true)
     @Override
     String getTranslationKey();
 
-    /**
-     * Returns the item rarity for the item.
-     *
-     * @return the item rarity (or null if none is set)
-     */
+    /// Returns the item rarity for the item.
+    ///
+    /// @return the item rarity (or null if none is set)
     @Nullable ItemRarity getItemRarity();
 
-    /**
-     * Gets the default value of the data component type for this item type.
-     *
-     * @param type the data component type
-     * @param <T> the value type
-     * @return the default value or {@code null} if there is none
-     * @see #hasDefaultData(DataComponentType) for DataComponentType.NonValued
-     */
+    /// Gets the default value of the data component type for this item type.
+    ///
+    /// @param type the data component type
+    /// @param <T> the value type
+    /// @return the default value or `null` if there is none
+    /// @see #hasDefaultData(DataComponentType) for DataComponentType.NonValued
     @ApiStatus.Experimental
     @Nullable <T> T getDefaultData(DataComponentType.Valued<T> type);
 
-    /**
-     * Checks if the data component type has a default value for this item type.
-     *
-     * @param type the data component type
-     * @return {@code true} if there is a default value
-     */
+    /// Checks if the data component type has a default value for this item type.
+    ///
+    /// @param type the data component type
+    /// @return `true` if there is a default value
     boolean hasDefaultData(DataComponentType type);
 
-    /**
-     * Gets the default data component types for this item type.
-     *
-     * @return an immutable set of data component types
-     */
+    /// Gets the default data component types for this item type.
+    ///
+    /// @return an immutable set of data component types
     @ApiStatus.Experimental
     @Unmodifiable Set<DataComponentType> getDefaultDataTypes();
 }

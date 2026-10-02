@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a sheep's wool is dyed
- */
+/// Called when a sheep's wool is dyed
 public class SheepDyeWoolEvent extends EntityDyeEvent {
 
     @ApiStatus.Internal

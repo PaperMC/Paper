@@ -14,10 +14,8 @@ import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * This class extends {@link org.bukkit.inventory.RecipeChoice.MaterialChoice} to maintain
- * compatibility when instances are returned from recipes.
- */
+/// This class extends [org.bukkit.inventory.RecipeChoice.MaterialChoice] to maintain
+/// compatibility when instances are returned from recipes.
 @NullMarked
 final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice implements RecipeChoice.ItemTypeChoice {
 

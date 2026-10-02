@@ -10,9 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player toggles the age lock of an entity using an item.
- */
+/// Called when a player toggles the age lock of an entity using an item.
 @NullMarked
 public class PlayerToggleEntityAgeLockEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,30 +30,22 @@ public class PlayerToggleEntityAgeLockEvent extends PlayerEvent implements Cance
         this.ageLocked = ageLocked;
     }
 
-    /**
-     * {@return the entity that is having its age locked or unlocked}
-     */
+    /// {@return the entity that is having its age locked or unlocked}
     public LivingEntity getEntity() {
         return this.entity;
     }
 
-    /**
-     * {@return the item being used to toggle the age lock of the entity}
-     */
+    /// {@return the item being used to toggle the age lock of the entity}
     public ItemStack getItem() {
         return this.item.clone();
     }
 
-    /**
-     * {@return the hand being used to toggle the age lock of the entity}
-     */
+    /// {@return the hand being used to toggle the age lock of the entity}
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * {@return whether the age of the entity is going to be locked or not}
-     */
+    /// {@return whether the age of the entity is going to be locked or not}
     public boolean isAgeLocked() {
         return this.ageLocked;
     }

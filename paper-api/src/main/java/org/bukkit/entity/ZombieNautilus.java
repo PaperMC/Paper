@@ -10,23 +10,17 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public interface ZombieNautilus extends AbstractNautilus {
 
-    /**
-     * Gets the variant of this zombie nautilus.
-     *
-     * @return the variant
-     */
+    /// Gets the variant of this zombie nautilus.
+    ///
+    /// @return the variant
     Variant getVariant();
 
-    /**
-     * Sets the variant of this zombie nautilus.
-     *
-     * @param variant the variant
-     */
+    /// Sets the variant of this zombie nautilus.
+    ///
+    /// @param variant the variant
     void setVariant(Variant variant);
 
-    /**
-     * Represents the variant of a Zombie Nautilus.
-     */
+    /// Represents the variant of a Zombie Nautilus.
     interface Variant extends Keyed {
 
         // Start generate - ZombieNautilusVariant

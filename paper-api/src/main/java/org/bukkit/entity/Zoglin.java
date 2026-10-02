@@ -1,25 +1,19 @@
 package org.bukkit.entity;
 
-/**
- * Represents a Zoglin.
- */
+/// Represents a Zoglin.
 public interface Zoglin extends Monster, Ageable {
 
-    /**
-     * Gets whether the zoglin is a baby
-     *
-     * @return Whether the zoglin is a baby
-     * @deprecated see {@link Ageable#isAdult()}
-     */
+    /// Gets whether the zoglin is a baby
+    ///
+    /// @return Whether the zoglin is a baby
+    /// @deprecated see [Ageable#isAdult()]
     @Deprecated(since = "1.6.2")
     public boolean isBaby();
 
-    /**
-     * Sets whether the zoglin is a baby
-     *
-     * @param baby Whether the zoglin is a baby
-     * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
-     */
+    /// Sets whether the zoglin is a baby
+    ///
+    /// @param baby Whether the zoglin is a baby
+    /// @deprecated see [Ageable#setBaby()] and [Ageable#setAdult()]
     @Deprecated(since = "1.16.2")
     public void setBaby(boolean baby);
 }

@@ -3,9 +3,7 @@ package org.bukkit.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Utils for casting number types to other number types
- */
+/// Utils for casting number types to other number types
 public final class NumberConversions {
     private NumberConversions() {}
 

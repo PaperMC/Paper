@@ -6,9 +6,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a piston block is triggered
- */
+/// Called when a piston block is triggered
 public abstract class BlockPistonEvent extends BlockEvent implements Cancellable {
 
     private final BlockFace direction;
@@ -19,20 +17,16 @@ public abstract class BlockPistonEvent extends BlockEvent implements Cancellable
         this.direction = direction;
     }
 
-    /**
-     * Returns {@code true} if the Piston in the event is sticky.
-     *
-     * @return stickiness of the piston
-     */
+    /// Returns `true` if the Piston in the event is sticky.
+    ///
+    /// @return stickiness of the piston
     public boolean isSticky() {
         return this.block.getType() == Material.STICKY_PISTON || this.block.getType() == Material.MOVING_PISTON;
     }
 
-    /**
-     * Return the direction in which the piston will operate.
-     *
-     * @return direction of the piston
-     */
+    /// Return the direction in which the piston will operate.
+    ///
+    /// @return direction of the piston
     @NotNull
     public BlockFace getDirection() {
         // Both are meh!

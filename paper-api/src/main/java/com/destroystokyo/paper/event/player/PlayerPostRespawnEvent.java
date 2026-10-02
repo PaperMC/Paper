@@ -8,9 +8,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired after a player has respawned
- */
+/// Fired after a player has respawned
 @NullMarked
 public class PlayerPostRespawnEvent extends AbstractRespawnEvent {
 
@@ -28,12 +26,10 @@ public class PlayerPostRespawnEvent extends AbstractRespawnEvent {
         super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
     }
 
-    /**
-     * Returns the location of the respawned player.
-     *
-     * @return location of the respawned player
-     * @see #getRespawnLocation()
-     */
+    /// Returns the location of the respawned player.
+    ///
+    /// @return location of the respawned player
+    /// @see #getRespawnLocation()
     @ApiStatus.Obsolete
     public Location getRespawnedLocation() {
         return super.getRespawnLocation();

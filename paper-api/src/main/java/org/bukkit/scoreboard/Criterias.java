@@ -1,10 +1,8 @@
 package org.bukkit.scoreboard;
 
-/**
- * Criteria names which trigger an objective to be modified by actions in-game
- *
- * @deprecated use the constants declared in {@link Criteria} instead
- */
+/// Criteria names which trigger an objective to be modified by actions in-game
+///
+/// @deprecated use the constants declared in [Criteria] instead
 @Deprecated(since = "1.19.2", forRemoval = true)
 public final class Criterias {
 

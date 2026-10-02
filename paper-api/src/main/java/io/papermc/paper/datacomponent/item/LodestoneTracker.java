@@ -6,10 +6,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
-/**
- * If present, specifies the target Lodestone that a Compass should point towards.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#LODESTONE_TRACKER
- */
+/// If present, specifies the target Lodestone that a Compass should point towards.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#LODESTONE_TRACKER
 @ApiStatus.NonExtendable
 public interface LodestoneTracker {
 
@@ -23,45 +21,35 @@ public interface LodestoneTracker {
         return ItemComponentTypesBridge.bridge().lodestoneTracker();
     }
 
-    /**
-     * The location that the compass should point towards.
-     *
-     * @return location
-     */
+    /// The location that the compass should point towards.
+    ///
+    /// @return location
     @Contract(value = "-> new", pure = true)
     @Nullable Location location();
 
-    /**
-     * If {@code true}, when the Lodestone at the target position is removed, the component will be removed.
-     *
-     * @return tracked
-     */
+    /// If `true`, when the Lodestone at the target position is removed, the component will be removed.
+    ///
+    /// @return tracked
     @Contract(pure = true)
     boolean tracked();
 
-    /**
-     * Builder for {@link LodestoneTracker}.
-     */
+    /// Builder for [LodestoneTracker].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<LodestoneTracker> {
 
-        /**
-         * Sets the location to point towards for this builder.
-         *
-         * @param location location to point towards
-         * @return the builder for chaining
-         * @see #location()
-         */
+        /// Sets the location to point towards for this builder.
+        ///
+        /// @param location location to point towards
+        /// @return the builder for chaining
+        /// @see #location()
         @Contract(value = "_ -> this", mutates = "this")
         Builder location(@Nullable Location location);
 
-        /**
-         * Sets if this location lodestone is tracked for this builder.
-         *
-         * @param tracked is tracked
-         * @return the builder for chaining
-         * @see #tracked()
-         */
+        /// Sets if this location lodestone is tracked for this builder.
+        ///
+        /// @param tracked is tracked
+        /// @return the builder for chaining
+        /// @see #tracked()
         @Contract(value = "_ -> this", mutates = "this")
         Builder tracked(boolean tracked);
     }

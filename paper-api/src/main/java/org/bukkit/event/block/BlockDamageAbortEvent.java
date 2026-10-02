@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player stops damaging a Block.
- *
- * @see BlockDamageEvent
- */
+/// Called when a player stops damaging a Block.
+///
+/// @see BlockDamageEvent
 public class BlockDamageAbortEvent extends BlockEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,21 +22,17 @@ public class BlockDamageAbortEvent extends BlockEvent {
         this.itemstack = itemInHand;
     }
 
-    /**
-     * Gets the player that stopped damaging the block involved in this event.
-     *
-     * @return The player that stopped damaging the block
-     */
+    /// Gets the player that stopped damaging the block involved in this event.
+    ///
+    /// @return The player that stopped damaging the block
     @NotNull
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets the ItemStack for the item currently in the player's hand.
-     *
-     * @return The ItemStack for the item currently in the player's hand
-     */
+    /// Gets the ItemStack for the item currently in the player's hand.
+    ///
+    /// @return The ItemStack for the item currently in the player's hand
     @NotNull
     public ItemStack getItemInHand() {
         return this.itemstack;

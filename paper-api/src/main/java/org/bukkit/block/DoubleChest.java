@@ -8,9 +8,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a double chest.
- */
+/// Represents a double chest.
 public class DoubleChest implements InventoryHolder {
     private DoubleChestInventory inventory;
 

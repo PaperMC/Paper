@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Material;
 
-/**
- * Represents the different types of monster eggs
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the different types of monster eggs
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class MonsterEggs extends TexturedMaterial {
 
@@ -31,11 +29,9 @@ public class MonsterEggs extends TexturedMaterial {
         }
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public MonsterEggs(final Material type, final byte data) {
         super(type, data);

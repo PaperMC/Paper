@@ -8,15 +8,13 @@ import org.bukkit.Keyed;
 import org.bukkit.Translatable;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represent a type of damage that an entity can receive.
- * <p>
- * Constants in this class include the base types provided by the vanilla
- * server. Data packs are capable of registering more types of damage which may
- * be obtained through {@link io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)} and {@link RegistryKey#DAMAGE_TYPE}.
- *
- * @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
- */
+/// Represent a type of damage that an entity can receive.
+///
+/// Constants in this class include the base types provided by the vanilla
+/// server. Data packs are capable of registering more types of damage which may
+/// be obtained through [io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)] and [RegistryKey#DAMAGE_TYPE].
+///
+/// @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
 public interface DamageType extends Keyed, Translatable {
 
     // Start generate - DamageType
@@ -128,47 +126,37 @@ public interface DamageType extends Keyed, Translatable {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The returned key is that of the death message sent when this damage type
-     * is responsible for the death of an entity.
-     * <p>
-     * <strong>Note</strong> This translation key is only used if
-     * {@link #getDeathMessageType()} is {@link DeathMessageType#DEFAULT}
-     */
+    /// {@inheritDoc}
+    ///
+    /// The returned key is that of the death message sent when this damage type
+    /// is responsible for the death of an entity.
+    ///
+    /// **Note** This translation key is only used if
+    /// [#getDeathMessageType()] is [DeathMessageType#DEFAULT]
     @NotNull
     @Override
     public String getTranslationKey();
 
-    /**
-     * Get the {@link DamageScaling} for this damage type.
-     *
-     * @return the damage scaling
-     */
+    /// Get the [DamageScaling] for this damage type.
+    ///
+    /// @return the damage scaling
     @NotNull
     public DamageScaling getDamageScaling();
 
-    /**
-     * Get the {@link DamageEffect} for this damage type.
-     *
-     * @return the damage effect
-     */
+    /// Get the [DamageEffect] for this damage type.
+    ///
+    /// @return the damage effect
     @NotNull
     public DamageEffect getDamageEffect();
 
-    /**
-     * Get the {@link DeathMessageType} for this damage type.
-     *
-     * @return the death message type
-     */
+    /// Get the [DeathMessageType] for this damage type.
+    ///
+    /// @return the death message type
     @NotNull
     public DeathMessageType getDeathMessageType();
 
-    /**
-     * Get the amount of hunger exhaustion caused by this damage type.
-     *
-     * @return the exhaustion
-     */
+    /// Get the amount of hunger exhaustion caused by this damage type.
+    ///
+    /// @return the exhaustion
     public float getExhaustion();
 }

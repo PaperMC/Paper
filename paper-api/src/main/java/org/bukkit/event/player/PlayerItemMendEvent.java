@@ -10,12 +10,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents when a player has an item repaired via the Mending enchantment.
- * <br>
- * This event is fired directly before the {@link PlayerExpChangeEvent}, and the
- * results of this event directly affect the {@link PlayerExpChangeEvent}.
- */
+/// Represents when a player has an item repaired via the Mending enchantment.
+///
+/// This event is fired directly before the [PlayerExpChangeEvent], and the
+/// results of this event directly affect the [PlayerExpChangeEvent].
 public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -49,97 +47,81 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
         this(player, item, null, experienceOrb, repairAmount);
     }
 
-    /**
-     * Get the {@link ItemStack} to be repaired.
-     * <br>
-     * This is not necessarily the item the player is holding.
-     *
-     * @return the item to be repaired
-     */
+    /// Get the [ItemStack] to be repaired.
+    ///
+    /// This is not necessarily the item the player is holding.
+    ///
+    /// @return the item to be repaired
     @NotNull
     public ItemStack getItem() {
         return this.item;
     }
 
-    /**
-     * Get the {@link EquipmentSlot} in which the repaired {@link ItemStack}
-     * may be found.
-     *
-     * @return the repaired slot
-     */
+    /// Get the [EquipmentSlot] in which the repaired [ItemStack]
+    /// may be found.
+    ///
+    /// @return the repaired slot
     @NotNull
     public EquipmentSlot getSlot() {
         return this.slot;
     }
 
-    /**
-     * Get the experience orb triggering the event.
-     *
-     * @return the experience orb
-     */
+    /// Get the experience orb triggering the event.
+    ///
+    /// @return the experience orb
     @NotNull
     public ExperienceOrb getExperienceOrb() {
         return this.experienceOrb;
     }
 
-    /**
-     * Get the amount the item is to be repaired.
-     * <p>
-     * The default value is twice the value of the consumed experience orb
-     * or the remaining damage left on the item, whichever is smaller.
-     *
-     * @return how much damage will be repaired by the experience orb
-     */
+    /// Get the amount the item is to be repaired.
+    ///
+    /// The default value is twice the value of the consumed experience orb
+    /// or the remaining damage left on the item, whichever is smaller.
+    ///
+    /// @return how much damage will be repaired by the experience orb
     public int getRepairAmount() {
         return this.repairAmount;
     }
 
-    /**
-     * Set the amount the item will be repaired.
-     * <br>
-     * Half of this value will be subtracted from the experience orb which initiated this event.
-     *
-     * @param amount how much damage will be repaired on the item
-     */
+    /// Set the amount the item will be repaired.
+    ///
+    /// Half of this value will be subtracted from the experience orb which initiated this event.
+    ///
+    /// @param amount how much damage will be repaired on the item
     public void setRepairAmount(int amount) {
         this.repairAmount = amount;
     }
 
-    /**
-     * Helper method to get the amount of experience that will be consumed.
-     * This method just returns the result of inputting {@link #getRepairAmount()}
-     * into the function {@link #getDurabilityToXpOperation()}.
-     *
-     * @return the amount of xp that will be consumed
-     */
+    /// Helper method to get the amount of experience that will be consumed.
+    /// This method just returns the result of inputting [#getRepairAmount()]
+    /// into the function [#getDurabilityToXpOperation()].
+    ///
+    /// @return the amount of xp that will be consumed
     public int getConsumedExperience() {
         return this.consumedExperience;
     }
 
-    /**
-     * Get the operation used to calculate xp used based on
-     * the set repair amount. Used to calculate how much of
-     * an XP orb will be consumed by this mend operation.
-     *
-     * @return the durability-to-xp operation
-     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
-     * The enchantment effects operation are too complex to reliably offer the inverse function.
-     */
+    /// Get the operation used to calculate xp used based on
+    /// the set repair amount. Used to calculate how much of
+    /// an XP orb will be consumed by this mend operation.
+    ///
+    /// @return the durability-to-xp operation
+    /// @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
+    /// The enchantment effects operation are too complex to reliably offer the inverse function.
     @Contract("-> fail")
     @Deprecated(forRemoval = true, since = "1.21")
     public @NotNull java.util.function.IntUnaryOperator getDurabilityToXpOperation() {
         throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
     }
 
-    /**
-     * Sets the operation used to calculate xp used based on
-     * the set repair amount. Used to calculate how much of
-     * an XP orb will be consumed by this mend operation.
-     *
-     * @param durabilityToXpOp the durability-to-xp operation
-     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
-     * The enchantment effects operation are too complex to reliably offer the inverse function.
-     */
+    /// Sets the operation used to calculate xp used based on
+    /// the set repair amount. Used to calculate how much of
+    /// an XP orb will be consumed by this mend operation.
+    ///
+    /// @param durabilityToXpOp the durability-to-xp operation
+    /// @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
+    /// The enchantment effects operation are too complex to reliably offer the inverse function.
     @Contract("_ -> fail")
     @Deprecated(forRemoval = true, since = "1.21")
     public void setDurabilityToXpOperation(@NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {

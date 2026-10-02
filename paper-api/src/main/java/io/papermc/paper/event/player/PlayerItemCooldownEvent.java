@@ -7,11 +7,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a player receives an item cooldown when using an item.
- *
- * @see PlayerItemGroupCooldownEvent for a more general event when applied to a group of items
- */
+/// Fired when a player receives an item cooldown when using an item.
+///
+/// @see PlayerItemGroupCooldownEvent for a more general event when applied to a group of items
 @NullMarked
 public class PlayerItemCooldownEvent extends PlayerItemGroupCooldownEvent {
 
@@ -23,11 +21,9 @@ public class PlayerItemCooldownEvent extends PlayerItemGroupCooldownEvent {
         this.type = type;
     }
 
-    /**
-     * Get the material of the item affected by the cooldown.
-     *
-     * @return material affected by the cooldown
-     */
+    /// Get the material of the item affected by the cooldown.
+    ///
+    /// @return material affected by the cooldown
     public Material getType() {
         return this.type;
     }

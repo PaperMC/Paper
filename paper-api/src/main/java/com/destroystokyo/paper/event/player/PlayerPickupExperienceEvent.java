@@ -31,9 +31,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a player is attempting to pick up an experience orb
- */
+/// Fired when a player is attempting to pick up an experience orb
 @NullMarked
 public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancellable {
 
@@ -48,9 +46,7 @@ public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancella
         this.experienceOrb = experienceOrb;
     }
 
-    /**
-     * @return Returns the Orb that the player is picking up
-     */
+    /// @return Returns the Orb that the player is picking up
     public ExperienceOrb getExperienceOrb() {
         return this.experienceOrb;
     }
@@ -60,11 +56,9 @@ public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancella
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <br>
-     * If {@code true}, cancels picking up the experience orb, leaving it in the world
-     */
+    /// {@inheritDoc}
+    ///
+    /// If `true`, cancels picking up the experience orb, leaving it in the world
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

@@ -6,41 +6,35 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 
-/**
- * This class is designed to be used in conjunction with the {@link
- * ConfigurationSerializable} API. It translates objects to an internal
- * implementation for later deserialization using {@link
- * BukkitObjectInputStream}.
- * <p>
- * Behavior of implementations extending this class is not guaranteed across
- * future versions.
- * @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
- * use {@link org.bukkit.inventory.ItemStack#serializeAsBytes()} or
- * {@link org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)}.
- */
+/// This class is designed to be used in conjunction with the
+/// [ConfigurationSerializable] API. It translates objects to an internal
+/// implementation for later deserialization using
+/// [BukkitObjectInputStream].
+///
+/// Behavior of implementations extending this class is not guaranteed across
+/// future versions.
+/// @deprecated Object streams on their own are not safe. For safer and more consistent serialization of items,
+/// use [org.bukkit.inventory.ItemStack#serializeAsBytes()] or
+/// [org.bukkit.inventory.ItemStack#serializeItemsAsBytes(java.util.Collection)].
 @Deprecated(since = "1.21") // Paper
 public class BukkitObjectOutputStream extends ObjectOutputStream {
 
-    /**
-     * Constructor provided to mirror super functionality.
-     *
-     * @throws IOException if an I/O error occurs while creating this stream
-     * @throws SecurityException if a security manager exists and denies
-     * enabling subclassing
-     * @see ObjectOutputStream#ObjectOutputStream()
-     */
+    /// Constructor provided to mirror super functionality.
+    ///
+    /// @throws IOException if an I/O error occurs while creating this stream
+    /// @throws SecurityException if a security manager exists and denies
+    /// enabling subclassing
+    /// @see ObjectOutputStream#ObjectOutputStream()
     protected BukkitObjectOutputStream() throws IOException, SecurityException {
         super();
         super.enableReplaceObject(true);
     }
 
-    /**
-     * Object output stream decoration constructor.
-     *
-     * @param out the stream to wrap
-     * @throws IOException if an I/O error occurs while writing stream header
-     * @see ObjectOutputStream#ObjectOutputStream(OutputStream)
-     */
+    /// Object output stream decoration constructor.
+    ///
+    /// @param out the stream to wrap
+    /// @throws IOException if an I/O error occurs while writing stream header
+    /// @see ObjectOutputStream#ObjectOutputStream(OutputStream)
     public BukkitObjectOutputStream(OutputStream out) throws IOException {
         super(out);
         super.enableReplaceObject(true);

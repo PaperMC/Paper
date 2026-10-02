@@ -10,123 +10,93 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Describes the display of an advancement.
- * <p>
- * The display is used in the chat, in the toast messages and the advancements
- * screen.
- */
+/// Describes the display of an advancement.
+///
+/// The display is used in the chat, in the toast messages and the advancements
+/// screen.
 @NullMarked
 public interface AdvancementDisplay {
 
-    /**
-     * Gets the {@link Frame}.
-     * <p>
-     * This defines the appearance of the tile in the advancements screen and
-     * the text when it's completed.
-     *
-     * @return the frame type
-     */
+    /// Gets the [Frame].
+    ///
+    /// This defines the appearance of the tile in the advancements screen and
+    /// the text when it's completed.
+    ///
+    /// @return the frame type
     Frame frame();
 
-    /**
-     * Gets the advancement title.
-     *
-     * @return the title
-     */
+    /// Gets the advancement title.
+    ///
+    /// @return the title
     Component title();
 
-    /**
-     * Gets the description.
-     *
-     * @return the description
-     */
+    /// Gets the description.
+    ///
+    /// @return the description
     Component description();
 
-    /**
-     * Gets the icon shown in the frame in the advancements screen.
-     *
-     * @return a copy of the icon
-     */
+    /// Gets the icon shown in the frame in the advancements screen.
+    ///
+    /// @return a copy of the icon
     ItemStack icon();
 
-    /**
-     * Gets whether a toast should be displayed.
-     * <p>
-     * A toast is a notification that will be displayed in the top right corner
-     * of the screen.
-     *
-     * @return {@code true} if a toast should be shown
-     */
+    /// Gets whether a toast should be displayed.
+    ///
+    /// A toast is a notification that will be displayed in the top right corner
+    /// of the screen.
+    ///
+    /// @return `true` if a toast should be shown
     boolean doesShowToast();
 
-    /**
-     * Gets whether a message should be sent in the chat.
-     *
-     * @return {@code true} if a message should be sent
-     * @see org.bukkit.event.player.PlayerAdvancementDoneEvent#message() to edit
-     * the message
-     */
+    /// Gets whether a message should be sent in the chat.
+    ///
+    /// @return `true` if a message should be sent
+    /// @see org.bukkit.event.player.PlayerAdvancementDoneEvent#message() to edit
+    /// the message
     boolean doesAnnounceToChat();
 
-    /**
-     * Gets whether this advancement is hidden.
-     * <p>
-     * Hidden advancements cannot be viewed by the player until they have been
-     * unlocked.
-     *
-     * @return {@code true} if hidden
-     */
+    /// Gets whether this advancement is hidden.
+    ///
+    /// Hidden advancements cannot be viewed by the player until they have been
+    /// unlocked.
+    ///
+    /// @return `true` if hidden
     boolean isHidden();
 
-    /**
-     * Gets the texture displayed behind the advancement tree when selected.
-     * <p>
-     * This only affects root advancements without any parent. If the background
-     * is not specified or doesn't exist, the tab background will be the missing
-     * texture.
-     *
-     * @return the background texture path
-     */
+    /// Gets the texture displayed behind the advancement tree when selected.
+    ///
+    /// This only affects root advancements without any parent. If the background
+    /// is not specified or doesn't exist, the tab background will be the missing
+    /// texture.
+    ///
+    /// @return the background texture path
     @Nullable NamespacedKey backgroundPath();
 
-    /**
-     * Gets the formatted display name for this display. This
-     * is a part of the component that would be shown in chat when a player
-     * completes the advancement.
-     *
-     * @return the display name
-     * @see org.bukkit.advancement.Advancement#displayName()
-     */
+    /// Gets the formatted display name for this display. This
+    /// is a part of the component that would be shown in chat when a player
+    /// completes the advancement.
+    ///
+    /// @return the display name
+    /// @see org.bukkit.advancement.Advancement#displayName()
     Component displayName();
 
-    /**
-     * Defines how the {@link #icon()} appears in the advancements screen and
-     * the color used with the {@link #title() advancement name}.
-     */
+    /// Defines how the [#icon()] appears in the advancements screen and
+    /// the color used with the [`advancement name`][#title()].
     enum Frame implements Translatable {
 
-        /**
-         * "Challenge complete" advancement.
-         * <p>
-         * The client will play the {@code ui.toast.challenge_complete} sound
-         * when the challenge is completed and the toast is shown.
-         */
+        /// "Challenge complete" advancement.
+        ///
+        /// The client will play the `ui.toast.challenge_complete` sound
+        /// when the challenge is completed and the toast is shown.
         CHALLENGE("challenge", NamedTextColor.DARK_PURPLE),
 
-        /**
-         * "Goal reached" advancement.
-         */
+        /// "Goal reached" advancement.
         GOAL("goal", NamedTextColor.GREEN),
 
-        /**
-         * "Advancement made" advancement.
-         */
+        /// "Advancement made" advancement.
         TASK("task", NamedTextColor.GREEN);
 
-        /**
-         * The name map.
-         */
+        /// The name map.
         public static final Index<String, Frame> NAMES = Index.create(Frame.class, frame -> frame.name);
         private final String name;
         private final TextColor color;
@@ -136,22 +106,18 @@ public interface AdvancementDisplay {
             this.color = color;
         }
 
-        /**
-         * Gets the {@link TextColor} used for the advancement name.
-         *
-         * @return the text color
-         */
+        /// Gets the [TextColor] used for the advancement name.
+        ///
+        /// @return the text color
         public TextColor color() {
             return this.color;
         }
 
-        /**
-         * Gets the translation key used when an advancement is completed.
-         * <p>
-         * This is the first line of the toast displayed by the client.
-         *
-         * @return the toast message key
-         */
+        /// Gets the translation key used when an advancement is completed.
+        ///
+        /// This is the first line of the toast displayed by the client.
+        ///
+        /// @return the toast message key
         @Override
         public String translationKey() {
             return "advancements.toast." + this.name;

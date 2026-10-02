@@ -1,6 +1,4 @@
-/**
- * This package contains classes related to dialog bodies in the Paper API.
- */
+/// This package contains classes related to dialog bodies in the Paper API.
 @NullMarked
 @MinecraftVersionDependent
 package io.papermc.paper.registry.data.dialog.body;

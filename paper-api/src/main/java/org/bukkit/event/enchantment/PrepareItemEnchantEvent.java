@@ -12,10 +12,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an ItemStack is inserted in an enchantment table - can be
- * called multiple times
- */
+/// Called when an ItemStack is inserted in an enchantment table - can be
+/// called multiple times
 public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -44,42 +42,34 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
         return (EnchantmentView) super.getView();
     }
 
-    /**
-     * Gets the player enchanting the item
-     *
-     * @return enchanting player
-     */
+    /// Gets the player enchanting the item
+    ///
+    /// @return enchanting player
     @NotNull
     public Player getEnchanter() {
         return this.enchanter;
     }
 
-    /**
-     * Gets the block being used to enchant the item
-     *
-     * @return the block used for enchanting
-     */
+    /// Gets the block being used to enchant the item
+    ///
+    /// @return the block used for enchanting
     @NotNull
     public Block getEnchantBlock() {
         return this.table;
     }
 
-    /**
-     * Gets the item to be enchanted.
-     *
-     * @return ItemStack of item
-     */
+    /// Gets the item to be enchanted.
+    ///
+    /// @return ItemStack of item
     @NotNull
     public ItemStack getItem() {
         return this.item;
     }
 
-    /**
-     * Get a list of offered experience level costs of the enchantment.
-     *
-     * @return experience level costs offered
-     * @deprecated Use {@link #getOffers()} instead of this method
-     */
+    /// Get a list of offered experience level costs of the enchantment.
+    ///
+    /// @return experience level costs offered
+    /// @deprecated Use [#getOffers()] instead of this method
     @NotNull
     @Deprecated(since = "1.20.5")
     public int[] getExpLevelCostsOffered() {
@@ -90,23 +80,19 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
         return levelOffers;
     }
 
-    /**
-     * Get a list of available {@link EnchantmentOffer} for the player. You can
-     * modify the values to change the available offers for the player. An offer
-     * may be null, if there isn't an enchantment offer at a specific slot. There
-     * are 3 slots in the enchantment table available to modify.
-     *
-     * @return list of available enchantment offers
-     */
+    /// Get a list of available [EnchantmentOffer] for the player. You can
+    /// modify the values to change the available offers for the player. An offer
+    /// may be null, if there isn't an enchantment offer at a specific slot. There
+    /// are 3 slots in the enchantment table available to modify.
+    ///
+    /// @return list of available enchantment offers
     public @Nullable EnchantmentOffer @NotNull[] getOffers() {
         return this.offers;
     }
 
-    /**
-     * Get enchantment bonus in effect - corresponds to number of bookshelves
-     *
-     * @return enchantment bonus
-     */
+    /// Get enchantment bonus in effect - corresponds to number of bookshelves
+    ///
+    /// @return enchantment bonus
     public int getEnchantmentBonus() {
         return this.bonus;
     }

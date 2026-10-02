@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when the time skips for a world clock.
- * <p>
- * If the event is cancelled the time will not change.
- */
+/// Called when the time skips for a world clock.
+///
+/// If the event is cancelled the time will not change.
 // TODO - snapshot - 26.1 clock
 @ApiStatus.Experimental
 @NullMarked
@@ -29,29 +27,23 @@ public class ClockTimeSkipEvent extends Event implements Cancellable {
         this.skipAmount = skipAmount;
     }
 
-    /**
-     * Gets the reason why the time has skipped.
-     *
-     * @return a SkipReason value detailing why the time has skipped
-     */
+    /// Gets the reason why the time has skipped.
+    ///
+    /// @return a SkipReason value detailing why the time has skipped
     public SkipReason getSkipReason() {
         return this.skipReason;
     }
 
-    /**
-     * Gets the amount of time that was skipped.
-     *
-     * @return Amount of time skipped
-     */
+    /// Gets the amount of time that was skipped.
+    ///
+    /// @return Amount of time skipped
     public long getSkipAmount() {
         return this.skipAmount;
     }
 
-    /**
-     * Sets the amount of time to skip.
-     *
-     * @param skipAmount Amount of time to skip
-     */
+    /// Sets the amount of time to skip.
+    ///
+    /// @param skipAmount Amount of time to skip
     public void setSkipAmount(long skipAmount) {
         this.skipAmount = skipAmount;
     }
@@ -75,23 +67,15 @@ public class ClockTimeSkipEvent extends Event implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum specifying the reason the time skipped.
-     */
+    /// An enum specifying the reason the time skipped.
     public enum SkipReason {
 
-        /**
-         * When time is changed using the vanilla /time command.
-         */
+        /// When time is changed using the vanilla /time command.
         COMMAND,
-        /**
-         * When time is changed by a plugin.
-         */
+        /// When time is changed by a plugin.
         CUSTOM,
-        /**
-         * When time is changed by all players sleeping in their beds and the
-         * night skips.
-         */
+        /// When time is changed by all players sleeping in their beds and the
+        /// night skips.
         NIGHT_SKIP
     }
 }

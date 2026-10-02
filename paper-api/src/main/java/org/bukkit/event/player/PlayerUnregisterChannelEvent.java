@@ -4,9 +4,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This is called immediately after a player unregisters for a plugin channel.
- */
+/// This is called immediately after a player unregisters for a plugin channel.
 public class PlayerUnregisterChannelEvent extends PlayerChannelEvent {
 
     @ApiStatus.Internal

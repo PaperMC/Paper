@@ -4,100 +4,82 @@ import org.bukkit.Material;
 import org.bukkit.TreeSpecies;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents the different types of Tree block that face a direction.
- *
- * @see Material#LEGACY_LOG
- * @see Material#LEGACY_LOG_2
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the different types of Tree block that face a direction.
+///
+/// @see Material#LEGACY_LOG
+/// @see Material#LEGACY_LOG_2
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Tree extends Wood {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_LOG;
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.UP;
 
-    /**
-     * Constructs a tree block.
-     */
+    /// Constructs a tree block.
     public Tree() {
         this(DEFAULT_TYPE, DEFAULT_SPECIES, DEFAULT_DIRECTION);
     }
 
-    /**
-     * Constructs a tree block of the given tree species.
-     *
-     * @param species the species of the tree block
-     */
+    /// Constructs a tree block of the given tree species.
+    ///
+    /// @param species the species of the tree block
     public Tree(TreeSpecies species) {
         this(DEFAULT_TYPE, species, DEFAULT_DIRECTION);
     }
 
-    /**
-     * Constructs a tree block of the given tree species, and facing the given
-     * direction.
-     *
-     * @param species the species of the tree block
-     * @param dir the direction the tree block is facing
-     */
+    /// Constructs a tree block of the given tree species, and facing the given
+    /// direction.
+    ///
+    /// @param species the species of the tree block
+    /// @param dir the direction the tree block is facing
     public Tree(TreeSpecies species, BlockFace dir) {
         this(DEFAULT_TYPE, species, dir);
     }
 
-    /**
-     * Constructs a tree block of the given type.
-     *
-     * @param type the type of tree block
-     */
+    /// Constructs a tree block of the given type.
+    ///
+    /// @param type the type of tree block
     public Tree(final Material type) {
         this(type, DEFAULT_SPECIES, DEFAULT_DIRECTION);
     }
 
-    /**
-     * Constructs a tree block of the given type and tree species.
-     *
-     * @param type the type of tree block
-     * @param species the species of the tree block
-     */
+    /// Constructs a tree block of the given type and tree species.
+    ///
+    /// @param type the type of tree block
+    /// @param species the species of the tree block
     public Tree(final Material type, TreeSpecies species) {
         this(type, species, DEFAULT_DIRECTION);
     }
 
-    /**
-     * Constructs a tree block of the given type and tree species, and facing
-     * the given direction.
-     *
-     * @param type the type of tree block
-     * @param species the species of the tree block
-     * @param dir the direction the tree block is facing
-     */
+    /// Constructs a tree block of the given type and tree species, and facing
+    /// the given direction.
+    ///
+    /// @param type the type of tree block
+    /// @param species the species of the tree block
+    /// @param dir the direction the tree block is facing
     public Tree(final Material type, TreeSpecies species, BlockFace dir) {
         super(type, species);
         setDirection(dir);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Tree(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Get direction of the log
-     *
-     * @return one of:
-     * <ul>
-     * <li>BlockFace.TOP for upright (default)
-     * <li>BlockFace.NORTH (east-west)
-     * <li>BlockFace.WEST (north-south)
-     * <li>BlockFace.SELF (directionless)
-     * </ul>
-     */
+    /// Get direction of the log
+    ///
+    /// @return one of:
+    ///
+    ///   - BlockFace.TOP for upright (default)
+    ///   - BlockFace.NORTH (east-west)
+    ///   - BlockFace.WEST (north-south)
+    ///   - BlockFace.SELF (directionless)
+    ///
     @SuppressWarnings("deprecation")
     public BlockFace getDirection() {
         switch ((getData() >> 2) & 0x3) {
@@ -113,11 +95,9 @@ public class Tree extends Wood {
         }
     }
 
-    /**
-     * Set direction of the log
-     *
-     * @param dir - direction of end of log (BlockFace.SELF for no direction)
-     */
+    /// Set direction of the log
+    ///
+    /// @param dir - direction of end of log (BlockFace.SELF for no direction)
     @SuppressWarnings("deprecation")
     public void setDirection(BlockFace dir) {
         int dat;

@@ -11,13 +11,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Triggered when an entity is created in the world by a player "placing" an item
- * on a block.
- * <br>
- * Note that this event is currently only fired for four specific placements:
- * armor stands, boats, minecarts, and end crystals.
- */
+/// Triggered when an entity is created in the world by a player "placing" an item
+/// on a block.
+///
+/// Note that this event is currently only fired for four specific placements:
+/// armor stands, boats, minecarts, and end crystals.
 public class EntityPlaceEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -44,41 +42,33 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
         this(entity, player, block, blockFace, EquipmentSlot.HAND);
     }
 
-    /**
-     * Returns the player placing the entity
-     *
-     * @return the player placing the entity
-     */
+    /// Returns the player placing the entity
+    ///
+    /// @return the player placing the entity
     @Nullable
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Returns the block that the entity was placed on
-     *
-     * @return the block that the entity was placed on
-     */
+    /// Returns the block that the entity was placed on
+    ///
+    /// @return the block that the entity was placed on
     @NotNull
     public Block getBlock() {
         return this.block;
     }
 
-    /**
-     * Returns the face of the block that the entity was placed on
-     *
-     * @return the face of the block that the entity was placed on
-     */
+    /// Returns the face of the block that the entity was placed on
+    ///
+    /// @return the face of the block that the entity was placed on
     @NotNull
     public BlockFace getBlockFace() {
         return this.blockFace;
     }
 
-    /**
-     * Get the hand used to place the entity.
-     *
-     * @return the hand
-     */
+    /// Get the hand used to place the entity.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;

@@ -3,13 +3,11 @@ package io.papermc.paper.math;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * A position represented with doubles.
- * <p>
- * <b>May see breaking changes until Experimental annotation is removed.</b>
- *
- * @see BlockPosition
- */
+/// A position represented with doubles.
+///
+/// **May see breaking changes until Experimental annotation is removed.**
+///
+/// @see BlockPosition
 @ApiStatus.Experimental
 public interface FinePosition extends Position {
 

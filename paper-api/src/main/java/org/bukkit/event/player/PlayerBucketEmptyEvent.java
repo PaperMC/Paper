@@ -10,9 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player empties a bucket
- */
+/// Called when a player empties a bucket
 public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

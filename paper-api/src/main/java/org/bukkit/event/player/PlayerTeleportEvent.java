@@ -13,9 +13,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collections;
 import java.util.Set;
 
-/**
- * Holds information for player teleport events
- */
+/// Holds information for player teleport events
 public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -42,33 +40,27 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
         this.teleportFlags = teleportFlags;
     }
 
-    /**
-     * Gets the cause of this teleportation event
-     *
-     * @return Cause of the event
-     */
+    /// Gets the cause of this teleportation event
+    ///
+    /// @return Cause of the event
     @NotNull
     public TeleportCause getCause() {
         return this.cause;
     }
 
-    /**
-     * Returns the relative teleportation flags used in this teleportation.
-     * This determines which axis the player will not lose their velocity in.
-     *
-     * @return an immutable set of relative teleportation flags
-     */
+    /// Returns the relative teleportation flags used in this teleportation.
+    /// This determines which axis the player will not lose their velocity in.
+    ///
+    /// @return an immutable set of relative teleportation flags
     @NotNull
     public @Unmodifiable Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
         return this.teleportFlags;
     }
 
-    /**
-     * Gets if the player will be dismounted in this teleportation.
-     *
-     * @return dismounted or not
-     * @deprecated dismounting on tp is no longer controlled by the server
-     */
+    /// Gets if the player will be dismounted in this teleportation.
+    ///
+    /// @return dismounted or not
+    /// @deprecated dismounting on tp is no longer controlled by the server
     @Deprecated(forRemoval = true)
     @Contract("-> true")
     public boolean willDismountPlayer() {
@@ -87,63 +79,39 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     }
 
     public enum TeleportCause {
-        /**
-         * Indicates the teleportation was caused by a player throwing an Ender
-         * Pearl
-         */
+        /// Indicates the teleportation was caused by a player throwing an Ender
+        /// Pearl
         ENDER_PEARL,
-        /**
-         * Indicates the teleportation was caused by a player executing a
-         * command
-         */
+        /// Indicates the teleportation was caused by a player executing a
+        /// command
         COMMAND,
-        /**
-         * Indicates the teleportation was caused by a plugin
-         */
+        /// Indicates the teleportation was caused by a plugin
         PLUGIN,
-        /**
-         * Indicates the teleportation was caused by a player entering a
-         * Nether portal
-         */
+        /// Indicates the teleportation was caused by a player entering a
+        /// Nether portal
         NETHER_PORTAL,
-        /**
-         * Indicates the teleportation was caused by a player entering an End
-         * portal
-         */
+        /// Indicates the teleportation was caused by a player entering an End
+        /// portal
         END_PORTAL,
-        /**
-         * Indicates the teleportation was caused by a player teleporting to an
-         * Entity/Player via the spectator menu
-         */
+        /// Indicates the teleportation was caused by a player teleporting to an
+        /// Entity/Player via the spectator menu
         SPECTATE,
-        /**
-         * Indicates the teleportation was caused by a player entering an End
-         * gateway
-         */
+        /// Indicates the teleportation was caused by a player entering an End
+        /// gateway
         END_GATEWAY,
-        /**
-         * Indicates the teleportation was caused by a player consuming an item with a {@link ConsumeEffect.TeleportRandomly} effect
-         */
+        /// Indicates the teleportation was caused by a player consuming an item with a [ConsumeEffect.TeleportRandomly] effect
         CONSUMABLE_EFFECT,
-        /**
-         * Indicates the teleportation was caused by a player exiting a vehicle
-         */
+        /// Indicates the teleportation was caused by a player exiting a vehicle
         DISMOUNT,
-        /**
-         * Indicates the teleportation was caused by a player exiting a bed
-         */
+        /// Indicates the teleportation was caused by a player exiting a bed
         EXIT_BED,
-        /**
-         * Indicates the teleportation was caused by an event not covered by
-         * this enum
-         */
+        /// Indicates the teleportation was caused by an event not covered by
+        /// this enum
         UNKNOWN;
 
-        /**
-         * Indicates the teleportation was caused by a player consuming chorus
-         * fruit
-         * @deprecated in favor of {@link #CONSUMABLE_EFFECT}
-         */
+        /// Indicates the teleportation was caused by a player consuming chorus
+        /// fruit
+        /// @deprecated in favor of [#CONSUMABLE_EFFECT]
         @Deprecated(since = "1.21.5", forRemoval = true)
         public static final TeleportCause CHORUS_FRUIT = CONSUMABLE_EFFECT;
     }

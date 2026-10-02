@@ -1,6 +1,4 @@
-/**
- * {@link org.bukkit.event.Event Events} relating to {@link
- * org.bukkit.entity.Hanging entities that hang}.
- */
+/// [`Events`][org.bukkit.event.Event] relating to
+/// [`entities that hang`][org.bukkit.entity.Hanging].
 package org.bukkit.event.hanging;
 

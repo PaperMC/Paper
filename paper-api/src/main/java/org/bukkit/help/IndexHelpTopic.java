@@ -9,14 +9,12 @@ import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This help topic generates a list of other help topics. This class is useful
- * for adding your own index help topics. To enforce a particular order, use a
- * sorted collection.
- * <p>
- * If a preamble is provided to the constructor, that text will be displayed
- * before the first item in the index.
- */
+/// This help topic generates a list of other help topics. This class is useful
+/// for adding your own index help topics. To enforce a particular order, use a
+/// sorted collection.
+///
+/// If a preamble is provided to the constructor, that text will be displayed
+/// before the first item in the index.
 public class IndexHelpTopic extends HelpTopic {
 
     protected String permission;
@@ -35,11 +33,9 @@ public class IndexHelpTopic extends HelpTopic {
         setTopicsCollection(topics);
     }
 
-    /**
-     * Sets the contents of the internal allTopics collection.
-     *
-     * @param topics The topics to set.
-     */
+    /// Sets the contents of the internal allTopics collection.
+    ///
+    /// @param topics The topics to set.
     protected void setTopicsCollection(@NotNull Collection<HelpTopic> topics) {
         this.allTopics = topics;
     }
@@ -90,26 +86,22 @@ public class IndexHelpTopic extends HelpTopic {
         return sb.toString();
     }
 
-    /**
-     * Builds the topic preamble. Override this method to change how the index
-     * preamble looks.
-     *
-     * @param sender The command sender requesting the preamble.
-     * @return The topic preamble.
-     */
+    /// Builds the topic preamble. Override this method to change how the index
+    /// preamble looks.
+    ///
+    /// @param sender The command sender requesting the preamble.
+    /// @return The topic preamble.
     @NotNull
     protected String buildPreamble(@NotNull CommandSender sender) {
         return ChatColor.GRAY + preamble;
     }
 
-    /**
-     * Builds individual lines in the index topic. Override this method to
-     * change how index lines are rendered.
-     *
-     * @param sender The command sender requesting the index line.
-     * @param topic  The topic to render into an index line.
-     * @return The rendered index line.
-     */
+    /// Builds individual lines in the index topic. Override this method to
+    /// change how index lines are rendered.
+    ///
+    /// @param sender The command sender requesting the index line.
+    /// @param topic  The topic to render into an index line.
+    /// @return The rendered index line.
     @NotNull
     protected String buildIndexLine(@NotNull CommandSender sender, @NotNull HelpTopic topic) {
         StringBuilder line = new StringBuilder();

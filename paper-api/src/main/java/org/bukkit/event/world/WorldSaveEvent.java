@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a World is saved.
- */
+/// Called when a World is saved.
 public class WorldSaveEvent extends WorldEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

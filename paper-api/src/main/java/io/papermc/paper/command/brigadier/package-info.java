@@ -1,6 +1,4 @@
-/**
- * Brigadier connection API.
- */
+/// Brigadier connection API.
 @NullMarked
 package io.papermc.paper.command.brigadier;
 

@@ -10,9 +10,7 @@ import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a player related inventory event
- */
+/// Represents a player related inventory event
 public class InventoryEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,32 +22,26 @@ public class InventoryEvent extends Event {
         this.transaction = transaction;
     }
 
-    /**
-     * Gets the primary Inventory involved in this transaction
-     *
-     * @return The upper inventory.
-     */
+    /// Gets the primary Inventory involved in this transaction
+    ///
+    /// @return The upper inventory.
     @NotNull
     public Inventory getInventory() {
         return this.transaction.getTopInventory();
     }
 
-    /**
-     * Gets the list of players viewing the primary (upper) inventory involved
-     * in this event
-     *
-     * @return A list of people viewing.
-     */
+    /// Gets the list of players viewing the primary (upper) inventory involved
+    /// in this event
+    ///
+    /// @return A list of people viewing.
     @NotNull
     public List<HumanEntity> getViewers() {
         return this.transaction.getTopInventory().getViewers();
     }
 
-    /**
-     * Gets the view object itself
-     *
-     * @return InventoryView
-     */
+    /// Gets the view object itself
+    ///
+    /// @return InventoryView
     @NotNull
     public InventoryView getView() {
         return this.transaction;

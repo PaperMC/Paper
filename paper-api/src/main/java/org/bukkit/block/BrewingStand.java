@@ -3,56 +3,42 @@ package org.bukkit.block;
 import org.bukkit.inventory.BrewerInventory;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a captured state of a brewing stand.
- */
+/// Represents a captured state of a brewing stand.
 public interface BrewingStand extends Container {
 
-    /**
-     * How much time is left in the brewing cycle.
-     *
-     * @return Brew Time
-     */
+    /// How much time is left in the brewing cycle.
+    ///
+    /// @return Brew Time
     int getBrewingTime();
 
-    /**
-     * Set the time left before brewing completes.
-     *
-     * @param brewTime Brewing time
-     */
+    /// Set the time left before brewing completes.
+    ///
+    /// @param brewTime Brewing time
     void setBrewingTime(int brewTime);
 
-    /**
-     * Sets the recipe time for the brewing process which is
-     * used to compute the progress of the brewing process with
-     * {@link #getBrewingTime()}.
-     *
-     * @param recipeBrewTime recipe brew time (in ticks)
-     * @throws IllegalArgumentException if the recipe brew time is non-positive
-     */
+    /// Sets the recipe time for the brewing process which is
+    /// used to compute the progress of the brewing process with
+    /// [#getBrewingTime()].
+    ///
+    /// @param recipeBrewTime recipe brew time (in ticks)
+    /// @throws IllegalArgumentException if the recipe brew time is non-positive
     void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
 
-    /**
-     * Gets the recipe time for the brewing process which is
-     * used to compute the progress of the brewing process with
-     * {@link #getBrewingTime()}.
-     *
-     * @return recipe brew time (in ticks)
-     */
+    /// Gets the recipe time for the brewing process which is
+    /// used to compute the progress of the brewing process with
+    /// [#getBrewingTime()].
+    ///
+    /// @return recipe brew time (in ticks)
     @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
 
-    /**
-     * Get the level of current fuel for brewing.
-     *
-     * @return The fuel level
-     */
+    /// Get the level of current fuel for brewing.
+    ///
+    /// @return The fuel level
     int getFuelLevel();
 
-    /**
-     * Set the level of current fuel for brewing.
-     *
-     * @param level fuel level
-     */
+    /// Set the level of current fuel for brewing.
+    ///
+    /// @param level fuel level
     void setFuelLevel(int level);
 
     @NotNull

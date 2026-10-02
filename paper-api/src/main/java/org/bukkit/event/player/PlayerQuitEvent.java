@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a player leaves a server
- */
+/// Called when a player leaves a server
 public class PlayerQuitEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -45,42 +43,34 @@ public class PlayerQuitEvent extends PlayerEvent {
         this.reason = quitReason == null ? QuitReason.DISCONNECTED : quitReason;
     }
 
-    /**
-     * Gets the quit message to send to all online players
-     *
-     * @return string quit message
-     */
+    /// Gets the quit message to send to all online players
+    ///
+    /// @return string quit message
     public @Nullable Component quitMessage() {
         return this.quitMessage;
     }
 
-    /**
-     * Sets the quit message to send to all online players
-     *
-     * @param quitMessage quit message
-     */
+    /// Sets the quit message to send to all online players
+    ///
+    /// @param quitMessage quit message
     public void quitMessage(@Nullable Component quitMessage) {
         this.quitMessage = quitMessage;
     }
 
-    /**
-     * Gets the quit message to send to all online players
-     *
-     * @return string quit message
-     * @deprecated in favour of {@link #quitMessage()}
-     */
+    /// Gets the quit message to send to all online players
+    ///
+    /// @return string quit message
+    /// @deprecated in favour of [#quitMessage()]
     @Nullable
     @Deprecated
     public String getQuitMessage() {
         return this.quitMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.quitMessage);
     }
 
-    /**
-     * Sets the quit message to send to all online players
-     *
-     * @param quitMessage quit message
-     * @deprecated in favour of {@link #quitMessage(Component)}
-     */
+    /// Sets the quit message to send to all online players
+    ///
+    /// @param quitMessage quit message
+    /// @deprecated in favour of [#quitMessage(Component)]
     @Deprecated
     public void setQuitMessage(@Nullable String quitMessage) {
         this.quitMessage = quitMessage != null ? LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null;
@@ -104,27 +94,19 @@ public class PlayerQuitEvent extends PlayerEvent {
 
     public enum QuitReason {
 
-        /**
-         * The player left on their own behalf.
-         * <p>
-         * This does not mean they pressed the disconnect button in their client, but rather that the client severed the
-         * connection themselves. This may occur if no keep-alive packet is received on their side, among other things.
-         */
+        /// The player left on their own behalf.
+        ///
+        /// This does not mean they pressed the disconnect button in their client, but rather that the client severed the
+        /// connection themselves. This may occur if no keep-alive packet is received on their side, among other things.
         DISCONNECTED,
-        /**
-         * The player was kicked from the server.
-         */
+        /// The player was kicked from the server.
         KICKED,
-        /**
-         * The player has timed out.
-         */
+        /// The player has timed out.
         TIMED_OUT,
-        /**
-         * The player's connection has entered an erroneous state.
-         * <p>
-         * Reasons for this may include invalid packets, invalid data, and uncaught exceptions in the packet handler,
-         * among others.
-         */
+        /// The player's connection has entered an erroneous state.
+        ///
+        /// Reasons for this may include invalid packets, invalid data, and uncaught exceptions in the packet handler,
+        /// among others.
         ERRONEOUS_STATE
     }
 }

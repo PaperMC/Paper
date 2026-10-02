@@ -12,15 +12,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a block dispenses loot from its designated LootTable.
- * <p>
- * This is not to be confused with events like {@link BlockDispenseEvent} which fires when a
- * singular item is dispensed from its inventory container.
- * <br>
- * Example: A player unlocks a trial chamber vault and the vault block dispenses
- * its loot.
- */
+/// Called when a block dispenses loot from its designated LootTable.
+///
+/// This is not to be confused with events like [BlockDispenseEvent] which fires when a
+/// singular item is dispensed from its inventory container.
+///
+/// Example: A player unlocks a trial chamber vault and the vault block dispenses
+/// its loot.
 public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -39,44 +37,36 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
         this.lootTable = lootTable;
     }
 
-    /**
-     * Gets the loot that will be dispensed.
-     *
-     * @return the loot that will be dispensed
-     */
+    /// Gets the loot that will be dispensed.
+    ///
+    /// @return the loot that will be dispensed
     @NotNull
     public List<ItemStack> getDispensedLoot() {
         return this.dispensedLoot;
     }
 
-    /**
-     * Sets the loot that will be dispensed.
-     *
-     * @param dispensedLoot new loot to dispense
-     */
+    /// Sets the loot that will be dispensed.
+    ///
+    /// @param dispensedLoot new loot to dispense
     public void setDispensedLoot(@Nullable List<ItemStack> dispensedLoot) {
         this.dispensedLoot = dispensedLoot == null ? new ArrayList<>() : dispensedLoot;
     }
 
-    /**
-     * Gets the loot table used to generate the initial loot to dispense.
-     *
-     * @return the loot table used to generate the initial loot to dispense
-     */
+    /// Gets the loot table used to generate the initial loot to dispense.
+    ///
+    /// @return the loot table used to generate the initial loot to dispense
     @NotNull
     public LootTable getLootTable() {
         return this.lootTable;
     }
 
-    /**
-     * Gets the player associated with this event.
-     * <br>
-     * <b>Warning:</b> Some event instances like a
-     * {@link org.bukkit.block.TrialSpawner} dispensing its reward loot may not
-     * have a player associated with them and will return {@code null}.
-     *
-     * @return the player who unlocked the vault
-     */
+    /// Gets the player associated with this event.
+    ///
+    /// **Warning:** Some event instances like a
+    /// [org.bukkit.block.TrialSpawner] dispensing its reward loot may not
+    /// have a player associated with them and will return `null`.
+    ///
+    /// @return the player who unlocked the vault
     @Nullable
     public Player getPlayer() {
         return this.player;

@@ -5,11 +5,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * This event is fired when whitelist is toggled
- *
- * @author Mark Vainomaa
- */
+/// This event is fired when whitelist is toggled
+///
+/// @author Mark Vainomaa
 @NullMarked
 public class WhitelistToggleEvent extends Event {
 
@@ -22,11 +20,9 @@ public class WhitelistToggleEvent extends Event {
         this.enabled = enabled;
     }
 
-    /**
-     * Gets whether whitelist is going to be enabled or not
-     *
-     * @return Whether whitelist is going to be enabled or not
-     */
+    /// Gets whether whitelist is going to be enabled or not
+    ///
+    /// @return Whether whitelist is going to be enabled or not
     public boolean isEnabled() {
         return this.enabled;
     }

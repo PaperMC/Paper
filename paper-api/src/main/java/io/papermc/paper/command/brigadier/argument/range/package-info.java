@@ -1,6 +1,4 @@
-/**
- * Range providers.
- */
+/// Range providers.
 @NullMarked
 package io.papermc.paper.command.brigadier.argument.range;
 

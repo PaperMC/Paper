@@ -15,14 +15,12 @@ import org.bukkit.Registry;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Holds all accepted Biomes in the server.
- * <p>
- * The Biomes listed in this interface are present in the default server
- * or can be enabled via a {@link FeatureFlag}.
- * There may be additional biomes present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
- * which can be accessed via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)} and {@link RegistryKey#BIOME}.
- */
+/// Holds all accepted Biomes in the server.
+///
+/// The Biomes listed in this interface are present in the default server
+/// or can be enabled via a [FeatureFlag].
+/// There may be additional biomes present in the server, for example from a [io.papermc.paper.datapack.Datapack]
+/// which can be accessed via [io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)] and [RegistryKey#BIOME].
 public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     // Start generate - Biome
@@ -161,11 +159,9 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     Biome WOODED_BADLANDS = getBiome("wooded_badlands");
     // End generate - Biome
 
-    /**
-     * Represents a custom Biome
-     *
-     * @deprecated Biome is no longer an enum, custom biomes will have their own biome instance.
-     */
+    /// Represents a custom Biome
+    ///
+    /// @deprecated Biome is no longer an enum, custom biomes will have their own biome instance.
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     Biome CUSTOM = InternalAPIBridge.get().constructLegacyCustomBiome();
 
@@ -174,11 +170,9 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * @param name of the biome.
-     * @return the biome with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the biome.
+    /// @return the biome with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Biome valueOf(@NotNull String name) {
@@ -192,10 +186,8 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
         return biome;
     }
 
-    /**
-     * @return an array of all known biomes.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known biomes.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Biome[] values() {

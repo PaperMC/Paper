@@ -6,184 +6,146 @@ import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a static, thread-safe snapshot of chunk of blocks.
- * <p>
- * Purpose is to allow clean, efficient copy of a chunk data to be made, and
- * then handed off for processing in another thread (e.g. map rendering)
- */
+/// Represents a static, thread-safe snapshot of chunk of blocks.
+///
+/// Purpose is to allow clean, efficient copy of a chunk data to be made, and
+/// then handed off for processing in another thread (e.g. map rendering)
 public interface ChunkSnapshot {
 
-    /**
-     * Gets the X-coordinate of this chunk
-     *
-     * @return X-coordinate
-     */
+    /// Gets the X-coordinate of this chunk
+    ///
+    /// @return X-coordinate
     int getX();
 
-    /**
-     * Gets the Z-coordinate of this chunk
-     *
-     * @return Z-coordinate
-     */
+    /// Gets the Z-coordinate of this chunk
+    ///
+    /// @return Z-coordinate
     int getZ();
 
-    /**
-     * Gets name of the world containing this chunk
-     *
-     * <p>This method is considered obsolete and is a candidate for future deprecation.
-     * Prefer using {@link #getWorldKey()} as the world identity.</p>
-     *
-     * @return Parent World Name
-     */
+    /// Gets name of the world containing this chunk
+    ///
+    /// This method is considered obsolete and is a candidate for future deprecation.
+    /// Prefer using [#getWorldKey()] as the world identity.
+    ///
+    /// @return Parent World Name
     @NotNull
     @ApiStatus.Obsolete
     String getWorldName();
 
-    /**
-     * Gets the key of the world containing this chunk
-     *
-     * @return Parent World Key
-     */
+    /// Gets the key of the world containing this chunk
+    ///
+    /// @return Parent World Key
     @NotNull
     Key getWorldKey();
 
-    /**
-     * Get block type for block at corresponding coordinate in the chunk
-     *
-     * @param x 0-15
-     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
-     * @param z 0-15
-     * @return block material type
-     */
+    /// Get block type for block at corresponding coordinate in the chunk
+    ///
+    /// @param x 0-15
+    /// @param y world minHeight (inclusive) - world maxHeight (exclusive)
+    /// @param z 0-15
+    /// @return block material type
     @NotNull
     Material getBlockType(int x, int y, int z);
 
-    /**
-     * Get block data for block at corresponding coordinate in the chunk
-     *
-     * @param x 0-15
-     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
-     * @param z 0-15
-     * @return block material type
-     */
+    /// Get block data for block at corresponding coordinate in the chunk
+    ///
+    /// @param x 0-15
+    /// @param y world minHeight (inclusive) - world maxHeight (exclusive)
+    /// @param z 0-15
+    /// @return block material type
     @NotNull
     BlockData getBlockData(int x, int y, int z);
 
-    /**
-     * Get block data for block at corresponding coordinate in the chunk
-     *
-     * @param x 0-15
-     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
-     * @param z 0-15
-     * @return 0-15
-     * @deprecated Magic value
-     */
+    /// Get block data for block at corresponding coordinate in the chunk
+    ///
+    /// @param x 0-15
+    /// @param y world minHeight (inclusive) - world maxHeight (exclusive)
+    /// @param z 0-15
+    /// @return 0-15
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2", forRemoval = true)
     int getData(int x, int y, int z);
 
-    /**
-     * Get sky light level for block at corresponding coordinate in the chunk
-     *
-     * @param x 0-15
-     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
-     * @param z 0-15
-     * @return 0-15
-     */
+    /// Get sky light level for block at corresponding coordinate in the chunk
+    ///
+    /// @param x 0-15
+    /// @param y world minHeight (inclusive) - world maxHeight (exclusive)
+    /// @param z 0-15
+    /// @return 0-15
     int getBlockSkyLight(int x, int y, int z);
 
-    /**
-     * Get light level emitted by block at corresponding coordinate in the
-     * chunk
-     *
-     * @param x 0-15
-     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
-     * @param z 0-15
-     * @return 0-15
-     */
+    /// Get light level emitted by block at corresponding coordinate in the
+    /// chunk
+    ///
+    /// @param x 0-15
+    /// @param y world minHeight (inclusive) - world maxHeight (exclusive)
+    /// @param z 0-15
+    /// @return 0-15
     int getBlockEmittedLight(int x, int y, int z);
 
-    /**
-     * Gets the highest non-air coordinate at the given coordinates
-     *
-     * @param x X-coordinate of the blocks (0-15)
-     * @param z Z-coordinate of the blocks (0-15)
-     * @return Y-coordinate of the highest non-air block
-     */
+    /// Gets the highest non-air coordinate at the given coordinates
+    ///
+    /// @param x X-coordinate of the blocks (0-15)
+    /// @param z Z-coordinate of the blocks (0-15)
+    /// @return Y-coordinate of the highest non-air block
     int getHighestBlockYAt(int x, int z);
 
-    /**
-     * Get biome at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param z Z-coordinate (0-15)
-     * @return Biome at given coordinate
-     * @deprecated biomes are now 3-dimensional
-     */
+    /// Get biome at given coordinates
+    ///
+    /// @param x X-coordinate (0-15)
+    /// @param z Z-coordinate (0-15)
+    /// @return Biome at given coordinate
+    /// @deprecated biomes are now 3-dimensional
     @NotNull
     @Deprecated(since = "1.15")
     Biome getBiome(int x, int z);
 
-    /**
-     * Get biome at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
-     * @param z Z-coordinate (0-15)
-     * @return Biome at given coordinate
-     */
+    /// Get biome at given coordinates
+    ///
+    /// @param x X-coordinate (0-15)
+    /// @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
+    /// @param z Z-coordinate (0-15)
+    /// @return Biome at given coordinate
     @NotNull
     Biome getBiome(int x, int y, int z);
 
-    /**
-     * Get raw biome temperature at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param z Z-coordinate (0-15)
-     * @return temperature at given coordinate
-     * @deprecated biomes are now 3-dimensional
-     */
+    /// Get raw biome temperature at given coordinates
+    ///
+    /// @param x X-coordinate (0-15)
+    /// @param z Z-coordinate (0-15)
+    /// @return temperature at given coordinate
+    /// @deprecated biomes are now 3-dimensional
     @Deprecated(since = "1.15")
     double getRawBiomeTemperature(int x, int z);
 
-    /**
-     * Get raw biome temperature at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
-     * @param z Z-coordinate (0-15)
-     * @return temperature at given coordinate
-     */
+    /// Get raw biome temperature at given coordinates
+    ///
+    /// @param x X-coordinate (0-15)
+    /// @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
+    /// @param z Z-coordinate (0-15)
+    /// @return temperature at given coordinate
     double getRawBiomeTemperature(int x, int y, int z);
 
-    /**
-     * Get world full time when chunk snapshot was captured
-     *
-     * @return time in ticks
-     */
+    /// Get world full time when chunk snapshot was captured
+    ///
+    /// @return time in ticks
     long getCaptureFullTime();
 
-    /**
-     * Test if section is empty
-     *
-     * @param sy - section Y coordinate (block Y / 16, world minHeight (inclusive) - world maxHeight (exclusive))
-     * @return true if empty, false if not
-     */
+    /// Test if section is empty
+    ///
+    /// @param sy - section Y coordinate (block Y / 16, world minHeight (inclusive) - world maxHeight (exclusive))
+    /// @return true if empty, false if not
     boolean isSectionEmpty(int sy);
 
-    /**
-     * Tests if this snapshot contains the specified block.
-     *
-     * @param block block to test
-     * @return if the block is contained within
-     */
+    /// Tests if this snapshot contains the specified block.
+    ///
+    /// @param block block to test
+    /// @return if the block is contained within
     boolean contains(@NotNull BlockData block);
 
-    /**
-     * Tests if this chunk contains the specified biome.
-     *
-     * @param biome biome to test
-     * @return if the biome is contained within
-     */
+    /// Tests if this chunk contains the specified biome.
+    ///
+    /// @param biome biome to test
+    /// @return if the biome is contained within
     boolean contains(@NotNull Biome biome);
 }

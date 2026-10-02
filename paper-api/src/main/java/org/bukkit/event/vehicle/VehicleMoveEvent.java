@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Raised when a vehicle moves.
- */
+/// Raised when a vehicle moves.
 public class VehicleMoveEvent extends VehicleEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,21 +22,17 @@ public class VehicleMoveEvent extends VehicleEvent {
         this.to = to;
     }
 
-    /**
-     * Get the previous position.
-     *
-     * @return Old position.
-     */
+    /// Get the previous position.
+    ///
+    /// @return Old position.
     @NotNull
     public Location getFrom() {
         return this.from.clone();
     }
 
-    /**
-     * Get the next position.
-     *
-     * @return New position.
-     */
+    /// Get the next position.
+    ///
+    /// @return New position.
     @NotNull
     public Location getTo() {
         return this.to.clone();

@@ -1,4 +1,2 @@
-/**
- * Classes relevant to bans.
- */
+/// Classes relevant to bans.
 package org.bukkit.ban;

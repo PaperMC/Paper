@@ -1,20 +1,12 @@
 package org.bukkit;
 
-/**
- * Determines the collision behavior when fluids get hit during ray tracing.
- */
+/// Determines the collision behavior when fluids get hit during ray tracing.
 public enum FluidCollisionMode {
 
-    /**
-     * Ignore fluids.
-     */
+    /// Ignore fluids.
     NEVER,
-    /**
-     * Only collide with source fluid blocks.
-     */
+    /// Only collide with source fluid blocks.
     SOURCE_ONLY,
-    /**
-     * Collide with all fluids.
-     */
+    /// Collide with all fluids.
     ALWAYS;
 }

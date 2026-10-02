@@ -4,89 +4,68 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Holds information about how the advancement is displayed by the game.
- *
- * @deprecated use {@link io.papermc.paper.advancement.AdvancementDisplay}
- */
+/// Holds information about how the advancement is displayed by the game.
+///
+/// @deprecated use [io.papermc.paper.advancement.AdvancementDisplay]
 @Deprecated(forRemoval = true) // Paper
 public interface AdvancementDisplay {
 
-    /**
-     * Gets the title of the advancement.
-     *
-     * @return The advancement title without colour codes.
-     */
+    /// Gets the title of the advancement.
+    ///
+    /// @return The advancement title without colour codes.
     @NotNull
     String getTitle();
 
-    /**
-     * Gets the visible description of the advancement.
-     *
-     * @return The advancement description without colour codes.
-     */
+    /// Gets the visible description of the advancement.
+    ///
+    /// @return The advancement description without colour codes.
     @NotNull
     String getDescription();
 
-    /**
-     * The icon that is used for this advancement.
-     *
-     * @return an ItemStack that represents the advancement.
-     */
+    /// The icon that is used for this advancement.
+    ///
+    /// @return an ItemStack that represents the advancement.
     @NotNull
     ItemStack getIcon();
 
-    /**
-     * Whether to show a toast to the player when this advancement has been
-     * completed.
-     *
-     * @return true if a toast is shown.
-     */
+    /// Whether to show a toast to the player when this advancement has been
+    /// completed.
+    ///
+    /// @return true if a toast is shown.
     boolean shouldShowToast();
 
-    /**
-     * Whether to announce in the chat when this advancement has been completed.
-     *
-     * @return true if announced in chat.
-     */
+    /// Whether to announce in the chat when this advancement has been completed.
+    ///
+    /// @return true if announced in chat.
     boolean shouldAnnounceChat();
 
-    /**
-     * Whether to hide this advancement and all its children from the
-     * advancement screen until this advancement have been completed.
-     *
-     * Has no effect on root advancements themselves, but still affects all
-     * their children.
-     *
-     * @return true if hidden.
-     */
+    /// Whether to hide this advancement and all its children from the
+    /// advancement screen until this advancement have been completed.
+    /// Has no effect on root advancements themselves, but still affects all
+    /// their children.
+    ///
+    /// @return true if hidden.
     boolean isHidden();
 
-    /**
-     * The X position of the advancement in the advancement screen.
-     *
-     * @return the X coordinate as float
-     */
+    /// The X position of the advancement in the advancement screen.
+    ///
+    /// @return the X coordinate as float
     @Contract("-> fail")
     default float getX() {
         throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
     }
 
-    /**
-     * The Y position of the advancement in the advancement screen.
-     *
-     * @return the Y coordinate as float
-     */
+    /// The Y position of the advancement in the advancement screen.
+    ///
+    /// @return the Y coordinate as float
     @Contract("-> fail")
     default float getY() {
         throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
     }
 
-    /**
-     * The display type of this advancement.
-     *
-     * @return an enum representing the type.
-     */
+    /// The display type of this advancement.
+    ///
+    /// @return an enum representing the type.
     @NotNull
     AdvancementDisplayType getType();
 }

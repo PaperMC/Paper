@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * MaterialData for torches
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// MaterialData for torches
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Torch extends SimpleAttachableMaterialData {
     public Torch() {
@@ -19,21 +17,17 @@ public class Torch extends SimpleAttachableMaterialData {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Torch(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the face that this block is attached on
-     *
-     * @return BlockFace attached to
-     */
+    /// Gets the face that this block is attached on
+    ///
+    /// @return BlockFace attached to
     @Override
     public BlockFace getAttachedFace() {
         byte data = getData();

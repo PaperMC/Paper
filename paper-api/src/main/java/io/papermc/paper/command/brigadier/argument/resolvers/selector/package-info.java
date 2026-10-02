@@ -1,6 +1,4 @@
-/**
- * Entity selector argument resolvers.
- */
+/// Entity selector argument resolvers.
 @NullMarked
 package io.papermc.paper.command.brigadier.argument.resolvers.selector;
 

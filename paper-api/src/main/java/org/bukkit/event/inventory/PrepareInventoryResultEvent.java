@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an item is put in a slot and the result is calculated.
- *
- * @deprecated use {@link com.destroystokyo.paper.event.inventory.PrepareResultEvent}
- */
+/// Called when an item is put in a slot and the result is calculated.
+///
+/// @deprecated use [com.destroystokyo.paper.event.inventory.PrepareResultEvent]
 @Deprecated
 @Warning(propagate = false)
 public class PrepareInventoryResultEvent extends InventoryEvent {
@@ -27,21 +25,17 @@ public class PrepareInventoryResultEvent extends InventoryEvent {
         this.result = result;
     }
 
-    /**
-     * Get result item, may be {@code null}.
-     *
-     * @return result item
-     */
+    /// Get result item, may be `null`.
+    ///
+    /// @return result item
     @Nullable
     public ItemStack getResult() {
         return this.result;
     }
 
-    /**
-     * Set result item, may be {@code null}.
-     *
-     * @param result result item
-     */
+    /// Set result item, may be `null`.
+    ///
+    /// @param result result item
     public void setResult(@Nullable ItemStack result) {
         this.result = result;
     }

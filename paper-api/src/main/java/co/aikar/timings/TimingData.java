@@ -28,11 +28,9 @@ import org.jetbrains.annotations.NotNull;
 
 import static co.aikar.util.JSONUtil.toArray;
 
-/**
- * <p>Lightweight object for tracking timing data</p>
- *
- * This is broken out to reduce memory usage
- */
+/// Lightweight object for tracking timing data
+///
+/// This is broken out to reduce memory usage
 class TimingData {
     private final int id;
     private int count = 0;

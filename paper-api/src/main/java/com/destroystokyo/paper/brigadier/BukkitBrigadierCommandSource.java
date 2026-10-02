@@ -6,9 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
- */
+/// @deprecated For removal, see [io.papermc.paper.command.brigadier.Commands] on how to use the new Brigadier API.
 @Deprecated(forRemoval = true)
 public interface BukkitBrigadierCommandSource {
 

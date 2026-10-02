@@ -2,9 +2,7 @@ package io.papermc.paper.datapack;
 
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Source of a datapack.
- */
+/// Source of a datapack.
 @NullMarked
 public sealed interface DatapackSource permits DatapackSourceImpl {
 

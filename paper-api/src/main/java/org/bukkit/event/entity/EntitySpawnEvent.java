@@ -7,11 +7,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity is spawned into a world.
- * <p>
- * If this event is cancelled, the entity will not spawn.
- */
+/// Called when an entity is spawned into a world.
+///
+/// If this event is cancelled, the entity will not spawn.
 public class EntitySpawnEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class EntitySpawnEvent extends EntityEvent implements Cancellable {
         super(spawnee);
     }
 
-    /**
-     * Gets the location at which the entity is spawning.
-     *
-     * @return The location at which the entity is spawning
-     */
+    /// Gets the location at which the entity is spawning.
+    ///
+    /// @return The location at which the entity is spawning
     @NotNull
     public Location getLocation() {
         return this.getEntity().getLocation();

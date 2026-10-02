@@ -9,21 +9,19 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A ConversationFactory is responsible for creating a {@link Conversation}
- * from a predefined template. A ConversationFactory is typically created when
- * a plugin is instantiated and builds a Conversation each time a user
- * initiates a conversation with the plugin. Each Conversation maintains its
- * own state and calls back as needed into the plugin.
- * <p>
- * The ConversationFactory implements a fluid API, allowing parameters to be
- * set as an extension to the constructor.
- *
- * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
- * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
- * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
- * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
- */
+/// A ConversationFactory is responsible for creating a [Conversation]
+/// from a predefined template. A ConversationFactory is typically created when
+/// a plugin is instantiated and builds a Conversation each time a user
+/// initiates a conversation with the plugin. Each Conversation maintains its
+/// own state and calls back as needed into the plugin.
+///
+/// The ConversationFactory implements a fluid API, allowing parameters to be
+/// set as an extension to the constructor.
+///
+/// @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+/// and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+/// It is recommended you instead manually listen to the [io.papermc.paper.event.player.AsyncChatEvent]
+/// or alternatively using [io.papermc.paper.dialog.Dialog] to get user input.
 @Deprecated(forRemoval = true)
 public class ConversationFactory {
 
@@ -37,11 +35,9 @@ public class ConversationFactory {
     protected List<ConversationCanceller> cancellers;
     protected List<ConversationAbandonedListener> abandonedListeners;
 
-    /**
-     * Constructs a ConversationFactory.
-     *
-     * @param plugin The plugin that owns the factory.
-     */
+    /// Constructs a ConversationFactory.
+    ///
+    /// @param plugin The plugin that owns the factory.
     public ConversationFactory(@NotNull Plugin plugin) {
         this.plugin = plugin;
         isModal = true;
@@ -54,151 +50,129 @@ public class ConversationFactory {
         abandonedListeners = new ArrayList<ConversationAbandonedListener>();
     }
 
-    /**
-     * Sets the modality of all {@link Conversation}s created by this factory.
-     * If a conversation is modal, all messages directed to the player are
-     * suppressed for the duration of the conversation.
-     * <p>
-     * The default is True.
-     *
-     * @param modal The modality of all conversations to be created.
-     * @return This object.
-     */
+    /// Sets the modality of all [Conversation]s created by this factory.
+    /// If a conversation is modal, all messages directed to the player are
+    /// suppressed for the duration of the conversation.
+    ///
+    /// The default is True.
+    ///
+    /// @param modal The modality of all conversations to be created.
+    /// @return This object.
     @NotNull
     public ConversationFactory withModality(boolean modal) {
         isModal = modal;
         return this;
     }
 
-    /**
-     * Sets the local echo status for all {@link Conversation}s created by
-     * this factory. If local echo is enabled, any text submitted to a
-     * conversation gets echoed back into the submitter's chat window.
-     *
-     * @param localEchoEnabled The status of local echo.
-     * @return This object.
-     */
+    /// Sets the local echo status for all [Conversation]s created by
+    /// this factory. If local echo is enabled, any text submitted to a
+    /// conversation gets echoed back into the submitter's chat window.
+    ///
+    /// @param localEchoEnabled The status of local echo.
+    /// @return This object.
     @NotNull
     public ConversationFactory withLocalEcho(boolean localEchoEnabled) {
         this.localEchoEnabled = localEchoEnabled;
         return this;
     }
 
-    /**
-     * Sets the {@link ConversationPrefix} that prepends all output from all
-     * generated conversations.
-     * <p>
-     * The default is a {@link NullConversationPrefix};
-     *
-     * @param prefix The ConversationPrefix to use.
-     * @return This object.
-     */
+    /// Sets the [ConversationPrefix] that prepends all output from all
+    /// generated conversations.
+    ///
+    /// The default is a [NullConversationPrefix];
+    ///
+    /// @param prefix The ConversationPrefix to use.
+    /// @return This object.
     @NotNull
     public ConversationFactory withPrefix(@NotNull ConversationPrefix prefix) {
         this.prefix = prefix;
         return this;
     }
 
-    /**
-     * Sets the number of inactive seconds to wait before automatically
-     * abandoning all generated conversations.
-     * <p>
-     * The default is 600 seconds (5 minutes).
-     *
-     * @param timeoutSeconds The number of seconds to wait.
-     * @return This object.
-     */
+    /// Sets the number of inactive seconds to wait before automatically
+    /// abandoning all generated conversations.
+    ///
+    /// The default is 600 seconds (5 minutes).
+    ///
+    /// @param timeoutSeconds The number of seconds to wait.
+    /// @return This object.
     @NotNull
     public ConversationFactory withTimeout(int timeoutSeconds) {
         return withConversationCanceller(new InactivityConversationCanceller(plugin, timeoutSeconds));
     }
 
-    /**
-     * Sets the first prompt to use in all generated conversations.
-     * <p>
-     * The default is Prompt.END_OF_CONVERSATION.
-     *
-     * @param firstPrompt The first prompt.
-     * @return This object.
-     */
+    /// Sets the first prompt to use in all generated conversations.
+    ///
+    /// The default is Prompt.END\_OF\_CONVERSATION.
+    ///
+    /// @param firstPrompt The first prompt.
+    /// @return This object.
     @NotNull
     public ConversationFactory withFirstPrompt(@Nullable Prompt firstPrompt) {
         this.firstPrompt = firstPrompt;
         return this;
     }
 
-    /**
-     * Sets any initial data with which to populate the conversation context
-     * sessionData map.
-     *
-     * @param initialSessionData The conversation context's initial
-     *     sessionData.
-     * @return This object.
-     */
+    /// Sets any initial data with which to populate the conversation context
+    /// sessionData map.
+    ///
+    /// @param initialSessionData The conversation context's initial
+    ///     sessionData.
+    /// @return This object.
     @NotNull
     public ConversationFactory withInitialSessionData(@NotNull Map<Object, Object> initialSessionData) {
         this.initialSessionData = initialSessionData;
         return this;
     }
 
-    /**
-     * Sets the player input that, when received, will immediately terminate
-     * the conversation.
-     *
-     * @param escapeSequence Input to terminate the conversation.
-     * @return This object.
-     */
+    /// Sets the player input that, when received, will immediately terminate
+    /// the conversation.
+    ///
+    /// @param escapeSequence Input to terminate the conversation.
+    /// @return This object.
     @NotNull
     public ConversationFactory withEscapeSequence(@NotNull String escapeSequence) {
         return withConversationCanceller(new ExactMatchConversationCanceller(escapeSequence));
     }
 
-    /**
-     * Adds a {@link ConversationCanceller} to constructed conversations.
-     *
-     * @param canceller The {@link ConversationCanceller} to add.
-     * @return This object.
-     */
+    /// Adds a [ConversationCanceller] to constructed conversations.
+    ///
+    /// @param canceller The [ConversationCanceller] to add.
+    /// @return This object.
     @NotNull
     public ConversationFactory withConversationCanceller(@NotNull ConversationCanceller canceller) {
         cancellers.add(canceller);
         return this;
     }
 
-    /**
-     * Prevents this factory from creating a conversation for non-player
-     * {@link Conversable} objects.
-     *
-     * @param playerOnlyMessage The message to return to a non-play in lieu of
-     *     starting a conversation.
-     * @return This object.
-     */
+    /// Prevents this factory from creating a conversation for non-player
+    /// [Conversable] objects.
+    ///
+    /// @param playerOnlyMessage The message to return to a non-play in lieu of
+    ///     starting a conversation.
+    /// @return This object.
     @NotNull
     public ConversationFactory thatExcludesNonPlayersWithMessage(@Nullable String playerOnlyMessage) {
         this.playerOnlyMessage = playerOnlyMessage;
         return this;
     }
 
-    /**
-     * Adds a {@link ConversationAbandonedListener} to all conversations
-     * constructed by this factory.
-     *
-     * @param listener The listener to add.
-     * @return This object.
-     */
+    /// Adds a [ConversationAbandonedListener] to all conversations
+    /// constructed by this factory.
+    ///
+    /// @param listener The listener to add.
+    /// @return This object.
     @NotNull
     public ConversationFactory addConversationAbandonedListener(@NotNull ConversationAbandonedListener listener) {
         abandonedListeners.add(listener);
         return this;
     }
 
-    /**
-     * Constructs a {@link Conversation} in accordance with the defaults set
-     * for this factory.
-     *
-     * @param forWhom The entity for whom the new conversation is mediating.
-     * @return A new conversation.
-     */
+    /// Constructs a [Conversation] in accordance with the defaults set
+    /// for this factory.
+    ///
+    /// @param forWhom The entity for whom the new conversation is mediating.
+    /// @return A new conversation.
     @NotNull
     public Conversation buildConversation(@NotNull Conversable forWhom) {
         //Abort conversation construction if we aren't supposed to talk to non-players

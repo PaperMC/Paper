@@ -4,12 +4,10 @@ import org.bukkit.entity.AbstractCubeMob;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a Slime decides to change its facing direction.
- * <p>
- * This event does not fire for the entity's actual movement. Only when it
- * is choosing to change direction.
- */
+/// Fired when a Slime decides to change its facing direction.
+///
+/// This event does not fire for the entity's actual movement. Only when it
+/// is choosing to change direction.
 @NullMarked
 public class SlimeChangeDirectionEvent extends SlimePathfindEvent {
 
@@ -21,20 +19,16 @@ public class SlimeChangeDirectionEvent extends SlimePathfindEvent {
         this.yaw = yaw;
     }
 
-    /**
-     * Get the new chosen yaw
-     *
-     * @return Chosen yaw
-     */
+    /// Get the new chosen yaw
+    ///
+    /// @return Chosen yaw
     public float getNewYaw() {
         return this.yaw;
     }
 
-    /**
-     * Set the new chosen yaw
-     *
-     * @param yaw Chosen yaw
-     */
+    /// Set the new chosen yaw
+    ///
+    /// @param yaw Chosen yaw
     public void setNewYaw(final float yaw) {
         this.yaw = yaw;
     }

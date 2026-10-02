@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when one Entity breeds with another Entity.
- */
+/// Called when one Entity breeds with another Entity.
 public class EntityBreedEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -41,61 +39,49 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets the parent creating this entity.
-     *
-     * @return The "birth" parent
-     */
+    /// Gets the parent creating this entity.
+    ///
+    /// @return The "birth" parent
     @NotNull
     public LivingEntity getMother() {
         return this.mother;
     }
 
-    /**
-     * Gets the other parent of the newly born entity.
-     *
-     * @return the other parent
-     */
+    /// Gets the other parent of the newly born entity.
+    ///
+    /// @return the other parent
     @NotNull
     public LivingEntity getFather() {
         return this.father;
     }
 
-    /**
-     * Gets the Entity responsible for breeding. Breeder is {@code null} for spontaneous
-     * conception.
-     *
-     * @return The Entity who initiated breeding.
-     */
+    /// Gets the Entity responsible for breeding. Breeder is `null` for spontaneous
+    /// conception.
+    ///
+    /// @return The Entity who initiated breeding.
     @Nullable
     public LivingEntity getBreeder() {
         return this.breeder;
     }
 
-    /**
-     * The ItemStack that was used to initiate breeding, if present.
-     *
-     * @return ItemStack used to initiate breeding.
-     */
+    /// The ItemStack that was used to initiate breeding, if present.
+    ///
+    /// @return ItemStack used to initiate breeding.
     @Nullable
     public ItemStack getBredWith() {
         return this.bredWith;
     }
 
-    /**
-     * Get the amount of experience granted by breeding.
-     *
-     * @return experience amount
-     */
+    /// Get the amount of experience granted by breeding.
+    ///
+    /// @return experience amount
     public int getExperience() {
         return this.experience;
     }
 
-    /**
-     * Set the amount of experience granted by breeding.
-     *
-     * @param experience experience amount
-     */
+    /// Set the amount of experience granted by breeding.
+    ///
+    /// @param experience experience amount
     public void setExperience(int experience) {
         Preconditions.checkArgument(experience >= 0, "Experience cannot be negative");
         this.experience = experience;

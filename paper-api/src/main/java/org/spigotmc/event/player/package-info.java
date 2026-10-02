@@ -1,4 +1,2 @@
-/**
- * Spigot-specific player events.
- */
+/// Spigot-specific player events.
 package org.spigotmc.event.player;

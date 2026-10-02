@@ -7,9 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an item is put in a slot for upgrade by a Smithing Table.
- */
+/// Called when an item is put in a slot for upgrade by a Smithing Table.
 public class PrepareSmithingEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
 
     @ApiStatus.Internal

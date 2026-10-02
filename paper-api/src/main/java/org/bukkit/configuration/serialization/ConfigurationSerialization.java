@@ -24,9 +24,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Utility class for storing and retrieving classes for {@link Configuration}.
- */
+/// Utility class for storing and retrieving classes for [Configuration].
 public class ConfigurationSerialization {
     public static final String SERIALIZED_TYPE_KEY = "==";
     private final Class<? extends ConfigurationSerializable> clazz;
@@ -149,40 +147,36 @@ public class ConfigurationSerialization {
         return result;
     }
 
-    /**
-     * Attempts to deserialize the given arguments into a new instance of the
-     * given class.
-     * <p>
-     * The class must implement {@link ConfigurationSerializable}, including
-     * the extra methods as specified in the javadoc of
-     * ConfigurationSerializable.
-     * <p>
-     * If a new instance could not be made, an example being the class not
-     * fully implementing the interface, null will be returned.
-     *
-     * @param args Arguments for deserialization
-     * @param clazz Class to deserialize into
-     * @return New instance of the specified class
-     */
+    /// Attempts to deserialize the given arguments into a new instance of the
+    /// given class.
+    ///
+    /// The class must implement [ConfigurationSerializable], including
+    /// the extra methods as specified in the javadoc of
+    /// ConfigurationSerializable.
+    ///
+    /// If a new instance could not be made, an example being the class not
+    /// fully implementing the interface, null will be returned.
+    ///
+    /// @param args Arguments for deserialization
+    /// @param clazz Class to deserialize into
+    /// @return New instance of the specified class
     @Nullable
     public static ConfigurationSerializable deserializeObject(@NotNull Map<String, ?> args, @NotNull Class<? extends ConfigurationSerializable> clazz) {
         return new ConfigurationSerialization(clazz).deserialize(args);
     }
 
-    /**
-     * Attempts to deserialize the given arguments into a new instance of the
-     * given class.
-     * <p>
-     * The class must implement {@link ConfigurationSerializable}, including
-     * the extra methods as specified in the javadoc of
-     * ConfigurationSerializable.
-     * <p>
-     * If a new instance could not be made, an example being the class not
-     * fully implementing the interface, null will be returned.
-     *
-     * @param args Arguments for deserialization
-     * @return New instance of the specified class
-     */
+    /// Attempts to deserialize the given arguments into a new instance of the
+    /// given class.
+    ///
+    /// The class must implement [ConfigurationSerializable], including
+    /// the extra methods as specified in the javadoc of
+    /// ConfigurationSerializable.
+    ///
+    /// If a new instance could not be made, an example being the class not
+    /// fully implementing the interface, null will be returned.
+    ///
+    /// @param args Arguments for deserialization
+    /// @return New instance of the specified class
     @Nullable
     public static ConfigurationSerializable deserializeObject(@NotNull Map<String, ?> args) {
         Class<? extends ConfigurationSerializable> clazz = null;
@@ -209,12 +203,10 @@ public class ConfigurationSerialization {
         return new ConfigurationSerialization(clazz).deserialize(args);
     }
 
-    /**
-     * Registers the given {@link ConfigurationSerializable} class by its
-     * alias
-     *
-     * @param clazz Class to register
-     */
+    /// Registers the given [ConfigurationSerializable] class by its
+    /// alias
+    ///
+    /// @param clazz Class to register
     public static void registerClass(@NotNull Class<? extends ConfigurationSerializable> clazz) {
         DelegateDeserialization delegate = clazz.getAnnotation(DelegateDeserialization.class);
 
@@ -224,58 +216,48 @@ public class ConfigurationSerialization {
         }
     }
 
-    /**
-     * Registers the given alias to the specified {@link
-     * ConfigurationSerializable} class
-     *
-     * @param clazz Class to register
-     * @param alias Alias to register as
-     * @see SerializableAs
-     */
+    /// Registers the given alias to the specified
+    /// [ConfigurationSerializable] class
+    ///
+    /// @param clazz Class to register
+    /// @param alias Alias to register as
+    /// @see SerializableAs
     public static void registerClass(@NotNull Class<? extends ConfigurationSerializable> clazz, @NotNull String alias) {
         aliases.put(alias, clazz);
     }
 
-    /**
-     * Unregisters the specified alias to a {@link ConfigurationSerializable}
-     *
-     * @param alias Alias to unregister
-     */
+    /// Unregisters the specified alias to a [ConfigurationSerializable]
+    ///
+    /// @param alias Alias to unregister
     public static void unregisterClass(@NotNull String alias) {
         aliases.remove(alias);
     }
 
-    /**
-     * Unregisters any aliases for the specified {@link
-     * ConfigurationSerializable} class
-     *
-     * @param clazz Class to unregister
-     */
+    /// Unregisters any aliases for the specified
+    /// [ConfigurationSerializable] class
+    ///
+    /// @param clazz Class to unregister
     public static void unregisterClass(@NotNull Class<? extends ConfigurationSerializable> clazz) {
         while (aliases.values().remove(clazz)) {
             ;
         }
     }
 
-    /**
-     * Attempts to get a registered {@link ConfigurationSerializable} class by
-     * its alias
-     *
-     * @param alias Alias of the serializable
-     * @return Registered class, or null if not found
-     */
+    /// Attempts to get a registered [ConfigurationSerializable] class by
+    /// its alias
+    ///
+    /// @param alias Alias of the serializable
+    /// @return Registered class, or null if not found
     @Nullable
     public static Class<? extends ConfigurationSerializable> getClassByAlias(@NotNull String alias) {
         return aliases.get(alias);
     }
 
-    /**
-     * Gets the correct alias for the given {@link ConfigurationSerializable}
-     * class
-     *
-     * @param clazz Class to get alias for
-     * @return Alias to use for the class
-     */
+    /// Gets the correct alias for the given [ConfigurationSerializable]
+    /// class
+    ///
+    /// @param clazz Class to get alias for
+    /// @return Alias to use for the class
     @NotNull
     public static String getAlias(@NotNull Class<? extends ConfigurationSerializable> clazz) {
         DelegateDeserialization delegate = clazz.getAnnotation(DelegateDeserialization.class);

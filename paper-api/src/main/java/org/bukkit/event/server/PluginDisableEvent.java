@@ -5,9 +5,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a plugin is disabled.
- */
+/// Called when a plugin is disabled.
 public class PluginDisableEvent extends PluginEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

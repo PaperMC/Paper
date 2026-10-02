@@ -13,10 +13,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when an entity is dyed. Currently, this is called for {@link Sheep}
- * being dyed, and {@link Wolf}/{@link Cat} collars being dyed.
- */
+/// Called when an entity is dyed. Currently, this is called for [Sheep]
+/// being dyed, and [Wolf]/[Cat] collars being dyed.
 @NullMarked
 public class EntityDyeEvent extends EntityEvent implements Cancellable {
 
@@ -34,29 +32,23 @@ public class EntityDyeEvent extends EntityEvent implements Cancellable {
         this.player = player;
     }
 
-    /**
-     * Gets the DyeColor the entity is being dyed
-     *
-     * @return the DyeColor the entity is being dyed
-     */
+    /// Gets the DyeColor the entity is being dyed
+    ///
+    /// @return the DyeColor the entity is being dyed
     public DyeColor getColor() {
         return this.dyeColor;
     }
 
-    /**
-     * Sets the DyeColor the entity is being dyed
-     *
-     * @param dyeColor the DyeColor the entity will be dyed
-     */
+    /// Sets the DyeColor the entity is being dyed
+    ///
+    /// @param dyeColor the DyeColor the entity will be dyed
     public void setColor(final DyeColor dyeColor) {
         this.dyeColor = dyeColor;
     }
 
-    /**
-     * Returns the player dyeing the entity, if available.
-     *
-     * @return player or {@code null}
-     */
+    /// Returns the player dyeing the entity, if available.
+    ///
+    /// @return player or `null`
     public @Nullable Player getPlayer() {
         return this.player;
     }

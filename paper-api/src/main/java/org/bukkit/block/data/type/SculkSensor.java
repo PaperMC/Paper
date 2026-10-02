@@ -4,65 +4,47 @@ import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.Waterlogged;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * 'sculk_sensor_phase' indicates the current operational phase of the sensor.
- */
+/// 'sculk\_sensor\_phase' indicates the current operational phase of the sensor.
 public interface SculkSensor extends AnaloguePowerable, Waterlogged {
 
-    /**
-     * Gets the value of the 'sculk_sensor_phase' property.
-     *
-     * @return the 'sculk_sensor_phase' value
-     * @deprecated bad name, use {@link #getSculkSensorPhase()}
-     */
+    /// Gets the value of the 'sculk\_sensor\_phase' property.
+    ///
+    /// @return the 'sculk\_sensor\_phase' value
+    /// @deprecated bad name, use [#getSculkSensorPhase()]
     @NotNull
     @Deprecated
     default Phase getPhase() {
         return this.getSculkSensorPhase();
     }
 
-    /**
-     * Sets the value of the 'sculk_sensor_phase' property.
-     *
-     * @param phase the new 'sculk_sensor_phase' value
-     * @deprecated bad name, use {@link #setSculkSensorPhase(Phase)}
-     */
+    /// Sets the value of the 'sculk\_sensor\_phase' property.
+    ///
+    /// @param phase the new 'sculk\_sensor\_phase' value
+    /// @deprecated bad name, use [#setSculkSensorPhase(Phase)]
     @Deprecated
     default void setPhase(@NotNull Phase phase) {
         this.setSculkSensorPhase(phase);
     }
 
-    /**
-     * Gets the value of the 'sculk_sensor_phase' property.
-     *
-     * @return the 'sculk_sensor_phase' value
-     */
+    /// Gets the value of the 'sculk\_sensor\_phase' property.
+    ///
+    /// @return the 'sculk\_sensor\_phase' value
     @NotNull
     Phase getSculkSensorPhase();
 
-    /**
-     * Sets the value of the 'sculk_sensor_phase' property.
-     *
-     * @param phase the new 'sculk_sensor_phase' value
-     */
+    /// Sets the value of the 'sculk\_sensor\_phase' property.
+    ///
+    /// @param phase the new 'sculk\_sensor\_phase' value
     void setSculkSensorPhase(@NotNull Phase phase);
 
-    /**
-     * The Phase of the sensor.
-     */
+    /// The Phase of the sensor.
     public enum Phase {
 
-        /**
-         * The sensor is inactive.
-         */
+        /// The sensor is inactive.
         INACTIVE,
-        /**
-         * The sensor is active.
-         */
+        /// The sensor is active.
         ACTIVE,
-        /**
-         * The sensor is cooling down.
-         */
+        /// The sensor is cooling down.
         COOLDOWN;
     }
 }

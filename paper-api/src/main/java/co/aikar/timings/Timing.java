@@ -26,58 +26,43 @@ package co.aikar.timings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Provides an ability to time sections of code within the Minecraft Server
- *
- * @deprecated Timings will be removed in the future
- */
+/// Provides an ability to time sections of code within the Minecraft Server
+///
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public interface Timing extends AutoCloseable {
-    /**
-     * Starts timing the execution until {@link #stopTiming()} is called.
-     *
-     * @return Timing
-     */
+    /// Starts timing the execution until [#stopTiming()] is called.
+    ///
+    /// @return Timing
     @NotNull
     Timing startTiming();
 
-    /**
-     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
-     *
-     * Will automatically be called when this Timing is used with try-with-resources
-     */
+    /// Stops timing and records the data. Propagates the data up to group handlers.
+    ///
+    /// Will automatically be called when this Timing is used with try-with-resources
     void stopTiming();
 
-    /**
-     * Starts timing the execution until {@link #stopTiming()} is called.
-     *
-     * But only if we are on the primary thread.
-     *
-     * @return Timing
-     */
+    /// Starts timing the execution until [#stopTiming()] is called.
+    /// But only if we are on the primary thread.
+    ///
+    /// @return Timing
     @NotNull
     Timing startTimingIfSync();
 
-    /**
-     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
-     *
-     * <p>Will automatically be called when this Timing is used with try-with-resources</p>
-     *
-     * But only if we are on the primary thread.
-     */
+    /// Stops timing and records the data. Propagates the data up to group handlers.
+    ///
+    /// Will automatically be called when this Timing is used with try-with-resources
+    ///
+    /// But only if we are on the primary thread.
     void stopTimingIfSync();
 
-    /**
-     * @deprecated Doesn't do anything - Removed
-     */
+    /// @deprecated Doesn't do anything - Removed
     @Deprecated
     void abort();
 
-    /**
-     * Used internally to get the actual backing Handler in the case of delegated Handlers
-     *
-     * @return TimingHandler
-     */
+    /// Used internally to get the actual backing Handler in the case of delegated Handlers
+    ///
+    /// @return TimingHandler
     @Nullable
     TimingHandler getTimingHandler();
 

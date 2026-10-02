@@ -5,9 +5,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents an Entity-related event
- */
+/// Represents an Entity-related event
 public abstract class EntityEvent extends Event {
 
     protected Entity entity;
@@ -16,21 +14,17 @@ public abstract class EntityEvent extends Event {
         this.entity = entity;
     }
 
-    /**
-     * Returns the Entity involved in this event
-     *
-     * @return Entity who is involved in this event
-     */
+    /// Returns the Entity involved in this event
+    ///
+    /// @return Entity who is involved in this event
     @NotNull
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Gets the EntityType of the Entity involved in this event.
-     *
-     * @return EntityType of the Entity involved in this event
-     */
+    /// Gets the EntityType of the Entity involved in this event.
+    ///
+    /// @return EntityType of the Entity involved in this event
     @NotNull
     public EntityType getEntityType() {
         return this.entity.getType();

@@ -8,9 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when an EnderDragon spawns an AreaEffectCloud by shooting flames
- */
+/// Fired when an EnderDragon spawns an AreaEffectCloud by shooting flames
 @NullMarked
 public class EnderDragonFlameEvent extends EntityEvent implements Cancellable {
 
@@ -25,17 +23,13 @@ public class EnderDragonFlameEvent extends EntityEvent implements Cancellable {
         this.areaEffectCloud = areaEffectCloud;
     }
 
-    /**
-     * The enderdragon involved in this event
-     */
+    /// The enderdragon involved in this event
     @Override
     public EnderDragon getEntity() {
         return (EnderDragon) super.getEntity();
     }
 
-    /**
-     * @return The area effect cloud spawned in this collision
-     */
+    /// @return The area effect cloud spawned in this collision
     public AreaEffectCloud getAreaEffectCloud() {
         return this.areaEffectCloud;
     }

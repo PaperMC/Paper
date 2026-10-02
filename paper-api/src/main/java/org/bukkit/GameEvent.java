@@ -6,9 +6,7 @@ import net.kyori.adventure.key.KeyPattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a generic Mojang game event.
- */
+/// Represents a generic Mojang game event.
 public abstract class GameEvent implements Keyed {
 
     // Start generate - GameEvent
@@ -134,126 +132,82 @@ public abstract class GameEvent implements Keyed {
 
     public static final GameEvent UNEQUIP = getEvent("unequip");
     // End generate - GameEvent
-    /**
-     * @deprecated in favor of {@link #BLOCK_ACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_ACTIVATE]
     @Deprecated(since = "1.19")
     public static final GameEvent BLOCK_PRESS = BLOCK_ACTIVATE;
-    /**
-     * @deprecated in favor of {@link #BLOCK_ACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_ACTIVATE]
     @Deprecated(since = "1.19")
     public static final GameEvent BLOCK_SWITCH = BLOCK_ACTIVATE;
-    /**
-     * @deprecated in favor of {@link #BLOCK_DEACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_DEACTIVATE]
     @Deprecated(since = "1.19")
     public static final GameEvent BLOCK_UNPRESS = BLOCK_DEACTIVATE;
-    /**
-     * @deprecated in favor of {@link #BLOCK_DEACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_DEACTIVATE]
     @Deprecated(since = "1.19")
     public static final GameEvent BLOCK_UNSWITCH = BLOCK_DEACTIVATE;
-    /**
-     * @deprecated in favor of {@link #BLOCK_ACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_ACTIVATE]
     @Deprecated(since = "1.20")
     public static final GameEvent DISPENSE_FAIL = BLOCK_ACTIVATE;
-    /**
-     * @deprecated in favor of {@link #DRINK}
-     */
+    /// @deprecated in favor of [#DRINK]
     @Deprecated(since = "1.19")
     public static final GameEvent DRINKING_FINISH = DRINK;
-    /**
-     * @deprecated in favor of {@link #ELYTRA_GLIDE}
-     */
+    /// @deprecated in favor of [#ELYTRA_GLIDE]
     @Deprecated(since = "1.19")
     public static final GameEvent ELYTRA_FREE_FALL = ELYTRA_GLIDE;
-    /**
-     * @deprecated in favor of {@link #ENTITY_DAMAGE}
-     */
+    /// @deprecated in favor of [#ENTITY_DAMAGE]
     @Deprecated(since = "1.19")
     public static final GameEvent ENTITY_DAMAGED = ENTITY_DAMAGE;
-    /**
-     * @deprecated in favor of {@link #ENTITY_DIE}
-     */
+    /// @deprecated in favor of [#ENTITY_DIE]
     @Deprecated(since = "1.19")
     public static final GameEvent ENTITY_DYING = ENTITY_DIE;
-    /**
-     * @deprecated in favor of {@link #ENTITY_DIE}
-     */
+    /// @deprecated in favor of [#ENTITY_DIE]
     @Deprecated(since = "1.19")
     public static final GameEvent ENTITY_KILLED = ENTITY_DIE;
-    /**
-     * @deprecated in favor of {@link #ENTITY_ACTION}
-     */
+    /// @deprecated in favor of [#ENTITY_ACTION]
     @Deprecated(since = "1.20.2")
     public static final GameEvent ENTITY_ROAR = ENTITY_ACTION;
-    /**
-     * @deprecated in favor of {@link #ENTITY_ACTION}
-     */
+    /// @deprecated in favor of [#ENTITY_ACTION]
     @Deprecated(since = "1.20.2")
     public static final GameEvent ENTITY_SHAKE = ENTITY_ACTION;
-    /**
-     * @deprecated in favor of {@link #ENTITY_INTERACT}
-     */
+    /// @deprecated in favor of [#ENTITY_INTERACT]
     @Deprecated(since = "1.19")
     public static final GameEvent MOB_INTERACT = ENTITY_INTERACT;
-    /**
-     * @deprecated in favor of {@link #BLOCK_DEACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_DEACTIVATE]
     @Deprecated(since = "1.20")
     public static final GameEvent PISTON_CONTRACT = BLOCK_DEACTIVATE;
-    /**
-     * @deprecated in favor of {@link #BLOCK_ACTIVATE}
-     */
+    /// @deprecated in favor of [#BLOCK_ACTIVATE]
     @Deprecated(since = "1.20")
     public static final GameEvent PISTON_EXTEND = BLOCK_ACTIVATE;
-    /**
-     * @deprecated in favor of {@link #ENTITY_ACTION}
-     */
+    /// @deprecated in favor of [#ENTITY_ACTION]
     @Deprecated(since = "1.19")
     public static final GameEvent RAVAGER_ROAR = ENTITY_ACTION;
-    /**
-     * @deprecated in favor of {@link #BLOCK_CHANGE}
-     */
+    /// @deprecated in favor of [#BLOCK_CHANGE]
     @Deprecated(since = "1.19")
     public static final GameEvent RING_BELL = BLOCK_CHANGE;
-    /**
-     * @deprecated in favor of {@link #CONTAINER_CLOSE}
-     */
+    /// @deprecated in favor of [#CONTAINER_CLOSE]
     @Deprecated(since = "1.19")
     public static final GameEvent SHULKER_CLOSE = CONTAINER_CLOSE;
-    /**
-     * @deprecated in favor of {@link #CONTAINER_OPEN}
-     */
+    /// @deprecated in favor of [#CONTAINER_OPEN]
     @Deprecated(since = "1.19")
     public static final GameEvent SHULKER_OPEN = CONTAINER_OPEN;
-    /**
-     * @deprecated in favor of {@link #ENTITY_ACTION}
-     */
+    /// @deprecated in favor of [#ENTITY_ACTION]
     @Deprecated(since = "1.19")
     public static final GameEvent WOLF_SHAKING = ENTITY_ACTION;
 
-    /**
-     * Returns a {@link GameEvent} by a {@link NamespacedKey}.
-     *
-     * @param namespacedKey the key
-     * @return the event or null
-     * @deprecated Use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// Returns a [GameEvent] by a [NamespacedKey].
+    ///
+    /// @param namespacedKey the key
+    /// @return the event or null
+    /// @deprecated Use [Registry#get(NamespacedKey)] instead.
     @Nullable
     @Deprecated(since = "1.20.1")
     public static GameEvent getByKey(@NotNull NamespacedKey namespacedKey) {
         return Registry.GAME_EVENT.get(namespacedKey);
     }
 
-    /**
-     * Returns the set of all GameEvents.
-     *
-     * @return the memoryKeys
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// Returns the set of all GameEvents.
+    ///
+    /// @return the memoryKeys
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.20.1")
     public static Collection<GameEvent> values() {
@@ -265,21 +219,17 @@ public abstract class GameEvent implements Keyed {
         return Registry.GAME_EVENT.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
     // Paper start
-    /**
-     * Gets the range of the event which is used to
-     * notify listeners of the event.
-     *
-     * @return the range
-     */
+    /// Gets the range of the event which is used to
+    /// notify listeners of the event.
+    ///
+    /// @return the range
     public abstract int getRange();
 
-    /**
-     * Gets the vibration level of the game event for vibration listeners.
-     * Not all events have vibration levels, and a level of 0 means
-     * it won't cause any vibrations.
-     *
-     * @return the vibration level
-     */
+    /// Gets the vibration level of the game event for vibration listeners.
+    /// Not all events have vibration levels, and a level of 0 means
+    /// it won't cause any vibrations.
+    ///
+    /// @return the vibration level
     public abstract int getVibrationLevel();
     // Paper end
 }

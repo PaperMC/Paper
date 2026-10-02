@@ -23,25 +23,19 @@ import org.jetbrains.annotations.Nullable;
 
 public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
 
-    /**
-     * @deprecated Use NamespacedKey version of constructor
-     */
+    /// @deprecated Use NamespacedKey version of constructor
     @Deprecated
     public MaterialSetTag(@NotNull Predicate<Material> filter) {
         this(null, Stream.of(Material.values()).filter(filter).collect(Collectors.toList()));
     }
 
-    /**
-     * @deprecated Use NamespacedKey version of constructor
-     */
+    /// @deprecated Use NamespacedKey version of constructor
     @Deprecated
     public MaterialSetTag(@NotNull Collection<Material> materials) {
         this(null, materials);
     }
 
-    /**
-     * @deprecated Use NamespacedKey version of constructor
-     */
+    /// @deprecated Use NamespacedKey version of constructor
     @Deprecated
     public MaterialSetTag(@NotNull Material... materials) {
         this(null, materials);

@@ -3,13 +3,11 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * This is the superclass for the {@link DetectorRail} and {@link PoweredRail}
- * classes
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// This is the superclass for the [DetectorRail] and [PoweredRail]
+/// classes
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class ExtendedRails extends Rails {
 
@@ -17,11 +15,9 @@ public class ExtendedRails extends Rails {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public ExtendedRails(final Material type, final byte data) {
         super(type, data);
@@ -32,11 +28,9 @@ public class ExtendedRails extends Rails {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Magic value
-     */
+    /// {@inheritDoc}
+    ///
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Override
     protected byte getConvertedData() {

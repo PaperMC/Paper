@@ -4,10 +4,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents information about a targeted entity
- * @deprecated use {@link org.bukkit.util.RayTraceResult}
- */
+/// Represents information about a targeted entity
+/// @deprecated use [org.bukkit.util.RayTraceResult]
 @Deprecated(forRemoval = true, since = "1.19.3")
 public class TargetEntityInfo {
     private final Entity entity;
@@ -18,21 +16,17 @@ public class TargetEntityInfo {
         this.hitVec = hitVec;
     }
 
-    /**
-     * Get the entity that is targeted
-     *
-     * @return Targeted entity
-     */
+    /// Get the entity that is targeted
+    ///
+    /// @return Targeted entity
     @NotNull
     public Entity getEntity() {
         return entity;
     }
 
-    /**
-     * Get the position the entity is targeted at
-     *
-     * @return Targeted position
-     */
+    /// Get the position the entity is targeted at
+    ///
+    /// @return Targeted position
     @NotNull
     public Vector getHitVector() {
         return hitVec;

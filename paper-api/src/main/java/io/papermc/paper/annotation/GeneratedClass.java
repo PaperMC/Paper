@@ -7,10 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Used to mark classes which are generated.
- * Any manual changes will be overwritten.
- */
+/// Used to mark classes which are generated.
+/// Any manual changes will be overwritten.
 @ApiStatus.Internal
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

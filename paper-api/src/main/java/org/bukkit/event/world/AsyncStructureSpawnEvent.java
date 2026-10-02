@@ -8,9 +8,7 @@ import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Structure} is naturally generated in the world.
- */
+/// Called when a [Structure] is naturally generated in the world.
 public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,46 +29,38 @@ public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable 
         this.chunkZ = chunkZ;
     }
 
-    /**
-     * Get the structure reference that is generated.
-     *
-     * @return the structure
-     */
+    /// Get the structure reference that is generated.
+    ///
+    /// @return the structure
     @NotNull
     public Structure getStructure() {
         return this.structure;
     }
 
-    /**
-     * Get the bounding box of the structure.
-     *
-     * @return the bounding box
-     */
+    /// Get the bounding box of the structure.
+    ///
+    /// @return the bounding box
     @NotNull
     public BoundingBox getBoundingBox() {
         return this.boundingBox.clone();
     }
 
-    /**
-     * Get the x coordinate of the origin chunk of the structure.
-     * <p>
-     * <b>Note, it is not safe to attempt to retrieve or interact with this
-     * chunk. This event is informative only!</b>
-     *
-     * @return the chunk x coordinate
-     */
+    /// Get the x coordinate of the origin chunk of the structure.
+    ///
+    /// **Note, it is not safe to attempt to retrieve or interact with this
+    /// chunk. This event is informative only!**
+    ///
+    /// @return the chunk x coordinate
     public int getChunkX() {
         return this.chunkX;
     }
 
-    /**
-     * Get the z coordinate of the origin chunk of the structure.
-     * <p>
-     * <b>Note, it is not safe to attempt to retrieve or interact with this
-     * chunk. This event is informative only!</b>
-     *
-     * @return the chunk z coordinate
-     */
+    /// Get the z coordinate of the origin chunk of the structure.
+    ///
+    /// **Note, it is not safe to attempt to retrieve or interact with this
+    /// chunk. This event is informative only!**
+    ///
+    /// @return the chunk z coordinate
     public int getChunkZ() {
         return this.chunkZ;
     }

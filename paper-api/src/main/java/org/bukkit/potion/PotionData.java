@@ -3,9 +3,7 @@ package org.bukkit.potion;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @deprecated Upgraded / extended potions are now their own {@link PotionType} use them instead.
- */
+/// @deprecated Upgraded / extended potions are now their own [PotionType] use them instead.
 @Deprecated(since = "1.20.6", forRemoval = true)
 public final class PotionData {
 
@@ -13,16 +11,14 @@ public final class PotionData {
     private final boolean extended;
     private final boolean upgraded;
 
-    /**
-     * Instantiates a final PotionData object to contain information about a
-     * Potion
-     *
-     * @param type the type of the Potion
-     * @param extended whether the potion is extended PotionType#isExtendable()
-     * must be true
-     * @param upgraded whether the potion is upgraded PotionType#isUpgradable()
-     * must be true
-     */
+    /// Instantiates a final PotionData object to contain information about a
+    /// Potion
+    ///
+    /// @param type the type of the Potion
+    /// @param extended whether the potion is extended PotionType#isExtendable()
+    /// must be true
+    /// @param upgraded whether the potion is upgraded PotionType#isUpgradable()
+    /// must be true
     public PotionData(@NotNull PotionType type, boolean extended, boolean upgraded) {
         Preconditions.checkArgument(type != null, "Potion Type must not be null");
         Preconditions.checkArgument(!upgraded || type.isUpgradeable(), "Potion Type is not upgradable");
@@ -39,33 +35,27 @@ public final class PotionData {
         this(type, false, false);
     }
 
-    /**
-     * Gets the type of the potion, Type matches up with each kind of craftable
-     * potion
-     *
-     * @return the potion type
-     */
+    /// Gets the type of the potion, Type matches up with each kind of craftable
+    /// potion
+    ///
+    /// @return the potion type
     @NotNull
     public PotionType getType() {
         return type;
     }
 
-    /**
-     * Checks if the potion is in an upgraded state. This refers to whether or
-     * not the potion is Tier 2, such as Potion of Fire Resistance II.
-     *
-     * @return true if the potion is upgraded;
-     */
+    /// Checks if the potion is in an upgraded state. This refers to whether or
+    /// not the potion is Tier 2, such as Potion of Fire Resistance II.
+    ///
+    /// @return true if the potion is upgraded;
     public boolean isUpgraded() {
         return upgraded;
     }
 
-    /**
-     * Checks if the potion is in an extended state. This refers to the extended
-     * duration potions
-     *
-     * @return true if the potion is extended
-     */
+    /// Checks if the potion is in an extended state. This refers to the extended
+    /// duration potions
+    ///
+    /// @return true if the potion is extended
     public boolean isExtended() {
         return extended;
     }

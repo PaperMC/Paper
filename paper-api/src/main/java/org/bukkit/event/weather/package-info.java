@@ -1,5 +1,3 @@
-/**
- * {@link org.bukkit.event.Event Events} relating to weather.
- */
+/// [`Events`][org.bukkit.event.Event] relating to weather.
 package org.bukkit.event.weather;
 

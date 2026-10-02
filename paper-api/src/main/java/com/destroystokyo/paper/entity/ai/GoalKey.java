@@ -7,11 +7,9 @@ import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Used to identify a Goal. Consists of a {@link NamespacedKey} and the type of mob the goal can be applied to
- *
- * @param <T> the type of mob the goal can be applied to
- */
+/// Used to identify a Goal. Consists of a [NamespacedKey] and the type of mob the goal can be applied to
+///
+/// @param <T> the type of mob the goal can be applied to
 @NullMarked
 public final class GoalKey<T extends Mob> {
 

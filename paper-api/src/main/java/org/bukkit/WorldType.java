@@ -6,9 +6,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents various types of worlds that may exist
- */
+/// Represents various types of worlds that may exist
 public enum WorldType {
     NORMAL("DEFAULT"),
     FLAT("FLAT"),
@@ -24,22 +22,18 @@ public enum WorldType {
         this.name = name;
     }
 
-    /**
-     * Gets the name of this WorldType
-     *
-     * @return Name of this type
-     */
+    /// Gets the name of this WorldType
+    ///
+    /// @return Name of this type
     @NotNull
     public String getName() {
         return name;
     }
 
-    /**
-     * Gets a WorldType by its name
-     *
-     * @param name Name of the WorldType to get
-     * @return Requested WorldType, or null if not found
-     */
+    /// Gets a WorldType by its name
+    ///
+    /// @param name Name of the WorldType to get
+    /// @return Requested WorldType, or null if not found
     @Nullable
     public static WorldType getByName(@NotNull String name) {
         return BY_NAME.get(name.toUpperCase(Locale.ROOT));

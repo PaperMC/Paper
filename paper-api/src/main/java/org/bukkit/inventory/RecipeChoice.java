@@ -20,35 +20,28 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a potential item match within a recipe. All choices within a
- * recipe must be satisfied for it to be craftable. Choices must never be
- * null or air.
- *
- * <b>This class is not legal for implementation by plugins!</b>
- */
+/// Represents a potential item match within a recipe. All choices within a
+/// recipe must be satisfied for it to be craftable. Choices must never be
+/// null or air.
+/// **This class is not legal for implementation by plugins!**
 @NullMarked
 @ApiStatus.NonExtendable
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
-    /**
-     * An "empty" recipe choice. Only valid as a recipe choice in
-     * specific places. Check the javadocs of a method before using it
-     * to be sure it's valid for that recipe and ingredient type.
-     *
-     * @return the empty recipe choice
-     */
+    /// An "empty" recipe choice. Only valid as a recipe choice in
+    /// specific places. Check the javadocs of a method before using it
+    /// to be sure it's valid for that recipe and ingredient type.
+    ///
+    /// @return the empty recipe choice
     static RecipeChoice empty() {
         return EmptyRecipeChoice.INSTANCE;
     }
 
-    /**
-     * Creates a new recipe choice based on a collection of {@link ItemType}s.
-     *
-     * @param itemType the first item type to match
-     * @param itemTypes other item types to match.
-     * @return a new recipe choice
-     */
+    /// Creates a new recipe choice based on a collection of [ItemType]s.
+    ///
+    /// @param itemType the first item type to match
+    /// @param itemTypes other item types to match.
+    /// @return a new recipe choice
     @Contract(pure = true, value = "_, _ -> new")
     static ItemTypeChoice itemType(final ItemType itemType, final ItemType ... itemTypes) {
         final List<ItemType> types = new ArrayList<>();
@@ -57,28 +50,24 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         return itemType(RegistrySet.keySetFromValues(RegistryKey.ITEM, types));
     }
 
-    /**
-     * Creates a new recipe choice based on a {@link RegistryKeySet} of item types.
-     * Can either be created via {@link RegistryKeySet#keySet(RegistryKey, TypedKey[])}
-     * or obtained from {@link org.bukkit.Registry#getTag(TagKey)}.
-     *
-     * @param itemTypes the item types to match
-     * @return a new recipe choice
-     */
+    /// Creates a new recipe choice based on a [RegistryKeySet] of item types.
+    /// Can either be created via [RegistryKeySet#keySet(RegistryKey, TypedKey\[\])]
+    /// or obtained from [org.bukkit.Registry#getTag(TagKey)].
+    ///
+    /// @param itemTypes the item types to match
+    /// @return a new recipe choice
     @Contract(pure = true, value = "_ -> new")
     static ItemTypeChoice itemType(final RegistryKeySet<ItemType> itemTypes) {
         return new ItemTypeRecipeChoiceImpl(itemTypes);
     }
 
-    /**
-     * Creates a choice that will be valid only if one of the stacks is
-     * exactly matched (aside from stack size).
-     *
-     * @param first  an ItemStack to match against.
-     *               Cannot be null or empty/air.
-     * @param others additional ItemStacks to match against.
-     * @return a new ExactChoice
-     */
+    /// Creates a choice that will be valid only if one of the stacks is
+    /// exactly matched (aside from stack size).
+    ///
+    /// @param first  an ItemStack to match against.
+    ///               Cannot be null or empty/air.
+    /// @param others additional ItemStacks to match against.
+    /// @return a new ExactChoice
     @Contract(value = "_, _ -> new", pure = true)
     static ExactChoice exactChoice(ItemStack first, ItemStack... others) {
         List<ItemStack> stacks = new ArrayList<>(others.length + 1);
@@ -87,42 +76,36 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         return new ExactChoice(stacks);
     }
 
-    /**
-     * Creates a choice that will be valid only if one of the stacks is
-     * exactly matched (aside from stack size).
-     *
-     * @param stacks the ItemStacks to match against.
-     *               Cannot be empty or contain empty/air stacks.
-     * @return a new ExactChoice
-     */
+    /// Creates a choice that will be valid only if one of the stacks is
+    /// exactly matched (aside from stack size).
+    ///
+    /// @param stacks the ItemStacks to match against.
+    ///               Cannot be empty or contain empty/air stacks.
+    /// @return a new ExactChoice
     @Contract(value = "_ -> new", pure = true)
     static ExactChoice exactChoice(List<ItemStack> stacks) {
         return new ExactChoice(stacks);
     }
 
-    /**
-     * Creates a recipe choice that will be valid only if an item matches the
-     * given predicate.
-     * <p>
-     * <b>Note:</b> Mutating the {@link ItemStack} within the predicate is not
-     * supported.
-     *
-     * @param stackPredicate the predicate to match against.
-     * @param exampleStack   an example {@link ItemStack} to be shown in the
-     *                       recipe book. Cannot be empty or air.
-     * @return a new PredicateChoice
-     */
+    /// Creates a recipe choice that will be valid only if an item matches the
+    /// given predicate.
+    ///
+    /// **Note:** Mutating the [ItemStack] within the predicate is not
+    /// supported.
+    ///
+    /// @param stackPredicate the predicate to match against.
+    /// @param exampleStack   an example [ItemStack] to be shown in the
+    ///                       recipe book. Cannot be empty or air.
+    /// @return a new PredicateChoice
     @Contract(value = "_, _ -> new", pure = true)
     static PredicateChoice predicateChoice(Predicate<? super ItemStack> stackPredicate, ItemStack exampleStack) {
         return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
     }
 
-    /**
-     * Gets a single item stack representative of this stack choice.
-     *
-     * @return a single representative item
-     * @deprecated for compatibility only
-     */
+    /// Gets a single item stack representative of this stack choice.
+    ///
+    /// @return a single representative item
+    /// @deprecated for compatibility only
     @Deprecated(since = "1.13.1")
     ItemStack getItemStack();
 
@@ -138,10 +121,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
     // Paper end - check valid ingredients
 
-    /**
-     * Represents a choice of multiple matching Materials.
-     * @apiNote recommended to use {@link ItemTypeChoice}
-     */
+    /// Represents a choice of multiple matching Materials.
+    /// @apiNote recommended to use [ItemTypeChoice]
     @ApiStatus.Obsolete(since = "1.21.11")
     sealed class MaterialChoice implements RecipeChoice permits ItemTypeRecipeChoiceImpl {
 
@@ -158,12 +139,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             this(Arrays.asList(choices));
         }
 
-        /**
-         * Constructs a MaterialChoice with the current values of the specified
-         * tag.
-         *
-         * @param choices the tag
-         */
+        /// Constructs a MaterialChoice with the current values of the specified
+        /// tag.
+        ///
+        /// @param choices the tag
         public MaterialChoice(Tag<Material> choices) {
             this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
@@ -267,33 +246,25 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         // Paper end - check valid ingredients
     }
 
-    /**
-     * Represents a choice that will be valid only if one of the stacks is
-     * exactly matched (aside from stack size).
-     */
+    /// Represents a choice that will be valid only if one of the stacks is
+    /// exactly matched (aside from stack size).
     final class ExactChoice implements RecipeChoice {
 
         private List<ItemStack> choices;
 
-        /**
-         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
-         */
+        /// @deprecated Use [RecipeChoice#exactChoice(ItemStack, ItemStack...)] instead
         @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
-        /**
-         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
-         */
+        /// @deprecated Use [RecipeChoice#exactChoice(ItemStack, ItemStack...)] instead
         @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
 
-        /**
-         * @deprecated Use {@link RecipeChoice#exactChoice(List)} instead
-         */
+        /// @deprecated Use [RecipeChoice#exactChoice(List)] instead
         @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
@@ -384,27 +355,21 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         // Paper end - check valid ingredients
     }
 
-    /**
-     * Represents a choice that will be valid if the {@link ItemStack#getType()}
-     * matches any of the item types in the set.
-     *
-     * @see #itemType(RegistryKeySet)
-     * @see #itemType(ItemType, ItemType...)
-     */
+    /// Represents a choice that will be valid if the [ItemStack#getType()]
+    /// matches any of the item types in the set.
+    ///
+    /// @see #itemType(RegistryKeySet)
+    /// @see #itemType(ItemType, ItemType...)
     sealed interface ItemTypeChoice extends RecipeChoice permits ItemTypeRecipeChoiceImpl {
 
-        /**
-         * Gets the set of item types that this choice will match.
-         *
-         * @return the set of item types
-         */
+        /// Gets the set of item types that this choice will match.
+        ///
+        /// @return the set of item types
         RegistryKeySet<ItemType> itemTypes();
     }
 
-    /**
-     * Represents a choice that will be valid only if an item matches the
-     * given predicate.
-     */
+    /// Represents a choice that will be valid only if an item matches the
+    /// given predicate.
     @ApiStatus.NonExtendable
     interface PredicateChoice extends RecipeChoice {
 

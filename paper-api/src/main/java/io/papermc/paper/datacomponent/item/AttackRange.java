@@ -8,11 +8,9 @@ import org.jetbrains.annotations.Range;
 @ApiStatus.NonExtendable
 public interface AttackRange {
 
-    /**
-     * Returns a new builder for creating an Attack Range.
-     *
-     * @return a builder instance
-     */
+    /// Returns a new builder for creating an Attack Range.
+    ///
+    /// @return a builder instance
     @Contract(value = "-> new", pure = true)
     static Builder attackRange() {
         return ItemComponentTypesBridge.bridge().attackRange();
@@ -36,9 +34,7 @@ public interface AttackRange {
     @Contract(pure = true)
     @Range(from = 0, to = 2) float mobFactor();
 
-    /**
-     * Builder for {@link AttackRange}.
-     */
+    /// Builder for [AttackRange].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<AttackRange> {
 

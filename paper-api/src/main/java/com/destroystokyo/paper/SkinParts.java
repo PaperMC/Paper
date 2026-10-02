@@ -4,17 +4,13 @@ import io.papermc.paper.InternalAPIBridge;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents the different parts of a player's skin that can be toggled on or off.
- */
+/// Represents the different parts of a player's skin that can be toggled on or off.
 @NullMarked
 public interface SkinParts {
 
-    /**
-     * Creates a new instance of {@link SkinParts} with all parts enabled.
-     *
-     * @return a new {@link SkinParts} instance
-     */
+    /// Creates a new instance of [SkinParts] with all parts enabled.
+    ///
+    /// @return a new [SkinParts] instance
     @Contract(value = "-> new", pure = true)
     static SkinParts.Mutable allParts() {
         return InternalAPIBridge.get().allSkinParts();

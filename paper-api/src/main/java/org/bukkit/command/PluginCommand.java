@@ -7,13 +7,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a {@link Command} belonging to a plugin
- *
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// Represents a [Command] belonging to a plugin
+///
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public final class PluginCommand extends Command implements PluginIdentifiableCommand {
     private final Plugin owningPlugin;
@@ -27,14 +25,12 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
         this.usageMessage = "";
     }
 
-    /**
-     * Executes the command, returning its success
-     *
-     * @param sender Source object which is executing this command
-     * @param commandLabel The alias of the command used
-     * @param args All arguments passed to the command, split via ' '
-     * @return true if the command was successful, otherwise false
-     */
+    /// Executes the command, returning its success
+    ///
+    /// @param sender Source object which is executing this command
+    /// @param commandLabel The alias of the command used
+    /// @param args All arguments passed to the command, split via ' '
+    /// @return true if the command was successful, otherwise false
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         boolean success = false;
@@ -62,75 +58,63 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
         return success;
     }
 
-    /**
-     * Sets the {@link CommandExecutor} to run when parsing this command
-     *
-     * @param executor New executor to run
-     */
+    /// Sets the [CommandExecutor] to run when parsing this command
+    ///
+    /// @param executor New executor to run
     public void setExecutor(@Nullable CommandExecutor executor) {
         this.executor = executor == null ? owningPlugin : executor;
     }
 
-    /**
-     * Gets the {@link CommandExecutor} associated with this command
-     *
-     * @return CommandExecutor object linked to this command
-     */
+    /// Gets the [CommandExecutor] associated with this command
+    ///
+    /// @return CommandExecutor object linked to this command
     @NotNull
     public CommandExecutor getExecutor() {
         return executor;
     }
 
-    /**
-     * Sets the {@link TabCompleter} to run when tab-completing this command.
-     * <p>
-     * If no TabCompleter is specified, and the command's executor implements
-     * TabCompleter, then the executor will be used for tab completion.
-     *
-     * @param completer New tab completer
-     */
+    /// Sets the [TabCompleter] to run when tab-completing this command.
+    ///
+    /// If no TabCompleter is specified, and the command's executor implements
+    /// TabCompleter, then the executor will be used for tab completion.
+    ///
+    /// @param completer New tab completer
     public void setTabCompleter(@Nullable TabCompleter completer) {
         this.completer = completer;
     }
 
-    /**
-     * Gets the {@link TabCompleter} associated with this command.
-     *
-     * @return TabCompleter object linked to this command
-     */
+    /// Gets the [TabCompleter] associated with this command.
+    ///
+    /// @return TabCompleter object linked to this command
     @Nullable
     public TabCompleter getTabCompleter() {
         return completer;
     }
 
-    /**
-     * Gets the owner of this PluginCommand
-     *
-     * @return Plugin that owns this command
-     */
+    /// Gets the owner of this PluginCommand
+    ///
+    /// @return Plugin that owns this command
     @Override
     @NotNull
     public Plugin getPlugin() {
         return owningPlugin;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Delegates to the tab completer if present.
-     * <p>
-     * If it is not present or returns null, will delegate to the current
-     * command executor if it implements {@link TabCompleter}. If a non-null
-     * list has not been found, will default to standard player name
-     * completion in {@link
-     * Command#tabComplete(CommandSender, String, String[])}.
-     * <p>
-     * This method does not consider permissions.
-     *
-     * @throws CommandException if the completer or executor throw an
-     *     exception during the process of tab-completing.
-     * @throws IllegalArgumentException if sender, alias, or args is null
-     */
+    /// {@inheritDoc}
+    ///
+    /// Delegates to the tab completer if present.
+    ///
+    /// If it is not present or returns null, will delegate to the current
+    /// command executor if it implements [TabCompleter]. If a non-null
+    /// list has not been found, will default to standard player name
+    /// completion in
+    /// [Command#tabComplete(CommandSender, String, String\[\])].
+    ///
+    /// This method does not consider permissions.
+    ///
+    /// @throws CommandException if the completer or executor throw an
+    ///     exception during the process of tab-completing.
+    /// @throws IllegalArgumentException if sender, alias, or args is null
     @NotNull
     @Override
     public java.util.List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws CommandException, IllegalArgumentException {

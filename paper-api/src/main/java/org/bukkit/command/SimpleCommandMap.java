@@ -20,11 +20,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public class SimpleCommandMap implements CommandMap {
     protected final Map<String, Command> knownCommands;
@@ -48,9 +46,7 @@ public class SimpleCommandMap implements CommandMap {
         register("bukkit", new HelpCommand());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /// {@inheritDoc}
     @Override
     public void registerAll(@NotNull String fallbackPrefix, @NotNull List<Command> commands) {
         if (commands != null) {
@@ -60,17 +56,13 @@ public class SimpleCommandMap implements CommandMap {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /// {@inheritDoc}
     @Override
     public boolean register(@NotNull String fallbackPrefix, @NotNull Command command) {
         return register(command.getName(), fallbackPrefix, command);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /// {@inheritDoc}
     @Override
     public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
         command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
@@ -96,17 +88,15 @@ public class SimpleCommandMap implements CommandMap {
         return registered;
     }
 
-    /**
-     * Registers a command with the given name is possible. Also uses
-     * fallbackPrefix to create a unique name.
-     *
-     * @param label the name of the command, without the '/'-prefix.
-     * @param command the command to register
-     * @param isAlias whether the command is an alias
-     * @param fallbackPrefix a prefix which is prepended to the command for a
-     *     unique address
-     * @return true if command was registered, false otherwise.
-     */
+    /// Registers a command with the given name is possible. Also uses
+    /// fallbackPrefix to create a unique name.
+    ///
+    /// @param label the name of the command, without the '/'-prefix.
+    /// @param command the command to register
+    /// @param isAlias whether the command is an alias
+    /// @param fallbackPrefix a prefix which is prepended to the command for a
+    ///     unique address
+    /// @return true if command was registered, false otherwise.
     private synchronized boolean register(@NotNull String label, @NotNull Command command, boolean isAlias, @NotNull String fallbackPrefix) {
         knownCommands.put(fallbackPrefix + ":" + label, command);
         // Paper start
@@ -137,9 +127,7 @@ public class SimpleCommandMap implements CommandMap {
         return registered;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /// {@inheritDoc}
     @Override
     public boolean dispatch(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException {
         String[] args = org.apache.commons.lang3.StringUtils.split(commandLine, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements

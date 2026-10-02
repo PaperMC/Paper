@@ -7,9 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when an entity attempts to perform a smash attack.
- */
+/// Called when an entity attempts to perform a smash attack.
 @NullMarked
 public class EntityAttemptSmashAttackEvent extends EntityEvent {
 
@@ -33,61 +31,47 @@ public class EntityAttemptSmashAttackEvent extends EntityEvent {
         this.originalResult = originalResult;
     }
 
-    /**
-     * Yields the target of the attempted smash attack.
-     *
-     * @return the target entity
-     */
+    /// Yields the target of the attempted smash attack.
+    ///
+    /// @return the target entity
     public LivingEntity getTarget() {
         return target;
     }
 
-    /**
-     * Yields a copy of the itemstack used in the smash attack attempt.
-     *
-     * @return the itemstack
-     */
+    /// Yields a copy of the itemstack used in the smash attack attempt.
+    ///
+    /// @return the itemstack
     public ItemStack getWeapon() {
         return weapon.clone();
     }
 
-    /**
-     * Yields the original result the server computed.
-     *
-     * @return {@code true} if this attempt would have been successful by vanilla's logic, {@code false} otherwise.
-     */
+    /// Yields the original result the server computed.
+    ///
+    /// @return `true` if this attempt would have been successful by vanilla's logic, `false` otherwise.
     public boolean getOriginalResult() {
         return originalResult;
     }
 
-    /**
-     * Yields the effective result of this event.
-     * The result may take one of three values:
-     *
-     * <ul>
-     *     <li>{@link Result#ALLOW}: The attempt will succeed.</li>
-     *     <li>{@link Result#DENY}: The attempt will fail.</li>
-     *     <li>{@link Result#DEFAULT}: The attempt will succeed if {@link #getOriginalResult()} is {@code true} and fail otherwise.</li>
-     * </ul>
-     *
-     * @return the result.
-     */
+    /// Yields the effective result of this event.
+    /// The result may take one of three values:
+    ///
+    ///   - [Result#ALLOW]: The attempt will succeed.
+    ///   - [Result#DENY]: The attempt will fail.
+    ///   - [Result#DEFAULT]: The attempt will succeed if [#getOriginalResult()] is `true` and fail otherwise.
+    ///
+    /// @return the result.
     public Result getResult() {
         return this.result;
     }
 
-    /**
-     * Configures a new result for this event.
-     * The passes result may take one of three values:
-     *
-     * <ul>
-     *     <li>{@link Result#ALLOW}: The attempt will succeed.</li>
-     *     <li>{@link Result#DENY}: The attempt will fail.</li>
-     *     <li>{@link Result#DEFAULT}: The attempt will succeed if {@link #getOriginalResult()} is {@code true} and fail otherwise.</li>
-     * </ul>
-     *
-     * @param result the new result of the event.
-     */
+    /// Configures a new result for this event.
+    /// The passes result may take one of three values:
+    ///
+    ///   - [Result#ALLOW]: The attempt will succeed.
+    ///   - [Result#DENY]: The attempt will fail.
+    ///   - [Result#DEFAULT]: The attempt will succeed if [#getOriginalResult()] is `true` and fail otherwise.
+    ///
+    /// @param result the new result of the event.
     public void setResult(final Result result) {
         this.result = result;
     }

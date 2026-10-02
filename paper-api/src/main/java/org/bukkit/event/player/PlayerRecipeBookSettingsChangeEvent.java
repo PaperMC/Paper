@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player changes recipe book settings.
- */
+/// Called when a player changes recipe book settings.
 public class PlayerRecipeBookSettingsChangeEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,30 +22,24 @@ public class PlayerRecipeBookSettingsChangeEvent extends PlayerEvent {
         this.filtering = filtering;
     }
 
-    /**
-     * Gets the type of recipe book the player is changing the settings for.
-     *
-     * @return the type of recipe book
-     */
+    /// Gets the type of recipe book the player is changing the settings for.
+    ///
+    /// @return the type of recipe book
     @NotNull
     public RecipeBookType getRecipeBookType() {
         return this.recipeBookType;
     }
 
-    /**
-     * Checks if the recipe book is being opened or closed.
-     *
-     * @return {@code true} if opening
-     */
+    /// Checks if the recipe book is being opened or closed.
+    ///
+    /// @return `true` if opening
     public boolean isOpen() {
         return this.open;
     }
 
-    /**
-     * Checks if the recipe book filter is being enabled or disabled.
-     *
-     * @return {@code true} if enabling
-     */
+    /// Checks if the recipe book filter is being enabled or disabled.
+    ///
+    /// @return `true` if enabling
     public boolean isFiltering() {
         return this.filtering;
     }
@@ -63,28 +55,18 @@ public class PlayerRecipeBookSettingsChangeEvent extends PlayerEvent {
         return HANDLER_LIST;
     }
 
-    /**
-     * Enum representing the various types of recipe book.
-     * <br>
-     * Different types of recipe book are shown in different GUIs.
-     */
+    /// Enum representing the various types of recipe book.
+    ///
+    /// Different types of recipe book are shown in different GUIs.
     public enum RecipeBookType {
 
-        /**
-         * Recipe book seen in crafting table and player inventory.
-         */
+        /// Recipe book seen in crafting table and player inventory.
         CRAFTING,
-        /**
-         * Recipe book seen in furnace.
-         */
+        /// Recipe book seen in furnace.
         FURNACE,
-        /**
-         * Recipe book seen in blast furnace.
-         */
+        /// Recipe book seen in blast furnace.
         BLAST_FURNACE,
-        /**
-         * Recipe book seen in smoker.
-         */
+        /// Recipe book seen in smoker.
         SMOKER;
     }
 }

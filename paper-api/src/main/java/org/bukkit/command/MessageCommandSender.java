@@ -13,11 +13,9 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * For when all you care about is just messaging
- *
- * @deprecated Timings will be removed in the future
- */
+/// For when all you care about is just messaging
+///
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public interface MessageCommandSender extends CommandSender {
 

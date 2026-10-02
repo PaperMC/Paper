@@ -10,11 +10,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a Warden's anger level has changed due to another entity.
- * <p>
- * If the event is cancelled, the warden's anger level will not change.
- */
+/// Called when a Warden's anger level has changed due to another entity.
+///
+/// If the event is cancelled, the warden's anger level will not change.
 @NullMarked
 public class WardenAngerChangeEvent extends EntityEvent implements Cancellable {
 
@@ -34,44 +32,36 @@ public class WardenAngerChangeEvent extends EntityEvent implements Cancellable {
         this.newAnger = newAnger;
     }
 
-    /**
-     * Gets the entity which triggered this anger update.
-     *
-     * @return triggering entity
-     */
+    /// Gets the entity which triggered this anger update.
+    ///
+    /// @return triggering entity
     public Entity getTarget() {
         return this.target;
     }
 
-    /**
-     * Gets the old anger level.
-     *
-     * @return old anger level
-     * @see Warden#getAnger(Entity)
-     */
+    /// Gets the old anger level.
+    ///
+    /// @return old anger level
+    /// @see Warden#getAnger(Entity)
     public @Range(from = 0, to = 150) int getOldAnger() {
         return this.oldAnger;
     }
 
-    /**
-     * Gets the new anger level resulting from this event.
-     *
-     * @return new anger level
-     * @see Warden#getAnger(Entity)
-     */
+    /// Gets the new anger level resulting from this event.
+    ///
+    /// @return new anger level
+    /// @see Warden#getAnger(Entity)
     public @Range(from = 0, to = 150) int getNewAnger() {
         return this.newAnger;
     }
 
-    /**
-     * Sets the new anger level resulting from this event.
-     * <p>
-     * The anger of a warden is capped at 150.
-     *
-     * @param newAnger the new anger level, max 150
-     * @throws IllegalArgumentException if newAnger is greater than 150
-     * @see Warden#setAnger(Entity, int)
-     */
+    /// Sets the new anger level resulting from this event.
+    ///
+    /// The anger of a warden is capped at 150.
+    ///
+    /// @param newAnger the new anger level, max 150
+    /// @throws IllegalArgumentException if newAnger is greater than 150
+    /// @see Warden#setAnger(Entity, int)
     public void setNewAnger(final @Range(from = 0, to = 150) int newAnger) {
         Preconditions.checkArgument(newAnger <= 150, "newAnger must not be greater than 150");
         this.newAnger = newAnger;

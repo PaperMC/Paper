@@ -12,9 +12,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Triggered when a hanging entity is created in the world
- */
+/// Triggered when a hanging entity is created in the world
 public class HangingPlaceEvent extends HangingEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -43,52 +41,42 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
         this.itemStack = itemStack;
     }
 
-    /**
-     * Returns the player placing the hanging entity
-     *
-     * @return the player placing the hanging entity
-     */
+    /// Returns the player placing the hanging entity
+    ///
+    /// @return the player placing the hanging entity
     @Nullable
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Returns the block that the hanging entity was placed on
-     *
-     * @return the block that the hanging entity was placed on
-     */
+    /// Returns the block that the hanging entity was placed on
+    ///
+    /// @return the block that the hanging entity was placed on
     @NotNull
     public Block getBlock() {
         return this.block;
     }
 
-    /**
-     * Returns the face of the block that the hanging entity was placed on
-     *
-     * @return the face of the block that the hanging entity was placed on
-     */
+    /// Returns the face of the block that the hanging entity was placed on
+    ///
+    /// @return the face of the block that the hanging entity was placed on
     @NotNull
     public BlockFace getBlockFace() {
         return this.blockFace;
     }
 
-    /**
-     * Returns the hand that was used to place the hanging entity, or {@code null}
-     * if a player did not place the hanging entity.
-     *
-     * @return the hand
-     */
+    /// Returns the hand that was used to place the hanging entity, or `null`
+    /// if a player did not place the hanging entity.
+    ///
+    /// @return the hand
     @Nullable
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Gets the item from which the hanging entity originated
-     *
-     * @return the item from which the hanging entity originated
-     */
+    /// Gets the item from which the hanging entity originated
+    ///
+    /// @return the item from which the hanging entity originated
     @Nullable
     public ItemStack getItemStack() {
         return this.itemStack;

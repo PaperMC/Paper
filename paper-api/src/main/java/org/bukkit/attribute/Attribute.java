@@ -14,170 +14,88 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Types of attributes which may be present on an {@link Attributable}.
- */
+/// Types of attributes which may be present on an [Attributable].
 public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
-    /**
-     * Maximum health of an Entity.
-     */
+    /// Maximum health of an Entity.
     Attribute MAX_HEALTH = getAttribute("max_health");
-    /**
-     * Range at which an Entity will follow others.
-     */
+    /// Range at which an Entity will follow others.
     Attribute FOLLOW_RANGE = getAttribute("follow_range");
-    /**
-     * Resistance of an Entity to knockback.
-     */
+    /// Resistance of an Entity to knockback.
     Attribute KNOCKBACK_RESISTANCE = getAttribute("knockback_resistance");
-    /**
-     * Movement speed of an Entity.
-     */
+    /// Movement speed of an Entity.
     Attribute MOVEMENT_SPEED = getAttribute("movement_speed");
-    /**
-     * Flying speed of an Entity.
-     */
+    /// Flying speed of an Entity.
     Attribute FLYING_SPEED = getAttribute("flying_speed");
-    /**
-     * Attack damage of an Entity.
-     */
+    /// Attack damage of an Entity.
     Attribute ATTACK_DAMAGE = getAttribute("attack_damage");
-    /**
-     * Attack knockback of an Entity.
-     */
+    /// Attack knockback of an Entity.
     Attribute ATTACK_KNOCKBACK = getAttribute("attack_knockback");
-    /**
-     * Attack speed of an Entity.
-     */
+    /// Attack speed of an Entity.
     Attribute ATTACK_SPEED = getAttribute("attack_speed");
-    /**
-     * Armor bonus of an Entity.
-     */
+    /// Armor bonus of an Entity.
     Attribute ARMOR = getAttribute("armor");
-    /**
-     * Armor durability bonus of an Entity.
-     */
+    /// Armor durability bonus of an Entity.
     Attribute ARMOR_TOUGHNESS = getAttribute("armor_toughness");
-    /**
-     * The fall damage multiplier of an Entity.
-     */
+    /// The fall damage multiplier of an Entity.
     Attribute FALL_DAMAGE_MULTIPLIER = getAttribute("fall_damage_multiplier");
-    /**
-     * Luck bonus of an Entity.
-     */
+    /// Luck bonus of an Entity.
     Attribute LUCK = getAttribute("luck");
-    /**
-     * Maximum absorption of an Entity.
-     */
+    /// Maximum absorption of an Entity.
     Attribute MAX_ABSORPTION = getAttribute("max_absorption");
-    /**
-     * The distance which an Entity can fall without damage.
-     */
+    /// The distance which an Entity can fall without damage.
     Attribute SAFE_FALL_DISTANCE = getAttribute("safe_fall_distance");
-    /**
-     * The relative scale of an Entity.
-     */
+    /// The relative scale of an Entity.
     Attribute SCALE = getAttribute("scale");
-    /**
-     * The height which an Entity can walk over.
-     */
+    /// The height which an Entity can walk over.
     Attribute STEP_HEIGHT = getAttribute("step_height");
-    /**
-     * The gravity applied to an Entity.
-     */
+    /// The gravity applied to an Entity.
     Attribute GRAVITY = getAttribute("gravity");
-    /**
-     * Strength with which an Entity will jump.
-     */
+    /// Strength with which an Entity will jump.
     Attribute JUMP_STRENGTH = getAttribute("jump_strength");
-    /**
-     * How long an entity remains burning after ignition.
-     */
+    /// How long an entity remains burning after ignition.
     Attribute BURNING_TIME = getAttribute("burning_time");
-    /**
-     * The camera distance of a player to their own entity.
-     */
+    /// The camera distance of a player to their own entity.
     Attribute CAMERA_DISTANCE = getAttribute("camera_distance");
-    /**
-     * Resistance to knockback from explosions.
-     */
+    /// Resistance to knockback from explosions.
     Attribute EXPLOSION_KNOCKBACK_RESISTANCE = getAttribute("explosion_knockback_resistance");
-    /**
-     * Movement speed through difficult terrain.
-     */
+    /// Movement speed through difficult terrain.
     Attribute MOVEMENT_EFFICIENCY = getAttribute("movement_efficiency");
-    /**
-     * Oxygen use underwater.
-     */
+    /// Oxygen use underwater.
     Attribute OXYGEN_BONUS = getAttribute("oxygen_bonus");
-    /**
-     * Movement speed through water.
-     */
+    /// Movement speed through water.
     Attribute WATER_MOVEMENT_EFFICIENCY = getAttribute("water_movement_efficiency");
-    /**
-     * Range at which mobs will be tempted by items.
-     */
+    /// Range at which mobs will be tempted by items.
     Attribute TEMPT_RANGE = getAttribute("tempt_range");
-    /**
-     * The block reach distance of a Player.
-     */
+    /// The block reach distance of a Player.
     Attribute BLOCK_INTERACTION_RANGE = getAttribute("block_interaction_range");
-    /**
-     * The entity reach distance of a Player.
-     */
+    /// The entity reach distance of a Player.
     Attribute ENTITY_INTERACTION_RANGE = getAttribute("entity_interaction_range");
-    /**
-     * Block break speed of a Player.
-     */
+    /// Block break speed of a Player.
     Attribute BLOCK_BREAK_SPEED = getAttribute("block_break_speed");
-    /**
-     * Mining speed for correct tools.
-     */
+    /// Mining speed for correct tools.
     Attribute MINING_EFFICIENCY = getAttribute("mining_efficiency");
-    /**
-     * Sneaking speed.
-     */
+    /// Sneaking speed.
     Attribute SNEAKING_SPEED = getAttribute("sneaking_speed");
-    /**
-     * Underwater mining speed.
-     */
+    /// Underwater mining speed.
     Attribute SUBMERGED_MINING_SPEED = getAttribute("submerged_mining_speed");
-    /**
-     * Sweeping damage.
-     */
+    /// Sweeping damage.
     Attribute SWEEPING_DAMAGE_RATIO = getAttribute("sweeping_damage_ratio");
-    /**
-     * Chance of a zombie to spawn reinforcements.
-     */
+    /// Chance of a zombie to spawn reinforcements.
     Attribute SPAWN_REINFORCEMENTS = getAttribute("spawn_reinforcements");
-    /**
-     * Attribute controlling the range an entity transmits itself as a waypoint.
-     */
+    /// Attribute controlling the range an entity transmits itself as a waypoint.
     Attribute WAYPOINT_TRANSMIT_RANGE = getAttribute("waypoint_transmit_range");
-    /**
-     * Attribute controlling the range an entity receives other waypoints from.
-     */
+    /// Attribute controlling the range an entity receives other waypoints from.
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
-    /**
-     * The air friction an entity receives when moving.
-     */
+    /// The air friction an entity receives when moving.
     Attribute AIR_DRAG_MODIFIER = getAttribute("air_drag_modifier");
-    /**
-     * The ground friction an entity receives when moving.
-     */
+    /// The ground friction an entity receives when moving.
     Attribute FRICTION_MODIFIER = getAttribute("friction_modifier");
-    /**
-     * The received motion when landing on the ground.
-     */
+    /// The received motion when landing on the ground.
     Attribute BOUNCINESS = getAttribute("bounciness");
-    /**
-     * The minimum distance the scoreboard objective in the below_name display slot become visible for others.
-     */
+    /// The minimum distance the scoreboard objective in the below\_name display slot become visible for others.
     Attribute BELOW_NAME_DISTANCE = getAttribute("below_name_distance");
-    /**
-     * The minimum distance the display name become visible for others.
-     */
+    /// The minimum distance the display name become visible for others.
     Attribute NAME_TAG_DISTANCE = getAttribute("name_tag_distance");
 
     @NotNull
@@ -185,24 +103,18 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
         return Registry.ATTRIBUTE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * {@return the sentiment of this attribute}
-     */
+    /// {@return the sentiment of this attribute}
     @NotNull
     Sentiment getSentiment();
 
-    /**
-     * {@return the default value of this attribute}
-     * <p>
-     * Default attribute values may differ between entity types, use {@link EntityType#getDefaultAttributes()} to get default attribute values for a specific entity type.
-     */
+    /// {@return the default value of this attribute}
+    ///
+    /// Default attribute values may differ between entity types, use [EntityType#getDefaultAttributes()] to get default attribute values for a specific entity type.
     double getDefaultValue();
 
-    /**
-     * @param name of the attribute.
-     * @return the attribute with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the attribute.
+    /// @return the attribute with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
@@ -212,20 +124,16 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
         return attribute;
     }
 
-    /**
-     * @return an array of all known attributes.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known attributes.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
         return Registry.ATTRIBUTE.stream().toArray(Attribute[]::new);
     }
 
-    /**
-     * An attribute sentiment describes the intent behind the attribute, meaning
-     * whether it is supposed to be a positive, neutral, or negative attribute.
-     */
+    /// An attribute sentiment describes the intent behind the attribute, meaning
+    /// whether it is supposed to be a positive, neutral, or negative attribute.
     enum Sentiment {
         // Start generate - AttributeSentiment
         POSITIVE,

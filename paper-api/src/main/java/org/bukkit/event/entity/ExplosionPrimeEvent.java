@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity has made a decision to explode.
- */
+/// Called when an entity has made a decision to explode.
 public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,38 +29,30 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
         this(explosive, explosive.getYield(), explosive.isIncendiary());
     }
 
-    /**
-     * Gets the radius of the explosion
-     *
-     * @return returns the radius of the explosion
-     */
+    /// Gets the radius of the explosion
+    ///
+    /// @return returns the radius of the explosion
     public float getRadius() {
         return this.radius;
     }
 
-    /**
-     * Sets the radius of the explosion
-     *
-     * @param radius the radius of the explosion
-     */
+    /// Sets the radius of the explosion
+    ///
+    /// @param radius the radius of the explosion
     public void setRadius(float radius) {
         this.radius = radius;
     }
 
-    /**
-     * Gets whether this explosion will create fire or not
-     *
-     * @return {@code true} if this explosion will create fire
-     */
+    /// Gets whether this explosion will create fire or not
+    ///
+    /// @return `true` if this explosion will create fire
     public boolean getFire() {
         return this.fire;
     }
 
-    /**
-     * Sets whether this explosion will create fire or not
-     *
-     * @param fire {@code true} if you want this explosion to create fire
-     */
+    /// Sets whether this explosion will create fire or not
+    ///
+    /// @param fire`true` if you want this explosion to create fire
     public void setFire(boolean fire) {
         this.fire = fire;
     }

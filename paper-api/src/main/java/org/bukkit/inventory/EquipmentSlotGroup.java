@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a group of {@link EquipmentSlot}.
- */
+/// Represents a group of [EquipmentSlot].
 public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
 
     private static final Map<String, EquipmentSlotGroup> BY_NAME = new HashMap<>();
@@ -50,13 +48,11 @@ public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
         return this.key;
     }
 
-    /**
-     * Gets an {@link EquipmentSlot} which is an example of a slot in this
-     * group.
-     *
-     * @return an example slot
-     * @deprecated for internal compatibility use only
-     */
+    /// Gets an [EquipmentSlot] which is an example of a slot in this
+    /// group.
+    ///
+    /// @return an example slot
+    /// @deprecated for internal compatibility use only
     @NotNull
     @Deprecated(since = "1.20.5")
     @ApiStatus.Internal
@@ -64,12 +60,10 @@ public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
         return example;
     }
 
-    /**
-     * Gets the {@link EquipmentSlotGroup} corresponding to the given string.
-     *
-     * @param name group name
-     * @return associated group or null
-     */
+    /// Gets the [EquipmentSlotGroup] corresponding to the given string.
+    ///
+    /// @param name group name
+    /// @return associated group or null
     @Nullable
     @ApiStatus.Internal
     public static EquipmentSlotGroup getByName(@NotNull String name) {

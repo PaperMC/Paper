@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when a player sends updated input to the server.
- *
- * @see Player#getCurrentInput()
- */
+/// This event is called when a player sends updated input to the server.
+///
+/// @see Player#getCurrentInput()
 public class PlayerInputEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class PlayerInputEvent extends PlayerEvent {
         this.input = input;
     }
 
-    /**
-     * Gets the new input received from this player.
-     *
-     * @return the new input
-     */
+    /// Gets the new input received from this player.
+    ///
+    /// @return the new input
     @NotNull
     public Input getInput() {
         return this.input;

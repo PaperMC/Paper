@@ -10,13 +10,11 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when the server detects the player is jumping.
- * <p>
- * Added to avoid the overhead and special case logic that many plugins use
- * when checking for jumps via {@link PlayerMoveEvent}, this event is fired whenever
- * the server detects that the player is jumping.
- */
+/// Called when the server detects the player is jumping.
+///
+/// Added to avoid the overhead and special case logic that many plugins use
+/// when checking for jumps via [PlayerMoveEvent], this event is fired whenever
+/// the server detects that the player is jumping.
 @NullMarked
 public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
 
@@ -34,58 +32,48 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
         this.to = to;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If this event is cancelled, the player will be moved or
-     * teleported back to the Location as defined by {@link #getFrom()}. This will not
-     * fire an event
-     */
+    /// {@inheritDoc}
+    ///
+    /// If this event is cancelled, the player will be moved or
+    /// teleported back to the Location as defined by [#getFrom()]. This will not
+    /// fire an event
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If this event is cancelled, the player will be moved or
-     * teleported back to the Location as defined by {@link #getFrom()}. This will not
-     * fire an event
-     */
+    /// {@inheritDoc}
+    ///
+    /// If this event is cancelled, the player will be moved or
+    /// teleported back to the Location as defined by [#getFrom()]. This will not
+    /// fire an event
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
     }
 
-    /**
-     * Gets the location this player jumped from
-     *
-     * @return Location the player jumped from
-     */
+    /// Gets the location this player jumped from
+    ///
+    /// @return Location the player jumped from
     public Location getFrom() {
         return this.from;
     }
 
-    /**
-     * Sets the location to mark as where the player jumped from
-     *
-     * @param from New location to mark as the players previous location
-     */
+    /// Sets the location to mark as where the player jumped from
+    ///
+    /// @param from New location to mark as the players previous location
     public void setFrom(final Location from) {
         Preconditions.checkArgument(from != null, "Cannot use null from location!");
         Preconditions.checkArgument(from.getWorld() != null, "Cannot use from location with null world!");
         this.from = from.clone();
     }
 
-    /**
-     * Gets the location this player jumped to
-     * <p>
-     * This information is based on what the client sends, it typically
-     * has little relation to the arc of the jump at any given point.
-     *
-     * @return Location the player jumped to
-     */
+    /// Gets the location this player jumped to
+    ///
+    /// This information is based on what the client sends, it typically
+    /// has little relation to the arc of the jump at any given point.
+    ///
+    /// @return Location the player jumped to
     public Location getTo() {
         return this.to.clone();
     }

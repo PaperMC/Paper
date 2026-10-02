@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a fence gate
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a fence gate
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Gate extends MaterialData implements Directional, Openable {
     private static final byte OPEN_BIT = 0x4;
@@ -22,11 +20,9 @@ public class Gate extends MaterialData implements Directional, Openable {
         super(Material.LEGACY_FENCE_GATE);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.13")
     public Gate(final Material type, final byte data) {
         super(type, data);

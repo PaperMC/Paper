@@ -4,92 +4,74 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.block.BellRingEvent;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a captured state of Bell.
- */
+/// Represents a captured state of Bell.
 public interface Bell extends TileState {
 
-    /**
-     * Ring this bell. This will call a {@link BellRingEvent}.
-     *
-     * @param entity the entity ringing the bell
-     * @param direction the direction from which the bell was rung or null to
-     * ring in the direction that the bell is facing
-     * @return true if rung successfully, false if the event was cancelled
-     */
+    /// Ring this bell. This will call a [BellRingEvent].
+    ///
+    /// @param entity the entity ringing the bell
+    /// @param direction the direction from which the bell was rung or null to
+    /// ring in the direction that the bell is facing
+    /// @return true if rung successfully, false if the event was cancelled
     public boolean ring(@Nullable Entity entity, @Nullable BlockFace direction);
 
-    /**
-     * Ring this bell in the direction that the bell is facing. This will call a
-     * {@link BellRingEvent}.
-     *
-     * @param entity the entity ringing the bell
-     * @return true if rung successfully, false if the event was cancelled
-     */
+    /// Ring this bell in the direction that the bell is facing. This will call a
+    /// [BellRingEvent].
+    ///
+    /// @param entity the entity ringing the bell
+    /// @return true if rung successfully, false if the event was cancelled
     default boolean ring(@Nullable Entity entity) {
         return this.ring(entity, null);
     }
 
-    /**
-     * Ring this bell. This will call a {@link BellRingEvent}.
-     *
-     * @param direction the direction from which the bell was rung or null to
-     * ring in the direction that the bell is facing
-     * @return true if rung successfully, false if the event was cancelled
-     */
+    /// Ring this bell. This will call a [BellRingEvent].
+    ///
+    /// @param direction the direction from which the bell was rung or null to
+    /// ring in the direction that the bell is facing
+    /// @return true if rung successfully, false if the event was cancelled
     default boolean ring(@Nullable BlockFace direction) {
         return this.ring(null, direction);
     }
 
-    /**
-     * Ring this bell in the direction that the bell is facing. This will call a
-     * {@link BellRingEvent}.
-     *
-     * @return true if rung successfully, false if the event was cancelled
-     */
+    /// Ring this bell in the direction that the bell is facing. This will call a
+    /// [BellRingEvent].
+    ///
+    /// @return true if rung successfully, false if the event was cancelled
     default boolean ring() {
         return this.ring(null, null);
     }
 
-    /**
-     * Check whether or not this bell is shaking. A bell is considered to be
-     * shaking if it was recently rung.
-     * <p>
-     * A bell will typically shake for 50 ticks.
-     *
-     * @return true if shaking, false otherwise
-     */
+    /// Check whether or not this bell is shaking. A bell is considered to be
+    /// shaking if it was recently rung.
+    ///
+    /// A bell will typically shake for 50 ticks.
+    ///
+    /// @return true if shaking, false otherwise
     public boolean isShaking();
 
-    /**
-     * Get the amount of ticks since this bell has been shaking, or 0 if the
-     * bell is not currently shaking.
-     * <p>
-     * A bell will typically shake for 50 ticks.
-     *
-     * @return the time in ticks since the bell was rung, or 0 if not shaking
-     */
+    /// Get the amount of ticks since this bell has been shaking, or 0 if the
+    /// bell is not currently shaking.
+    ///
+    /// A bell will typically shake for 50 ticks.
+    ///
+    /// @return the time in ticks since the bell was rung, or 0 if not shaking
     public int getShakingTicks();
 
-    /**
-     * Check whether or not this bell is resonating. A bell is considered to be
-     * resonating if {@link #isShaking() while shaking}, raiders were detected
-     * in the area and are ready to be highlighted to nearby players.
-     * <p>
-     * A bell will typically resonate for 40 ticks.
-     *
-     * @return true if resonating, false otherwise
-     */
+    /// Check whether or not this bell is resonating. A bell is considered to be
+    /// resonating if [`while shaking`][#isShaking()], raiders were detected
+    /// in the area and are ready to be highlighted to nearby players.
+    ///
+    /// A bell will typically resonate for 40 ticks.
+    ///
+    /// @return true if resonating, false otherwise
     public boolean isResonating();
 
-    /**
-     * Get the amount of ticks since this bell has been resonating, or 0 if the
-     * bell is not currently resonating.
-     * <p>
-     * A bell will typically resonate for 40 ticks.
-     *
-     * @return the time in ticks since the bell has been resonating, or 0 if not
-     * resonating
-     */
+    /// Get the amount of ticks since this bell has been resonating, or 0 if the
+    /// bell is not currently resonating.
+    ///
+    /// A bell will typically resonate for 40 ticks.
+    ///
+    /// @return the time in ticks since the bell has been resonating, or 0 if not
+    /// resonating
     public int getResonatingTicks();
 }

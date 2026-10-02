@@ -1,34 +1,21 @@
 package org.bukkit;
 
-/**
- * Represents the outcome of an explosion.
- */
+/// Represents the outcome of an explosion.
 public enum ExplosionResult {
 
-    /**
-     * Represents an explosion where no change took place.
-     *
-     * This is the case when {@link org.bukkit.GameRules#MOB_GRIEFING} is
-     * disabled.
-     */
+    /// Represents an explosion where no change took place.
+    /// This is the case when [org.bukkit.GameRules#MOB_GRIEFING] is
+    /// disabled.
     KEEP,
-    /**
-     * Represents an explosion where all destroyed blocks drop their items.
-     *
-     * This is the case when
-     * {@link org.bukkit.GameRules#TNT_EXPLOSION_DROP_DECAY} or
-     * {@link org.bukkit.GameRules#BLOCK_EXPLOSION_DROP_DECAY} is disabled.
-     */
+    /// Represents an explosion where all destroyed blocks drop their items.
+    /// This is the case when
+    /// [org.bukkit.GameRules#TNT_EXPLOSION_DROP_DECAY] or
+    /// [org.bukkit.GameRules#BLOCK_EXPLOSION_DROP_DECAY] is disabled.
     DESTROY,
-    /**
-     * Represents an explosion where explosions cause only some blocks to drop.
-     */
+    /// Represents an explosion where explosions cause only some blocks to drop.
     DESTROY_WITH_DECAY,
-    /**
-     * Represents an explosion where a block change/update has happened.
-     *
-     * For example, when a wind charge is used it will cause nearby buttons,
-     * levers and bells to be activated.
-     */
+    /// Represents an explosion where a block change/update has happened.
+    /// For example, when a wind charge is used it will cause nearby buttons,
+    /// levers and bells to be activated.
     TRIGGER_BLOCK
 }

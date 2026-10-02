@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when an entity creates an item drop.
- */
+/// Thrown when an entity creates an item drop.
 public class EntityDropItemEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class EntityDropItemEvent extends EntityEvent implements Cancellable {
         this.drop = drop;
     }
 
-    /**
-     * Gets the Item created by the entity
-     *
-     * @return Item created by the entity
-     */
+    /// Gets the Item created by the entity
+    ///
+    /// @return Item created by the entity
     @NotNull
     public Item getItemDrop() {
         return this.drop;

@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents the tripwire hook
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the tripwire hook
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class TripwireHook extends SimpleAttachableMaterialData implements Redstone {
 
@@ -16,11 +14,9 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         super(Material.LEGACY_TRIPWIRE_HOOK);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public TripwireHook(final Material type, final byte data) {
         super(type, data);
@@ -31,20 +27,16 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         setFacingDirection(dir);
     }
 
-    /**
-     * Test if tripwire is connected
-     *
-     * @return true if connected, false if not
-     */
+    /// Test if tripwire is connected
+    ///
+    /// @return true if connected, false if not
     public boolean isConnected() {
         return (getData() & 0x4) != 0;
     }
 
-    /**
-     * Set tripwire connection state
-     *
-     * @param connected - true if connected, false if not
-     */
+    /// Set tripwire connection state
+    ///
+    /// @param connected - true if connected, false if not
     public void setConnected(boolean connected) {
         int dat = getData() & (0x8 | 0x3);
         if (connected) {
@@ -53,20 +45,16 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         setData((byte) dat);
     }
 
-    /**
-     * Test if hook is currently activated
-     *
-     * @return true if activated, false if not
-     */
+    /// Test if hook is currently activated
+    ///
+    /// @return true if activated, false if not
     public boolean isActivated() {
         return (getData() & 0x8) != 0;
     }
 
-    /**
-     * Set hook activated state
-     *
-     * @param act - true if activated, false if not
-     */
+    /// Set hook activated state
+    ///
+    /// @param act - true if activated, false if not
     public void setActivated(boolean act) {
         int dat = getData() & (0x4 | 0x3);
         if (act) {

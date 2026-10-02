@@ -3,23 +3,19 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a skull.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a skull.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Skull extends MaterialData implements Directional {
     public Skull() {
         super(Material.LEGACY_SKULL);
     }
 
-    /**
-     * Instantiate a skull facing in a particular direction.
-     *
-     * @param direction the direction the skull's face is facing
-     */
+    /// Instantiate a skull facing in a particular direction.
+    ///
+    /// @param direction the direction the skull's face is facing
     public Skull(BlockFace direction) {
         this();
         setFacingDirection(direction);
@@ -29,11 +25,9 @@ public class Skull extends MaterialData implements Directional {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Skull(final Material type, final byte data) {
         super(type, data);

@@ -30,9 +30,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player is firing a bow and the server is choosing an arrow to use.
- */
+/// Called when a player is firing a bow and the server is choosing an arrow to use.
 @NullMarked
 public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
 
@@ -49,33 +47,25 @@ public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
         this.arrow = arrow;
     }
 
-    /**
-     * @return the player is using to fire the arrow
-     */
+    /// @return the player is using to fire the arrow
     public ItemStack getBow() {
         return this.bow;
     }
 
-    /**
-     * @return the arrow that is attempting to be used
-     */
+    /// @return the arrow that is attempting to be used
     public ItemStack getArrow() {
         return this.arrow;
     }
 
-    /**
-     * {@inheritDoc}
-     * <br>
-     * Whether use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Whether use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
-     */
+    /// Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

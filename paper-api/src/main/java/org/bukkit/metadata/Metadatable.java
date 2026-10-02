@@ -4,56 +4,46 @@ import java.util.List;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This interface is implemented by all objects that can provide metadata
- * about themselves.
- *
- * @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
- * removed. It is recommended that when wanting persistent metadata, you use {@link org.bukkit.persistence.PersistentDataContainer}.
- * <p>
- * If you want temporary values on an entity, use the entity lifecycle events and a {@link java.util.Map} of your own. (See {@link com.destroystokyo.paper.event.entity.EntityAddToWorldEvent} and {@link com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent})
- */
+/// This interface is implemented by all objects that can provide metadata
+/// about themselves.
+///
+/// @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
+/// removed. It is recommended that when wanting persistent metadata, you use [org.bukkit.persistence.PersistentDataContainer].
+///
+/// If you want temporary values on an entity, use the entity lifecycle events and a [java.util.Map] of your own. (See [com.destroystokyo.paper.event.entity.EntityAddToWorldEvent] and [com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent])
 @Deprecated
 public interface Metadatable {
-    /**
-     * Sets a metadata value in the implementing object's metadata store.
-     *
-     * @param metadataKey A unique key to identify this metadata.
-     * @param newMetadataValue The metadata value to apply.
-     * @throws IllegalArgumentException If value is null, or the owning plugin
-     *     is null
-     */
+    /// Sets a metadata value in the implementing object's metadata store.
+    ///
+    /// @param metadataKey A unique key to identify this metadata.
+    /// @param newMetadataValue The metadata value to apply.
+    /// @throws IllegalArgumentException If value is null, or the owning plugin
+    ///     is null
     public void setMetadata(@NotNull String metadataKey, @NotNull MetadataValue newMetadataValue);
 
-    /**
-     * Returns a list of previously set metadata values from the implementing
-     * object's metadata store.
-     *
-     * @param metadataKey the unique metadata key being sought.
-     * @return A list of values, one for each plugin that has set the
-     *     requested value.
-     */
+    /// Returns a list of previously set metadata values from the implementing
+    /// object's metadata store.
+    ///
+    /// @param metadataKey the unique metadata key being sought.
+    /// @return A list of values, one for each plugin that has set the
+    ///     requested value.
     @NotNull
     public List<MetadataValue> getMetadata(@NotNull String metadataKey);
 
-    /**
-     * Tests to see whether the implementing object contains the given
-     * metadata value in its metadata store.
-     *
-     * @param metadataKey the unique metadata key being queried.
-     * @return the existence of the metadataKey within subject.
-     */
+    /// Tests to see whether the implementing object contains the given
+    /// metadata value in its metadata store.
+    ///
+    /// @param metadataKey the unique metadata key being queried.
+    /// @return the existence of the metadataKey within subject.
     public boolean hasMetadata(@NotNull String metadataKey);
 
-    /**
-     * Removes the given metadata value from the implementing object's
-     * metadata store.
-     *
-     * @param metadataKey the unique metadata key identifying the metadata to
-     *     remove.
-     * @param owningPlugin This plugin's metadata value will be removed. All
-     *     other values will be left untouched.
-     * @throws IllegalArgumentException If plugin is null
-     */
+    /// Removes the given metadata value from the implementing object's
+    /// metadata store.
+    ///
+    /// @param metadataKey the unique metadata key identifying the metadata to
+    ///     remove.
+    /// @param owningPlugin This plugin's metadata value will be removed. All
+    ///     other values will be left untouched.
+    /// @throws IllegalArgumentException If plugin is null
     public void removeMetadata(@NotNull String metadataKey, @NotNull Plugin owningPlugin);
 }

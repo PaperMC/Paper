@@ -3,10 +3,8 @@ package org.bukkit.plugin.messaging;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Contains information about a {@link Plugin}s registration to a plugin
- * channel.
- */
+/// Contains information about a [Plugin]s registration to a plugin
+/// channel.
 public final class PluginMessageListenerRegistration {
     private final Messenger messenger;
     private final Plugin plugin;
@@ -33,41 +31,33 @@ public final class PluginMessageListenerRegistration {
         this.listener = listener;
     }
 
-    /**
-     * Gets the plugin channel that this registration is about.
-     *
-     * @return Plugin channel.
-     */
+    /// Gets the plugin channel that this registration is about.
+    ///
+    /// @return Plugin channel.
     @NotNull
     public String getChannel() {
         return channel;
     }
 
-    /**
-     * Gets the registered listener described by this registration.
-     *
-     * @return Registered listener.
-     */
+    /// Gets the registered listener described by this registration.
+    ///
+    /// @return Registered listener.
     @NotNull
     public PluginMessageListener getListener() {
         return listener;
     }
 
-    /**
-     * Gets the plugin that this registration is for.
-     *
-     * @return Registered plugin.
-     */
+    /// Gets the plugin that this registration is for.
+    ///
+    /// @return Registered plugin.
     @NotNull
     public Plugin getPlugin() {
         return plugin;
     }
 
-    /**
-     * Checks if this registration is still valid.
-     *
-     * @return True if this registration is still valid, otherwise false.
-     */
+    /// Checks if this registration is still valid.
+    ///
+    /// @return True if this registration is still valid, otherwise false.
     public boolean isValid() {
         return messenger.isRegistrationValid(this);
     }

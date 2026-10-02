@@ -9,11 +9,9 @@ import org.jspecify.annotations.Nullable;
 @ApiStatus.NonExtendable
 public interface PiercingWeapon {
 
-    /**
-     * Returns a new builder for creating a Piercing Weapon.
-     *
-     * @return a builder instance
-     */
+    /// Returns a new builder for creating a Piercing Weapon.
+    ///
+    /// @return a builder instance
     static Builder piercingWeapon() {
         return ItemComponentTypesBridge.bridge().piercingWeapon();
     }
@@ -26,9 +24,7 @@ public interface PiercingWeapon {
 
     @Nullable Key hitSound();
 
-    /**
-     * Builder for {@link PiercingWeapon}.
-     */
+    /// Builder for [PiercingWeapon].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
 

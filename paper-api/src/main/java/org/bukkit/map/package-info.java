@@ -1,6 +1,3 @@
-/**
- * Classes to facilitate plugin handling of {@link org.bukkit.Material#MAP
- * map} displays.
- */
+/// Classes to facilitate plugin handling of [`map`][org.bukkit.Material#MAP] displays.
 package org.bukkit.map;
 

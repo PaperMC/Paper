@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a Zombified piglin is angered by another entity.
- * <p>
- * If the event is cancelled, the zombified piglin will not be angered.
- */
+/// Called when a Zombified piglin is angered by another entity.
+///
+/// If the event is cancelled, the zombified piglin will not be angered.
 public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,32 +27,26 @@ public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
         this.newAnger = newAnger;
     }
 
-    /**
-     * Gets the entity (if any) which triggered this anger update.
-     *
-     * @return triggering entity, or {@code null}
-     */
+    /// Gets the entity (if any) which triggered this anger update.
+    ///
+    /// @return triggering entity, or `null`
     @Nullable
     public Entity getTarget() {
         return this.target;
     }
 
-    /**
-     * Gets the new anger resulting from this event.
-     *
-     * @return new anger
-     * @see PigZombie#getAnger()
-     */
+    /// Gets the new anger resulting from this event.
+    ///
+    /// @return new anger
+    /// @see PigZombie#getAnger()
     public int getNewAnger() {
         return this.newAnger;
     }
 
-    /**
-     * Sets the new anger resulting from this event.
-     *
-     * @param newAnger the new anger
-     * @see PigZombie#setAnger(int)
-     */
+    /// Sets the new anger resulting from this event.
+    ///
+    /// @param newAnger the new anger
+    /// @see PigZombie#setAnger(int)
     public void setNewAnger(int newAnger) {
         this.newAnger = newAnger;
     }

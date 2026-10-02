@@ -7,9 +7,7 @@ import org.bukkit.event.entity.EntityTeleportEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired any time an entity attempts to teleport in an end gateway
- */
+/// Fired any time an entity attempts to teleport in an end gateway
 @NullMarked
 public class EntityTeleportEndGatewayEvent extends EntityTeleportEvent {
 
@@ -21,11 +19,9 @@ public class EntityTeleportEndGatewayEvent extends EntityTeleportEvent {
         this.gateway = gateway;
     }
 
-    /**
-     * The gateway triggering the teleport
-     *
-     * @return EndGateway used
-     */
+    /// The gateway triggering the teleport
+    ///
+    /// @return EndGateway used
     public EndGateway getGateway() {
         return this.gateway;
     }

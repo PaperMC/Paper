@@ -7,9 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when an item is put in an inventory containing a result slot
- */
+/// Called when an item is put in an inventory containing a result slot
 @NullMarked
 public class PrepareResultEvent extends PrepareInventoryResultEvent {
 
@@ -20,21 +18,17 @@ public class PrepareResultEvent extends PrepareInventoryResultEvent {
         super(inventory, result);
     }
 
-    /**
-     * Get result item, may be {@code null}.
-     *
-     * @return result item
-     */
+    /// Get result item, may be `null`.
+    ///
+    /// @return result item
     @Override
     public @Nullable ItemStack getResult() {
         return super.getResult();
     }
 
-    /**
-     * Set result item, may be {@code null}.
-     *
-     * @param result result item
-     */
+    /// Set result item, may be `null`.
+    ///
+    /// @param result result item
     @Override
     public void setResult(final @Nullable ItemStack result) {
         super.setResult(result);

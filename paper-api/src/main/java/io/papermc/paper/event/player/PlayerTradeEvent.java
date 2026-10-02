@@ -6,9 +6,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player trades with a villager or wandering trader
- */
+/// Called when a player trades with a villager or wandering trader
 @NullMarked
 public class PlayerTradeEvent extends PlayerPurchaseEvent {
 
@@ -22,12 +20,10 @@ public class PlayerTradeEvent extends PlayerPurchaseEvent {
         return (AbstractVillager) super.getMerchant();
     }
 
-    /**
-     * Gets the Villager or Wandering trader associated with this event
-     *
-     * @return the villager or wandering trader
-     * @see #getMerchant()
-     */
+    /// Gets the Villager or Wandering trader associated with this event
+    ///
+    /// @return the villager or wandering trader
+    /// @see #getMerchant()
     @ApiStatus.Obsolete
     public AbstractVillager getVillager() {
         return getMerchant();

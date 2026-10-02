@@ -8,9 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a {@link Tameable} dies and sends a death message.
- */
+/// Called when a [Tameable] dies and sends a death message.
 @NullMarked
 public class TameableDeathMessageEvent extends EntityEvent implements Cancellable {
 
@@ -25,20 +23,16 @@ public class TameableDeathMessageEvent extends EntityEvent implements Cancellabl
         this.deathMessage = deathMessage;
     }
 
-    /**
-     * Set the death message that appears to the owner of the tameable.
-     *
-     * @param deathMessage Death message to appear
-     */
+    /// Set the death message that appears to the owner of the tameable.
+    ///
+    /// @param deathMessage Death message to appear
     public void deathMessage(final Component deathMessage) {
         this.deathMessage = deathMessage;
     }
 
-    /**
-     * Get the death message that appears to the owner of the tameable.
-     *
-     * @return Death message to appear
-     */
+    /// Get the death message that appears to the owner of the tameable.
+    ///
+    /// @return Death message to appear
     public Component deathMessage() {
         return this.deathMessage;
     }

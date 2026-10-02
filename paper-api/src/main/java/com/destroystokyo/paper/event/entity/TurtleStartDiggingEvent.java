@@ -8,9 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a Turtle starts digging to lay eggs
- */
+/// Fired when a Turtle starts digging to lay eggs
 @NullMarked
 public class TurtleStartDiggingEvent extends EntityEvent implements Cancellable {
 
@@ -25,21 +23,17 @@ public class TurtleStartDiggingEvent extends EntityEvent implements Cancellable 
         this.location = location;
     }
 
-    /**
-     * The turtle digging
-     *
-     * @return The turtle
-     */
+    /// The turtle digging
+    ///
+    /// @return The turtle
     @Override
     public Turtle getEntity() {
         return (Turtle) super.getEntity();
     }
 
-    /**
-     * Get the location where the turtle is digging
-     *
-     * @return Location where digging
-     */
+    /// Get the location where the turtle is digging
+    ///
+    /// @return Location where digging
     public Location getLocation() {
         return this.location.clone();
     }

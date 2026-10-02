@@ -13,9 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a player interacts with a Bucket
- */
+/// Called when a player interacts with a Bucket
 public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellable {
 
     private final Block block;
@@ -54,71 +52,57 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
         this.hand = hand;
     }
 
-    /**
-     * Gets the block involved in this event.
-     *
-     * @return The Block which block is involved in this event
-     */
+    /// Gets the block involved in this event.
+    ///
+    /// @return The Block which block is involved in this event
     @NotNull
     public final Block getBlock() {
         return this.block;
     }
 
-    /**
-     * Return the block clicked
-     *
-     * @return the clicked block
-     */
+    /// Return the block clicked
+    ///
+    /// @return the clicked block
     @NotNull
     public Block getBlockClicked() {
         return this.blockClicked;
     }
 
-    /**
-     * Get the face on the clicked block
-     *
-     * @return the clicked face
-     */
+    /// Get the face on the clicked block
+    ///
+    /// @return the clicked face
     @NotNull
     public BlockFace getBlockFace() {
         return this.blockFace;
     }
 
-    /**
-     * Returns the bucket used in this event
-     *
-     * @return the used bucket
-     */
+    /// Returns the bucket used in this event
+    ///
+    /// @return the used bucket
     @NotNull
     public Material getBucket() {
         return this.bucket;
     }
 
-    /**
-     * Get the hand that was used in this event.
-     *
-     * @return the hand
-     */
+    /// Get the hand that was used in this event.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Get the resulting item in hand after the bucket event
-     *
-     * @return ItemStack hold in hand after the event.
-     */
+    /// Get the resulting item in hand after the bucket event
+    ///
+    /// @return ItemStack hold in hand after the event.
     @Nullable
     public ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    /**
-     * Set the item in hand after the event
-     *
-     * @param itemStack the new held ItemStack after the bucket event.
-     */
+    /// Set the item in hand after the event
+    ///
+    /// @param itemStack the new held ItemStack after the bucket event.
     public void setItemStack(@Nullable ItemStack itemStack) {
         this.itemStack = itemStack;
     }

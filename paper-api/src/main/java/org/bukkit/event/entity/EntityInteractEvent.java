@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity interacts with an object
- */
+/// Called when an entity interacts with an object
 public class EntityInteractEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,11 +22,9 @@ public class EntityInteractEvent extends EntityEvent implements Cancellable {
         this.block = block;
     }
 
-    /**
-     * Returns the involved block
-     *
-     * @return the block clicked with this item.
-     */
+    /// Returns the involved block
+    ///
+    /// @return the block clicked with this item.
     @NotNull
     public Block getBlock() {
         return this.block;

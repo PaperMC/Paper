@@ -11,11 +11,9 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a living entity receives knockback.
- *
- * @deprecated use {@link io.papermc.paper.event.entity.EntityKnockbackEvent}
- */
+/// Called when a living entity receives knockback.
+///
+/// @deprecated use [io.papermc.paper.event.entity.EntityKnockbackEvent]
 @Deprecated(forRemoval = true) // Paper
 @Warning(propagate = false)
 public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
@@ -45,63 +43,55 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets the cause of the knockback.
-     *
-     * @return the cause of the knockback
-     */
+    /// Gets the cause of the knockback.
+    ///
+    /// @return the cause of the knockback
     @NotNull
     public KnockbackCause getCause() {
         return this.cause;
     }
 
-    /**
-     * Gets the raw force of the knockback.
-     * <p>
-     * This value is based on factors such as the {@link Enchantment#KNOCKBACK}
-     * level of an attacker and the
-     * {@link Attribute#KNOCKBACK_RESISTANCE} of the entity.
-     *
-     * @return the knockback force
-     */
+    /// Gets the raw force of the knockback.
+    ///
+    /// This value is based on factors such as the [Enchantment#KNOCKBACK]
+    /// level of an attacker and the
+    /// [Attribute#KNOCKBACK_RESISTANCE] of the entity.
+    ///
+    /// @return the knockback force
     public double getForce() {
         return this.force;
     }
 
-    /**
-     * Gets the raw knockback force that will be applied to the entity. <br>
-     * This value is read-only, changes made to it <b>will not</b> have any
-     * effect on the final knockback received.
-     *
-     * @return the raw knockback
-     * @see #getFinalKnockback()
-     */
+    /// Gets the raw knockback force that will be applied to the entity.
+    ///
+    /// This value is read-only, changes made to it **will not** have any
+    /// effect on the final knockback received.
+    ///
+    /// @return the raw knockback
+    /// @see #getFinalKnockback()
     @NotNull
     public Vector getKnockback() {
         return this.rawKnockback.clone();
     }
 
-    /**
-     * Gets the force that will be applied to the entity. <br>
-     * In contrast to {@link EntityKnockbackEvent#getKnockback()} this value is
-     * affected by the entities current velocity and whether they are touching
-     * the ground.
-     * <p>
-     * <b>Note:</b> this method returns a copy, changes must be applied with
-     * {@link #setFinalKnockback(Vector)}.
-     *
-     * @return the final knockback
-     */
+    /// Gets the force that will be applied to the entity.
+    ///
+    /// In contrast to [EntityKnockbackEvent#getKnockback()] this value is
+    /// affected by the entities current velocity and whether they are touching
+    /// the ground.
+    ///
+    /// **Note:** this method returns a copy, changes must be applied with
+    /// [#setFinalKnockback(Vector)].
+    ///
+    /// @return the final knockback
     @NotNull
     public Vector getFinalKnockback() {
         return this.knockback.clone();
     }
 
-    /**
-     * Sets the force that will be applied to the entity.
-     *
-     * @param knockback the force to apply
-     */
+    /// Sets the force that will be applied to the entity.
+    ///
+    /// @param knockback the force to apply
     @NotNull
     public void setFinalKnockback(@NotNull Vector knockback) {
         Preconditions.checkArgument(knockback != null, "Knockback cannot be null");
@@ -130,34 +120,20 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the cause of the knockback.
-     */
+    /// An enum to specify the cause of the knockback.
     public enum KnockbackCause {
 
-        /**
-         * Knockback caused by non-entity damage.
-         */
+        /// Knockback caused by non-entity damage.
         DAMAGE,
-        /**
-         * Knockback caused by an attacking entity.
-         */
+        /// Knockback caused by an attacking entity.
         ENTITY_ATTACK,
-        /**
-         * Knockback caused by an explosion.
-         */
+        /// Knockback caused by an explosion.
         EXPLOSION,
-        /**
-         * Knockback caused by the target blocking with a shield.
-         */
+        /// Knockback caused by the target blocking with a shield.
         SHIELD_BLOCK,
-        /**
-         * Knockback caused by a sweeping attack.
-         */
+        /// Knockback caused by a sweeping attack.
         SWEEP_ATTACK,
-        /**
-         * Knockback with an unknown cause.
-         */
+        /// Knockback with an unknown cause.
         UNKNOWN;
     }
 }

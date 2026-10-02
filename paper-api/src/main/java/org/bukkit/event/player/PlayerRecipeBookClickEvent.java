@@ -9,11 +9,9 @@ import org.bukkit.inventory.Recipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player clicks a recipe in the recipe book.
- *
- * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
- */
+/// Called when a player clicks a recipe in the recipe book.
+///
+/// @deprecated use [com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent]
 @Deprecated(forRemoval = true)
 @Warning(propagate = false)
 public class PlayerRecipeBookClickEvent extends PlayerEvent {
@@ -32,41 +30,36 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
         this.shiftClick = shiftClick;
     }
 
-    /**
-     * Gets the original recipe the player was trying to craft.
-     * <br>
-     * This <em>will not</em> reflect any changes made with {@link #setRecipe(Recipe)}.
-     *
-     * @return the original recipe
-     */
+    /// Gets the original recipe the player was trying to craft.
+    ///
+    /// This _will not_ reflect any changes made with [#setRecipe(Recipe)].
+    ///
+    /// @return the original recipe
     @NotNull
     public Recipe getOriginalRecipe() {
         return this.originalRecipe;
     }
 
-    /**
-     * Gets the recipe the player is trying to craft.
-     * <br>
-     * This <em>will</em> reflect changes made with {@link #setRecipe(Recipe)}.
-     *
-     * @return the recipe
-     */
+    /// Gets the recipe the player is trying to craft.
+    ///
+    /// This _will_ reflect changes made with [#setRecipe(Recipe)].
+    ///
+    /// @return the recipe
     @NotNull
     public Recipe getRecipe() {
         return this.recipe;
     }
 
-    /**
-     * Set the recipe that will be used. <br>
-     * The game will attempt to move the ingredients for this recipe into the
-     * appropriate slots.
-     * <p>
-     * If the original recipe is a {@link CraftingRecipe} the provided recipe
-     * must also be a {@link CraftingRecipe}, otherwise the provided recipe must
-     * be of the same type as the original recipe.
-     *
-     * @param recipe the recipe to be used
-     */
+    /// Set the recipe that will be used.
+    ///
+    /// The game will attempt to move the ingredients for this recipe into the
+    /// appropriate slots.
+    ///
+    /// If the original recipe is a [CraftingRecipe] the provided recipe
+    /// must also be a [CraftingRecipe], otherwise the provided recipe must
+    /// be of the same type as the original recipe.
+    ///
+    /// @param recipe the recipe to be used
     public void setRecipe(@NotNull Recipe recipe) {
         Preconditions.checkArgument(recipe != null, "recipe cannot be null");
         if (this.originalRecipe instanceof CraftingRecipe) { // Any type of crafting recipe is acceptable
@@ -77,23 +70,19 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
         this.recipe = recipe;
     }
 
-    /**
-     * If {@code true} the game will attempt to move the ingredients for as many copies
-     * of this recipe as possible into the appropriate slots, otherwise only 1
-     * copy will be moved.
-     *
-     * @return whether as many copies as possible should be moved
-     */
+    /// If `true` the game will attempt to move the ingredients for as many copies
+    /// of this recipe as possible into the appropriate slots, otherwise only 1
+    /// copy will be moved.
+    ///
+    /// @return whether as many copies as possible should be moved
     public boolean isShiftClick() {
         return this.shiftClick;
     }
 
-    /**
-     * Sets if the game will attempt to move the ingredients for as many copies
-     * of this recipe as possible into the appropriate slots.
-     *
-     * @param shiftClick whether as many copies as possible should be moved
-     */
+    /// Sets if the game will attempt to move the ingredients for as many copies
+    /// of this recipe as possible into the appropriate slots.
+    ///
+    /// @param shiftClick whether as many copies as possible should be moved
     public void setShiftClick(boolean shiftClick) {
         this.shiftClick = shiftClick;
     }

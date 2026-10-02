@@ -14,19 +14,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Represents a dialog. Can be created during normal server operation via {@link #create(Consumer)}.
- * Can also be created during bootstrap via {@link io.papermc.paper.registry.event.RegistryEvents#DIALOG}.
- */
+/// Represents a dialog. Can be created during normal server operation via [#create(Consumer)].
+/// Can also be created during bootstrap via [io.papermc.paper.registry.event.RegistryEvents#DIALOG].
 @ApiStatus.NonExtendable
 public interface Dialog extends Keyed, DialogLike {
 
-    /**
-     * Creates a new dialog using the provided builder.
-     *
-     * @param value the builder to use for creating the dialog
-     * @return a new dialog instance
-     */
+    /// Creates a new dialog using the provided builder.
+    ///
+    /// @param value the builder to use for creating the dialog
+    /// @return a new dialog instance
     static Dialog create(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createDialog(value);
     }
@@ -44,18 +40,14 @@ public interface Dialog extends Keyed, DialogLike {
         return registry.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, value));
     }
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#DIALOG]. Dialogs can exist without a key.
     @Deprecated(since = "1.21.8", forRemoval = true)
     @Override
     NamespacedKey getKey();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#DIALOG]. Dialogs can exist without a key.
     @Deprecated(since = "1.21.8", forRemoval = true)
     @Override
     default Key key() {

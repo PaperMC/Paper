@@ -5,9 +5,7 @@ import org.bukkit.World;
 import org.bukkit.event.world.WorldEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents events related to raids.
- */
+/// Represents events related to raids.
 public abstract class RaidEvent extends WorldEvent {
 
     private final Raid raid;
@@ -17,11 +15,9 @@ public abstract class RaidEvent extends WorldEvent {
         this.raid = raid;
     }
 
-    /**
-     * Returns the raid involved with this event.
-     *
-     * @return the raid
-     */
+    /// Returns the raid involved with this event.
+    ///
+    /// @return the raid
     @NotNull
     public Raid getRaid() {
         return this.raid;

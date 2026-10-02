@@ -10,13 +10,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player shoots a projectile.
- * <p>
- * Notably this event is not called for arrows as the player does not launch them, rather shoots them with the help
- * of a bow or crossbow. A plugin may listen to {@link EntityShootBowEvent}
- * for these actions instead.
- */
+/// Called when a player shoots a projectile.
+///
+/// Notably this event is not called for arrows as the player does not launch them, rather shoots them with the help
+/// of a bow or crossbow. A plugin may listen to [EntityShootBowEvent]
+/// for these actions instead.
 @NullMarked
 public class PlayerLaunchProjectileEvent extends PlayerEvent implements Cancellable {
 
@@ -35,38 +33,30 @@ public class PlayerLaunchProjectileEvent extends PlayerEvent implements Cancella
         this.projectile = projectile;
     }
 
-    /**
-     * Gets the projectile which will be launched by this event
-     *
-     * @return the launched projectile
-     */
+    /// Gets the projectile which will be launched by this event
+    ///
+    /// @return the launched projectile
     public Projectile getProjectile() {
         return this.projectile;
     }
 
-    /**
-     * Get the ItemStack used to fire the projectile
-     *
-     * @return The ItemStack used
-     */
+    /// Get the ItemStack used to fire the projectile
+    ///
+    /// @return The ItemStack used
     public ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    /**
-     * Get whether to consume the ItemStack or not
-     *
-     * @return {@code true} to consume
-     */
+    /// Get whether to consume the ItemStack or not
+    ///
+    /// @return `true` to consume
     public boolean shouldConsume() {
         return this.consumeItem;
     }
 
-    /**
-     * Set whether to consume the ItemStack or not
-     *
-     * @param consumeItem {@code true} to consume
-     */
+    /// Set whether to consume the ItemStack or not
+    ///
+    /// @param consumeItem`true` to consume
     public void setShouldConsume(final boolean consumeItem) {
         this.consumeItem = consumeItem;
     }

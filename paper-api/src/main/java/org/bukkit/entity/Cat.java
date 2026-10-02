@@ -13,61 +13,45 @@ import org.bukkit.Registry;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Meow.
- */
+/// Meow.
 public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarColorable { // Paper - CollarColorable
 
-    /**
-     * Gets the current type of this cat.
-     *
-     * @return Type of the cat.
-     */
+    /// Gets the current type of this cat.
+    ///
+    /// @return Type of the cat.
     @NotNull
     public Type getCatType();
 
-    /**
-     * Sets the current type of this cat.
-     *
-     * @param type New type of this cat.
-     */
+    /// Sets the current type of this cat.
+    ///
+    /// @param type New type of this cat.
     public void setCatType(@NotNull Type type);
 
-    /**
-     * Get the sound variant of this cat.
-     *
-     * @return cat sound variant
-     */
+    /// Get the sound variant of this cat.
+    ///
+    /// @return cat sound variant
     @NotNull
     SoundVariant getSoundVariant();
 
-    /**
-     * Set the sound variant of this cat.
-     *
-     * @param variant cat sound variant
-     */
+    /// Set the sound variant of this cat.
+    ///
+    /// @param variant cat sound variant
     void setSoundVariant(@NotNull SoundVariant variant);
 
-    /**
-     * Get the collar color of this cat
-     *
-     * @return the color of the collar
-     */
+    /// Get the collar color of this cat
+    ///
+    /// @return the color of the collar
     @NotNull
     @Override // Paper
     public DyeColor getCollarColor();
 
-    /**
-     * Set the collar color of this cat
-     *
-     * @param color the color to apply
-     */
+    /// Set the collar color of this cat
+    ///
+    /// @param color the color to apply
     @Override // Paper
     public void setCollarColor(@NotNull DyeColor color);
 
-    /**
-     * Represents the various different cat types there are.
-     */
+    /// Represents the various different cat types there are.
     interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - CatType
@@ -99,11 +83,9 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
-        /**
-         * @param name of the cat type.
-         * @return the cat type with the given name.
-         * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-         */
+        /// @param name of the cat type.
+        /// @return the cat type with the given name.
+        /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
@@ -113,10 +95,8 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
             return type;
         }
 
-        /**
-         * @return an array of all known cat types.
-         * @deprecated use {@link Registry#stream()}.
-         */
+        /// @return an array of all known cat types.
+        /// @deprecated use [Registry#stream()].
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
@@ -124,9 +104,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         }
     }
 
-    /**
-     * Represents the sound variant of a cat.
-     */
+    /// Represents the sound variant of a cat.
     interface SoundVariant extends Keyed {
 
         // Start generate - CatSoundVariant
@@ -141,33 +119,25 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         }
     }
 
-    /**
-     * Sets if the cat is lying down.
-     * This is visual and does not affect the behaviour of the cat.
-     *
-     * @param lyingDown whether the cat should lie down
-     */
+    /// Sets if the cat is lying down.
+    /// This is visual and does not affect the behaviour of the cat.
+    ///
+    /// @param lyingDown whether the cat should lie down
     public void setLyingDown(boolean lyingDown);
 
-    /**
-     * Gets if the cat is lying down.
-     *
-     * @return whether the cat is lying down
-     */
+    /// Gets if the cat is lying down.
+    ///
+    /// @return whether the cat is lying down
     public boolean isLyingDown();
 
-    /**
-     * Sets if the cat has its head up.
-     * This is visual and does not affect the behaviour of the cat.
-     *
-     * @param headUp head is up
-     */
+    /// Sets if the cat has its head up.
+    /// This is visual and does not affect the behaviour of the cat.
+    ///
+    /// @param headUp head is up
     public void setHeadUp(boolean headUp);
 
-    /**
-     * Gets if the cat has its head up.
-     *
-     * @return head is up
-     */
+    /// Gets if the cat has its head up.
+    ///
+    /// @return head is up
     public boolean isHeadUp();
 }

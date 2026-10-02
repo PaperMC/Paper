@@ -16,9 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 @SuppressWarnings("WeakerAccess")
 public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {

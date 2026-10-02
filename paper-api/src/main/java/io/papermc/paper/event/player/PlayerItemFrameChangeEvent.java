@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when an {@link ItemFrame} is having an item rotated, added, or removed from it.
- */
+/// Called when an [ItemFrame] is having an item rotated, added, or removed from it.
 @NullMarked
 public class PlayerItemFrameChangeEvent extends PlayerEvent implements Cancellable {
 
@@ -32,42 +30,34 @@ public class PlayerItemFrameChangeEvent extends PlayerEvent implements Cancellab
         this.action = action;
     }
 
-    /**
-     * Gets the {@link ItemFrame} involved in this event.
-     *
-     * @return the {@link ItemFrame}
-     */
+    /// Gets the [ItemFrame] involved in this event.
+    ///
+    /// @return the [ItemFrame]
     public ItemFrame getItemFrame() {
         return this.itemFrame;
     }
 
-    /**
-     * Gets the {@link ItemStack} involved in this event.
-     * This is the item being added, rotated, or removed from the {@link ItemFrame}.
-     * <p>
-     * If this method returns air, then the resulting item in the ItemFrame will be empty.
-     *
-     * @return the {@link ItemStack} being added, rotated, or removed
-     */
+    /// Gets the [ItemStack] involved in this event.
+    /// This is the item being added, rotated, or removed from the [ItemFrame].
+    ///
+    /// If this method returns air, then the resulting item in the ItemFrame will be empty.
+    ///
+    /// @return the [ItemStack] being added, rotated, or removed
     public ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    /**
-     * Sets the {@link ItemStack} that this {@link ItemFrame} holds.
-     * If {@code null} is provided, the ItemStack will become air and the result in the ItemFrame will be empty.
-     *
-     * @param itemStack {@link ItemFrame} item
-     */
+    /// Sets the [ItemStack] that this [ItemFrame] holds.
+    /// If `null` is provided, the ItemStack will become air and the result in the ItemFrame will be empty.
+    ///
+    /// @param itemStack [ItemFrame] item
     public void setItemStack(final @Nullable ItemStack itemStack) {
         this.itemStack = itemStack == null ? ItemStack.empty() : itemStack;
     }
 
-    /**
-     * Gets the action that was performed on this {@link ItemFrame}.
-     *
-     * @return action performed on the item frame in this event
-     */
+    /// Gets the action that was performed on this [ItemFrame].
+    ///
+    /// @return action performed on the item frame in this event
     public ItemFrameChangeAction getAction() {
         return this.action;
     }

@@ -27,29 +27,23 @@ public interface SwingAnimation {
         // End generate - SwingAnimationType
     }
 
-    /**
-     * Builder for {@link SwingAnimation}.
-     */
+    /// Builder for [SwingAnimation].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<SwingAnimation> {
 
-        /**
-         * Sets the swing animation type.
-         *
-         * @param type animation type
-         * @return the builder for chaining
-         * @see #type()
-         */
+        /// Sets the swing animation type.
+        ///
+        /// @param type animation type
+        /// @return the builder for chaining
+        /// @see #type()
         @Contract(value = "_ -> this", mutates = "this")
         Builder type(Animation type);
 
-        /**
-         * Sets the swing animation duration in ticks.
-         *
-         * @param duration duration (>= 0)
-         * @return the builder for chaining
-         * @see #duration()
-         */
+        /// Sets the swing animation duration in ticks.
+        ///
+        /// @param duration duration (>= 0)
+        /// @return the builder for chaining
+        /// @see #duration()
         @Contract(value = "_ -> this", mutates = "this")
         Builder duration(@NonNegative int duration);
     }

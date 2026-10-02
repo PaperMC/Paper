@@ -1,6 +1,4 @@
-/**
- * Classes dedicated to letting {@link org.bukkit.plugin.Plugin plugins} run
- * code at specific time intervals, including thread safety.
- */
+/// Classes dedicated to letting [`plugins`][org.bukkit.plugin.Plugin] run
+/// code at specific time intervals, including thread safety.
 package org.bukkit.scheduler;
 

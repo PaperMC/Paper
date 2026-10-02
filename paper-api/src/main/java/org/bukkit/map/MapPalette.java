@@ -8,12 +8,10 @@ import java.awt.image.BufferedImage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the palette that map items use.
- * <p>
- * These fields are the base color ranges. Each entry corresponds to four
- * colors of varying shades with values entry to entry + 3.
- */
+/// Represents the palette that map items use.
+///
+/// These fields are the base color ranges. Each entry corresponds to four
+/// colors of varying shades with values entry to entry + 3.
 public final class MapPalette {
     // Internal mechanisms
     private MapPalette() {}
@@ -289,83 +287,53 @@ public final class MapPalette {
     };
 
     // Interface
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte TRANSPARENT = 0;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte LIGHT_GREEN = 4;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte LIGHT_BROWN = 8;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte GRAY_1 = 12;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte RED = 16;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte PALE_BLUE = 20;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte GRAY_2 = 24;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte DARK_GREEN = 28;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte WHITE = 32;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte LIGHT_GRAY = 36;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte BROWN = 40;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte DARK_GRAY = 44;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte BLUE = 48;
-    /**
-     * @deprecated Magic value
-     */
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public static final byte DARK_BROWN = 52;
 
-    /**
-     * Resize an image to 128x128.
-     *
-     * @param image The image to resize.
-     * @return The resized image.
-     */
+    /// Resize an image to 128x128.
+    ///
+    /// @param image The image to resize.
+    /// @return The resized image.
     @NotNull
     public static BufferedImage resizeImage(@Nullable Image image) {
         BufferedImage result = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
@@ -375,13 +343,11 @@ public final class MapPalette {
         return result;
     }
 
-    /**
-     * Convert an Image to a byte[] using the palette.
-     *
-     * @param image The image to convert.
-     * @return A byte[] containing the pixels of the image.
-     * @deprecated use color-related methods
-     */
+    /// Convert an Image to a byte[] using the palette.
+    ///
+    /// @param image The image to convert.
+    /// @return A byte[] containing the pixels of the image.
+    /// @deprecated use color-related methods
     @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     @NotNull
     public static byte[] imageToBytes(@NotNull Image image) {
@@ -400,29 +366,25 @@ public final class MapPalette {
         return result;
     }
 
-    /**
-     * Get the index of the closest matching color in the palette to the given
-     * color.
-     *
-     * @param r The red component of the color.
-     * @param b The blue component of the color.
-     * @param g The green component of the color.
-     * @return The index in the palette.
-     * @deprecated use color-related methods
-     */
+    /// Get the index of the closest matching color in the palette to the given
+    /// color.
+    ///
+    /// @param r The red component of the color.
+    /// @param b The blue component of the color.
+    /// @param g The green component of the color.
+    /// @return The index in the palette.
+    /// @deprecated use color-related methods
     @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public static byte matchColor(int r, int g, int b) {
         return matchColor(new Color(r, g, b));
     }
 
-    /**
-     * Get the index of the closest matching color in the palette to the given
-     * color.
-     *
-     * @param color The Color to match.
-     * @return The index in the palette.
-     * @deprecated use color-related methods
-     */
+    /// Get the index of the closest matching color in the palette to the given
+    /// color.
+    ///
+    /// @param color The Color to match.
+    /// @return The index in the palette.
+    /// @deprecated use color-related methods
     @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public static byte matchColor(@NotNull Color color) {
         if (color.getAlpha() < 128) return 0;
@@ -446,13 +408,11 @@ public final class MapPalette {
         return (byte) (index < 128 ? index : -129 + (index - 127));
     }
 
-    /**
-     * Get the value of the given color in the palette.
-     *
-     * @param index The index in the palette.
-     * @return The Color of the palette entry.
-     * @deprecated use color directly
-     */
+    /// Get the value of the given color in the palette.
+    ///
+    /// @param index The index in the palette.
+    /// @return The Color of the palette entry.
+    /// @deprecated use color directly
     @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     @NotNull
     public static Color getColor(byte index) {
@@ -460,12 +420,10 @@ public final class MapPalette {
         return colors[index >= 0 ? index : index + 256];
     }
 
-    /**
-     * Gets the closest {@link Color} in the map palette.
-     *
-     * @param color to match against the map palette
-     * @return the nearest {@link Color} from the map palette
-     */
+    /// Gets the closest [Color] in the map palette.
+    ///
+    /// @param color to match against the map palette
+    /// @return the nearest [Color] from the map palette
     @NotNull
     public static Color getNearestColor(@NotNull Color color) {
         byte b = matchColor(color);
@@ -474,40 +432,32 @@ public final class MapPalette {
 
     private static MapColorCache mapColorCache;
 
-    /**
-     * Sets the given MapColorCache.
-     *
-     * @param mapColorCache The map color cache to set
-     */
+    /// Sets the given MapColorCache.
+    ///
+    /// @param mapColorCache The map color cache to set
     public static void setMapColorCache(@NotNull MapColorCache mapColorCache) {
         Preconditions.checkState(MapPalette.mapColorCache == null, "Map color cache already set");
 
         MapPalette.mapColorCache = mapColorCache;
     }
 
-    /**
-     * Holds cached information for matching map colors of a given RBG color.
-     */
+    /// Holds cached information for matching map colors of a given RBG color.
     public interface MapColorCache {
 
-        /**
-         * Returns true if the MapColorCache has values cached, if not it will
-         * return false.
-         * A case where it might return false is when the cache is not build jet.
-         *
-         * @return true if this MapColorCache has values cached otherwise false
-         */
+        /// Returns true if the MapColorCache has values cached, if not it will
+        /// return false.
+        /// A case where it might return false is when the cache is not build jet.
+        ///
+        /// @return true if this MapColorCache has values cached otherwise false
         boolean isCached();
 
-        /**
-         * Get the cached index of the closest matching color in the palette to the given
-         * color.
-         *
-         * @param color The Color to match.
-         * @return The index in the palette.
-         * @throws IllegalStateException if {@link #isCached()} returns false
-         * @apiNote Internal Use Only
-         */
+        /// Get the cached index of the closest matching color in the palette to the given
+        /// color.
+        ///
+        /// @param color The Color to match.
+        /// @return The index in the palette.
+        /// @throws IllegalStateException if [#isCached()] returns false
+        /// @apiNote Internal Use Only
         @org.jetbrains.annotations.ApiStatus.Internal // Paper
         byte matchColor(@NotNull Color color);
     }

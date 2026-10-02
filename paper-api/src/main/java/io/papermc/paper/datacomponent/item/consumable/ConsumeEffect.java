@@ -8,155 +8,119 @@ import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Effect that occurs when consuming an item.
- */
+/// Effect that occurs when consuming an item.
 @ApiStatus.NonExtendable
 public interface ConsumeEffect {
 
-    /**
-     * Creates a consume effect that randomly teleports the entity on consumption.
-     *
-     * @param diameter diameter of random teleportation
-     * @return the effect instance
-     * @see #teleportRandomlyEffect(float, boolean)
-     */
+    /// Creates a consume effect that randomly teleports the entity on consumption.
+    ///
+    /// @param diameter diameter of random teleportation
+    /// @return the effect instance
+    /// @see #teleportRandomlyEffect(float, boolean)
     @Contract(value = "_ -> new", pure = true)
     static TeleportRandomly teleportRandomlyEffect(final float diameter) {
         return teleportRandomlyEffect(diameter, true);
     }
 
-    /**
-     * Creates a consume effect that randomly teleports the entity on consumption.
-     *
-     * @param diameter diameter of random teleportation
-     * @param directionalParticles show a particle trail in the direction of the teleportation
-     * @return the effect instance
-     */
+    /// Creates a consume effect that randomly teleports the entity on consumption.
+    ///
+    /// @param diameter diameter of random teleportation
+    /// @param directionalParticles show a particle trail in the direction of the teleportation
+    /// @return the effect instance
     @Contract(value = "_, _ -> new", pure = true)
     static TeleportRandomly teleportRandomlyEffect(final float diameter, final boolean directionalParticles) {
         return ConsumableTypesBridge.bridge().teleportRandomlyEffect(diameter, directionalParticles);
     }
 
-    /**
-     * Creates a consume effect that removes status effects on consumption.
-     *
-     * @param effects the potion effects to remove
-     * @return the effect instance
-     */
+    /// Creates a consume effect that removes status effects on consumption.
+    ///
+    /// @param effects the potion effects to remove
+    /// @return the effect instance
     @Contract(value = "_ -> new", pure = true)
     static RemoveStatusEffects removeEffects(final RegistryKeySet<PotionEffectType> effects) {
         return ConsumableTypesBridge.bridge().removeStatusEffects(effects);
     }
 
-    /**
-     * Creates a consume effect that plays a sound on consumption.
-     *
-     * @param key the key sound effect to play
-     * @return the effect instance
-     */
+    /// Creates a consume effect that plays a sound on consumption.
+    ///
+    /// @param key the key sound effect to play
+    /// @return the effect instance
     @Contract(value = "_ -> new", pure = true)
     static PlaySound playSoundConsumeEffect(final Key key) {
         return ConsumableTypesBridge.bridge().playSoundEffect(key);
     }
 
-    /**
-     * Creates a consume effect that clears all status effects.
-     *
-     * @return the effect instance
-     */
+    /// Creates a consume effect that clears all status effects.
+    ///
+    /// @return the effect instance
     @Contract(value = "-> new", pure = true)
     static ClearAllStatusEffects clearAllStatusEffects() {
         return ConsumableTypesBridge.bridge().clearAllStatusEffects();
     }
 
-    /**
-     * Creates a consume effect that gives potion effects on consumption.
-     *
-     * @param effects     the potion effects to apply
-     * @param probability the probability of these effects being applied, between 0 and 1 inclusive
-     * @return the effect instance
-     */
+    /// Creates a consume effect that gives potion effects on consumption.
+    ///
+    /// @param effects     the potion effects to apply
+    /// @param probability the probability of these effects being applied, between 0 and 1 inclusive
+    /// @return the effect instance
     @Contract(value = "_, _ -> new", pure = true)
     static ApplyStatusEffects applyStatusEffects(final List<PotionEffect> effects, final float probability) {
         return ConsumableTypesBridge.bridge().applyStatusEffects(effects, probability);
     }
 
-    /**
-     * Represents a consumable effect that randomly teleports the entity on consumption.
-     */
+    /// Represents a consumable effect that randomly teleports the entity on consumption.
     @ApiStatus.NonExtendable
     interface TeleportRandomly extends ConsumeEffect {
 
-        /**
-         * The max range that the entity can be teleported to.
-         *
-         * @return teleportation diameter
-         */
+        /// The max range that the entity can be teleported to.
+        ///
+        /// @return teleportation diameter
         float diameter();
 
-        /**
-         * Checks whether to show a particle trail in the direction of the teleportation.
-         *
-         * @return {@code true} if the particle trail should be shown
-         */
+        /// Checks whether to show a particle trail in the direction of the teleportation.
+        ///
+        /// @return `true` if the particle trail should be shown
         boolean directionalParticles();
     }
 
-    /**
-     * Represents a consumable effect that removes status effects on consumption.
-     */
+    /// Represents a consumable effect that removes status effects on consumption.
     @ApiStatus.NonExtendable
     interface RemoveStatusEffects extends ConsumeEffect {
 
-        /**
-         * Potion effects to remove.
-         *
-         * @return effects
-         */
+        /// Potion effects to remove.
+        ///
+        /// @return effects
         RegistryKeySet<PotionEffectType> removeEffects();
     }
 
-    /**
-     * Represents a consumable effect that plays a sound on consumption.
-     */
+    /// Represents a consumable effect that plays a sound on consumption.
     @ApiStatus.NonExtendable
     interface PlaySound extends ConsumeEffect {
 
-        /**
-         * Sound effect to play in the world.
-         *
-         * @return sound effect
-         */
+        /// Sound effect to play in the world.
+        ///
+        /// @return sound effect
         Key sound();
     }
 
-    /**
-     * Represents a consumable effect that clears all effects on consumption.
-     */
+    /// Represents a consumable effect that clears all effects on consumption.
     @ApiStatus.NonExtendable
     interface ClearAllStatusEffects extends ConsumeEffect {
 
     }
 
-    /**
-     * Represents a consumable effect that applies potion effects based on a probability on consumption.
-     */
+    /// Represents a consumable effect that applies potion effects based on a probability on consumption.
     @ApiStatus.NonExtendable
     interface ApplyStatusEffects extends ConsumeEffect {
 
-        /**
-         * Potion effect instances to grant.
-         *
-         * @return potion effects
-         */
+        /// Potion effect instances to grant.
+        ///
+        /// @return potion effects
         List<PotionEffect> effects();
 
-        /**
-         * Float between 0 and 1, chance for the effect to be applied.
-         *
-         * @return chance
-         */
+        /// Float between 0 and 1, chance for the effect to be applied.
+        ///
+        /// @return chance
         float probability();
     }
 }

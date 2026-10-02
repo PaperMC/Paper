@@ -17,9 +17,7 @@ import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Concrete implementation of an attribute modifier.
- */
+/// Concrete implementation of an attribute modifier.
 public class AttributeModifier implements ConfigurationSerializable, Keyed {
 
     private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
@@ -64,13 +62,11 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         this.slot = slot;
     }
 
-    /**
-     * Get the unique ID for this modifier.
-     *
-     * @return unique id
-     * @see #getKey()
-     * @deprecated attributes are now identified by keys
-     */
+    /// Get the unique ID for this modifier.
+    ///
+    /// @return unique id
+    /// @see #getKey()
+    /// @deprecated attributes are now identified by keys
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true)
     public UUID getUniqueId() {
@@ -92,53 +88,43 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return key;
     }
 
-    /**
-     * Get the name of this modifier.
-     *
-     * @return name
-     */
+    /// Get the name of this modifier.
+    ///
+    /// @return name
     @NotNull
     public String getName() {
         return key.getKey();
     }
 
-    /**
-     * Get the amount by which this modifier will apply its {@link Operation}.
-     *
-     * @return modification amount
-     */
+    /// Get the amount by which this modifier will apply its [Operation].
+    ///
+    /// @return modification amount
     public double getAmount() {
         return amount;
     }
 
-    /**
-     * Get the operation this modifier will apply.
-     *
-     * @return operation
-     */
+    /// Get the operation this modifier will apply.
+    ///
+    /// @return operation
     @NotNull
     public Operation getOperation() {
         return operation;
     }
 
-    /**
-     * Get the {@link EquipmentSlot} this AttributeModifier is active on,
-     * or null if this modifier is applicable for any slot.
-     *
-     * @return the slot
-     * @deprecated use {@link #getSlotGroup()}
-     */
+    /// Get the [EquipmentSlot] this AttributeModifier is active on,
+    /// or null if this modifier is applicable for any slot.
+    ///
+    /// @return the slot
+    /// @deprecated use [#getSlotGroup()]
     @Nullable
     @Deprecated(since = "1.20.5")
     public EquipmentSlot getSlot() {
         return slot == EquipmentSlotGroup.ANY ? null : slot.getExample();
     }
 
-    /**
-     * Get the {@link EquipmentSlotGroup} this AttributeModifier is active on.
-     *
-     * @return the slot
-     */
+    /// Get the [EquipmentSlotGroup] this AttributeModifier is active on.
+    ///
+    /// @return the slot
     @NotNull
     public EquipmentSlotGroup getSlotGroup() {
         return slot;
@@ -211,22 +197,14 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return new AttributeModifier(key, NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], EquipmentSlotGroup.ANY);
     }
 
-    /**
-     * Enumerable operation to be applied.
-     */
+    /// Enumerable operation to be applied.
     public enum Operation {
 
-        /**
-         * Adds (or subtracts) the specified amount to the base value.
-         */
+        /// Adds (or subtracts) the specified amount to the base value.
         ADD_NUMBER,
-        /**
-         * Adds this scalar of amount to the base value.
-         */
+        /// Adds this scalar of amount to the base value.
         ADD_SCALAR,
-        /**
-         * Multiply amount by this value, after adding 1 to it.
-         */
+        /// Multiply amount by this value, after adding 1 to it.
         MULTIPLY_SCALAR_1;
     }
 }

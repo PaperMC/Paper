@@ -1,4 +1,2 @@
-/**
- * Generalized BlockData classes.
- */
+/// Generalized BlockData classes.
 package org.bukkit.block.data;

@@ -9,11 +9,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is fired when a sign is opened by the player.
- *
- * @deprecated use {@link io.papermc.paper.event.player.PlayerOpenSignEvent}
- */
+/// This event is fired when a sign is opened by the player.
+///
+/// @deprecated use [io.papermc.paper.event.player.PlayerOpenSignEvent]
 @Deprecated(forRemoval = true)
 @Warning(propagate = false)
 public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
@@ -34,31 +32,25 @@ public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
         this.cause = cause;
     }
 
-    /**
-     * Gets the sign that was opened.
-     *
-     * @return opened sign
-     */
+    /// Gets the sign that was opened.
+    ///
+    /// @return opened sign
     @NotNull
     public Sign getSign() {
         return this.sign;
     }
 
-    /**
-     * Gets side of the sign opened.
-     *
-     * @return side of sign opened
-     */
+    /// Gets side of the sign opened.
+    ///
+    /// @return side of sign opened
     @NotNull
     public Side getSide() {
         return this.side;
     }
 
-    /**
-     * Gets the cause of the sign open.
-     *
-     * @return sign open cause
-     */
+    /// Gets the cause of the sign open.
+    ///
+    /// @return sign open cause
     @NotNull
     public Cause getCause() {
         return this.cause;
@@ -87,21 +79,13 @@ public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
 
     public enum Cause {
 
-        /**
-         * Indicate the sign was opened because of an interaction.
-         */
+        /// Indicate the sign was opened because of an interaction.
         INTERACT,
-        /**
-         * Indicate the sign was opened because the sign was placed.
-         */
+        /// Indicate the sign was opened because the sign was placed.
         PLACE,
-        /**
-         * Indicate the sign was opened because of a plugin.
-         */
+        /// Indicate the sign was opened because of a plugin.
         PLUGIN,
-        /**
-         * Indicate the sign was opened for an unknown reason.
-         */
+        /// Indicate the sign was opened for an unknown reason.
         UNKNOWN
     }
 }

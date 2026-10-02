@@ -4,10 +4,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the contents of item transformation information when an item is used.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_REMAINDER
- */
+/// Holds the contents of item transformation information when an item is used.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#USE_REMAINDER
 @ApiStatus.NonExtendable
 public interface UseRemainder {
 
@@ -16,11 +14,9 @@ public interface UseRemainder {
         return ItemComponentTypesBridge.bridge().useRemainder(itemStack);
     }
 
-    /**
-     * The item that the item that is consumed is transformed into.
-     *
-     * @return item
-     */
+    /// The item that the item that is consumed is transformed into.
+    ///
+    /// @return item
     @Contract(value = "-> new", pure = true)
     ItemStack transformInto();
 }

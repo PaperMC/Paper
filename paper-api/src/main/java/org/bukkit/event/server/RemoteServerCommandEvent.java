@@ -5,10 +5,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when a command is received over RCON. See the javadocs
- * of {@link ServerCommandEvent} for more information.
- */
+/// This event is called when a command is received over RCON. See the javadocs
+/// of [ServerCommandEvent] for more information.
 public class RemoteServerCommandEvent extends ServerCommandEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

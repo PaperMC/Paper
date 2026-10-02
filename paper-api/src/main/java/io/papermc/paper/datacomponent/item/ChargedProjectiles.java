@@ -7,10 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds all projectiles that have been loaded into a Crossbow.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#CHARGED_PROJECTILES
- */
+/// Holds all projectiles that have been loaded into a Crossbow.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#CHARGED_PROJECTILES
 @ApiStatus.NonExtendable
 public interface ChargedProjectiles {
 
@@ -24,37 +22,29 @@ public interface ChargedProjectiles {
         return ItemComponentTypesBridge.bridge().chargedProjectiles();
     }
 
-    /**
-     * Lists the projectiles that are currently loaded into this component.
-     *
-     * @return the loaded projectiles
-     */
+    /// Lists the projectiles that are currently loaded into this component.
+    ///
+    /// @return the loaded projectiles
     @Contract(value = "-> new", pure = true)
     @Unmodifiable List<ItemStack> projectiles();
 
-    /**
-     * Builder for {@link ChargedProjectiles}.
-     */
+    /// Builder for [ChargedProjectiles].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ChargedProjectiles> {
 
-        /**
-         * Adds a projectile to be loaded in this builder.
-         *
-         * @param item projectile
-         * @return the builder for chaining
-         * @see #projectiles()
-         */
+        /// Adds a projectile to be loaded in this builder.
+        ///
+        /// @param item projectile
+        /// @return the builder for chaining
+        /// @see #projectiles()
         @Contract(value = "_ -> this", mutates = "this")
         Builder add(ItemStack item);
 
-        /**
-         * Adds projectiles to be loaded in this builder.
-         *
-         * @param items projectiles
-         * @return the builder for chaining
-         * @see #projectiles()
-         */
+        /// Adds projectiles to be loaded in this builder.
+        ///
+        /// @param items projectiles
+        /// @return the builder for chaining
+        /// @see #projectiles()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<ItemStack> items);
     }

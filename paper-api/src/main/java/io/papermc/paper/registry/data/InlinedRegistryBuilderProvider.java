@@ -11,9 +11,7 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * @hidden
- */
+/// @hidden
 @ApiStatus.Internal
 @ApiStatus.NonExtendable
 public interface InlinedRegistryBuilderProvider {

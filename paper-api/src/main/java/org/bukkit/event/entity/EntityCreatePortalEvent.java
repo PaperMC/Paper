@@ -11,11 +11,9 @@ import org.bukkit.event.world.PortalCreateEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when a Living Entity creates a portal in a world.
- *
- * @deprecated Use {@link PortalCreateEvent}
- */
+/// Thrown when a Living Entity creates a portal in a world.
+///
+/// @deprecated Use [PortalCreateEvent]
 @Deprecated(since = "1.14.1")
 @Warning(propagate = false)
 public class EntityCreatePortalEvent extends EntityEvent implements Cancellable {
@@ -41,21 +39,17 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets a list of all blocks associated with the portal.
-     *
-     * @return List of blocks that will be changed.
-     */
+    /// Gets a list of all blocks associated with the portal.
+    ///
+    /// @return List of blocks that will be changed.
     @NotNull
     public List<BlockState> getBlocks() {
         return this.blocks;
     }
 
-    /**
-     * Gets the type of portal that is trying to be created.
-     *
-     * @return Type of portal.
-     */
+    /// Gets the type of portal that is trying to be created.
+    ///
+    /// @return Type of portal.
     @NotNull
     public PortalType getPortalType() {
         return this.type;

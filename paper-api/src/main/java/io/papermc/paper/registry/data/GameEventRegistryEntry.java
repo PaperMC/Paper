@@ -6,39 +6,30 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * A data-centric version-specific registry entry for the {@link GameEvent} type.
- */
+/// A data-centric version-specific registry entry for the [GameEvent] type.
 @ApiStatus.NonExtendable
 public interface GameEventRegistryEntry {
 
-    /**
-     * Provides the range in which this game event will notify its listeners.
-     *
-     * @return the range of blocks, represented as an int
-     * @see GameEvent#getRange()
-     */
+    /// Provides the range in which this game event will notify its listeners.
+    ///
+    /// @return the range of blocks, represented as an int
+    /// @see GameEvent#getRange()
     @NonNegative int range();
 
-    /**
-     * A mutable builder for the {@link GameEventRegistryEntry} plugins may change in applicable registry events.
-     * <p>
-     * The following values are required for each builder:
-     * <ul>
-     *     <li>{@link #range(int)}</li>
-     * </ul>
-     */
+    /// A mutable builder for the [GameEventRegistryEntry] plugins may change in applicable registry events.
+    ///
+    /// The following values are required for each builder:
+    ///
+    ///   - [#range(int)]
     @ApiStatus.NonExtendable
     interface Builder extends GameEventRegistryEntry, RegistryBuilder<GameEvent> {
 
-        /**
-         * Sets the range in which this game event should notify its listeners.
-         *
-         * @param range the range of blocks
-         * @return this builder instance
-         * @see GameEventRegistryEntry#range()
-         * @see GameEvent#getRange()
-         */
+        /// Sets the range in which this game event should notify its listeners.
+        ///
+        /// @param range the range of blocks
+        /// @return this builder instance
+        /// @see GameEventRegistryEntry#range()
+        /// @see GameEvent#getRange()
         @Contract(value = "_ -> this", mutates = "this")
         Builder range(@NonNegative int range);
     }

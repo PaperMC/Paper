@@ -7,11 +7,9 @@ import org.bukkit.event.player.PlayerFishEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called just before a {@link FishHook}'s {@link FishHook.HookState} is changed.
- *
- * <p>If you want to monitor a player's fishing state transition, you can use {@link PlayerFishEvent}.</p>
- */
+/// Called just before a [FishHook]'s [FishHook.HookState] is changed.
+///
+/// If you want to monitor a player's fishing state transition, you can use [PlayerFishEvent].
 @NullMarked
 public final class FishHookStateChangeEvent extends EntityEvent {
 
@@ -25,13 +23,11 @@ public final class FishHookStateChangeEvent extends EntityEvent {
         this.newHookState = newHookState;
     }
 
-    /**
-     * Get the <strong>new</strong> hook state of the {@link FishHook}.
-     *
-     * <p>Refer to {@link FishHook#getState()} to get the current hook state.</p>
-     *
-     * @return the <strong>new</strong> hook state
-     */
+    /// Get the **new** hook state of the [FishHook].
+    ///
+    /// Refer to [FishHook#getState()] to get the current hook state.
+    ///
+    /// @return the **new** hook state
     public FishHook.HookState getNewHookState() {
         return this.newHookState;
     }

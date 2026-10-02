@@ -31,9 +31,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired once a profiles additional properties (such as textures) has been filled
- */
+/// Fired once a profiles additional properties (such as textures) has been filled
 @NullMarked
 public class FillProfileEvent extends Event {
 
@@ -47,19 +45,15 @@ public class FillProfileEvent extends Event {
         this.profile = profile;
     }
 
-    /**
-     * @return The Profile that had properties filled
-     */
+    /// @return The Profile that had properties filled
     public PlayerProfile getPlayerProfile() {
         return this.profile;
     }
 
-    /**
-     * Same as .getPlayerProfile().getProperties()
-     *
-     * @return The new properties on the profile.
-     * @see PlayerProfile#getProperties()
-     */
+    /// Same as .getPlayerProfile().getProperties()
+    ///
+    /// @return The new properties on the profile.
+    /// @see PlayerProfile#getProperties()
     public Set<ProfileProperty> getProperties() {
         return this.profile.getProperties();
     }

@@ -4,9 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a block related event.
- */
+/// Represents a block related event.
 public abstract class BlockEvent extends Event {
 
     protected Block block;
@@ -15,11 +13,9 @@ public abstract class BlockEvent extends Event {
         this.block = block;
     }
 
-    /**
-     * Gets the block involved in this event.
-     *
-     * @return The Block which block is involved in this event
-     */
+    /// Gets the block involved in this event.
+    ///
+    /// @return The Block which block is involved in this event
     @NotNull
     public final Block getBlock() {
         return this.block;

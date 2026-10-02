@@ -8,10 +8,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds the effects that will be applied when consuming Suspicious Stew.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#SUSPICIOUS_STEW_EFFECTS
- */
+/// Holds the effects that will be applied when consuming Suspicious Stew.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#SUSPICIOUS_STEW_EFFECTS
 @ApiStatus.NonExtendable
 public interface SuspiciousStewEffects {
 
@@ -25,37 +23,29 @@ public interface SuspiciousStewEffects {
         return ItemComponentTypesBridge.bridge().suspiciousStewEffects();
     }
 
-    /**
-     * Effects that will be applied when consuming Suspicious Stew.
-     *
-     * @return effects
-     */
+    /// Effects that will be applied when consuming Suspicious Stew.
+    ///
+    /// @return effects
     @Contract(pure = true)
     @Unmodifiable List<SuspiciousEffectEntry> effects();
 
-    /**
-     * Builder for {@link SuspiciousStewEffects}.
-     */
+    /// Builder for [SuspiciousStewEffects].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<SuspiciousStewEffects> {
 
-        /**
-         * Adds an effect applied to this builder.
-         *
-         * @param entry effect
-         * @return the builder for chaining
-         * @see #effects()
-         */
+        /// Adds an effect applied to this builder.
+        ///
+        /// @param entry effect
+        /// @return the builder for chaining
+        /// @see #effects()
         @Contract(value = "_ -> this", mutates = "this")
         Builder add(SuspiciousEffectEntry entry);
 
-        /**
-         * Adds effects applied to this builder.
-         *
-         * @param entries effect
-         * @return the builder for chaining
-         * @see #effects()
-         */
+        /// Adds effects applied to this builder.
+        ///
+        /// @param entries effect
+        /// @return the builder for chaining
+        /// @see #effects()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(Collection<SuspiciousEffectEntry> entries);
     }

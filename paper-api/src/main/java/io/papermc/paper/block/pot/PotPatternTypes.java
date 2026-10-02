@@ -5,9 +5,7 @@ import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 
-/**
- * All pot pattern types.
- */
+/// All pot pattern types.
 public final class PotPatternTypes {
 
     // Start generate - PotPatternTypes

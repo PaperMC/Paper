@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Called when a piston extends
- */
+/// Called when a piston extends
 public class BlockPistonExtendEvent extends BlockPistonEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -36,24 +34,20 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
         this.blocks = blocks;
     }
 
-    /**
-     * Get the amount of blocks which will be moved while extending.
-     *
-     * @return the amount of moving blocks
-     * @deprecated slime blocks make the value of this method
-     *          inaccurate due to blocks being pushed at the side
-     */
+    /// Get the amount of blocks which will be moved while extending.
+    ///
+    /// @return the amount of moving blocks
+    /// @deprecated slime blocks make the value of this method
+    ///          inaccurate due to blocks being pushed at the side
     @Deprecated(since = "1.8")
     public int getLength() {
         return this.length;
     }
 
-    /**
-     * Get an immutable list of the blocks which will be moved by the
-     * extending.
-     *
-     * @return Immutable list of the moved blocks.
-     */
+    /// Get an immutable list of the blocks which will be moved by the
+    /// extending.
+    ///
+    /// @return Immutable list of the moved blocks.
     @NotNull
     @Unmodifiable
     public List<Block> getBlocks() {

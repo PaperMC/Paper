@@ -7,57 +7,44 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * A data-centric version-specific registry entry for the {@link org.bukkit.inventory.meta.trim.TrimMaterial} type.
- */
+/// A data-centric version-specific registry entry for the [org.bukkit.inventory.meta.trim.TrimMaterial] type.
 @ApiStatus.NonExtendable
 public interface TrimMaterialRegistryEntry {
 
-    /**
-     * Provides the palette texture id to be used for this trim material.
-     *
-     * @return the palette texture id
-     */
+    /// Provides the palette texture id to be used for this trim material.
+    ///
+    /// @return the palette texture id
     @Contract(pure = true)
     Key paletteId();
 
-    /**
-     * Provides the description of the trim material.
-     *
-     * @return the description
-     */
+    /// Provides the description of the trim material.
+    ///
+    /// @return the description
     @Contract(pure = true)
     Component description();
 
-    /**
-     * A mutable builder for {@link TrimMaterialRegistryEntry} plugins may change in applicable registry events.
-     * <p>
-     * The following values are required for each builder:
-     * <ul>
-     *     <li>{@link #paletteId(Key)}</li>
-     *     <li>{@link #description(Component)}</li>
-     * </ul>
-     */
+    /// A mutable builder for [TrimMaterialRegistryEntry] plugins may change in applicable registry events.
+    ///
+    /// The following values are required for each builder:
+    ///
+    ///   - [#paletteId(Key)]
+    ///   - [#description(Component)]
     @ApiStatus.NonExtendable
     interface Builder extends TrimMaterialRegistryEntry, RegistryBuilder<TrimMaterial> {
 
-        /**
-         * Sets the palette texture id to be used for this trim material.
-         *
-         * @param paletteId the palette texture id
-         * @return this builder instance
-         * @see #paletteId()
-         */
+        /// Sets the palette texture id to be used for this trim material.
+        ///
+        /// @param paletteId the palette texture id
+        /// @return this builder instance
+        /// @see #paletteId()
         @Contract(value = "_ -> this", mutates = "this")
         Builder paletteId(Key paletteId);
 
-        /**
-         * Sets the description for the trim material.
-         *
-         * @param description the description
-         * @return this builder instance
-         * @see #description()
-         */
+        /// Sets the description for the trim material.
+        ///
+        /// @param description the description
+        /// @return this builder instance
+        /// @see #description()
         @Contract(value = "_ -> this", mutates = "this")
         Builder description(Component description);
     }

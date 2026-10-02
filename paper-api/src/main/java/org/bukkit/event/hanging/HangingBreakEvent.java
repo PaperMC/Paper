@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Triggered when a hanging entity is removed
- */
+/// Triggered when a hanging entity is removed
 public class HangingBreakEvent extends HangingEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,11 +20,9 @@ public class HangingBreakEvent extends HangingEvent implements Cancellable {
         this.cause = cause;
     }
 
-    /**
-     * Gets the cause for the hanging entity's removal
-     *
-     * @return the RemoveCause for the hanging entity's removal
-     */
+    /// Gets the cause for the hanging entity's removal
+    ///
+    /// @return the RemoveCause for the hanging entity's removal
     @NotNull
     public HangingBreakEvent.RemoveCause getCause() {
         return this.cause;
@@ -53,29 +49,17 @@ public class HangingBreakEvent extends HangingEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the cause of the removal
-     */
+    /// An enum to specify the cause of the removal
     public enum RemoveCause {
-        /**
-         * Removed by an entity
-         */
+        /// Removed by an entity
         ENTITY,
-        /**
-         * Removed by an explosion
-         */
+        /// Removed by an explosion
         EXPLOSION,
-        /**
-         * Removed by placing a block on it
-         */
+        /// Removed by placing a block on it
         OBSTRUCTION,
-        /**
-         * Removed by destroying the block behind it, etc
-         */
+        /// Removed by destroying the block behind it, etc
         PHYSICS,
-        /**
-         * Removed by an uncategorised cause
-         */
+        /// Removed by an uncategorised cause
         DEFAULT,
     }
 }

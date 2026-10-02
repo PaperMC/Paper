@@ -5,9 +5,7 @@ import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents a part of the "brain" of a mob. It tracks all tasks (running or not), allows adding and removing goals
- */
+/// Represents a part of the "brain" of a mob. It tracks all tasks (running or not), allows adding and removing goals
 @NullMarked
 public interface MobGoals {
 

@@ -7,9 +7,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a Turtle decides to go home
- */
+/// Fired when a Turtle decides to go home
 @NullMarked
 public class TurtleGoHomeEvent extends EntityEvent implements Cancellable {
 
@@ -22,11 +20,9 @@ public class TurtleGoHomeEvent extends EntityEvent implements Cancellable {
         super(turtle);
     }
 
-    /**
-     * The turtle going home
-     *
-     * @return The turtle
-     */
+    /// The turtle going home
+    ///
+    /// @return The turtle
     @Override
     public Turtle getEntity() {
         return (Turtle) super.getEntity();

@@ -9,12 +9,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a Sculk sensor receives a game event and hence might activate.
- * <br>
- * Will be called cancelled if the block's default behavior is to ignore the
- * event.
- */
+/// Called when a Sculk sensor receives a game event and hence might activate.
+///
+/// Will be called cancelled if the block's default behavior is to ignore the
+/// event.
 public class BlockReceiveGameEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,21 +29,17 @@ public class BlockReceiveGameEvent extends BlockEvent implements Cancellable {
         this.entity = entity;
     }
 
-    /**
-     * Get the underlying event.
-     *
-     * @return the event
-     */
+    /// Get the underlying event.
+    ///
+    /// @return the event
     @NotNull
     public GameEvent getEvent() {
         return this.event;
     }
 
-    /**
-     * Get the entity which triggered this event, if present.
-     *
-     * @return triggering entity or {@code null}
-     */
+    /// Get the entity which triggered this event, if present.
+    ///
+    /// @return triggering entity or `null`
     @Nullable
     public Entity getEntity() {
         return this.entity;

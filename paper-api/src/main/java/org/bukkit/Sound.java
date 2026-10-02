@@ -8,19 +8,17 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An interface of Sounds the server is able to send to players.
- * <p>
- * The sounds listed in this interface are present in the default server
- * or can be enabled via a {@link FeatureFlag}.
- * There may be additional sounds present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
- * which can be accessed via {@link Registry#SOUNDS}.
- * <p>
- * <b>WARNING:</b> At any time, sounds may be added/removed from this interface or even
- * Minecraft itself! There is no guarantee the sounds will play. There is no
- * guarantee values will not be removed from this interface. As such, you should not
- * depend on the ordinal values of this class.
- */
+/// An interface of Sounds the server is able to send to players.
+///
+/// The sounds listed in this interface are present in the default server
+/// or can be enabled via a [FeatureFlag].
+/// There may be additional sounds present in the server, for example from a [io.papermc.paper.datapack.Datapack]
+/// which can be accessed via [Registry#SOUNDS].
+///
+/// **WARNING:** At any time, sounds may be added/removed from this interface or even
+/// Minecraft itself! There is no guarantee the sounds will play. There is no
+/// guarantee values will not be removed from this interface. As such, you should not
+/// depend on the ordinal values of this class.
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
@@ -4012,11 +4010,9 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
         return Registry.SOUNDS.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * @param name of the sound.
-     * @return the sound with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the sound.
+    /// @return the sound with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound valueOf(@NotNull String name) {
@@ -4043,19 +4039,15 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     }
 
     // Paper start - deprecate getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#SOUNDS}. Sounds
-     * can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)] and [Registry#SOUNDS]. Sounds
+    /// can exist without a key.
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
     @NotNull NamespacedKey getKey();
     // Paper end - deprecate getKey
 
-    /**
-     * @return an array of all known sounds.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known sounds.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound[] values() {
@@ -4063,10 +4055,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     }
 
     // Paper start
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#SOUNDS}. Sounds
-     * can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)] and [Registry#SOUNDS]. Sounds
+    /// can exist without a key.
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
     default net.kyori.adventure.key.@NotNull Key key() {

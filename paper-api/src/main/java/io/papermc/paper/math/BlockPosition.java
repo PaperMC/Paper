@@ -5,13 +5,11 @@ import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * A position represented with integers.
- * <p>
- * <b>May see breaking changes until Experimental annotation is removed.</b>
- *
- * @see FinePosition
- */
+/// A position represented with integers.
+///
+/// **May see breaking changes until Experimental annotation is removed.**
+///
+/// @see FinePosition
 @ApiStatus.Experimental
 public interface BlockPosition extends Position {
 
@@ -55,38 +53,32 @@ public interface BlockPosition extends Position {
         return new FinePositionImpl(this.blockX() + x, this.blockY() + y, this.blockZ() + z);
     }
 
-    /**
-     * Returns a block position offset by 1 in the direction specified.
-     *
-     * @param blockFace the block face to offset towards
-     * @return the offset block position
-     */
+    /// Returns a block position offset by 1 in the direction specified.
+    ///
+    /// @param blockFace the block face to offset towards
+    /// @return the offset block position
     @Contract(value = "_ -> new", pure = true)
     default BlockPosition offset(final BlockFace blockFace) {
         return this.offset(blockFace, 1);
     }
 
-    /**
-     * Returns a block position offset in the direction specified
-     * multiplied by the amount.
-     *
-     * @param blockFace the block face to offset towards
-     * @param amount    the number of times to move in that direction
-     * @return the offset block position
-     */
+    /// Returns a block position offset in the direction specified
+    /// multiplied by the amount.
+    ///
+    /// @param blockFace the block face to offset towards
+    /// @param amount    the number of times to move in that direction
+    /// @return the offset block position
     @Contract(pure = true)
     default BlockPosition offset(final BlockFace blockFace, final int amount) {
         return amount == 0 ? this : new BlockPositionImpl(this.blockX() + (blockFace.getModX() * amount), this.blockY() + (blockFace.getModY() * amount), this.blockZ() + (blockFace.getModZ() * amount));
     }
 
-    /**
-     * Returns a block position offset by the amount along
-     * the specified axis.
-     *
-     * @param axis   the axis to offset along
-     * @param amount the amount to offset along that axis
-     * @return the offset block position
-     */
+    /// Returns a block position offset by the amount along
+    /// the specified axis.
+    ///
+    /// @param axis   the axis to offset along
+    /// @param amount the amount to offset along that axis
+    /// @return the offset block position
     @Contract(pure = true)
     default BlockPosition offset(final Axis axis, final int amount) {
         return amount == 0 ? this : switch (axis) {

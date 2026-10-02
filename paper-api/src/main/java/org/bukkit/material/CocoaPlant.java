@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents the cocoa plant
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the cocoa plant
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class CocoaPlant extends MaterialData implements Directional, Attachable {
 
@@ -22,11 +20,9 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
         super(Material.LEGACY_COCOA);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public CocoaPlant(final Material type, final byte data) {
         super(type, data);
@@ -43,11 +39,9 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
         setFacingDirection(dir);
     }
 
-    /**
-     * Get size of plant
-     *
-     * @return size
-     */
+    /// Get size of plant
+    ///
+    /// @return size
     public CocoaPlantSize getSize() {
         switch (getData() & 0xC) {
             case 0:
@@ -59,11 +53,9 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
         }
     }
 
-    /**
-     * Set size of plant
-     *
-     * @param sz - size of plant
-     */
+    /// Set size of plant
+    ///
+    /// @param sz - size of plant
     public void setSize(CocoaPlantSize sz) {
         int dat = getData() & 0x3;
         switch (sz) {

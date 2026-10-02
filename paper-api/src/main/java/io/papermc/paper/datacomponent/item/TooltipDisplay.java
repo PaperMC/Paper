@@ -9,11 +9,9 @@ import org.jetbrains.annotations.Contract;
 @ApiStatus.NonExtendable
 public interface TooltipDisplay {
 
-    /**
-     * Returns a new builder for creating a TooltipDisplay.
-     *
-     * @return a builder
-     */
+    /// Returns a new builder for creating a TooltipDisplay.
+    ///
+    /// @return a builder
     @Contract(value = "-> new", pure = true)
     static Builder tooltipDisplay() {
         return ItemComponentTypesBridge.bridge().tooltipDisplay();
@@ -23,9 +21,7 @@ public interface TooltipDisplay {
 
     Set<DataComponentType> hiddenComponents();
 
-    /**
-     * Builder for {@link TooltipDisplay}.
-     */
+    /// Builder for [TooltipDisplay].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<TooltipDisplay> {
 

@@ -4,9 +4,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Thrown when a plugin's scheduler fails with an exception
- */
+/// Thrown when a plugin's scheduler fails with an exception
 public class ServerSchedulerException extends ServerPluginException {
 
     private final BukkitTask task;
@@ -26,11 +24,9 @@ public class ServerSchedulerException extends ServerPluginException {
         this.task = checkNotNull(task, "task");
     }
 
-    /**
-     * Gets the task which threw the exception
-     *
-     * @return exception throwing task
-     */
+    /// Gets the task which threw the exception
+    ///
+    /// @return exception throwing task
     public BukkitTask getTask() {
         return task;
     }

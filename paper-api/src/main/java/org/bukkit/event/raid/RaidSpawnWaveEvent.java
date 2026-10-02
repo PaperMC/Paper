@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Called when a raid wave spawns.
- */
+/// Called when a raid wave spawns.
 public class RaidSpawnWaveEvent extends RaidEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -27,21 +25,17 @@ public class RaidSpawnWaveEvent extends RaidEvent {
         this.leader = leader;
     }
 
-    /**
-     * Returns all {@link Raider} that spawned in this wave.
-     *
-     * @return an immutable list of raiders
-     */
+    /// Returns all [Raider] that spawned in this wave.
+    ///
+    /// @return an immutable list of raiders
     @NotNull
     public @Unmodifiable List<Raider> getRaiders() {
         return Collections.unmodifiableList(this.raiders);
     }
 
-    /**
-     * Returns the patrol leader.
-     *
-     * @return {@link Raider}
-     */
+    /// Returns the patrol leader.
+    ///
+    /// @return [Raider]
     @NotNull
     public Raider getPatrolLeader() {
         return this.leader;

@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a Slime splits into smaller Slimes upon death
- */
+/// Called when a Slime splits into smaller Slimes upon death
 public class SlimeSplitEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -28,20 +26,16 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
         return (AbstractCubeMob) this.entity;
     }
 
-    /**
-     * Gets the amount of smaller slimes to spawn
-     *
-     * @return the amount of slimes to spawn
-     */
+    /// Gets the amount of smaller slimes to spawn
+    ///
+    /// @return the amount of slimes to spawn
     public int getCount() {
         return this.count;
     }
 
-    /**
-     * Sets how many smaller slimes will spawn on the split
-     *
-     * @param count the amount of slimes to spawn
-     */
+    /// Sets how many smaller slimes will spawn on the split
+    ///
+    /// @param count the amount of slimes to spawn
     public void setCount(int count) {
         this.count = count;
     }

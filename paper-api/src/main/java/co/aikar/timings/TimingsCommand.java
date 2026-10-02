@@ -36,9 +36,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static net.kyori.adventure.text.Component.text;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public class TimingsCommand extends BukkitCommand {
     private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");

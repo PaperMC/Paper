@@ -18,20 +18,16 @@ public class EntityBreakByEntityEvent extends EntityBreakEvent {
         this.damageSource = damageSource;
     }
 
-    /**
-     * Gets the entity that removed the entity.
-     *
-     * @return the entity that removed the entity
-     */
+    /// Gets the entity that removed the entity.
+    ///
+    /// @return the entity that removed the entity
     public Entity getRemover() {
         return this.remover;
     }
 
-    /**
-     * Gets the {@link DamageSource} that caused the entity to be removed.
-     *
-     * @return the damage source
-     */
+    /// Gets the [DamageSource] that caused the entity to be removed.
+    ///
+    /// @return the damage source
     public DamageSource getDamageSource() {
         return this.damageSource;
     }

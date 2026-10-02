@@ -1,6 +1,4 @@
 package org.bukkit.entity;
 
-/**
- * Represents a Spider.
- */
+/// Represents a Spider.
 public interface Spider extends Monster {}

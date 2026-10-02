@@ -4,9 +4,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Raised when a vehicle collides.
- */
+/// Raised when a vehicle collides.
 public abstract class VehicleCollisionEvent extends VehicleEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

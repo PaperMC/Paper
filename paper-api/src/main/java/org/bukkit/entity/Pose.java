@@ -1,82 +1,44 @@
 package org.bukkit.entity;
 
-/**
- * Represents an entity body pose.
- */
+/// Represents an entity body pose.
 public enum Pose {
 
     // Start generate - Pose
-    /**
-     * Entity is standing normally.
-     */
+    /// Entity is standing normally.
     STANDING,
-    /**
-     * Entity is gliding.
-     */
+    /// Entity is gliding.
     FALL_FLYING,
-    /**
-     * Entity is sleeping.
-     */
+    /// Entity is sleeping.
     SLEEPING,
-    /**
-     * Entity is swimming.
-     */
+    /// Entity is swimming.
     SWIMMING,
-    /**
-     * Entity is riptiding with a trident.
-     */
+    /// Entity is riptiding with a trident.
     SPIN_ATTACK,
-    /**
-     * Entity is sneaking.
-     */
+    /// Entity is sneaking.
     SNEAKING,
-    /**
-     * Entity is long jumping.
-     */
+    /// Entity is long jumping.
     LONG_JUMPING,
-    /**
-     * Entity is dead.
-     */
+    /// Entity is dead.
     DYING,
-    /**
-     * Entity is croaking.
-     */
+    /// Entity is croaking.
     CROAKING,
-    /**
-     * Entity is using its tongue.
-     */
+    /// Entity is using its tongue.
     USING_TONGUE,
-    /**
-     * Entity is sitting.
-     */
+    /// Entity is sitting.
     SITTING,
-    /**
-     * Entity is roaring.
-     */
+    /// Entity is roaring.
     ROARING,
-    /**
-     * Entity is sniffing.
-     */
+    /// Entity is sniffing.
     SNIFFING,
-    /**
-     * Entity is emerging.
-     */
+    /// Entity is emerging.
     EMERGING,
-    /**
-     * Entity is digging.
-     */
+    /// Entity is digging.
     DIGGING,
-    /**
-     * Entity is sliding.
-     */
+    /// Entity is sliding.
     SLIDING,
-    /**
-     * Entity is shooting.
-     */
+    /// Entity is shooting.
     SHOOTING,
-    /**
-     * Entity is inhaling.
-     */
+    /// Entity is inhaling.
     INHALING;
     // End generate - Pose
 }

@@ -7,26 +7,24 @@ import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when a player closes an inventory.
- * <p>
- * Because InventoryCloseEvent occurs within a modification of the Inventory,
- * not all Inventory related methods are safe to use.
- * <p>
- * Methods that change the view a player is looking at should never be invoked
- * by an EventHandler for InventoryCloseEvent using the HumanEntity or
- * InventoryView associated with this event.
- * Examples of these include:
- * <ul>
- * <li>{@link HumanEntity#closeInventory()}
- * <li>{@link HumanEntity#openInventory(org.bukkit.inventory.Inventory)}
- * <li>{@link InventoryView#close()}
- * </ul>
- * To invoke one of these methods, schedule a task using
- * {@link org.bukkit.scheduler.BukkitScheduler#runTask(org.bukkit.plugin.Plugin, Runnable)}, which will run the task
- * on the next tick. Also be aware that this is not an exhaustive list, and
- * other methods could potentially create issues as well.
- */
+/// This event is called when a player closes an inventory.
+///
+/// Because InventoryCloseEvent occurs within a modification of the Inventory,
+/// not all Inventory related methods are safe to use.
+///
+/// Methods that change the view a player is looking at should never be invoked
+/// by an EventHandler for InventoryCloseEvent using the HumanEntity or
+/// InventoryView associated with this event.
+/// Examples of these include:
+///
+///   - [HumanEntity#closeInventory()]
+///   - [HumanEntity#openInventory(org.bukkit.inventory.Inventory)]
+///   - [InventoryView#close()]
+///
+/// To invoke one of these methods, schedule a task using
+/// [org.bukkit.scheduler.BukkitScheduler#runTask(org.bukkit.plugin.Plugin, Runnable)], which will run the task
+/// on the next tick. Also be aware that this is not an exhaustive list, and
+/// other methods could potentially create issues as well.
 public class InventoryCloseEvent extends InventoryEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -44,11 +42,9 @@ public class InventoryCloseEvent extends InventoryEvent {
         this.reason = reason;
     }
 
-    /**
-     * Returns the player involved in this event
-     *
-     * @return Player who is involved in this event
-     */
+    /// Returns the player involved in this event
+    ///
+    /// @return Player who is involved in this event
     @NotNull
     public final HumanEntity getPlayer() {
         return this.transaction.getPlayer();
@@ -71,44 +67,26 @@ public class InventoryCloseEvent extends InventoryEvent {
     }
 
     public enum Reason {
-        /**
-         * Unknown reason
-         */
+        /// Unknown reason
         UNKNOWN,
-        /**
-         * Player is teleporting
-         *
-         * @deprecated As of 1.21.10, this is not called anymore as inventories are not closed on teleportation.
-         */
+        /// Player is teleporting
+        ///
+        /// @deprecated As of 1.21.10, this is not called anymore as inventories are not closed on teleportation.
         @Deprecated(since = "1.21.10")
         TELEPORT,
-        /**
-         * Player is no longer permitted to use this inventory
-         */
+        /// Player is no longer permitted to use this inventory
         CANT_USE,
-        /**
-         * The chunk the inventory was in was unloaded
-         */
+        /// The chunk the inventory was in was unloaded
         UNLOADED,
-        /**
-         * Opening new inventory instead
-         */
+        /// Opening new inventory instead
         OPEN_NEW,
-        /**
-         * Closed
-         */
+        /// Closed
         PLAYER,
-        /**
-         * Closed due to disconnect
-         */
+        /// Closed due to disconnect
         DISCONNECT,
-        /**
-         * The player died
-         */
+        /// The player died
         DEATH,
-        /**
-         * Closed by Bukkit API
-         */
+        /// Closed by Bukkit API
         PLUGIN,
     }
 }

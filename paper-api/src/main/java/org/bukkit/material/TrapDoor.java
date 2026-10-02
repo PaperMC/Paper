@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a trap door
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a trap door
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
     public TrapDoor() {
@@ -19,11 +17,9 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public TrapDoor(final Material type, final byte data) {
         super(type, data);
@@ -47,20 +43,16 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         setData(data);
     }
 
-    /**
-     * Test if trapdoor is inverted
-     *
-     * @return true if inverted (top half), false if normal (bottom half)
-     */
+    /// Test if trapdoor is inverted
+    ///
+    /// @return true if inverted (top half), false if normal (bottom half)
     public boolean isInverted() {
         return ((getData() & 0x8) != 0);
     }
 
-    /**
-     * Set trapdoor inverted state
-     *
-     * @param inv - true if inverted (top half), false if normal (bottom half)
-     */
+    /// Set trapdoor inverted state
+    ///
+    /// @param inv - true if inverted (top half), false if normal (bottom half)
     public void setInverted(boolean inv) {
         int dat = getData() & 0x7;
         if (inv) {

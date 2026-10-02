@@ -13,9 +13,7 @@ import org.jspecify.annotations.NullMarked;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * An abstract implementation of a chat event, handling shared logic.
- */
+/// An abstract implementation of a chat event, handling shared logic.
 @ApiStatus.NonExtendable
 @NullMarked
 public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
@@ -37,75 +35,61 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
         this.signedMessage = signedMessage;
     }
 
-    /**
-     * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
-     * <p>
-     * The set returned may auto-populate on access. Any listener accessing the returned set should be aware that
-     * it may reduce performance for a lazy set implementation.
-     *
-     * @return a mutable set of {@link Audience audiences} who will receive the chat message
-     */
+    /// Gets a set of [`audiences`][Audience] that this chat message will be displayed to.
+    ///
+    /// The set returned may auto-populate on access. Any listener accessing the returned set should be aware that
+    /// it may reduce performance for a lazy set implementation.
+    ///
+    /// @return a mutable set of [`audiences`][Audience] who will receive the chat message
     public final Set<Audience> viewers() {
         return this.viewers;
     }
 
-    /**
-     * Sets the chat renderer.
-     *
-     * @param renderer the chat renderer
-     * @throws NullPointerException if {@code renderer} is {@code null}
-     */
+    /// Sets the chat renderer.
+    ///
+    /// @param renderer the chat renderer
+    /// @throws NullPointerException if `renderer` is `null`
     public final void renderer(final ChatRenderer renderer) {
         this.renderer = requireNonNull(renderer, "renderer");
     }
 
-    /**
-     * Gets the chat renderer.
-     *
-     * @return the chat renderer
-     */
+    /// Gets the chat renderer.
+    ///
+    /// @return the chat renderer
     public final ChatRenderer renderer() {
         return this.renderer;
     }
 
-    /**
-     * Gets the user-supplied message.
-     * The return value will reflect changes made using {@link #message(Component)}.
-     *
-     * @return the user-supplied message
-     */
+    /// Gets the user-supplied message.
+    /// The return value will reflect changes made using [#message(Component)].
+    ///
+    /// @return the user-supplied message
     public final Component message() {
         return this.message;
     }
 
-    /**
-     * Sets the user-supplied message.
-     *
-     * @param message the user-supplied message
-     * @throws NullPointerException if {@code message} is {@code null}
-     */
+    /// Sets the user-supplied message.
+    ///
+    /// @param message the user-supplied message
+    /// @throws NullPointerException if `message` is `null`
     public final void message(final Component message) {
         this.message = requireNonNull(message, "message");
     }
 
-    /**
-     * Gets the original and unmodified user-supplied message.
-     * The return value will <b>not</b> reflect changes made using
-     * {@link #message(Component)}.
-     *
-     * @return the original user-supplied message
-     */
+    /// Gets the original and unmodified user-supplied message.
+    /// The return value will **not** reflect changes made using
+    /// [#message(Component)].
+    ///
+    /// @return the original user-supplied message
     public final Component originalMessage() {
         return this.originalMessage;
     }
 
-    /**
-     * Gets the signed message.
-     * Changes made in this event will <b>not</b> update
-     * the signed message.
-     *
-     * @return the signed message
-     */
+    /// Gets the signed message.
+    /// Changes made in this event will **not** update
+    /// the signed message.
+    ///
+    /// @return the signed message
     public final SignedMessage signedMessage() {
         return this.signedMessage;
     }

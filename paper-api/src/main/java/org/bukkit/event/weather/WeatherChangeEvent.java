@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores data for weather changing in a world
- */
+/// Stores data for weather changing in a world
 public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,20 +29,16 @@ public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
         this(world, newWeatherState, Cause.UNKNOWN);
     }
 
-    /**
-     * Gets the state of weather that the world is being set to
-     *
-     * @return {@code true} if the weather is being set to raining, {@code false} otherwise
-     */
+    /// Gets the state of weather that the world is being set to
+    ///
+    /// @return `true` if the weather is being set to raining, `false` otherwise
     public boolean toWeatherState() {
         return this.newWeatherState;
     }
 
-    /**
-     * Gets the cause of the weather change.
-     *
-     * @return the weather change cause
-     */
+    /// Gets the cause of the weather change.
+    ///
+    /// @return the weather change cause
     @NotNull
     public Cause getCause() {
         return this.cause;

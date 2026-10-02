@@ -6,9 +6,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when a player picks up an arrow from the ground.
- */
+/// Thrown when a player picks up an arrow from the ground.
 public class PlayerPickupArrowEvent extends PlayerPickupItemEvent {
 
     private final AbstractArrow arrow;
@@ -19,11 +17,9 @@ public class PlayerPickupArrowEvent extends PlayerPickupItemEvent {
         this.arrow = arrow;
     }
 
-    /**
-     * Get the arrow being picked up by the player
-     *
-     * @return The arrow being picked up
-     */
+    /// Get the arrow being picked up by the player
+    ///
+    /// @return The arrow being picked up
     @NotNull
     public AbstractArrow getArrow() {
         return this.arrow;

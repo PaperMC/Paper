@@ -7,18 +7,14 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Class containing file utilities
- */
+/// Class containing file utilities
 public class FileUtil {
 
-    /**
-     * This method copies one file to another location
-     *
-     * @param inFile the source filename
-     * @param outFile the target filename
-     * @return true on success
-     */
+    /// This method copies one file to another location
+    ///
+    /// @param inFile the source filename
+    /// @param outFile the target filename
+    /// @return true on success
     public static boolean copy(@NotNull File inFile, @NotNull File outFile) {
         if (!inFile.exists()) {
             return false;

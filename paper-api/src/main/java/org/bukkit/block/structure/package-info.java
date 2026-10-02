@@ -1,4 +1,2 @@
-/**
- * Classes relevant to structure blocks.
- */
+/// Classes relevant to structure blocks.
 package org.bukkit.block.structure;

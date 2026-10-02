@@ -3,9 +3,7 @@ package org.bukkit.block;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents the face of a block
- */
+/// Represents the face of a block
 public enum BlockFace {
     NORTH(0, 0, -1),
     EAST(1, 0, 0),
@@ -43,38 +41,30 @@ public enum BlockFace {
         this.modZ = face1.getModZ() + face2.getModZ();
     }
 
-    /**
-     * Get the amount of X-coordinates to modify to get the represented block
-     *
-     * @return Amount of X-coordinates to modify
-     */
+    /// Get the amount of X-coordinates to modify to get the represented block
+    ///
+    /// @return Amount of X-coordinates to modify
     public int getModX() {
         return modX;
     }
 
-    /**
-     * Get the amount of Y-coordinates to modify to get the represented block
-     *
-     * @return Amount of Y-coordinates to modify
-     */
+    /// Get the amount of Y-coordinates to modify to get the represented block
+    ///
+    /// @return Amount of Y-coordinates to modify
     public int getModY() {
         return modY;
     }
 
-    /**
-     * Get the amount of Z-coordinates to modify to get the represented block
-     *
-     * @return Amount of Z-coordinates to modify
-     */
+    /// Get the amount of Z-coordinates to modify to get the represented block
+    ///
+    /// @return Amount of Z-coordinates to modify
     public int getModZ() {
         return modZ;
     }
 
-    /**
-     * Gets the normal vector corresponding to this block face.
-     *
-     * @return the normal vector
-     */
+    /// Gets the normal vector corresponding to this block face.
+    ///
+    /// @return the normal vector
     @NotNull
     public Vector getDirection() {
         Vector direction = new Vector(modX, modY, modZ);
@@ -84,12 +74,10 @@ public enum BlockFace {
         return direction;
     }
 
-    /**
-     * Returns true if this face is aligned with one of the unit axes in 3D
-     * Cartesian space (ie NORTH, SOUTH, EAST, WEST, UP, DOWN).
-     *
-     * @return Cartesian status
-     */
+    /// Returns true if this face is aligned with one of the unit axes in 3D
+    /// Cartesian space (ie NORTH, SOUTH, EAST, WEST, UP, DOWN).
+    ///
+    /// @return Cartesian status
     public boolean isCartesian() {
         switch (this) {
             case NORTH:

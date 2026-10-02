@@ -44,9 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.error.YAMLException;
 
-/**
- * Represents a Java plugin loader, allowing plugins in the form of .jar
- */
+/// Represents a Java plugin loader, allowing plugins in the form of .jar
 @Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future. This implementation will be moved.
 public final class JavaPluginLoader implements PluginLoader {
     final Server server;
@@ -54,11 +52,9 @@ public final class JavaPluginLoader implements PluginLoader {
     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
     private final LibraryLoader libraryLoader;
 
-    /**
-     * This class was not meant to be constructed explicitly
-     *
-     * @param instance the server instance
-     */
+    /// This class was not meant to be constructed explicitly
+    ///
+    /// @param instance the server instance
     @Deprecated(since = "1.4.5")
     public JavaPluginLoader(@NotNull Server instance) {
         Preconditions.checkArgument(instance != null, "Server cannot be null");

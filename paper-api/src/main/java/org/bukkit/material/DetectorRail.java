@@ -2,12 +2,10 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 
-/**
- * Represents a detector rail
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a detector rail
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class DetectorRail extends ExtendedRails implements PressureSensor {
     public DetectorRail() {
@@ -18,11 +16,9 @@ public class DetectorRail extends ExtendedRails implements PressureSensor {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public DetectorRail(final Material type, final byte data) {
         super(type, data);

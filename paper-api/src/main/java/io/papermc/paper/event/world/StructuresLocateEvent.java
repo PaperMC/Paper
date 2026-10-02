@@ -15,19 +15,17 @@ import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called <b>before</b> a set of configured structures is located.
- * This happens when:
- * <ul>
- *     <li>The /locate command is used.<br></li>
- *     <li>An Eye of Ender is used.</li>
- *     <li>An Explorer/Treasure Map is activated.</li>
- *     <li>A dolphin swims to a treasure location.</li>
- *     <li>A trade is done with a villager for a map.</li>
- *     <li>{@link World#locateNearestStructure(Location, StructureType, int, boolean)} is invoked.</li>
- *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
- * </ul>
- */
+/// Called **before** a set of configured structures is located.
+/// This happens when:
+///
+///   - The /locate command is used.
+///
+///   - An Eye of Ender is used.
+///   - An Explorer/Treasure Map is activated.
+///   - A dolphin swims to a treasure location.
+///   - A trade is done with a villager for a map.
+///   - [World#locateNearestStructure(Location, StructureType, int, boolean)] is invoked.
+///   - [World#locateNearestStructure(Location, Structure, int, boolean)] is invoked.
 @NullMarked
 public class StructuresLocateEvent extends WorldEvent implements Cancellable {
 
@@ -50,96 +48,78 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
         this.findUnexplored = findUnexplored;
     }
 
-    /**
-     * Gets the {@link Location} from which the search is to be conducted.
-     *
-     * @return {@link Location} where search begins
-     */
+    /// Gets the [Location] from which the search is to be conducted.
+    ///
+    /// @return [Location] where search begins
     public Location getOrigin() {
         return this.origin.clone();
     }
 
-    /**
-     * Gets the {@link Location} and {@link Structure} set as the result, if it was defined.
-     * <p>
-     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
-     * Since this event fires <i>before</i> the search is done, the actual result is unknown at this point.
-     *
-     * @return The result location and structure, if it has been set. {@code null} if it has not.
-     * @see World#locateNearestStructure(Location, StructureType, int, boolean)
-     */
+    /// Gets the [Location] and [Structure] set as the result, if it was defined.
+    ///
+    /// Returns `null` if it has not been set by [StructuresLocateEvent#setResult(Result)].
+    /// Since this event fires _before_ the search is done, the actual result is unknown at this point.
+    ///
+    /// @return The result location and structure, if it has been set. `null` if it has not.
+    /// @see World#locateNearestStructure(Location, StructureType, int, boolean)
     public @Nullable Result getResult() {
         return this.result;
     }
 
-    /**
-     * Sets the result {@link Location} and {@link Structure}. This causes the search to be
-     * skipped, and the result object passed here to be used as the result.
-     *
-     * @param result the {@link Location} and {@link Structure} of the search.
-     */
+    /// Sets the result [Location] and [Structure]. This causes the search to be
+    /// skipped, and the result object passed here to be used as the result.
+    ///
+    /// @param result the [Location] and [Structure] of the search.
     public void setResult(final @Nullable Result result) {
         this.result = result;
     }
 
-    /**
-     * Gets an unmodifiable list of Structures that are valid targets for the search.
-     *
-     * @return an unmodifiable list of Structures
-     */
+    /// Gets an unmodifiable list of Structures that are valid targets for the search.
+    ///
+    /// @return an unmodifiable list of Structures
     public @UnmodifiableView List<Structure> getStructures() {
         return Collections.unmodifiableList(this.structures);
     }
 
-    /**
-     * Sets the list of Structures that are valid targets for the search.
-     *
-     * @param structures a list of Structures targets
-     */
+    /// Sets the list of Structures that are valid targets for the search.
+    ///
+    /// @param structures a list of Structures targets
     public void setStructures(final List<Structure> structures) {
         this.structures = structures;
     }
 
-    /**
-     * Gets the search radius in which to attempt locating the structure.
-     * <p>
-     * This radius may not always be obeyed during the structure search!
-     *
-     * @return the search radius (in chunks)
-     */
+    /// Gets the search radius in which to attempt locating the structure.
+    ///
+    /// This radius may not always be obeyed during the structure search!
+    ///
+    /// @return the search radius (in chunks)
     public int getRadius() {
         return this.radius;
     }
 
-    /**
-     * Sets the search radius in which to attempt locating the structure.
-     * <p>
-     * This radius may not always be obeyed during the structure search!
-     *
-     * @param radius the search radius (in chunks)
-     */
+    /// Sets the search radius in which to attempt locating the structure.
+    ///
+    /// This radius may not always be obeyed during the structure search!
+    ///
+    /// @param radius the search radius (in chunks)
     public void setRadius(final int radius) {
         this.radius = radius;
     }
 
-    /**
-     * Gets whether to search exclusively for unexplored structures.
-     * <p>
-     * As with the search radius, this value is not always obeyed.
-     *
-     * @return Whether to search for only unexplored structures.
-     */
+    /// Gets whether to search exclusively for unexplored structures.
+    ///
+    /// As with the search radius, this value is not always obeyed.
+    ///
+    /// @return Whether to search for only unexplored structures.
     public boolean shouldFindUnexplored() {
         return this.findUnexplored;
     }
 
-    /**
-     * Sets whether to search exclusively for unexplored structures.
-     * <p>
-     * As with the search radius, this value is not always obeyed.
-     *
-     * @param findUnexplored Whether to search for only unexplored structures.
-     */
+    /// Sets whether to search exclusively for unexplored structures.
+    ///
+    /// As with the search radius, this value is not always obeyed.
+    ///
+    /// @param findUnexplored Whether to search for only unexplored structures.
     public void setFindUnexplored(final boolean findUnexplored) {
         this.findUnexplored = findUnexplored;
     }
@@ -163,9 +143,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * Result for {@link StructuresLocateEvent}.
-     */
+    /// Result for [StructuresLocateEvent].
     public record Result(Position pos, Structure structure) {
 
         @Deprecated(forRemoval = true)

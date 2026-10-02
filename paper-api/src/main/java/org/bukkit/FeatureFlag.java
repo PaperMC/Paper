@@ -7,9 +7,7 @@ import net.kyori.adventure.util.Index;
 import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * This represents a Feature Flag for a {@link io.papermc.paper.world.flag.FeatureFlagSetHolder}.
- */
+/// This represents a Feature Flag for a [io.papermc.paper.world.flag.FeatureFlagSetHolder].
 public interface FeatureFlag extends Keyed {
 
     // Start generate - FeatureFlag
@@ -25,42 +23,32 @@ public interface FeatureFlag extends Keyed {
     FeatureFlag VANILLA = create("vanilla");
     // End generate - FeatureFlag
 
-    /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19 - 1.19.4
-     *
-     * @deprecated not available since 1.20
-     * The {@code trade_rebalance} feature flag.
-     */
+    /// **AVAILABLE BETWEEN VERSIONS:** 1.19 - 1.19.4
+    ///
+    /// @deprecated not available since 1.20
+    /// The `trade_rebalance` feature flag.
     @Deprecated(since = "1.20")
     FeatureFlag UPDATE_1_20 = deprecated("update_1_20");
 
-    /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
-     *
-     * @deprecated not available since 1.21
-     */
+    /// **AVAILABLE BETWEEN VERSIONS:** 1.20.5 - 1.20.6
+    ///
+    /// @deprecated not available since 1.21
     @Deprecated(since = "1.21")
     FeatureFlag UPDATE_121 = deprecated("update_1_21");
 
-    /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.1
-     *
-     * @deprecated not available since 1.21.2
-     */
+    /// **AVAILABLE BETWEEN VERSIONS:** 1.19.3 - 1.21.1
+    ///
+    /// @deprecated not available since 1.21.2
     @Deprecated(since = "1.21.2")
     FeatureFlag BUNDLE = deprecated("bundle");
 
-    /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.21.2 - 1.21.3
-     *
-     * @deprecated not available since 1.21.4
-     */
+    /// **AVAILABLE BETWEEN VERSIONS:** 1.21.2 - 1.21.3
+    ///
+    /// @deprecated not available since 1.21.4
     @Deprecated(since = "1.21.4")
     FeatureFlag WINTER_DROP = deprecated("winter_drop");
 
-    /**
-     * An index of all feature flags.
-     */
+    /// An index of all feature flags.
     Index<Key, FeatureFlag> ALL_FLAGS = Index.create(FeatureFlag::key, List.copyOf(FeatureFlagImpl.ALL_FLAGS));
 
     private static FeatureFlag create(@Subst("vanilla") final String name) {

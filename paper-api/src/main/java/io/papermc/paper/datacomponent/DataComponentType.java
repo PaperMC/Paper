@@ -8,12 +8,10 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface DataComponentType extends Keyed {
 
-    /**
-     * Checks if this data component type is persistent, or
-     * that it will be saved with any itemstack it's attached to.
-     *
-     * @return {@code true} if persistent, {@code false} otherwise
-     */
+    /// Checks if this data component type is persistent, or
+    /// that it will be saved with any itemstack it's attached to.
+    ///
+    /// @return `true` if persistent, `false` otherwise
     boolean isPersistent();
 
     @SuppressWarnings("unused")

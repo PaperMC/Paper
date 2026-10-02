@@ -9,11 +9,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Raised when a vehicle is destroyed, which could be caused by either a
- * player or the environment. This is not raised if the boat is simply
- * 'removed' due to other means.
- */
+/// Raised when a vehicle is destroyed, which could be caused by either a
+/// player or the environment. This is not raised if the boat is simply
+/// 'removed' due to other means.
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,21 +27,17 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
         this.attacker = attacker;
     }
 
-    /**
-     * Gets the DamageSource that has destroyed the vehicle.
-     *
-     * @return the DamageSource that has destroyed the vehicle
-     */
+    /// Gets the DamageSource that has destroyed the vehicle.
+    ///
+    /// @return the DamageSource that has destroyed the vehicle
     @NotNull
     public DamageSource getDamageSource() {
         return this.damageSource;
     }
 
-    /**
-     * Gets the Entity that has destroyed the vehicle, potentially null
-     *
-     * @return the Entity that has destroyed the vehicle, potentially null
-     */
+    /// Gets the Entity that has destroyed the vehicle, potentially null
+    ///
+    /// @return the Entity that has destroyed the vehicle, potentially null
     @Nullable
     public Entity getAttacker() {
         return this.attacker;

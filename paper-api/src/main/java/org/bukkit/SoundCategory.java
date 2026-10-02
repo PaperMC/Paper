@@ -3,9 +3,7 @@ package org.bukkit;
 import net.kyori.adventure.sound.Sound;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * An Enum of categories for sounds.
- */
+/// An Enum of categories for sounds.
 @NullMarked
 public enum SoundCategory implements Sound.Source.Provider {
 

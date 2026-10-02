@@ -7,9 +7,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called just before a {@link PufferFish} inflates or deflates.
- */
+/// Called just before a [PufferFish] inflates or deflates.
 @NullMarked
 public class PufferFishStateChangeEvent extends EntityEvent implements Cancellable {
 
@@ -29,41 +27,34 @@ public class PufferFishStateChangeEvent extends EntityEvent implements Cancellab
         return (PufferFish) super.getEntity();
     }
 
-    /**
-     * Get the <strong>new</strong> puff state of the {@link PufferFish}.
-     * <p>
-     * This is what the {@link PufferFish}'s new puff state will be after this event if it isn't cancelled.<br>
-     * Refer to {@link PufferFish#getPuffState()} to get the current puff state.
-     *
-     * @return The <strong>new</strong> puff state, 0 being not inflated, 1 being slightly inflated and 2 being fully inflated
-     */
+    /// Get the **new** puff state of the [PufferFish].
+    ///
+    /// This is what the [PufferFish]'s new puff state will be after this event if it isn't cancelled.
+    ///
+    /// Refer to [PufferFish#getPuffState()] to get the current puff state.
+    ///
+    /// @return The **new** puff state, 0 being not inflated, 1 being slightly inflated and 2 being fully inflated
     public int getNewPuffState() {
         return this.newPuffState;
     }
 
-    /**
-     * Get if the {@link PufferFish} is going to inflate.
-     *
-     * @return If it's going to inflate
-     */
+    /// Get if the [PufferFish] is going to inflate.
+    ///
+    /// @return If it's going to inflate
     public boolean isInflating() {
         return this.newPuffState > this.getEntity().getPuffState();
     }
 
-    /**
-     * Get if the {@link PufferFish} is going to deflate.
-     *
-     * @return If it's going to deflate
-     */
+    /// Get if the [PufferFish] is going to deflate.
+    ///
+    /// @return If it's going to deflate
     public boolean isDeflating() {
         return this.newPuffState < this.getEntity().getPuffState();
     }
 
-    /**
-     * Set whether to cancel the {@link PufferFish} (in/de)flating.
-     *
-     * @param cancel {@code true} if you wish to cancel the (in/de)flation
-     */
+    /// Set whether to cancel the [PufferFish] (in/de)flating.
+    ///
+    /// @param cancel`true` if you wish to cancel the (in/de)flation
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

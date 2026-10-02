@@ -9,14 +9,12 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Event triggered for server broadcast messages such as from
- * {@link org.bukkit.Server#broadcast(Component)}.
- * <p>
- * This event behaves similarly to {@link io.papermc.paper.event.player.AsyncChatEvent} in that it
- * should be async if fired from an async thread. Please see that event for
- * further information.
- */
+/// Event triggered for server broadcast messages such as from
+/// [org.bukkit.Server#broadcast(Component)].
+///
+/// This event behaves similarly to [io.papermc.paper.event.player.AsyncChatEvent] in that it
+/// should be async if fired from an async thread. Please see that event for
+/// further information.
 public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -53,60 +51,50 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
         this.recipients = recipients;
     }
 
-    /**
-     * Get the broadcast message.
-     *
-     * @return Message to broadcast
-     */
+    /// Get the broadcast message.
+    ///
+    /// @return Message to broadcast
     public @NotNull Component message() {
         return this.message;
     }
 
-    /**
-     * Set the broadcast message.
-     *
-     * @param message New message to broadcast
-     */
+    /// Set the broadcast message.
+    ///
+    /// @param message New message to broadcast
     public void message(@NotNull Component message) {
         this.message = message;
     }
 
-    /**
-     * Get the message to broadcast.
-     *
-     * @return Message to broadcast
-     * @deprecated in favour of {@link #message()}
-     */
+    /// Get the message to broadcast.
+    ///
+    /// @return Message to broadcast
+    /// @deprecated in favour of [#message()]
     @NotNull
     @Deprecated
     public String getMessage() {
         return LegacyComponentSerializer.legacySection().serialize(this.message);
     }
 
-    /**
-     * Set the message to broadcast.
-     *
-     * @param message New message to broadcast
-     * @deprecated in favour of {@link #message(Component)}
-     */
+    /// Set the message to broadcast.
+    ///
+    /// @param message New message to broadcast
+    /// @deprecated in favour of [#message(Component)]
     @Deprecated // Paper
     public void setMessage(@NotNull String message) {
         this.message = LegacyComponentSerializer.legacySection().deserialize(message);
     }
 
-    /**
-     * Gets a set of recipients that this chat message will be displayed to.
-     * <p>
-     * The set returned is not guaranteed to be mutable and may auto-populate
-     * on access. Any listener accessing the returned set should be aware that
-     * it may reduce performance for a lazy set implementation.
-     * <p>
-     * Listeners should be aware that modifying the list may throw {@link
-     * UnsupportedOperationException} if the event caller provides an
-     * unmodifiable set.
-     *
-     * @return All CommandSenders who will see this chat message
-     */
+    /// Gets a set of recipients that this chat message will be displayed to.
+    ///
+    /// The set returned is not guaranteed to be mutable and may auto-populate
+    /// on access. Any listener accessing the returned set should be aware that
+    /// it may reduce performance for a lazy set implementation.
+    ///
+    /// Listeners should be aware that modifying the list may throw
+    /// [UnsupportedOperationException] if the event caller provides an
+    /// unmodifiable set.
+    ///
+    /// @return All CommandSenders who will see this chat message
     @NotNull
     public Set<CommandSender> getRecipients() {
         return this.recipients;

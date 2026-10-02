@@ -8,11 +8,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player attempts to tab-complete a chat message.
- *
- * @deprecated This event is no longer fired due to client changes
- */
+/// Called when a player attempts to tab-complete a chat message.
+///
+/// @deprecated This event is no longer fired due to client changes
 @Deprecated(since = "1.13")
 @Warning(reason = "This event is no longer fired due to client changes", value = true, propagate = false)
 public class PlayerChatTabCompleteEvent extends PlayerEvent {
@@ -38,34 +36,28 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
         this.completions = completions;
     }
 
-    /**
-     * Gets the chat message being tab-completed.
-     *
-     * @return the chat message
-     */
+    /// Gets the chat message being tab-completed.
+    ///
+    /// @return the chat message
     @NotNull
     public String getChatMessage() {
         return this.message;
     }
 
-    /**
-     * Gets the last 'token' of the message being tab-completed.
-     * <p>
-     * The token is the substring starting with the character after the last
-     * space in the message.
-     *
-     * @return The last token for the chat message
-     */
+    /// Gets the last 'token' of the message being tab-completed.
+    ///
+    /// The token is the substring starting with the character after the last
+    /// space in the message.
+    ///
+    /// @return The last token for the chat message
     @NotNull
     public String getLastToken() {
         return this.lastToken;
     }
 
-    /**
-     * This is the collection of completions for this event.
-     *
-     * @return the current completions
-     */
+    /// This is the collection of completions for this event.
+    ///
+    /// @return the current completions
     @NotNull
     public Collection<String> getTabCompletions() {
         return this.completions;

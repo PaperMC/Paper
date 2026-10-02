@@ -4,9 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a vibration from a Skulk sensor.
- */
+/// Represents a vibration from a Skulk sensor.
 public class Vibration {
 
     private final Location origin;
@@ -26,33 +24,27 @@ public class Vibration {
         this.arrivalTime = arrivalTime;
     }
 
-    /**
-     * Get the origin of the vibration.
-     *
-     * @deprecated unused as of 1.19
-     * @return origin
-     */
+    /// Get the origin of the vibration.
+    ///
+    /// @deprecated unused as of 1.19
+    /// @return origin
     @NotNull
     @Deprecated(forRemoval = true) // Paper
     public Location getOrigin() {
         return origin;
     }
 
-    /**
-     * Get the vibration destination.
-     *
-     * @return destination
-     */
+    /// Get the vibration destination.
+    ///
+    /// @return destination
     @NotNull
     public Destination getDestination() {
         return destination;
     }
 
-    /**
-     * Get the vibration arrival time in ticks.
-     *
-     * @return arrival time
-     */
+    /// Get the vibration arrival time in ticks.
+    ///
+    /// @return arrival time
     public int getArrivalTime() {
         return arrivalTime;
     }

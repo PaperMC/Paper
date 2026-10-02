@@ -10,11 +10,9 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Holds information for living entity movement events
- * <p>
- * Does not fire for players; use {@link PlayerMoveEvent} for player movement.
- */
+/// Holds information for living entity movement events
+///
+/// Does not fire for players; use [PlayerMoveEvent] for player movement.
 @NullMarked
 public class EntityMoveEvent extends EntityEvent implements Cancellable {
 
@@ -37,85 +35,67 @@ public class EntityMoveEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) super.getEntity();
     }
 
-    /**
-     * Gets the location this entity moved from
-     *
-     * @return Location the entity moved from
-     */
+    /// Gets the location this entity moved from
+    ///
+    /// @return Location the entity moved from
     public Location getFrom() {
         return this.from;
     }
 
-    /**
-     * Sets the location to mark as where the entity moved from
-     *
-     * @param from New location to mark as the entity's previous location
-     */
+    /// Sets the location to mark as where the entity moved from
+    ///
+    /// @param from New location to mark as the entity's previous location
     public void setFrom(final Location from) {
         this.validateLocation(from);
         this.from = from.clone();
     }
 
-    /**
-     * Gets the location this entity moved to
-     *
-     * @return Location the entity moved to
-     */
+    /// Gets the location this entity moved to
+    ///
+    /// @return Location the entity moved to
     public Location getTo() {
         return this.to;
     }
 
-    /**
-     * Sets the location that this entity will move to
-     *
-     * @param to New Location this entity will move to
-     */
+    /// Sets the location that this entity will move to
+    ///
+    /// @param to New Location this entity will move to
     public void setTo(final Location to) {
         this.validateLocation(to);
         this.to = to.clone();
     }
 
-    /**
-     * Check if the entity has changed position (even within the same block) in the event
-     *
-     * @return whether the entity has changed position or not
-     */
+    /// Check if the entity has changed position (even within the same block) in the event
+    ///
+    /// @return whether the entity has changed position or not
     public boolean hasChangedPosition() {
         return this.hasExplicitlyChangedPosition() || !this.from.getWorld().equals(this.to.getWorld());
     }
 
-    /**
-     * Check if the entity has changed position (even within the same block) in the event, disregarding a possible world change
-     *
-     * @return whether the entity has changed position or not
-     */
+    /// Check if the entity has changed position (even within the same block) in the event, disregarding a possible world change
+    ///
+    /// @return whether the entity has changed position or not
     public boolean hasExplicitlyChangedPosition() {
         return this.from.getX() != this.to.getX() || this.from.getY() != this.to.getY() || this.from.getZ() != this.to.getZ();
     }
 
-    /**
-     * Check if the entity has moved to a new block in the event
-     *
-     * @return whether the entity has moved to a new block or not
-     */
+    /// Check if the entity has moved to a new block in the event
+    ///
+    /// @return whether the entity has moved to a new block or not
     public boolean hasChangedBlock() {
         return this.hasExplicitlyChangedBlock() || !this.from.getWorld().equals(this.to.getWorld());
     }
 
-    /**
-     * Check if the entity has moved to a new block in the event, disregarding a possible world change
-     *
-     * @return whether the entity has moved to a new block or not
-     */
+    /// Check if the entity has moved to a new block in the event, disregarding a possible world change
+    ///
+    /// @return whether the entity has moved to a new block or not
     public boolean hasExplicitlyChangedBlock() {
         return this.from.getBlockX() != this.to.getBlockX() || this.from.getBlockY() != this.to.getBlockY() || this.from.getBlockZ() != this.to.getBlockZ();
     }
 
-    /**
-     * Check if the entity has changed orientation in the event
-     *
-     * @return whether the entity has changed orientation or not
-     */
+    /// Check if the entity has changed orientation in the event
+    ///
+    /// @return whether the entity has changed orientation or not
     public boolean hasChangedOrientation() {
         return this.from.getPitch() != this.to.getPitch() || this.from.getYaw() != this.to.getYaw();
     }

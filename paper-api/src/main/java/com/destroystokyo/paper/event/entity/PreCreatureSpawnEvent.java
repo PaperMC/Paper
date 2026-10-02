@@ -9,16 +9,14 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * WARNING: This event only fires for a limited number of cases, and not for every case that {@link CreatureSpawnEvent} does.
- * <p>
- * You should still listen to {@link CreatureSpawnEvent} as a backup, and only use this event as an "enhancement".
- * The intent of this event is to improve server performance, so it fires even if the spawning might fail later, for
- * example when the entity would be unable to spawn due to limited space or lighting.
- * <p>
- * Currently: NATURAL and SPAWNER based reasons. <!-- Please submit a Pull Request for future additions. -->
- * Also, Plugins that replace Entity Registrations with their own custom entities might not fire this event.
- */
+/// WARNING: This event only fires for a limited number of cases, and not for every case that [CreatureSpawnEvent] does.
+///
+/// You should still listen to [CreatureSpawnEvent] as a backup, and only use this event as an "enhancement".
+/// The intent of this event is to improve server performance, so it fires even if the spawning might fail later, for
+/// example when the entity would be unable to spawn due to limited space or lighting.
+///
+/// Currently: NATURAL and SPAWNER based reasons.
+/// Also, Plugins that replace Entity Registrations with their own custom entities might not fire this event.
 @NullMarked
 public class PreCreatureSpawnEvent extends Event implements Cancellable {
 
@@ -38,57 +36,43 @@ public class PreCreatureSpawnEvent extends Event implements Cancellable {
         this.reason = reason;
     }
 
-    /**
-     * @return The location this creature is being spawned at
-     */
+    /// @return The location this creature is being spawned at
     public Location getSpawnLocation() {
         return this.location.clone();
     }
 
-    /**
-     * @return The type of creature being spawned
-     */
+    /// @return The type of creature being spawned
     public EntityType getType() {
         return this.type;
     }
 
-    /**
-     * @return Reason this creature is spawning (ie, NATURAL vs SPAWNER)
-     */
+    /// @return Reason this creature is spawning (ie, NATURAL vs SPAWNER)
     public CreatureSpawnEvent.SpawnReason getReason() {
         return this.reason;
     }
 
-    /**
-     * @return If the spawn process should be aborted vs trying more attempts
-     */
+    /// @return If the spawn process should be aborted vs trying more attempts
     public boolean shouldAbortSpawn() {
         return this.shouldAbortSpawn;
     }
 
-    /**
-     * Set this if you are more blanket blocking all types of these spawns, and wish to abort the spawn process from
-     * trying more attempts after this cancellation.
-     *
-     * @param shouldAbortSpawn Set if the spawn process should be aborted vs trying more attempts
-     */
+    /// Set this if you are more blanket blocking all types of these spawns, and wish to abort the spawn process from
+    /// trying more attempts after this cancellation.
+    ///
+    /// @param shouldAbortSpawn Set if the spawn process should be aborted vs trying more attempts
     public void setShouldAbortSpawn(final boolean shouldAbortSpawn) {
         this.shouldAbortSpawn = shouldAbortSpawn;
     }
 
-    /**
-     * @return If the spawn of this creature is cancelled or not
-     */
+    /// @return If the spawn of this creature is cancelled or not
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * Cancelling this event is more efficient than cancelling {@link CreatureSpawnEvent}
-     *
-     * @param cancel {@code true} if you wish to cancel this event, and abort the spawn of this creature
-     */
+    /// Cancelling this event is more efficient than cancelling [CreatureSpawnEvent]
+    ///
+    /// @param cancel`true` if you wish to cancel this event, and abort the spawn of this creature
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

@@ -7,14 +7,12 @@ import org.bukkit.event.world.ChunkEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Is called when a {@link Player} receives a {@link Chunk}
- * <p>
- * Can for example be used for spawning a fake entity when the player receives a chunk.
- * <p>
- * Should only be used for packet/clientside related stuff.
- * Not intended for modifying server side state.
- */
+/// Is called when a [Player] receives a [Chunk]
+///
+/// Can for example be used for spawning a fake entity when the player receives a chunk.
+///
+/// Should only be used for packet/clientside related stuff.
+/// Not intended for modifying server side state.
 @NullMarked
 public class PlayerChunkLoadEvent extends ChunkEvent {
 

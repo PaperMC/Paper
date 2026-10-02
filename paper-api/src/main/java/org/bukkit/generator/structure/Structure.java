@@ -9,13 +9,11 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represent a Structure from the world.
- * <p>
- * Listed structures are present in the default server. Depending on the server
- * there might be additional structures present (for example structures added by
- * data packs), which can be received via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}.
- */
+/// Represent a Structure from the world.
+///
+/// Listed structures are present in the default server. Depending on the server
+/// there might be additional structures present (for example structures added by
+/// data packs), which can be received via [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)] and [io.papermc.paper.registry.RegistryKey#STRUCTURE].
 public abstract class Structure implements Keyed {
 
     // Start generate - Structure
@@ -129,26 +127,20 @@ public abstract class Structure implements Keyed {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * Returns the type of the structure.
-     *
-     * @return the type of structure
-     */
+    /// Returns the type of the structure.
+    ///
+    /// @return the type of structure
     @NotNull
     public abstract StructureType getStructureType();
     // Paper start - deprecate getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}. Structures can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#STRUCTURE]. Structures can exist without a key.
     @Override
     @Deprecated(since = "1.20.4", forRemoval = true)
     public abstract @NotNull NamespacedKey getKey();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}. Structures can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#STRUCTURE]. Structures can exist without a key.
     @Override
     @Deprecated(since = "1.20.4", forRemoval = true)
     public net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {

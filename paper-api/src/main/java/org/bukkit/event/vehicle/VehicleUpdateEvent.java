@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a vehicle updates
- */
+/// Called when a vehicle updates
 public class VehicleUpdateEvent extends VehicleEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

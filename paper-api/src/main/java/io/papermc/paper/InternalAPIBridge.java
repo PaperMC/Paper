@@ -37,20 +37,16 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Static bridge to the server internals.
- * <p>
- * Any and all methods in here are *not* to be called by plugin developers, may change at any time and may generally
- * cause issues when called under unexpected circumstances.
- */
+/// Static bridge to the server internals.
+///
+/// Any and all methods in here are \*not\* to be called by plugin developers, may change at any time and may generally
+/// cause issues when called under unexpected circumstances.
 @ApiStatus.Internal
 public interface InternalAPIBridge {
 
-    /**
-     * Yields the instance of this API bridge by lazily requesting it from the java service loader API.
-     *
-     * @return the instance.
-     */
+    /// Yields the instance of this API bridge by lazily requesting it from the java service loader API.
+    ///
+    /// @return the instance.
     static InternalAPIBridge get() {
         class Holder {
 
@@ -68,14 +64,12 @@ public interface InternalAPIBridge {
 
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 
-    /**
-     * Causes this predicate to be considered restricted.
-     * Applying this to a command node prevents this command from being executed from an
-     * unattended context, such as click events.
-     *
-     * @param predicate wrapped predicate
-     * @return wrapped predicate
-     */
+    /// Causes this predicate to be considered restricted.
+    /// Applying this to a command node prevents this command from being executed from an
+    /// unattended context, such as click events.
+    ///
+    /// @param predicate wrapped predicate
+    /// @return wrapped predicate
     Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
 
     ResolvableProfile defaultMannequinProfile();

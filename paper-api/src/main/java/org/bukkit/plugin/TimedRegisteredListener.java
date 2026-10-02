@@ -7,11 +7,9 @@ import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Extends RegisteredListener to include timing information.
- *
- * @deprecated This class was part of Timings v1 and has gone unused for over a decade, timings will be removed in the future.
- */
+/// Extends RegisteredListener to include timing information.
+///
+/// @deprecated This class was part of Timings v1 and has gone unused for over a decade, timings will be removed in the future.
 @Deprecated(forRemoval = true)
 public class TimedRegisteredListener extends RegisteredListener {
     private int count;
@@ -50,54 +48,44 @@ public class TimedRegisteredListener extends RegisteredListener {
         return class1;
     }
 
-    /**
-     * Resets the call count and total time for this listener
-     */
+    /// Resets the call count and total time for this listener
     public void reset() {
         count = 0;
         totalTime = 0;
     }
 
-    /**
-     * Gets the total times this listener has been called
-     *
-     * @return Times this listener has been called
-     */
+    /// Gets the total times this listener has been called
+    ///
+    /// @return Times this listener has been called
     public int getCount() {
         return count;
     }
 
-    /**
-     * Gets the total time calls to this listener have taken
-     *
-     * @return Total time for all calls of this listener
-     */
+    /// Gets the total time calls to this listener have taken
+    ///
+    /// @return Total time for all calls of this listener
     public long getTotalTime() {
         return totalTime;
     }
 
-    /**
-     * Gets the class of the events this listener handled. If it handled
-     * multiple classes of event, the closest shared superclass will be
-     * returned, such that for any event this listener has handled,
-     * <code>this.getEventClass().isAssignableFrom(event.getClass())</code>
-     * and no class <code>this.getEventClass().isAssignableFrom(clazz)
-     * {@literal && this.getEventClass() != clazz &&}
-     * event.getClass().isAssignableFrom(clazz)</code> for all handled events.
-     *
-     * @return the event class handled by this RegisteredListener
-     */
+    /// Gets the class of the events this listener handled. If it handled
+    /// multiple classes of event, the closest shared superclass will be
+    /// returned, such that for any event this listener has handled,
+    /// `this.getEventClass().isAssignableFrom(event.getClass())`
+    /// and no class `this.getEventClass().isAssignableFrom(clazz)
+    /// {@literal && this.getEventClass() != clazz &&}
+    /// event.getClass().isAssignableFrom(clazz)` for all handled events.
+    ///
+    /// @return the event class handled by this RegisteredListener
     @Nullable
     public Class<? extends Event> getEventClass() {
         return eventClass;
     }
 
-    /**
-     * Gets whether this listener has handled multiple events, such that for
-     * some two events, <code>eventA.getClass() != eventB.getClass()</code>.
-     *
-     * @return true if this listener has handled multiple events
-     */
+    /// Gets whether this listener has handled multiple events, such that for
+    /// some two events, `eventA.getClass() != eventB.getClass()`.
+    ///
+    /// @return true if this listener has handled multiple events
     public boolean hasMultiple() {
         return multiple;
     }

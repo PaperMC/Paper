@@ -1,6 +1,4 @@
 package org.bukkit.entity;
 
-/**
- * Represents an Enemy
- */
+/// Represents an Enemy
 public interface Enemy extends LivingEntity {}

@@ -11,9 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Event fired when a dispenser shears a nearby entity.
- */
+/// Event fired when a dispenser shears a nearby entity.
 public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,41 +30,33 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
         this.drops = drops;
     }
 
-    /**
-     * Gets the entity that was sheared.
-     *
-     * @return the entity that was sheared.
-     */
+    /// Gets the entity that was sheared.
+    ///
+    /// @return the entity that was sheared.
     @NotNull
     public Entity getEntity() {
         return this.sheared;
     }
 
-    /**
-     * Gets the item used to shear this entity.
-     *
-     * @return the item used to shear this entity.
-     */
+    /// Gets the item used to shear this entity.
+    ///
+    /// @return the item used to shear this entity.
     @NotNull
     public ItemStack getTool() {
         return this.tool.clone();
     }
 
-    /**
-     * Get an immutable list of drops for this shearing.
-     *
-     * @return the shearing drops
-     * @see #setDrops(List)
-     */
+    /// Get an immutable list of drops for this shearing.
+    ///
+    /// @return the shearing drops
+    /// @see #setDrops(List)
     public @NotNull @Unmodifiable List<ItemStack> getDrops() {
         return Collections.unmodifiableList(this.drops);
     }
 
-    /**
-     * Sets the drops for the shearing.
-     *
-     * @param drops the shear drops
-     */
+    /// Sets the drops for the shearing.
+    ///
+    /// @param drops the shear drops
     public void setDrops(final @NotNull List<ItemStack> drops) {
         this.drops = List.copyOf(drops);
     }

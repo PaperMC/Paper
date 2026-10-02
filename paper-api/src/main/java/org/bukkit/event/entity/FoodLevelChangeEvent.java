@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a human entity's food level changes
- */
+/// Called when a human entity's food level changes
 public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -39,35 +37,29 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
         return (HumanEntity) this.entity;
     }
 
-    /**
-     * Gets the item that triggered this event, if any.
-     *
-     * @return an ItemStack for the item being consumed
-     */
+    /// Gets the item that triggered this event, if any.
+    ///
+    /// @return an ItemStack for the item being consumed
     @Nullable
     public ItemStack getItem() {
         return this.item == null ? null : this.item.clone();
     }
 
-    /**
-     * Gets the resultant food level that the entity involved in this event
-     * should be set to.
-     * <p>
-     * Where 20 is a full food bar and 0 is an empty one.
-     *
-     * @return The resultant food level
-     */
+    /// Gets the resultant food level that the entity involved in this event
+    /// should be set to.
+    ///
+    /// Where 20 is a full food bar and 0 is an empty one.
+    ///
+    /// @return The resultant food level
     public int getFoodLevel() {
         return this.level;
     }
 
-    /**
-     * Sets the resultant food level that the entity involved in this event
-     * should be set to
-     *
-     * @param level the resultant food level that the entity involved in this
-     *     event should be set to
-     */
+    /// Sets the resultant food level that the entity involved in this event
+    /// should be set to
+    ///
+    /// @param level the resultant food level that the entity involved in this
+    ///     event should be set to
     public void setFoodLevel(int level) {
         if (level < 0) level = 0;
 

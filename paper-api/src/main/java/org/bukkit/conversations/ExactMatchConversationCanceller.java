@@ -2,25 +2,21 @@ package org.bukkit.conversations;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An ExactMatchConversationCanceller cancels a conversation if the user
- * enters an exact input string
- *
- * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
- * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
- * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
- * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
- */
+/// An ExactMatchConversationCanceller cancels a conversation if the user
+/// enters an exact input string
+///
+/// @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+/// and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+/// It is recommended you instead manually listen to the [io.papermc.paper.event.player.AsyncChatEvent]
+/// or alternatively using [io.papermc.paper.dialog.Dialog] to get user input.
 @Deprecated(forRemoval = true)
 public class ExactMatchConversationCanceller implements ConversationCanceller {
     private String escapeSequence;
 
-    /**
-     * Builds an ExactMatchConversationCanceller.
-     *
-     * @param escapeSequence The string that, if entered by the user, will
-     *     cancel the conversation.
-     */
+    /// Builds an ExactMatchConversationCanceller.
+    ///
+    /// @param escapeSequence The string that, if entered by the user, will
+    ///     cancel the conversation.
     public ExactMatchConversationCanceller(@NotNull String escapeSequence) {
         this.escapeSequence = escapeSequence;
     }

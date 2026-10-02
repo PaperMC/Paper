@@ -4,51 +4,37 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Represents a component which can turn any item into food.
- */
+/// Represents a component which can turn any item into food.
 @ApiStatus.Experimental
 public interface FoodComponent extends ConfigurationSerializable {
 
-    /**
-     * Gets the food restored by this item when eaten.
-     *
-     * @return nutrition value
-     */
+    /// Gets the food restored by this item when eaten.
+    ///
+    /// @return nutrition value
     @NonNegative int getNutrition();
 
-    /**
-     * Sets the food restored by this item when eaten.
-     *
-     * @param nutrition new nutrition value, must be non-negative
-     */
+    /// Sets the food restored by this item when eaten.
+    ///
+    /// @param nutrition new nutrition value, must be non-negative
     void setNutrition(@NonNegative int nutrition);
 
-    /**
-     * Gets the saturation restored by this item when eaten.
-     *
-     * @return saturation value
-     */
+    /// Gets the saturation restored by this item when eaten.
+    ///
+    /// @return saturation value
     float getSaturation();
 
-    /**
-     * Sets the saturation restored by this item when eaten.
-     *
-     * @param saturation new saturation value
-     */
+    /// Sets the saturation restored by this item when eaten.
+    ///
+    /// @param saturation new saturation value
     void setSaturation(float saturation);
 
-    /**
-     * Gets if this item can be eaten even when not hungry.
-     *
-     * @return true if always edible
-     */
+    /// Gets if this item can be eaten even when not hungry.
+    ///
+    /// @return true if always edible
     boolean canAlwaysEat();
 
-    /**
-     * Sets if this item can be eaten even when not hungry.
-     *
-     * @param canAlwaysEat whether always edible
-     */
+    /// Sets if this item can be eaten even when not hungry.
+    ///
+    /// @param canAlwaysEat whether always edible
     void setCanAlwaysEat(boolean canAlwaysEat);
 }

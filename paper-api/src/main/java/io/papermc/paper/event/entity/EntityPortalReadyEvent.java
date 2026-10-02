@@ -12,14 +12,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when an entity is ready to be teleported by a plugin.
- * Currently, this is only called after the required
- * ticks have passed for a Nether Portal.
- * <p>
- * Cancelling this event resets the entity's readiness
- * regarding the current portal.
- */
+/// Called when an entity is ready to be teleported by a plugin.
+/// Currently, this is only called after the required
+/// ticks have passed for a Nether Portal.
+///
+/// Cancelling this event resets the entity's readiness
+/// regarding the current portal.
 @NullMarked
 public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {
 
@@ -37,39 +35,33 @@ public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {
         this.portalType = portalType;
     }
 
-    /**
-     * Gets the world this portal will teleport to.
-     * Can be {@code null} if "allow-nether" is false in server.properties
-     * or if there is another situation where there is no world to teleport to.
-     * <p>
-     * This world may be modified by later events such as {@link PlayerPortalEvent}
-     * or {@link EntityPortalEvent}.
-     *
-     * @return the world the portal will teleport the entity to.
-     */
+    /// Gets the world this portal will teleport to.
+    /// Can be `null` if "allow-nether" is false in server.properties
+    /// or if there is another situation where there is no world to teleport to.
+    ///
+    /// This world may be modified by later events such as [PlayerPortalEvent]
+    /// or [EntityPortalEvent].
+    ///
+    /// @return the world the portal will teleport the entity to.
     public @Nullable World getTargetWorld() {
         return this.targetWorld;
     }
 
-    /**
-     * Sets the world this portal will teleport to. A {@code null} value
-     * will essentially cancel the teleport and prevent further events
-     * such as {@link PlayerPortalEvent} from firing.
-     * <p>
-     * This world may be modified by later events such as {@link PlayerPortalEvent}
-     * or {@link EntityPortalEvent}.
-     *
-     * @param targetWorld the world
-     */
+    /// Sets the world this portal will teleport to. A `null` value
+    /// will essentially cancel the teleport and prevent further events
+    /// such as [PlayerPortalEvent] from firing.
+    ///
+    /// This world may be modified by later events such as [PlayerPortalEvent]
+    /// or [EntityPortalEvent].
+    ///
+    /// @param targetWorld the world
     public void setTargetWorld(final @Nullable World targetWorld) {
         this.targetWorld = targetWorld;
     }
 
-    /**
-     * Gets the portal type for this event.
-     *
-     * @return the portal type
-     */
+    /// Gets the portal type for this event.
+    ///
+    /// @return the portal type
     public PortalType getPortalType() {
         return this.portalType;
     }

@@ -14,9 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Standard implementation to {@link Messenger}
- */
+/// Standard implementation to [Messenger]
 public class StandardMessenger implements Messenger {
     private final Map<String, Set<PluginMessageListenerRegistration>> incomingByChannel = new HashMap<String, Set<PluginMessageListenerRegistration>>();
     private final Map<Plugin, Set<PluginMessageListenerRegistration>> incomingByPlugin = new HashMap<Plugin, Set<PluginMessageListenerRegistration>>();
@@ -492,24 +490,20 @@ public class StandardMessenger implements Messenger {
         }
     }
 
-    /**
-     * Validates a Plugin Channel name.
-     *
-     * @param channel Channel name to validate.
-     * @deprecated not an API method
-     */
+    /// Validates a Plugin Channel name.
+    ///
+    /// @param channel Channel name to validate.
+    /// @deprecated not an API method
     @Deprecated(since = "1.13")
     public static void validateChannel(@NotNull String channel) {
         validateAndCorrectChannel(channel);
     }
 
-    /**
-     * Validates and corrects a Plugin Channel name. Method is not reentrant / idempotent.
-     *
-     * @param channel Channel name to validate.
-     * @return corrected channel name
-     * @deprecated not an API method
-     */
+    /// Validates and corrects a Plugin Channel name. Method is not reentrant / idempotent.
+    ///
+    /// @param channel Channel name to validate.
+    /// @return corrected channel name
+    /// @deprecated not an API method
     @Deprecated(since = "1.13")
     @NotNull
     public static String validateAndCorrectChannel(@NotNull String channel) {
@@ -546,24 +540,22 @@ public class StandardMessenger implements Messenger {
     }
     // Paper end - improve error message
 
-    /**
-     * Validates the input of a Plugin Message, ensuring the arguments are all
-     * valid.
-     *
-     * @param messenger Messenger to use for validation.
-     * @param source Source plugin of the Message.
-     * @param channel Plugin Channel to send the message by.
-     * @param message Raw message payload to send.
-     * @throws IllegalArgumentException Thrown if the source plugin is
-     *     disabled.
-     * @throws IllegalArgumentException Thrown if source, channel or message
-     *     is null.
-     * @throws MessageTooLargeException Thrown if the message is too big.
-     * @throws ChannelNameTooLongException Thrown if the channel name is too
-     *     long.
-     * @throws ChannelNotRegisteredException Thrown if the channel is not
-     *     registered for this plugin.
-     */
+    /// Validates the input of a Plugin Message, ensuring the arguments are all
+    /// valid.
+    ///
+    /// @param messenger Messenger to use for validation.
+    /// @param source Source plugin of the Message.
+    /// @param channel Plugin Channel to send the message by.
+    /// @param message Raw message payload to send.
+    /// @throws IllegalArgumentException Thrown if the source plugin is
+    ///     disabled.
+    /// @throws IllegalArgumentException Thrown if source, channel or message
+    ///     is null.
+    /// @throws MessageTooLargeException Thrown if the message is too big.
+    /// @throws ChannelNameTooLongException Thrown if the channel name is too
+    ///     long.
+    /// @throws ChannelNotRegisteredException Thrown if the channel is not
+    ///     registered for this plugin.
     public static void validatePluginMessage(@NotNull Messenger messenger, @NotNull Plugin source, @NotNull String channel, byte @NotNull [] message) {
         if (messenger == null) {
             throw new IllegalArgumentException("Messenger cannot be null");

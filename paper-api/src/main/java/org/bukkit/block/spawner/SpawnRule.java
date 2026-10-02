@@ -7,10 +7,8 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a spawn rule that controls what conditions an entity from a
- * monster spawner can spawn.
- */
+/// Represents a spawn rule that controls what conditions an entity from a
+/// monster spawner can spawn.
 @SerializableAs("SpawnRule")
 public class SpawnRule implements Cloneable, ConfigurationSerializable {
 
@@ -19,18 +17,16 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
     private int minSkyLight;
     private int maxSkyLight;
 
-    /**
-     * Constructs a new SpawnRule.
-     *
-     * @param minBlockLight The minimum (inclusive) block light required for
-     * spawning to succeed.
-     * @param maxBlockLight The maximum (inclusive) block light required for
-     * spawning to succeed.
-     * @param minSkyLight The minimum (inclusive) sky light required for
-     * spawning to succeed.
-     * @param maxSkyLight The maximum (inclusive) sky light required for
-     * spawning to succeed.
-     */
+    /// Constructs a new SpawnRule.
+    ///
+    /// @param minBlockLight The minimum (inclusive) block light required for
+    /// spawning to succeed.
+    /// @param maxBlockLight The maximum (inclusive) block light required for
+    /// spawning to succeed.
+    /// @param minSkyLight The minimum (inclusive) sky light required for
+    /// spawning to succeed.
+    /// @param maxSkyLight The maximum (inclusive) sky light required for
+    /// spawning to succeed.
     public SpawnRule(int minBlockLight, int maxBlockLight, int minSkyLight, int maxSkyLight) {
         Preconditions.checkArgument(minBlockLight <= maxBlockLight, "minBlockLight must be <= maxBlockLight (%s <= %s)", minBlockLight, maxBlockLight);
         Preconditions.checkArgument(minSkyLight <= maxSkyLight, "minSkyLight must be <= maxSkyLight (%s <= %s)", minSkyLight, maxSkyLight);
@@ -45,22 +41,18 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
         this.maxSkyLight = maxSkyLight;
     }
 
-    /**
-     * Gets the minimum (inclusive) block light required for spawning to
-     * succeed.
-     *
-     * @return minimum block light
-     */
+    /// Gets the minimum (inclusive) block light required for spawning to
+    /// succeed.
+    ///
+    /// @return minimum block light
     public int getMinBlockLight() {
         return minBlockLight;
     }
 
-    /**
-     * Sets the minimum (inclusive) block light required for spawning to
-     * succeed.
-     *
-     * @param minBlockLight minimum block light
-     */
+    /// Sets the minimum (inclusive) block light required for spawning to
+    /// succeed.
+    ///
+    /// @param minBlockLight minimum block light
     public void setMinBlockLight(int minBlockLight) {
         Preconditions.checkArgument(minBlockLight >= 0, "minBlockLight must be >= 0 (given %s)", minBlockLight);
         Preconditions.checkArgument(minBlockLight <= maxBlockLight, "minBlockLight must be <= maxBlockLight (%s <= %s)", minBlockLight, maxBlockLight);
@@ -68,42 +60,34 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
         this.minBlockLight = minBlockLight;
     }
 
-    /**
-     * Gets the maximum (inclusive) block light required for spawning to
-     * succeed.
-     *
-     * @return maximum block light
-     */
+    /// Gets the maximum (inclusive) block light required for spawning to
+    /// succeed.
+    ///
+    /// @return maximum block light
     public int getMaxBlockLight() {
         return maxBlockLight;
     }
 
-    /**
-     * Sets the maximum (inclusive) block light required for spawning to
-     * succeed.
-     *
-     * @param maxBlockLight maximum block light
-     */
+    /// Sets the maximum (inclusive) block light required for spawning to
+    /// succeed.
+    ///
+    /// @param maxBlockLight maximum block light
     public void setMaxBlockLight(int maxBlockLight) {
         Preconditions.checkArgument(maxBlockLight >= 0, "maxBlockLight must be >= 0 (given %s)", maxBlockLight);
 
         this.maxBlockLight = maxBlockLight;
     }
 
-    /**
-     * Gets the minimum (inclusive) sky light required for spawning to succeed.
-     *
-     * @return minimum sky light
-     */
+    /// Gets the minimum (inclusive) sky light required for spawning to succeed.
+    ///
+    /// @return minimum sky light
     public int getMinSkyLight() {
         return minSkyLight;
     }
 
-    /**
-     * Sets the minimum (inclusive) sky light required for spawning to succeed.
-     *
-     * @param minSkyLight minimum sky light
-     */
+    /// Sets the minimum (inclusive) sky light required for spawning to succeed.
+    ///
+    /// @param minSkyLight minimum sky light
     public void setMinSkyLight(int minSkyLight) {
         Preconditions.checkArgument(minSkyLight >= 0, "minSkyLight must be >= 0 (given %s)", minSkyLight);
         Preconditions.checkArgument(minSkyLight <= maxSkyLight, "minSkyLight must be <= maxSkyLight (%s <= %s)", minSkyLight, maxSkyLight);
@@ -111,20 +95,16 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
         this.minSkyLight = minSkyLight;
     }
 
-    /**
-     * Gets the maximum (inclusive) sky light required for spawning to succeed.
-     *
-     * @return maximum sky light
-     */
+    /// Gets the maximum (inclusive) sky light required for spawning to succeed.
+    ///
+    /// @return maximum sky light
     public int getMaxSkyLight() {
         return maxSkyLight;
     }
 
-    /**
-     * Sets the maximum (inclusive) sky light required for spawning to succeed.
-     *
-     * @param maxSkyLight maximum sky light
-     */
+    /// Sets the maximum (inclusive) sky light required for spawning to succeed.
+    ///
+    /// @param maxSkyLight maximum sky light
     public void setMaxSkyLight(int maxSkyLight) {
         Preconditions.checkArgument(maxSkyLight >= 0, "maxSkyLight must be >= 0 (given %s)", maxSkyLight);
 

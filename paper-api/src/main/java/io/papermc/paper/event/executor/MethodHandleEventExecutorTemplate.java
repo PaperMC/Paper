@@ -11,18 +11,16 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
-/**
- * This class is designed to be used as hidden class template.
- * Initializing the class directly will fail due to missing {@code classData}.
- * Instead, {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, MethodHandles.Lookup.ClassOption...)}
- * must be used, with the {@code classData} object being a list consisting of two elements:
- * <ol>
- *     <li>A {@link Method} representing the event handler method</li>
- *     <li>A {@link Class} representing the event type</li>
- * </ol>
- * The method must take {@link Event} or a subtype of it as its single parameter.
- * If the method is non-static, it also needs to reside in a class implementing {@link Listener}.
- */
+/// This class is designed to be used as hidden class template.
+/// Initializing the class directly will fail due to missing `classData`.
+/// Instead, [java.lang.invoke.MethodHandles.Lookup#defineHiddenClassWithClassData(byte\[\], Object, boolean, MethodHandles.Lookup.ClassOption...)]
+/// must be used, with the `classData` object being a list consisting of two elements:
+///
+///   1. A [Method] representing the event handler method
+///   2. A [Class] representing the event type
+///
+/// The method must take [Event] or a subtype of it as its single parameter.
+/// If the method is non-static, it also needs to reside in a class implementing [Listener].
 @SuppressWarnings("unused")
 @ApiStatus.Internal
 @NullMarked

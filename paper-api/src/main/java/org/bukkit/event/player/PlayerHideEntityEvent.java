@@ -6,16 +6,14 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a visible entity is hidden from a player.
- * <br>
- * This event is only called when the entity's visibility status is actually
- * changed.
- * <br>
- * This event is called regardless of if the entity was within tracking range.
- *
- * @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
- */
+/// Called when a visible entity is hidden from a player.
+///
+/// This event is only called when the entity's visibility status is actually
+/// changed.
+///
+/// This event is called regardless of if the entity was within tracking range.
+///
+/// @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
 public class PlayerHideEntityEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -28,11 +26,9 @@ public class PlayerHideEntityEvent extends PlayerEvent {
         this.entity = entity;
     }
 
-    /**
-     * Gets the entity which has been hidden from the player.
-     *
-     * @return the hidden entity
-     */
+    /// Gets the entity which has been hidden from the player.
+    ///
+    /// @return the hidden entity
     @NotNull
     public Entity getEntity() {
         return this.entity;

@@ -5,9 +5,7 @@ import static co.aikar.timings.TimingsManager.*;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @deprecated Timings will be removed in the future
- */
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 public class FullServerTickHandler extends TimingHandler {
     private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null);

@@ -10,13 +10,11 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a projectile collides with an entity
- * <p>
- * This event is called <b>before</b> {@link EntityDamageByEntityEvent}, and cancelling it will allow the projectile to continue flying
- *
- * @deprecated Deprecated, use {@link org.bukkit.event.entity.ProjectileHitEvent} and check if there is a hit entity
- */
+/// Called when a projectile collides with an entity
+///
+/// This event is called **before** [EntityDamageByEntityEvent], and cancelling it will allow the projectile to continue flying
+///
+/// @deprecated Deprecated, use [org.bukkit.event.entity.ProjectileHitEvent] and check if there is a hit entity
 @Deprecated(since = "1.19.3")
 @Warning(propagate = false)
 public class ProjectileCollideEvent extends EntityEvent implements Cancellable {
@@ -33,21 +31,17 @@ public class ProjectileCollideEvent extends EntityEvent implements Cancellable {
         this.collidedWith = collidedWith;
     }
 
-    /**
-     * Get the projectile that collided
-     *
-     * @return the projectile that collided
-     */
+    /// Get the projectile that collided
+    ///
+    /// @return the projectile that collided
     @NotNull
     public Projectile getEntity() {
         return (Projectile) super.getEntity();
     }
 
-    /**
-     * Get the entity the projectile collided with
-     *
-     * @return the entity collided with
-     */
+    /// Get the entity the projectile collided with
+    ///
+    /// @return the entity collided with
     @NotNull
     public Entity getCollidedWith() {
         return this.collidedWith;

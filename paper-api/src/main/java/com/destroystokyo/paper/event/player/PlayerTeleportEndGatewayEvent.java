@@ -7,9 +7,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a teleport is triggered for an End Gateway
- */
+/// Fired when a teleport is triggered for an End Gateway
 @NullMarked
 public class PlayerTeleportEndGatewayEvent extends PlayerTeleportEvent {
 
@@ -21,11 +19,9 @@ public class PlayerTeleportEndGatewayEvent extends PlayerTeleportEvent {
         this.gateway = gateway;
     }
 
-    /**
-     * The gateway triggering the teleport
-     *
-     * @return EndGateway used
-     */
+    /// The gateway triggering the teleport
+    ///
+    /// @return EndGateway used
     public EndGateway getGateway() {
         return this.gateway;
     }

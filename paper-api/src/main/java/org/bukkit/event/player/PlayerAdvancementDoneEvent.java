@@ -8,9 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import net.kyori.adventure.text.Component;
 
-/**
- * Called when a player has completed all criteria in an advancement.
- */
+/// Called when a player has completed all criteria in an advancement.
 public class PlayerAdvancementDoneEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,36 +29,30 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
         this.message = message;
     }
 
-    /**
-     * Get the advancement which has been completed.
-     *
-     * @return completed advancement
-     */
+    /// Get the advancement which has been completed.
+    ///
+    /// @return completed advancement
     @NotNull
     public Advancement getAdvancement() {
         return this.advancement;
     }
 
-    /**
-     * Gets the message to send to all online players.
-     * <p>
-     * Will be {@code null} if the advancement does not announce to chat, for example if
-     * it is a recipe unlock or a root advancement.
-     *
-     * @return The announcement message, or {@code null}
-     */
+    /// Gets the message to send to all online players.
+    ///
+    /// Will be `null` if the advancement does not announce to chat, for example if
+    /// it is a recipe unlock or a root advancement.
+    ///
+    /// @return The announcement message, or `null`
     @Nullable
     public Component message() {
         return this.message;
     }
 
-    /**
-     * Sets the message to send to all online players.
-     * <p>
-     * If set to {@code null} the message will not be sent.
-     *
-     * @param message The new message
-     */
+    /// Sets the message to send to all online players.
+    ///
+    /// If set to `null` the message will not be sent.
+    ///
+    /// @param message The new message
     public void message(@Nullable Component message) {
         this.message = message;
     }

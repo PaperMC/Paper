@@ -20,9 +20,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A type of {@link ConfigurationSection} that is stored in memory.
- */
+/// A type of [ConfigurationSection] that is stored in memory.
 public class MemorySection implements ConfigurationSection {
     protected final Map<String, SectionPathData> map = new LinkedHashMap<String, SectionPathData>();
     private final Configuration root;
@@ -30,16 +28,14 @@ public class MemorySection implements ConfigurationSection {
     private final String path;
     private final String fullPath;
 
-    /**
-     * Creates an empty MemorySection for use as a root {@link Configuration}
-     * section.
-     * <p>
-     * Note that calling this without being yourself a {@link Configuration}
-     * will throw an exception!
-     *
-     * @throws IllegalStateException Thrown if this is not a {@link
-     *     Configuration} root.
-     */
+    /// Creates an empty MemorySection for use as a root [Configuration]
+    /// section.
+    ///
+    /// Note that calling this without being yourself a [Configuration]
+    /// will throw an exception!
+    ///
+    /// @throws IllegalStateException Thrown if this is not a
+    /// [Configuration] root.
     protected MemorySection() {
         if (!(this instanceof Configuration)) {
             throw new IllegalStateException("Cannot construct a root MemorySection when not a Configuration");
@@ -51,15 +47,13 @@ public class MemorySection implements ConfigurationSection {
         this.root = (Configuration) this;
     }
 
-    /**
-     * Creates an empty MemorySection with the specified parent and path.
-     *
-     * @param parent Parent section that contains this own section.
-     * @param path Path that you may access this section from via the root
-     *     {@link Configuration}.
-     * @throws IllegalArgumentException Thrown is parent or path is null, or
-     *     if parent contains no root Configuration.
-     */
+    /// Creates an empty MemorySection with the specified parent and path.
+    ///
+    /// @param parent Parent section that contains this own section.
+    /// @param path Path that you may access this section from via the root
+    ///     [Configuration].
+    /// @throws IllegalArgumentException Thrown is parent or path is null, or
+    ///     if parent contains no root Configuration.
     protected MemorySection(@NotNull ConfigurationSection parent, @NotNull String path) {
         Preconditions.checkArgument(parent != null, "Parent cannot be null");
         Preconditions.checkArgument(path != null, "Path cannot be null");
@@ -911,34 +905,30 @@ public class MemorySection implements ConfigurationSection {
         }
     }
 
-    /**
-     * Creates a full path to the given {@link ConfigurationSection} from its
-     * root {@link Configuration}.
-     * <p>
-     * You may use this method for any given {@link ConfigurationSection}, not
-     * only {@link MemorySection}.
-     *
-     * @param section Section to create a path for.
-     * @param key Name of the specified section.
-     * @return Full path of the section from its root.
-     */
+    /// Creates a full path to the given [ConfigurationSection] from its
+    /// root [Configuration].
+    ///
+    /// You may use this method for any given [ConfigurationSection], not
+    /// only [MemorySection].
+    ///
+    /// @param section Section to create a path for.
+    /// @param key Name of the specified section.
+    /// @return Full path of the section from its root.
     @NotNull
     public static String createPath(@NotNull ConfigurationSection section, @Nullable String key) {
         return createPath(section, key, (section == null) ? null : section.getRoot());
     }
 
-    /**
-     * Creates a relative path to the given {@link ConfigurationSection} from
-     * the given relative section.
-     * <p>
-     * You may use this method for any given {@link ConfigurationSection}, not
-     * only {@link MemorySection}.
-     *
-     * @param section Section to create a path for.
-     * @param key Name of the specified section.
-     * @param relativeTo Section to create the path relative to.
-     * @return Full path of the section from its root.
-     */
+    /// Creates a relative path to the given [ConfigurationSection] from
+    /// the given relative section.
+    ///
+    /// You may use this method for any given [ConfigurationSection], not
+    /// only [MemorySection].
+    ///
+    /// @param section Section to create a path for.
+    /// @param key Name of the specified section.
+    /// @param relativeTo Section to create the path relative to.
+    /// @return Full path of the section from its root.
     @NotNull
     public static String createPath(@NotNull ConfigurationSection section, @Nullable String key, @Nullable ConfigurationSection relativeTo) {
         Preconditions.checkArgument(section != null, "Cannot create path without a section");

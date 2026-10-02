@@ -4,15 +4,13 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * NumericPrompt is the base class for any prompt that requires a {@link
- * Number} response from the user.
- *
- * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
- * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
- * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
- * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
- */
+/// NumericPrompt is the base class for any prompt that requires a
+/// [Number] response from the user.
+///
+/// @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+/// and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+/// It is recommended you instead manually listen to the [io.papermc.paper.event.player.AsyncChatEvent]
+/// or alternatively using [io.papermc.paper.dialog.Dialog] to get user input.
 @Deprecated(forRemoval = true)
 public abstract class NumericPrompt extends ValidatingPrompt {
     public NumericPrompt() {
@@ -24,14 +22,12 @@ public abstract class NumericPrompt extends ValidatingPrompt {
         return NumberUtils.isNumber(input) && isNumberValid(context, NumberUtils.createNumber(input));
     }
 
-    /**
-     * Override this method to do further validation on the numeric player
-     * input after the input has been determined to actually be a number.
-     *
-     * @param context Context information about the conversation.
-     * @param input The number the player provided.
-     * @return The validity of the player's input.
-     */
+    /// Override this method to do further validation on the numeric player
+    /// input after the input has been determined to actually be a number.
+    ///
+    /// @param context Context information about the conversation.
+    /// @param input The number the player provided.
+    /// @return The validity of the player's input.
     protected boolean isNumberValid(@NotNull ConversationContext context, @NotNull Number input) {
         return true;
     }
@@ -46,14 +42,12 @@ public abstract class NumericPrompt extends ValidatingPrompt {
         }
     }
 
-    /**
-     * Override this method to perform some action with the user's integer
-     * response.
-     *
-     * @param context Context information about the conversation.
-     * @param input The user's response as a {@link Number}.
-     * @return The next {@link Prompt} in the prompt graph.
-     */
+    /// Override this method to perform some action with the user's integer
+    /// response.
+    ///
+    /// @param context Context information about the conversation.
+    /// @param input The user's response as a [Number].
+    /// @return The next [Prompt] in the prompt graph.
     @Nullable
     protected abstract Prompt acceptValidatedInput(@NotNull ConversationContext context, @NotNull Number input);
 
@@ -67,27 +61,23 @@ public abstract class NumericPrompt extends ValidatingPrompt {
         }
     }
 
-    /**
-     * Optionally override this method to display an additional message if the
-     * user enters an invalid number.
-     *
-     * @param context Context information about the conversation.
-     * @param invalidInput The invalid input provided by the user.
-     * @return A message explaining how to correct the input.
-     */
+    /// Optionally override this method to display an additional message if the
+    /// user enters an invalid number.
+    ///
+    /// @param context Context information about the conversation.
+    /// @param invalidInput The invalid input provided by the user.
+    /// @return A message explaining how to correct the input.
     @Nullable
     protected String getInputNotNumericText(@NotNull ConversationContext context, @NotNull String invalidInput) {
         return null;
     }
 
-    /**
-     * Optionally override this method to display an additional message if the
-     * user enters an invalid numeric input.
-     *
-     * @param context Context information about the conversation.
-     * @param invalidInput The invalid input provided by the user.
-     * @return A message explaining how to correct the input.
-     */
+    /// Optionally override this method to display an additional message if the
+    /// user enters an invalid numeric input.
+    ///
+    /// @param context Context information about the conversation.
+    /// @param invalidInput The invalid input provided by the user.
+    /// @return A message explaining how to correct the input.
     @Nullable
     protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull Number invalidInput) {
         return null;

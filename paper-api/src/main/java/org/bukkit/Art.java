@@ -10,14 +10,12 @@ import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the art on a painting.
- * <p>
- * The arts listed in this interface are present in the default server
- * or can be enabled via a {@link FeatureFlag}.
- * There may be additional arts present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
- * which can be accessed via {@link RegistryAccess#registryAccess()} and {@link RegistryKey#PAINTING_VARIANT}.
- */
+/// Represents the art on a painting.
+///
+/// The arts listed in this interface are present in the default server
+/// or can be enabled via a [FeatureFlag].
+/// There may be additional arts present in the server, for example from a [io.papermc.paper.datapack.Datapack]
+/// which can be accessed via [RegistryAccess#registryAccess()] and [RegistryKey#PAINTING_VARIANT].
 public interface Art extends OldEnum<Art>, Keyed {
 
     // Start generate - Art
@@ -129,42 +127,32 @@ public interface Art extends OldEnum<Art>, Keyed {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * Gets the width of the painting, in blocks
-     *
-     * @return The width of the painting, in blocks
-     */
+    /// Gets the width of the painting, in blocks
+    ///
+    /// @return The width of the painting, in blocks
     int getBlockWidth();
 
-    /**
-     * Gets the height of the painting, in blocks
-     *
-     * @return The height of the painting, in blocks
-     */
+    /// Gets the height of the painting, in blocks
+    ///
+    /// @return The height of the painting, in blocks
     int getBlockHeight();
 
-    /**
-     * Get the ID of this painting.
-     *
-     * @return The ID of this painting
-     * @deprecated Magic value that is based on inconsistent, data-driven registry
-     */
+    /// Get the ID of this painting.
+    ///
+    /// @return The ID of this painting
+    /// @deprecated Magic value that is based on inconsistent, data-driven registry
     @Deprecated(since = "1.6.2", forRemoval = true)
     int getId();
 
     // Paper start - deprecate getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT]. Painting variants can exist without a key.
     @Deprecated(since = "1.21", forRemoval = true)
     @Override
     @NotNull NamespacedKey getKey();
 
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
-     */
+    /// @deprecated use [Registry#getKey(Keyed)], [io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)],
+    /// and [io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT]. Painting variants can exist without a key.
     @Deprecated(since = "1.21", forRemoval = true)
     @Override
     default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
@@ -173,35 +161,27 @@ public interface Art extends OldEnum<Art>, Keyed {
     // Paper end - deprecate getKey
 
     // Paper start - name and author components, assetId key
-    /**
-     * Get the painting's title.
-     *
-     * @return the title
-     */
+    /// Get the painting's title.
+    ///
+    /// @return the title
     net.kyori.adventure.text.@Nullable Component title();
 
-    /**
-     * Get the painting's author.
-     *
-     * @return the author
-     */
+    /// Get the painting's author.
+    ///
+    /// @return the author
     net.kyori.adventure.text.@Nullable Component author();
 
-    /**
-     * Get the painting's asset id
-     *
-     * @return the asset id
-     */
+    /// Get the painting's asset id
+    ///
+    /// @return the asset id
     net.kyori.adventure.key.@NotNull Key assetId();
     // Paper end - name and author components, assetId key
 
-    /**
-     * Get a painting by its numeric ID
-     *
-     * @param id The ID
-     * @return The painting
-     * @deprecated Magic value that is based on inconsistent, data-driven registry
-     */
+    /// Get a painting by its numeric ID
+    ///
+    /// @param id The ID
+    /// @return The painting
+    /// @deprecated Magic value that is based on inconsistent, data-driven registry
     @Deprecated(since = "1.6.2", forRemoval = true)
     @Nullable
     static Art getById(int id) {
@@ -214,15 +194,13 @@ public interface Art extends OldEnum<Art>, Keyed {
         return null;
     }
 
-    /**
-     * Get a painting by its unique name
-     * <p>
-     * This ignores capitalization
-     *
-     * @param name The name
-     * @return The painting
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// Get a painting by its unique name
+    ///
+    /// This ignores capitalization
+    ///
+    /// @param name The name
+    /// @return The painting
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @Deprecated(since = "1.21.3")
     @Nullable
     static Art getByName(@NotNull String name) {
@@ -235,11 +213,9 @@ public interface Art extends OldEnum<Art>, Keyed {
         return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
     }
 
-    /**
-     * @param name of the art.
-     * @return the art with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the art.
+    /// @return the art with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
@@ -249,10 +225,8 @@ public interface Art extends OldEnum<Art>, Keyed {
         return art;
     }
 
-    /**
-     * @return an array of all known arts.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known arts.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art[] values() {

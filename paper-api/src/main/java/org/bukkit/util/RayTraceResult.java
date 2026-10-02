@@ -8,13 +8,11 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * The hit result of a ray trace.
- * <p>
- * Only the hit position is guaranteed to always be available. The availability
- * of the other attributes depends on what got hit and on the context in which
- * the ray trace was performed.
- */
+/// The hit result of a ray trace.
+///
+/// Only the hit position is guaranteed to always be available. The availability
+/// of the other attributes depends on what got hit and on the context in which
+/// the ray trace was performed.
 public class RayTraceResult {
 
     private final Vector hitPosition;
@@ -31,92 +29,74 @@ public class RayTraceResult {
         this.hitEntity = hitEntity;
     }
 
-    /**
-     * Creates a RayTraceResult.
-     *
-     * @param hitPosition the hit position
-     */
+    /// Creates a RayTraceResult.
+    ///
+    /// @param hitPosition the hit position
     public RayTraceResult(@NotNull Vector hitPosition) {
         this(hitPosition, null, null, null);
     }
 
-    /**
-     * Creates a RayTraceResult.
-     *
-     * @param hitPosition the hit position
-     * @param hitBlockFace the hit block face
-     */
+    /// Creates a RayTraceResult.
+    ///
+    /// @param hitPosition the hit position
+    /// @param hitBlockFace the hit block face
     public RayTraceResult(@NotNull Vector hitPosition, @Nullable BlockFace hitBlockFace) {
         this(hitPosition, null, hitBlockFace, null);
     }
 
-    /**
-     * Creates a RayTraceResult.
-     *
-     * @param hitPosition the hit position
-     * @param hitBlock the hit block
-     * @param hitBlockFace the hit block face
-     */
+    /// Creates a RayTraceResult.
+    ///
+    /// @param hitPosition the hit position
+    /// @param hitBlock the hit block
+    /// @param hitBlockFace the hit block face
     public RayTraceResult(@NotNull Vector hitPosition, @Nullable Block hitBlock, @Nullable BlockFace hitBlockFace) {
         this(hitPosition, hitBlock, hitBlockFace, null);
     }
 
-    /**
-     * Creates a RayTraceResult.
-     *
-     * @param hitPosition the hit position
-     * @param hitEntity the hit entity
-     */
+    /// Creates a RayTraceResult.
+    ///
+    /// @param hitPosition the hit position
+    /// @param hitEntity the hit entity
     public RayTraceResult(@NotNull Vector hitPosition, @Nullable Entity hitEntity) {
         this(hitPosition, null, null, hitEntity);
     }
 
-    /**
-     * Creates a RayTraceResult.
-     *
-     * @param hitPosition the hit position
-     * @param hitEntity the hit entity
-     * @param hitBlockFace the hit block face
-     */
+    /// Creates a RayTraceResult.
+    ///
+    /// @param hitPosition the hit position
+    /// @param hitEntity the hit entity
+    /// @param hitBlockFace the hit block face
     public RayTraceResult(@NotNull Vector hitPosition, @Nullable Entity hitEntity, @Nullable BlockFace hitBlockFace) {
         this(hitPosition, null, hitBlockFace, hitEntity);
     }
 
-    /**
-     * Gets the exact position of the hit.
-     *
-     * @return a copy of the exact hit position
-     */
+    /// Gets the exact position of the hit.
+    ///
+    /// @return a copy of the exact hit position
     @NotNull
     public Vector getHitPosition() {
         return hitPosition.clone();
     }
 
-    /**
-     * Gets the hit block.
-     *
-     * @return the hit block, or <code>null</code> if not available
-     */
+    /// Gets the hit block.
+    ///
+    /// @return the hit block, or `null` if not available
     @Nullable
     public Block getHitBlock() {
         return hitBlock;
     }
 
-    /**
-     * Gets the hit block face.
-     *
-     * @return the hit block face, or <code>null</code> if not available
-     */
+    /// Gets the hit block face.
+    ///
+    /// @return the hit block face, or `null` if not available
     @Nullable
     public BlockFace getHitBlockFace() {
         return hitBlockFace;
     }
 
-    /**
-     * Gets the hit entity.
-     *
-     * @return the hit entity, or <code>null</code> if not available
-     */
+    /// Gets the hit entity.
+    ///
+    /// @return the hit entity, or `null` if not available
     @Nullable
     public Entity getHitEntity() {
         return hitEntity;

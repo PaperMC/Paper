@@ -1,6 +1,4 @@
-/**
- * Package containing maths-related API, including position API.
- */
+/// Package containing maths-related API, including position API.
 @NullMarked
 package io.papermc.paper.math;
 

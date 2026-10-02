@@ -7,9 +7,7 @@ import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/**
- * Represents an arbitrary affine transformation.
- */
+/// Represents an arbitrary affine transformation.
 public class Transformation {
 
     @NotNull
@@ -45,41 +43,33 @@ public class Transformation {
         this.rightRotation = new Quaternionf(rightRotation);
     }
 
-    /**
-     * Gets the translation component of this transformation.
-     *
-     * @return translation component
-     */
+    /// Gets the translation component of this transformation.
+    ///
+    /// @return translation component
     @NotNull
     public Vector3f getTranslation() {
         return this.translation;
     }
 
-    /**
-     * Gets the left rotation component of this transformation.
-     *
-     * @return left rotation component
-     */
+    /// Gets the left rotation component of this transformation.
+    ///
+    /// @return left rotation component
     @NotNull
     public Quaternionf getLeftRotation() {
         return this.leftRotation;
     }
 
-    /**
-     * Gets the scale component of this transformation.
-     *
-     * @return scale component
-     */
+    /// Gets the scale component of this transformation.
+    ///
+    /// @return scale component
     @NotNull
     public Vector3f getScale() {
         return this.scale;
     }
 
-    /**
-     * Gets the right rotation component of this transformation.
-     *
-     * @return right rotation component
-     */
+    /// Gets the right rotation component of this transformation.
+    ///
+    /// @return right rotation component
     @NotNull
     public Quaternionf getRightRotation() {
         return this.rightRotation;

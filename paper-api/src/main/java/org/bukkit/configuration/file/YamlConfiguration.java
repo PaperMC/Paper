@@ -34,19 +34,13 @@ import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.reader.UnicodeReader;
 
-/**
- * An implementation of {@link Configuration} which saves all files in Yaml.
- * Note that this implementation is not synchronized.
- */
+/// An implementation of [Configuration] which saves all files in Yaml.
+/// Note that this implementation is not synchronized.
 public class YamlConfiguration extends FileConfiguration {
-    /**
-     * @deprecated unused, not intended to be API
-     */
+    /// @deprecated unused, not intended to be API
     @Deprecated(since = "1.18.1")
     protected static final String COMMENT_PREFIX = "# ";
-    /**
-     * @deprecated unused, not intended to be API
-     */
+    /// @deprecated unused, not intended to be API
     @Deprecated(since = "1.18.1")
     protected static final String BLANK_CONFIG = "{}\n";
     private final DumperOptions yamlDumperOptions;
@@ -122,12 +116,10 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
-    /**
-     * This method splits the header on the last empty line, and sets the
-     * comments below this line as comments for the first key on the map object.
-     *
-     * @param node The root node of the yaml object
-     */
+    /// This method splits the header on the last empty line, and sets the
+    /// comments below this line as comments for the first key on the map object.
+    ///
+    /// @param node The root node of the yaml object
     private void adjustNodeComments(final MappingNode node) {
         if (node.getBlockComments() == null && !node.getValue().isEmpty()) {
             Node firstNode = node.getValue().get(0).getKeyNode();
@@ -238,14 +230,12 @@ public class YamlConfiguration extends FileConfiguration {
         return lines;
     }
 
-    /**
-     * Removes the empty line at the end of the header that separates the header
-     * from further comments. Also removes all empty header starts (backwards
-     * compat).
-     *
-     * @param header The list of heading comments
-     * @return The modified list
-     */
+    /// Removes the empty line at the end of the header that separates the header
+    /// from further comments. Also removes all empty header starts (backwards
+    /// compat).
+    ///
+    /// @param header The list of heading comments
+    /// @return The modified list
     private List<String> loadHeader(List<String> header) {
         LinkedList<String> list = new LinkedList<>(header);
 
@@ -260,13 +250,11 @@ public class YamlConfiguration extends FileConfiguration {
         return list;
     }
 
-    /**
-     * Adds the empty line at the end of the header that separates the header
-     * from further comments.
-     *
-     * @param header The list of heading comments
-     * @return The modified list
-     */
+    /// Adds the empty line at the end of the header that separates the header
+    /// from further comments.
+    ///
+    /// @param header The list of heading comments
+    /// @return The modified list
     private List<String> saveHeader(List<String> header) {
         LinkedList<String> list = new LinkedList<>(header);
 
@@ -287,19 +275,17 @@ public class YamlConfiguration extends FileConfiguration {
         return (YamlConfigurationOptions) options;
     }
 
-    /**
-     * Creates a new {@link YamlConfiguration}, loading from the given file.
-     * <p>
-     * Any errors loading the Configuration will be logged and then ignored.
-     * If the specified input is not a valid config, a blank config will be
-     * returned.
-     * <p>
-     * The encoding used may follow the system dependent default.
-     *
-     * @param file Input file
-     * @return Resulting configuration
-     * @throws IllegalArgumentException Thrown if file is null
-     */
+    /// Creates a new [YamlConfiguration], loading from the given file.
+    ///
+    /// Any errors loading the Configuration will be logged and then ignored.
+    /// If the specified input is not a valid config, a blank config will be
+    /// returned.
+    ///
+    /// The encoding used may follow the system dependent default.
+    ///
+    /// @param file Input file
+    /// @return Resulting configuration
+    /// @throws IllegalArgumentException Thrown if file is null
     @NotNull
     public static YamlConfiguration loadConfiguration(@NotNull File file) {
         Preconditions.checkArgument(file != null, "File cannot be null");
@@ -318,17 +304,15 @@ public class YamlConfiguration extends FileConfiguration {
         return config;
     }
 
-    /**
-     * Creates a new {@link YamlConfiguration}, loading from the given reader.
-     * <p>
-     * Any errors loading the Configuration will be logged and then ignored.
-     * If the specified input is not a valid config, a blank config will be
-     * returned.
-     *
-     * @param reader input
-     * @return resulting configuration
-     * @throws IllegalArgumentException Thrown if stream is null
-     */
+    /// Creates a new [YamlConfiguration], loading from the given reader.
+    ///
+    /// Any errors loading the Configuration will be logged and then ignored.
+    /// If the specified input is not a valid config, a blank config will be
+    /// returned.
+    ///
+    /// @param reader input
+    /// @return resulting configuration
+    /// @throws IllegalArgumentException Thrown if stream is null
     @NotNull
     public static YamlConfiguration loadConfiguration(@NotNull Reader reader) {
         Preconditions.checkArgument(reader != null, "Stream cannot be null");

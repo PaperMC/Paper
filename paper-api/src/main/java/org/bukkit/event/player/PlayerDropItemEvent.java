@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when a player drops an item from their inventory
- */
+/// Thrown when a player drops an item from their inventory
 public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,11 +21,9 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
         this.drop = drop;
     }
 
-    /**
-     * Gets the ItemDrop created by the player
-     *
-     * @return ItemDrop created by the player
-     */
+    /// Gets the ItemDrop created by the player
+    ///
+    /// @return ItemDrop created by the player
     @NotNull
     public Item getItemDrop() {
         return this.drop;

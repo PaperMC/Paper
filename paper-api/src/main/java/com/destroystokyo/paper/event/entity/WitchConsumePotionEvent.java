@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Fired when a witch consumes the potion in their hand to buff themselves.
- */
+/// Fired when a witch consumes the potion in their hand to buff themselves.
 @NullMarked
 public class WitchConsumePotionEvent extends EntityEvent implements Cancellable {
 
@@ -31,25 +29,19 @@ public class WitchConsumePotionEvent extends EntityEvent implements Cancellable 
         return (Witch) super.getEntity();
     }
 
-    /**
-     * @return the potion the witch will consume and have the effects applied.
-     */
+    /// @return the potion the witch will consume and have the effects applied.
     public @Nullable ItemStack getPotion() {
         return this.potion;
     }
 
-    /**
-     * Sets the potion to be consumed and applied to the witch.
-     *
-     * @param potion The potion
-     */
+    /// Sets the potion to be consumed and applied to the witch.
+    ///
+    /// @param potion The potion
     public void setPotion(final @Nullable ItemStack potion) {
         this.potion = potion != null ? potion.clone() : null;
     }
 
-    /**
-     * @return Event was cancelled or potion was {@code null}
-     */
+    /// @return Event was cancelled or potion was `null`
     @Override
     public boolean isCancelled() {
         return this.cancelled || this.potion == null;

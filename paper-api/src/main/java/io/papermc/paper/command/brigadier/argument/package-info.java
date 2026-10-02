@@ -1,6 +1,4 @@
-/**
- * Arguments.
- */
+/// Arguments.
 @NullMarked
 package io.papermc.paper.command.brigadier.argument;
 

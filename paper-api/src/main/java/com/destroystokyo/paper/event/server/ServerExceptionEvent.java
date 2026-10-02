@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called whenever an exception is thrown in a recoverable section of the server.
- */
+/// Called whenever an exception is thrown in a recoverable section of the server.
 @NullMarked
 public class ServerExceptionEvent extends Event {
 
@@ -23,11 +21,9 @@ public class ServerExceptionEvent extends Event {
         this.exception = exception;
     }
 
-    /**
-     * Gets the wrapped exception that was thrown.
-     *
-     * @return Exception thrown
-     */
+    /// Gets the wrapped exception that was thrown.
+    ///
+    /// @return Exception thrown
     public ServerException getException() {
         return this.exception;
     }

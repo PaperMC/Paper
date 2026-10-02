@@ -1,6 +1,4 @@
-/**
- * Dialog types for the Paper API.
- */
+/// Dialog types for the Paper API.
 @NullMarked
 @MinecraftVersionDependent
 package io.papermc.paper.registry.data.dialog.type;

@@ -5,9 +5,7 @@ import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents a property on a {@link PlayerProfile}
- */
+/// Represents a property on a [PlayerProfile]
 @NullMarked
 public final class ProfileProperty {
 
@@ -28,30 +26,22 @@ public final class ProfileProperty {
         Preconditions.checkArgument(signature == null || signature.length() <= 1024, "ProfileProperty signature can not be longer than 1024 characters");
     }
 
-    /**
-     * @return The property name, ie "textures"
-     */
+    /// @return The property name, ie "textures"
     public String getName() {
         return this.name;
     }
 
-    /**
-     * @return The property value, likely to be base64 encoded
-     */
+    /// @return The property value, likely to be base64 encoded
     public String getValue() {
         return this.value;
     }
 
-    /**
-     * @return A signature from Mojang for signed properties
-     */
+    /// @return A signature from Mojang for signed properties
     public @Nullable String getSignature() {
         return this.signature;
     }
 
-    /**
-     * @return If this property has a signature or not
-     */
+    /// @return If this property has a signature or not
     public boolean isSigned() {
         return this.signature != null;
     }

@@ -5,12 +5,10 @@ import java.util.EnumSet;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a vine
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a vine
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Vine extends MaterialData {
     private static final int VINE_NORTH = 0x4;
@@ -23,20 +21,16 @@ public class Vine extends MaterialData {
         super(Material.LEGACY_VINE);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Vine(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Vine(byte data) {
         super(Material.LEGACY_VINE, data);
@@ -71,14 +65,12 @@ public class Vine extends MaterialData {
         setData(data);
     }
 
-    /**
-     * Check if the vine is attached to the specified face of an adjacent
-     * block. You can check two faces at once by passing e.g. {@link
-     * BlockFace#NORTH_EAST}.
-     *
-     * @param face The face to check.
-     * @return Whether it is attached to that face.
-     */
+    /// Check if the vine is attached to the specified face of an adjacent
+    /// block. You can check two faces at once by passing e.g.
+    /// [BlockFace#NORTH_EAST].
+    ///
+    /// @param face The face to check.
+    /// @return Whether it is attached to that face.
     public boolean isOnFace(BlockFace face) {
         switch (face) {
             case WEST:
@@ -104,11 +96,9 @@ public class Vine extends MaterialData {
         }
     }
 
-    /**
-     * Attach the vine to the specified face of an adjacent block.
-     *
-     * @param face The face to attach.
-     */
+    /// Attach the vine to the specified face of an adjacent block.
+    ///
+    /// @param face The face to attach.
     public void putOnFace(BlockFace face) {
         switch (face) {
             case WEST:
@@ -146,11 +136,9 @@ public class Vine extends MaterialData {
         }
     }
 
-    /**
-     * Detach the vine from the specified face of an adjacent block.
-     *
-     * @param face The face to detach.
-     */
+    /// Detach the vine from the specified face of an adjacent block.
+    ///
+    /// @param face The face to detach.
     public void removeFromFace(BlockFace face) {
         switch (face) {
             case WEST:

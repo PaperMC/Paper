@@ -1,8 +1,6 @@
 package io.papermc.paper.enchantments;
 
-/**
- * @deprecated Enchantments do not have a "rarity" since 1.20.5
- */
+/// @deprecated Enchantments do not have a "rarity" since 1.20.5
 @Deprecated(forRemoval = true, since = "1.20.5")
 public enum EnchantmentRarity {
 
@@ -17,11 +15,9 @@ public enum EnchantmentRarity {
         this.weight = weight;
     }
 
-    /**
-     * Gets the weight for the rarity.
-     *
-     * @return the weight
-     */
+    /// Gets the weight for the rarity.
+    ///
+    /// @return the weight
     public int getWeight() {
         return weight;
     }

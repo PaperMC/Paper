@@ -1,6 +1,4 @@
-/**
- * Common connection events.
- */
+/// Common connection events.
 @NullMarked
 package io.papermc.paper.event.connection;
 

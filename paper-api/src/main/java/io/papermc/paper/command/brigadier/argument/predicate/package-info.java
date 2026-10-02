@@ -1,6 +1,4 @@
-/**
- * Predicates for argument types.
- */
+/// Predicates for argument types.
 @NullMarked
 package io.papermc.paper.command.brigadier.argument.predicate;
 

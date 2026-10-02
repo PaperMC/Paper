@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player's experience cooldown changes.
- */
+/// Called when a player's experience cooldown changes.
 public class PlayerExpCooldownChangeEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,32 +20,26 @@ public class PlayerExpCooldownChangeEvent extends PlayerEvent {
         this.reason = reason;
     }
 
-    /**
-     * Gets the reason for the change.
-     *
-     * @return The reason for the change
-     */
+    /// Gets the reason for the change.
+    ///
+    /// @return The reason for the change
     @NotNull
     public ChangeReason getReason() {
         return this.reason;
     }
 
-    /**
-     * Gets the new cooldown for the player.
-     *
-     * @return The new cooldown
-     * @see Player#getExpCooldown()
-     */
+    /// Gets the new cooldown for the player.
+    ///
+    /// @return The new cooldown
+    /// @see Player#getExpCooldown()
     public int getNewCooldown() {
         return this.newCooldown;
     }
 
-    /**
-     * Sets the new cooldown for the player.
-     *
-     * @param newCooldown The new cooldown to set
-     * @see Player#setExpCooldown(int)
-     */
+    /// Sets the new cooldown for the player.
+    ///
+    /// @param newCooldown The new cooldown to set
+    /// @see Player#setExpCooldown(int)
     public void setNewCooldown(int newCooldown) {
         this.newCooldown = newCooldown;
     }
@@ -65,15 +57,11 @@ public class PlayerExpCooldownChangeEvent extends PlayerEvent {
 
     public enum ChangeReason {
 
-        /**
-         * The cooldown was set by picking up an experience orb.
-         */
+        /// The cooldown was set by picking up an experience orb.
         PICKUP_ORB,
-        /**
-         * The cooldown was set by a plugin.
-         *
-         * @see Player#setExpCooldown(int)
-         */
+        /// The cooldown was set by a plugin.
+        ///
+        /// @see Player#setExpCooldown(int)
         PLUGIN;
     }
 }

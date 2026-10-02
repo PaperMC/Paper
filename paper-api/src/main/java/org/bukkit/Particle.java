@@ -22,17 +22,11 @@ public enum Particle implements Keyed {
     ENCHANTED_HIT("enchanted_hit"),
     SMOKE("smoke"),
     LARGE_SMOKE("large_smoke"),
-    /**
-     * Uses {@link Spell} as DataType
-     */
+    /// Uses [Spell] as DataType
     EFFECT("effect", Spell.class),
-    /**
-     * Uses {@link Spell} as DataType
-     */
+    /// Uses [Spell] as DataType
     INSTANT_EFFECT("instant_effect", Spell.class),
-    /**
-     * Uses {@link Color} as DataType (with alpha support)
-     */
+    /// Uses [Color] as DataType (with alpha support)
     ENTITY_EFFECT("entity_effect", Color.class),
     WITCH("witch"),
     DRIPPING_WATER("dripping_water"),
@@ -46,33 +40,23 @@ public enum Particle implements Keyed {
     FLAME("flame"),
     LAVA("lava"),
     CLOUD("cloud"),
-    /**
-     * Uses {@link DustOptions} as DataType
-     */
+    /// Uses [DustOptions] as DataType
     DUST("dust", DustOptions.class),
     ITEM_SNOWBALL("item_snowball"),
     ITEM_SLIME("item_slime"),
     HEART("heart"),
-    /**
-     * Uses {@link ItemStack} as DataType
-     */
+    /// Uses [ItemStack] as DataType
     ITEM("item", ItemStack.class),
-    /**
-     * Uses {@link BlockData} as DataType
-     */
+    /// Uses [BlockData] as DataType
     BLOCK("block", BlockData.class),
     RAIN("rain"),
     ELDER_GUARDIAN("elder_guardian"),
-    /**
-     * Uses {@link Float} as DataType, for the power of the breath
-     */
+    /// Uses [Float] as DataType, for the power of the breath
     DRAGON_BREATH("dragon_breath", Float.class),
     END_ROD("end_rod"),
     DAMAGE_INDICATOR("damage_indicator"),
     SWEEP_ATTACK("sweep_attack"),
-    /**
-     * Uses {@link BlockData} as DataType
-     */
+    /// Uses [BlockData] as DataType
     FALLING_DUST("falling_dust", BlockData.class),
     TOTEM_OF_UNDYING("totem_of_undying"),
     SPIT("spit"),
@@ -86,9 +70,7 @@ public enum Particle implements Keyed {
     CAMPFIRE_COSY_SMOKE("campfire_cosy_smoke"),
     CAMPFIRE_SIGNAL_SMOKE("campfire_signal_smoke"),
     COMPOSTER("composter"),
-    /**
-     * Uses {@link Color} as DataType
-     */
+    /// Uses [Color] as DataType
     FLASH("flash", Color.class),
     FALLING_LAVA("falling_lava"),
     LANDING_LAVA("landing_lava"),
@@ -107,13 +89,9 @@ public enum Particle implements Keyed {
     LANDING_OBSIDIAN_TEAR("landing_obsidian_tear"),
     REVERSE_PORTAL("reverse_portal"),
     WHITE_ASH("white_ash"),
-    /**
-     * Uses {@link DustTransition} as DataType
-     */
+    /// Uses [DustTransition] as DataType
     DUST_COLOR_TRANSITION("dust_color_transition", DustTransition.class),
-    /**
-     * Uses {@link Vibration} as DataType
-     */
+    /// Uses [Vibration] as DataType
     VIBRATION("vibration", Vibration.class),
     FALLING_SPORE_BLOSSOM("falling_spore_blossom"),
     SPORE_BLOSSOM_AIR("spore_blossom_air"),
@@ -131,23 +109,17 @@ public enum Particle implements Keyed {
     SCRAPE("scrape"),
     SONIC_BOOM("sonic_boom"),
     SCULK_SOUL("sculk_soul"),
-    /**
-     * Uses {@link Float} as DataType, the angle in radians
-     */
+    /// Uses [Float] as DataType, the angle in radians
     SCULK_CHARGE("sculk_charge", Float.class),
     SCULK_CHARGE_POP("sculk_charge_pop"),
-    /**
-     * Uses {@link Integer} as DataType
-     */
+    /// Uses [Integer] as DataType
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
     RED_POPLAR_LEAVES("red_poplar_leaves"),
     ORANGE_POPLAR_LEAVES("orange_poplar_leaves"),
     YELLOW_POPLAR_LEAVES("yellow_poplar_leaves"),
-    /**
-     * Uses {@link Color} as DataType
-     */
+    /// Uses [Color] as DataType
     TINTED_LEAVES("tinted_leaves", Color.class),
     EGG_CRACK("egg_crack"),
     DUST_PLUME("dust_plume"),
@@ -161,25 +133,17 @@ public enum Particle implements Keyed {
     VAULT_CONNECTION("vault_connection"),
     INFESTED("infested"),
     ITEM_COBWEB("item_cobweb"),
-    /**
-     * Uses {@link BlockData} as DataType
-     */
+    /// Uses [BlockData] as DataType
     DUST_PILLAR("dust_pillar", BlockData.class),
-    /**
-     * Uses {@link BlockData} as DataType
-     */
+    /// Uses [BlockData] as DataType
     BLOCK_CRUMBLE("block_crumble", BlockData.class),
     FIREFLY("firefly"),
-    /**
-     * Uses {@link Trail} as DataType
-     */
+    /// Uses [Trail] as DataType
     TRAIL("trail", Trail.class),
     OMINOUS_SPAWNING("ominous_spawning"),
     RAID_OMEN("raid_omen"),
     TRIAL_OMEN("trial_omen"),
-    /**
-     * Uses {@link BlockData} as DataType
-     */
+    /// Uses [BlockData] as DataType
     BLOCK_MARKER("block_marker", BlockData.class),
     COPPER_FIRE_FLAME("copper_fire_flame"),
     PAUSE_MOB_GROWTH("pause_mob_growth"),
@@ -188,21 +152,13 @@ public enum Particle implements Keyed {
     NOXIOUS_GAS_CLOUD("noxious_gas_cloud"),
     SULFUR_CUBE_GOO("sulfur_cube_goo"),
     SULFUR_BUBBLES("sulfur_bubbles"),
-    /**
-     * Uses {@link Geyser} as DataType
-     */
+    /// Uses [Geyser] as DataType
     GEYSER("geyser", Geyser.class),
-    /**
-     * Uses {@link GeyserBase} as DataType
-     */
+    /// Uses [GeyserBase] as DataType
     GEYSER_BASE("geyser_base", GeyserBase.class),
-    /**
-     * Uses {@link Geyser} as DataType
-     */
+    /// Uses [Geyser] as DataType
     GEYSER_PLUME("geyser_plume", Geyser.class),
-    /**
-     * Uses {@link GeyserBase} as DataType
-     */
+    /// Uses [GeyserBase] as DataType
     GEYSER_POOF("geyser_poof", GeyserBase.class),
     ;
 
@@ -227,10 +183,8 @@ public enum Particle implements Keyed {
         // Paper - all particles are registered
     }
 
-    /**
-     * Returns the required data type for the particle
-     * @return the required data type
-     */
+    /// Returns the required data type for the particle
+    /// @return the required data type
     @NotNull
     public Class<?> getDataType() {
         return dataType;
@@ -246,43 +200,31 @@ public enum Particle implements Keyed {
         return key;
     }
 
-    /**
-     * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
-     *
-     * @return a {@link com.destroystokyo.paper.ParticleBuilder} for the particle
-     */
+    /// Creates a [com.destroystokyo.paper.ParticleBuilder]
+    ///
+    /// @return a [com.destroystokyo.paper.ParticleBuilder] for the particle
     @NotNull
     public com.destroystokyo.paper.ParticleBuilder builder() {
         return new com.destroystokyo.paper.ParticleBuilder(this);
     }
 
-    /**
-     * The randomization type for the particle, which controls how offset and speed are randomized.
-     */
+    /// The randomization type for the particle, which controls how offset and speed are randomized.
     public enum RandomizationType {
-        /**
-         * The default randomization type, which multiplies each offset axis and each speed axis independently by its
-         * own Gaussian random value (similar to {@link java.util.Random#nextGaussian()} (mean 0, standard deviation 1).
-         */
+        /// The default randomization type, which multiplies each offset axis and each speed axis independently by its
+        /// own Gaussian random value (similar to [java.util.Random#nextGaussian()] (mean 0, standard deviation 1).
         DEFAULT,
 
-        /**
-         * Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
-         * similar to {@link java.util.Random#nextDouble()}. Speed is left unmodified.
-         */
+        /// Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
+        /// similar to [java.util.Random#nextDouble()]. Speed is left unmodified.
         ALTERNATIVE,
 
-        /**
-         * Multiplies each offset axis <b>and</b> each speed axis independently by its own uniform random
-         * value in the range [0, 1) similar to {@link java.util.Random#nextDouble()}.
-         */
+        /// Multiplies each offset axis **and** each speed axis independently by its own uniform random
+        /// value in the range [0, 1) similar to [java.util.Random#nextDouble()].
         ALTERNATIVE_WITH_SPEED
     }
 
-    /**
-     * Options which can be applied to dust particles - a particle
-     * color and size.
-     */
+    /// Options which can be applied to dust particles - a particle
+    /// color and size.
     public static class DustOptions {
 
         private final Color color;
@@ -294,29 +236,23 @@ public enum Particle implements Keyed {
             this.size = requireRange(size, "size", 0.01F, 4.0F);
         }
 
-        /**
-         * The color of the particles to be displayed.
-         *
-         * @return particle color
-         */
+        /// The color of the particles to be displayed.
+        ///
+        /// @return particle color
         @NotNull
         public Color getColor() {
             return color;
         }
 
-        /**
-         * Relative size of the particle.
-         *
-         * @return relative particle size
-         */
+        /// Relative size of the particle.
+        ///
+        /// @return relative particle size
         public float getSize() {
             return size;
         }
     }
 
-    /**
-     * Options which can be applied to a color transitioning dust particles.
-     */
+    /// Options which can be applied to a color transitioning dust particles.
     public static class DustTransition extends DustOptions {
 
         private final Color toColor;
@@ -328,20 +264,16 @@ public enum Particle implements Keyed {
             this.toColor = toColor;
         }
 
-        /**
-         * The final of the particles to be displayed.
-         *
-         * @return final particle color
-         */
+        /// The final of the particles to be displayed.
+        ///
+        /// @return final particle color
         @NotNull
         public Color getToColor() {
             return toColor;
         }
     }
 
-    /**
-     * Options which can be applied to trail particles - a location, color and duration.
-     */
+    /// Options which can be applied to trail particles - a location, color and duration.
     public static class Trail {
 
         private final Location target;
@@ -354,39 +286,31 @@ public enum Particle implements Keyed {
             this.duration = requirePositive(duration, "duration");
         }
 
-        /**
-         * The target of the particles to be displayed.
-         *
-         * @return particle target
-         */
+        /// The target of the particles to be displayed.
+        ///
+        /// @return particle target
         @NotNull
         public Location getTarget() {
             return target;
         }
 
-        /**
-         * The color of the particles to be displayed.
-         *
-         * @return particle color
-         */
+        /// The color of the particles to be displayed.
+        ///
+        /// @return particle color
         @NotNull
         public Color getColor() {
             return color;
         }
 
-        /**
-         * The duration of the trail to be displayed.
-         *
-         * @return trail duration
-         */
+        /// The duration of the trail to be displayed.
+        ///
+        /// @return trail duration
         public @Positive int getDuration() {
             return duration;
         }
     }
 
-    /**
-     * Options which can be applied to effect particles.
-     */
+    /// Options which can be applied to effect particles.
     public static class Spell {
 
         private final Color color;
@@ -397,28 +321,22 @@ public enum Particle implements Keyed {
             this.power = power;
         }
 
-        /**
-         * The color of the particles to be displayed.
-         *
-         * @return particle color
-         */
+        /// The color of the particles to be displayed.
+        ///
+        /// @return particle color
         public @NotNull Color getColor() {
             return color;
         }
 
-        /**
-         * The power of the particles to be displayed.
-         *
-         * @return particle power
-         */
+        /// The power of the particles to be displayed.
+        ///
+        /// @return particle power
         public float getPower() {
             return power;
         }
     }
 
-    /**
-     * Options which can be applied to geyser base particles.
-     */
+    /// Options which can be applied to geyser base particles.
     public static class GeyserBase extends AbstractGeyser {
 
         private final float burstImpulse;
@@ -428,17 +346,13 @@ public enum Particle implements Keyed {
             this.burstImpulse = burstImpulse;
         }
 
-        /**
-         * {@return the burst impulse}
-         */
+        /// {@return the burst impulse}
         public float getBurstImpulse() {
             return this.burstImpulse;
         }
     }
 
-    /**
-     * Options which can be applied to geyser particles.
-     */
+    /// Options which can be applied to geyser particles.
     public static class Geyser extends AbstractGeyser {
 
         public Geyser(final int waterBlocks) {
@@ -454,12 +368,10 @@ public enum Particle implements Keyed {
             this.waterBlocks = requirePositive(waterBlocks, "waterBlocks");
         }
 
-        /**
-         * The number of water blocks below the geyser
-         * which scale the particle size and its burst impulse.
-         *
-         * @return the number of water blocks
-         */
+        /// The number of water blocks below the geyser
+        /// which scale the particle size and its burst impulse.
+        ///
+        /// @return the number of water blocks
         public @Positive int getWaterBlocks() {
             return waterBlocks;
         }

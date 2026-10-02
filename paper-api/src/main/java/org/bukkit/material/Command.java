@@ -2,12 +2,10 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 
-/**
- * Represents a command block
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a command block
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Command extends MaterialData implements Redstone {
     public Command() {
@@ -18,33 +16,27 @@ public class Command extends MaterialData implements Redstone {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Command(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current state of this Material, indicating if it's powered or
-     * unpowered
-     *
-     * @return true if powered, otherwise false
-     */
+    /// Gets the current state of this Material, indicating if it's powered or
+    /// unpowered
+    ///
+    /// @return true if powered, otherwise false
     @Override
     public boolean isPowered() {
         return (getData() & 1) != 0;
     }
 
-    /**
-     * Sets the current state of this Material
-     *
-     * @param bool
-     *            whether or not the command block is powered
-     */
+    /// Sets the current state of this Material
+    ///
+    /// @param bool
+    ///            whether or not the command block is powered
     public void setPowered(boolean bool) {
         setData((byte) (bool ? (getData() | 1) : (getData() & -2)));
     }

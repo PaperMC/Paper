@@ -22,23 +22,19 @@ public class Pattern implements ConfigurationSerializable {
     private final DyeColor color;
     private final PatternType pattern;
 
-    /**
-     * Creates a new pattern from the specified color and
-     * pattern type
-     *
-     * @param color   the pattern color
-     * @param pattern the pattern type
-     */
+    /// Creates a new pattern from the specified color and
+    /// pattern type
+    ///
+    /// @param color   the pattern color
+    /// @param pattern the pattern type
     public Pattern(@NotNull DyeColor color, @NotNull PatternType pattern) {
         this.color = color;
         this.pattern = pattern;
     }
 
-    /**
-     * Constructor for deserialization.
-     *
-     * @param map the map to deserialize from
-     */
+    /// Constructor for deserialization.
+    ///
+    /// @param map the map to deserialize from
     public Pattern(@NotNull Map<String, Object> map) {
         color = DyeColor.legacyValueOf(getString(map, COLOR));
 
@@ -71,21 +67,17 @@ public class Pattern implements ConfigurationSerializable {
         );
     }
 
-    /**
-     * Returns the color of the pattern
-     *
-     * @return the color of the pattern
-     */
+    /// Returns the color of the pattern
+    ///
+    /// @return the color of the pattern
     @NotNull
     public DyeColor getColor() {
         return color;
     }
 
-    /**
-     * Returns the type of pattern
-     *
-     * @return the pattern type
-     */
+    /// Returns the type of pattern
+    ///
+    /// @return the pattern type
     @NotNull
     public PatternType getPattern() {
         return pattern;

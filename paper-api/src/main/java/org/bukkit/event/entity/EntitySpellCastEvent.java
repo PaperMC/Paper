@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Spellcaster} casts a spell.
- */
+/// Called when a [Spellcaster] casts a spell.
 public class EntitySpellCastEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,14 +27,12 @@ public class EntitySpellCastEvent extends EntityEvent implements Cancellable {
         return (Spellcaster) this.entity;
     }
 
-    /**
-     * Get the spell to be cast in this event.
-     * <br>
-     * This is a convenience method equivalent to
-     * {@link Spellcaster#getSpell()}.
-     *
-     * @return the spell to cast
-     */
+    /// Get the spell to be cast in this event.
+    ///
+    /// This is a convenience method equivalent to
+    /// [Spellcaster#getSpell()].
+    ///
+    /// @return the spell to cast
     @NotNull
     public Spellcaster.Spell getSpell() {
         return this.spell;

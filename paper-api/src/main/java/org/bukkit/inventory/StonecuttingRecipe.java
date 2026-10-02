@@ -7,32 +7,26 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a Stonecutting recipe.
- */
+/// Represents a Stonecutting recipe.
 public class StonecuttingRecipe implements Recipe, Keyed {
     private final NamespacedKey key;
     private ItemStack output;
     private RecipeChoice ingredient;
 
-    /**
-     * Create a Stonecutting recipe to craft the specified ItemStack.
-     *
-     * @param key The unique recipe key
-     * @param result The item you want the recipe to create.
-     * @param source The input material.
-     */
+    /// Create a Stonecutting recipe to craft the specified ItemStack.
+    ///
+    /// @param key The unique recipe key
+    /// @param result The item you want the recipe to create.
+    /// @param source The input material.
     public StonecuttingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source) {
         this(key, result, new RecipeChoice.MaterialChoice(Collections.singletonList(source)));
     }
 
-    /**
-     * Create a Stonecutting recipe to craft the specified ItemStack.
-     *
-     * @param key The unique recipe key
-     * @param result The item you want the recipe to create.
-     * @param input The input choices.
-     */
+    /// Create a Stonecutting recipe to craft the specified ItemStack.
+    ///
+    /// @param key The unique recipe key
+    /// @param result The item you want the recipe to create.
+    /// @param input The input choices.
     public StonecuttingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input) {
         Preconditions.checkArgument(!result.isEmpty(), "Recipe cannot have an empty result."); // Paper
         this.key = key;
@@ -40,57 +34,47 @@ public class StonecuttingRecipe implements Recipe, Keyed {
         this.ingredient = input.validate(false).clone(); // Paper
     }
 
-    /**
-     * Sets the input of this Stonecutting recipe.
-     *
-     * @param input The input material.
-     * @return The changed recipe, so you can chain calls.
-     */
+    /// Sets the input of this Stonecutting recipe.
+    ///
+    /// @param input The input material.
+    /// @return The changed recipe, so you can chain calls.
     @NotNull
     public StonecuttingRecipe setInput(@NotNull Material input) {
         this.ingredient = new RecipeChoice.MaterialChoice(Collections.singletonList(input));
         return this;
     }
 
-    /**
-     * Get the input material.
-     *
-     * @return The input material.
-     * @deprecated Use {@link #getInputChoice()} instead for more complete data.
-     */
+    /// Get the input material.
+    ///
+    /// @return The input material.
+    /// @deprecated Use [#getInputChoice()] instead for more complete data.
     @Deprecated // Paper
     @NotNull
     public ItemStack getInput() {
         return this.ingredient.getItemStack();
     }
 
-    /**
-     * Sets the input of this Stonecutting recipe.
-     *
-     * @param input The input choice.
-     * @return The changed recipe, so you can chain calls.
-     */
+    /// Sets the input of this Stonecutting recipe.
+    ///
+    /// @param input The input choice.
+    /// @return The changed recipe, so you can chain calls.
     @NotNull
     public StonecuttingRecipe setInputChoice(@NotNull RecipeChoice input) {
         this.ingredient = input.validate(false).clone(); // Paper
         return (StonecuttingRecipe) this;
     }
 
-    /**
-     * Get the input choice.
-     *
-     * @return The input choice.
-     */
+    /// Get the input choice.
+    ///
+    /// @return The input choice.
     @NotNull
     public RecipeChoice getInputChoice() {
         return this.ingredient.clone();
     }
 
-    /**
-     * Get the result of this recipe.
-     *
-     * @return The resulting stack.
-     */
+    /// Get the result of this recipe.
+    ///
+    /// @return The resulting stack.
     @NotNull
     @Override
     public ItemStack getResult() {
@@ -103,27 +87,23 @@ public class StonecuttingRecipe implements Recipe, Keyed {
         return key;
     }
 
-    /**
-     * Get the group of this recipe. Recipes with the same group may be grouped
-     * together when displayed in the client.
-     *
-     * @return recipe group. An empty string denotes no group. May not be null.
-     * @deprecated no longer used for this recipe
-     */
+    /// Get the group of this recipe. Recipes with the same group may be grouped
+    /// together when displayed in the client.
+    ///
+    /// @return recipe group. An empty string denotes no group. May not be null.
+    /// @deprecated no longer used for this recipe
     @NotNull
     @Deprecated(since = "26.1")
     public String getGroup() {
         return "";
     }
 
-    /**
-     * Set the group of this recipe. Recipes with the same group may be grouped
-     * together when displayed in the client.
-     *
-     * @param group recipe group. An empty string denotes no group. May not be
-     * null.
-     * @deprecated no longer used for this recipe
-     */
+    /// Set the group of this recipe. Recipes with the same group may be grouped
+    /// together when displayed in the client.
+    ///
+    /// @param group recipe group. An empty string denotes no group. May not be
+    /// null.
+    /// @deprecated no longer used for this recipe
     @Deprecated(since = "26.1")
     public void setGroup(@NotNull String group) {
         Preconditions.checkArgument(group != null, "group cannot be null");

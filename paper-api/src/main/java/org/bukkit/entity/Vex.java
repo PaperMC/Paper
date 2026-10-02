@@ -3,156 +3,118 @@ package org.bukkit.entity;
 import org.bukkit.Location;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a Vex.
- */
+/// Represents a Vex.
 public interface Vex extends Monster {
 
-    /**
-     * Gets the charging state of this entity.
-     *
-     * When this entity is charging it will have a glowing red texture.
-     *
-     * @return charging state
-     */
+    /// Gets the charging state of this entity.
+    /// When this entity is charging it will have a glowing red texture.
+    ///
+    /// @return charging state
     boolean isCharging();
 
-    /**
-     * Sets the charging state of this entity.
-     *
-     * When this entity is charging it will have a glowing red texture.
-     *
-     * @param charging new state
-     */
+    /// Sets the charging state of this entity.
+    /// When this entity is charging it will have a glowing red texture.
+    ///
+    /// @param charging new state
     void setCharging(boolean charging);
 
-    /**
-     * Gets the bound of this entity.
-     *
-     * An idle vex will navigate a 15x11x15 area centered around its bound
-     * location.
-     *
-     * When summoned by an Evoker, this location will be set to that of the
-     * summoner.
-     *
-     * @return {@link Location} of the bound or null if not set
-     */
+    /// Gets the bound of this entity.
+    /// An idle vex will navigate a 15x11x15 area centered around its bound
+    /// location.
+    /// When summoned by an Evoker, this location will be set to that of the
+    /// summoner.
+    ///
+    /// @return [Location] of the bound or null if not set
     @Nullable
     Location getBound();
 
-    /**
-     * Sets the bound of this entity.
-     *
-     * An idle vex will navigate a 15x11x15 area centered around its bound
-     * location.
-     *
-     * When summoned by an Evoker, this location will be set to that of the
-     * summoner.
-     *
-     * @param location {@link Location} of the bound or null to clear
-     */
+    /// Sets the bound of this entity.
+    /// An idle vex will navigate a 15x11x15 area centered around its bound
+    /// location.
+    /// When summoned by an Evoker, this location will be set to that of the
+    /// summoner.
+    ///
+    /// @param location [Location] of the bound or null to clear
     void setBound(@Nullable Location location);
 
-    /**
-     * Gets the remaining lifespan of this entity.
-     *
-     * @return life in ticks
-     * @deprecated use {@link #getLimitedLifetimeTicks()}
-     */
+    /// Gets the remaining lifespan of this entity.
+    ///
+    /// @return life in ticks
+    /// @deprecated use [#getLimitedLifetimeTicks()]
     @Deprecated
     default int getLifeTicks() {
         return this.getLimitedLifetimeTicks();
     }
 
-    /**
-     * Sets the remaining lifespan of this entity.
-     *
-     * @param lifeTicks life in ticks, or negative for unlimited lifepan
-     * @deprecated This API duplicates existing API which uses the more
-     * preferable name due to mirroring internals better
-     */
+    /// Sets the remaining lifespan of this entity.
+    ///
+    /// @param lifeTicks life in ticks, or negative for unlimited lifepan
+    /// @deprecated This API duplicates existing API which uses the more
+    /// preferable name due to mirroring internals better
     @Deprecated
     void setLifeTicks(int lifeTicks);
 
-    /**
-     * Gets if the entity has a limited life.
-     *
-     * @return true if the entity has limited life
-     * @deprecated use {@link #hasLimitedLifetime()}
-     */
+    /// Gets if the entity has a limited life.
+    ///
+    /// @return true if the entity has limited life
+    /// @deprecated use [#hasLimitedLifetime()]
     @Deprecated
     default boolean hasLimitedLife() {
         return this.hasLimitedLifetime();
     }
     // Paper start
 
-    /**
-     * Gets the Mob that summoned this vex
-     *
-     * @return mob that summoned this vex
-     * @deprecated use {@link #getOwner()}
-     */
+    /// Gets the Mob that summoned this vex
+    ///
+    /// @return mob that summoned this vex
+    /// @deprecated use [#getOwner()]
     @Deprecated(forRemoval = true, since = "26.2")
     default @Nullable Mob getSummoner() {
         return this.getOwner() instanceof Mob mob ? mob : null;
     }
 
-    /**
-     * Sets the summoner of this vex
-     *
-     * @param summoner new summoner
-     * @deprecated use {@link #setOwner(LivingEntity)}
-     */
+    /// Sets the summoner of this vex
+    ///
+    /// @param summoner new summoner
+    /// @deprecated use [#setOwner(LivingEntity)]
     @Deprecated(forRemoval = true, since = "26.2")
     default void setSummoner(final @Nullable Mob summoner) {
         this.setOwner(summoner);
     }
 
-    /**
-     * Gets the owner of this vex which is
-     * often its summoner.
-     *
-     * @return new owner
-     */
+    /// Gets the owner of this vex which is
+    /// often its summoner.
+    ///
+    /// @return new owner
     @Nullable LivingEntity getOwner();
 
-    /**
-     * Sets the owner of this vex.
-     *
-     * @param owner new owner
-     */
+    /// Sets the owner of this vex.
+    ///
+    /// @param owner new owner
     void setOwner(@Nullable LivingEntity owner);
 
-    /**
-     * Gets if this vex should start to take damage
-     * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
-     *
-     * @return will take damage
-     */
+    /// Gets if this vex should start to take damage
+    /// once [Vex#getLimitedLifetimeTicks()] is less than or equal to 0.
+    ///
+    /// @return will take damage
     boolean hasLimitedLifetime();
 
-    /**
-     * Sets if this vex should start to take damage
-     * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
-     *
-     * @param hasLimitedLifetime should take damage
-     */
+    /// Sets if this vex should start to take damage
+    /// once [Vex#getLimitedLifetimeTicks()] is less than or equal to 0.
+    ///
+    /// @param hasLimitedLifetime should take damage
     void setLimitedLifetime(boolean hasLimitedLifetime);
 
-    /**
-     * Gets the number of ticks remaining until the vex will start
-     * to take damage.
-     *
-     * @return ticks until the vex will start to take damage
-     */
+    /// Gets the number of ticks remaining until the vex will start
+    /// to take damage.
+    ///
+    /// @return ticks until the vex will start to take damage
     int getLimitedLifetimeTicks();
 
-    /**
-     * Sets the number of ticks remaining until the vex takes damage.
-     * This number is ticked down only if {@link Vex#hasLimitedLifetime()} is true.
-     *
-     * @param ticks ticks remaining
-     */
+    /// Sets the number of ticks remaining until the vex takes damage.
+    /// This number is ticked down only if [Vex#hasLimitedLifetime()] is true.
+    ///
+    /// @param ticks ticks remaining
     void setLimitedLifetimeTicks(int ticks);
     // Paper end
 }

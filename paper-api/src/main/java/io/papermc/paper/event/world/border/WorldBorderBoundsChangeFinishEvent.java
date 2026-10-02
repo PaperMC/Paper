@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a moving world border has finished its move.
- */
+/// Called when a moving world border has finished its move.
 @NullMarked
 public class WorldBorderBoundsChangeFinishEvent extends WorldBorderEvent {
 
@@ -26,31 +24,25 @@ public class WorldBorderBoundsChangeFinishEvent extends WorldBorderEvent {
         this.duration = duration;
     }
 
-    /**
-     * Gets the old size of the worldborder.
-     *
-     * @return the old size
-     */
+    /// Gets the old size of the worldborder.
+    ///
+    /// @return the old size
     public double getOldSize() {
         return this.oldSize;
     }
 
-    /**
-     * Gets the new size of the worldborder.
-     *
-     * @return the new size
-     */
+    /// Gets the new size of the worldborder.
+    ///
+    /// @return the new size
     public double getNewSize() {
         return this.newSize;
     }
 
-    /**
-     * Gets the duration this worldborder took to make the change.
-     * <p>
-     * Can be 0 if handlers for {@link WorldBorderCenterChangeEvent} set the duration to 0.
-     *
-     * @return the duration of the transition
-     */
+    /// Gets the duration this worldborder took to make the change.
+    ///
+    /// Can be 0 if handlers for [WorldBorderCenterChangeEvent] set the duration to 0.
+    ///
+    /// @return the duration of the transition
     public double getDuration() {
         return this.duration;
     }

@@ -8,12 +8,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an entity enters love mode.
- * <br>
- * This can be cancelled but the item will still be consumed that was used to
- * make the entity enter into love mode.
- */
+/// Called when an entity enters love mode.
+///
+/// This can be cancelled but the item will still be consumed that was used to
+/// make the entity enter into love mode.
 public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -30,43 +28,35 @@ public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable
         this.ticksInLove = ticksInLove;
     }
 
-    /**
-     * Gets the animal that is entering love mode.
-     *
-     * @return The animal that is entering love mode
-     */
+    /// Gets the animal that is entering love mode.
+    ///
+    /// @return The animal that is entering love mode
     @NotNull
     @Override
     public Animals getEntity() {
         return (Animals) this.entity;
     }
 
-    /**
-     * Gets the Human Entity that caused the animal to enter love mode.
-     *
-     * @return The Human entity that caused the animal to enter love mode, or
-     * {@code null} if there wasn't one.
-     */
+    /// Gets the Human Entity that caused the animal to enter love mode.
+    ///
+    /// @return The Human entity that caused the animal to enter love mode, or
+    /// `null` if there wasn't one.
     @Nullable
     public HumanEntity getHumanEntity() {
         return this.humanEntity;
     }
 
-    /**
-     * Gets the amount of ticks that the animal will fall in love for.
-     *
-     * @return The amount of ticks that the animal will fall in love for
-     */
+    /// Gets the amount of ticks that the animal will fall in love for.
+    ///
+    /// @return The amount of ticks that the animal will fall in love for
     public int getTicksInLove() {
         return this.ticksInLove;
     }
 
-    /**
-     * Sets the amount of ticks that the animal will fall in love for.
-     *
-     * @param ticksInLove The amount of ticks that the animal will fall in love
-     * for
-     */
+    /// Sets the amount of ticks that the animal will fall in love for.
+    ///
+    /// @param ticksInLove The amount of ticks that the animal will fall in love
+    /// for
     public void setTicksInLove(int ticksInLove) {
         this.ticksInLove = ticksInLove;
     }

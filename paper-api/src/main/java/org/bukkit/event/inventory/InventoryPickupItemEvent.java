@@ -8,9 +8,7 @@ import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a hopper or hopper minecart picks up a dropped item.
- */
+/// Called when a hopper or hopper minecart picks up a dropped item.
 public class InventoryPickupItemEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -26,17 +24,13 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
         this.item = item;
     }
 
-    /**
-     * Gets the Inventory that picked up the item
-     */
+    /// Gets the Inventory that picked up the item
     @NotNull
     public Inventory getInventory() {
         return this.inventory;
     }
 
-    /**
-     * Gets the Item entity that was picked up
-     */
+    /// Gets the Item entity that was picked up
     @NotNull
     public Item getItem() {
         return this.item;

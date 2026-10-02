@@ -13,9 +13,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Base Permissible for use in any Permissible object via proxy or extension
- */
+/// Base Permissible for use in any Permissible object via proxy or extension
 public class PermissibleBase implements Permissible {
     private final ServerOperator opable;
     private final Permissible parent;

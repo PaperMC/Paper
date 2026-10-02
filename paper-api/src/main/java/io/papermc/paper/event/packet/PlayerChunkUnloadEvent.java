@@ -7,12 +7,10 @@ import org.bukkit.event.world.ChunkEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Is called when a {@link Player} receives a chunk unload packet.
- * <p>
- * Should only be used for packet/clientside related stuff.
- * Not intended for modifying server side.
- */
+/// Is called when a [Player] receives a chunk unload packet.
+///
+/// Should only be used for packet/clientside related stuff.
+/// Not intended for modifying server side.
 @NullMarked
 public class PlayerChunkUnloadEvent extends ChunkEvent {
 

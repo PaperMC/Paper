@@ -7,10 +7,8 @@ import org.bukkit.event.block.BlockEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a beacon is activated.
- * Activation occurs when the beacon beam becomes visible.
- */
+/// Called when a beacon is activated.
+/// Activation occurs when the beacon beam becomes visible.
 @NullMarked
 public class BeaconActivatedEvent extends BlockEvent {
 
@@ -21,11 +19,9 @@ public class BeaconActivatedEvent extends BlockEvent {
         super(beacon);
     }
 
-    /**
-     * Returns the beacon that was activated.
-     *
-     * @return the beacon that was activated.
-     */
+    /// Returns the beacon that was activated.
+    ///
+    /// @return the beacon that was activated.
     public Beacon getBeacon() {
         return (Beacon) this.block.getState();
     }

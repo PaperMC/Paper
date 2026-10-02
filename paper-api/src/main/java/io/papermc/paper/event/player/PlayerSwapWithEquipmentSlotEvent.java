@@ -9,9 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Triggered when a {@link Player} swaps an item with an equipment slot.
- */
+/// Triggered when a [Player] swaps an item with an equipment slot.
 @NullMarked
 public class PlayerSwapWithEquipmentSlotEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList HANDLERS = new HandlerList();
@@ -33,23 +31,17 @@ public class PlayerSwapWithEquipmentSlotEvent extends PlayerEvent implements Can
         this.itemToSwap = itemToSwap;
     }
 
-    /**
-     * {@return the item in one of the hand slots}
-     */
+    /// {@return the item in one of the hand slots}
     public ItemStack getItemInHand() {
         return this.itemInHand.clone();
     }
 
-    /**
-     * {@return the slot to swap into}
-     */
+    /// {@return the slot to swap into}
     public EquipmentSlot getSlot() {
         return this.slot;
     }
 
-    /**
-     * {@return the item to swap}
-     */
+    /// {@return the item to swap}
     public ItemStack getItemToSwap() {
         return this.itemToSwap.clone();
     }

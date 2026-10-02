@@ -7,10 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds the layers of patterns on a banner.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
- */
+/// Holds the layers of patterns on a banner.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
 @ApiStatus.NonExtendable
 public interface BannerPatternLayers {
 
@@ -24,37 +22,29 @@ public interface BannerPatternLayers {
         return ItemComponentTypesBridge.bridge().bannerPatternLayers();
     }
 
-    /**
-     * Gets the patterns on the banner.
-     *
-     * @return the patterns
-     */
+    /// Gets the patterns on the banner.
+    ///
+    /// @return the patterns
     @Contract(pure = true)
     @Unmodifiable List<Pattern> patterns();
 
-    /**
-     * Builder for {@link BannerPatternLayers}.
-     */
+    /// Builder for [BannerPatternLayers].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BannerPatternLayers> {
 
-        /**
-         * Adds a pattern to the banner.
-         *
-         * @param pattern the pattern
-         * @return the builder for chaining
-         * @see #patterns()
-         */
+        /// Adds a pattern to the banner.
+        ///
+        /// @param pattern the pattern
+        /// @return the builder for chaining
+        /// @see #patterns()
         @Contract(value = "_ -> this", mutates = "this")
         Builder add(Pattern pattern);
 
-        /**
-         * Adds multiple patterns to the banner.
-         *
-         * @param patterns the patterns
-         * @return the builder for chaining
-         * @see #patterns()
-         */
+        /// Adds multiple patterns to the banner.
+        ///
+        /// @param patterns the patterns
+        /// @return the builder for chaining
+        /// @see #patterns()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<Pattern> patterns);
     }

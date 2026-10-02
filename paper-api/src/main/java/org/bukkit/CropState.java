@@ -4,43 +4,25 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the different growth states of crops
- */
+/// Represents the different growth states of crops
 @Deprecated(forRemoval = true, since = "1.13")
 public enum CropState {
 
-    /**
-     * State when first seeded
-     */
+    /// State when first seeded
     SEEDED(0x0),
-    /**
-     * First growth stage
-     */
+    /// First growth stage
     GERMINATED(0x1),
-    /**
-     * Second growth stage
-     */
+    /// Second growth stage
     VERY_SMALL(0x2),
-    /**
-     * Third growth stage
-     */
+    /// Third growth stage
     SMALL(0x3),
-    /**
-     * Fourth growth stage
-     */
+    /// Fourth growth stage
     MEDIUM(0x4),
-    /**
-     * Fifth growth stage
-     */
+    /// Fifth growth stage
     TALL(0x5),
-    /**
-     * Almost ripe stage
-     */
+    /// Almost ripe stage
     VERY_TALL(0x6),
-    /**
-     * Ripe stage
-     */
+    /// Ripe stage
     RIPE(0x7);
 
     private final byte data;
@@ -50,25 +32,21 @@ public enum CropState {
         this.data = (byte) data;
     }
 
-    /**
-     * Gets the associated data value representing this growth state
-     *
-     * @return A byte containing the data value of this growth state
-     * @deprecated Magic value
-     */
+    /// Gets the associated data value representing this growth state
+    ///
+    /// @return A byte containing the data value of this growth state
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
 
-    /**
-     * Gets the CropState with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link CropState} representing the given value, or null if
-     *     it doesn't exist
-     * @deprecated Magic value
-     */
+    /// Gets the CropState with the given data value
+    ///
+    /// @param data Data value to fetch
+    /// @return The [CropState] representing the given value, or null if
+    ///     it doesn't exist
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Nullable
     public static CropState getByData(final byte data) {

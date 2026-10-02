@@ -5,11 +5,9 @@ import org.bukkit.event.server.ServerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when resources such as datapacks are reloaded (e.g. /minecraft:reload)
- * <p>
- * Intended for use to re-register custom recipes, advancements that may be lost during a reload like this.
- */
+/// Called when resources such as datapacks are reloaded (e.g. /minecraft:reload)
+///
+/// Intended for use to re-register custom recipes, advancements that may be lost during a reload like this.
 @NullMarked
 public class ServerResourcesReloadedEvent extends ServerEvent {
 
@@ -22,11 +20,9 @@ public class ServerResourcesReloadedEvent extends ServerEvent {
         this.cause = cause;
     }
 
-    /**
-     * Gets the cause of the resource reload.
-     *
-     * @return the reload cause
-     */
+    /// Gets the cause of the resource reload.
+    ///
+    /// @return the reload cause
     public Cause getCause() {
         return this.cause;
     }

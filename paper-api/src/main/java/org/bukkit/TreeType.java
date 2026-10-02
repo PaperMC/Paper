@@ -1,116 +1,60 @@
 package org.bukkit;
 
-/**
- * Tree and organic structure types.
- */
+/// Tree and organic structure types.
 public enum TreeType {
 
-    /**
-     * Regular tree, no branches
-     */
+    /// Regular tree, no branches
     TREE,
-    /**
-     * Regular tree, extra tall with branches
-     */
+    /// Regular tree, extra tall with branches
     BIG_TREE,
-    /**
-     * Redwood tree, shaped like a pine tree
-     */
+    /// Redwood tree, shaped like a pine tree
     REDWOOD,
-    /**
-     * Tall redwood tree with just a few leaves at the top
-     */
+    /// Tall redwood tree with just a few leaves at the top
     TALL_REDWOOD,
-    /**
-     * Birch tree
-     */
+    /// Birch tree
     BIRCH,
-    /**
-     * Standard jungle tree; 4 blocks wide and tall
-     */
+    /// Standard jungle tree; 4 blocks wide and tall
     JUNGLE,
-    /**
-     * Smaller jungle tree; 1 block wide
-     */
+    /// Smaller jungle tree; 1 block wide
     SMALL_JUNGLE,
-    /**
-     * Jungle tree with cocoa plants; 1 block wide
-     */
+    /// Jungle tree with cocoa plants; 1 block wide
     COCOA_TREE,
-    /**
-     * Small bush that grows in the jungle
-     */
+    /// Small bush that grows in the jungle
     JUNGLE_BUSH,
-    /**
-     * Big red mushroom; short and fat
-     */
+    /// Big red mushroom; short and fat
     RED_MUSHROOM,
-    /**
-     * Big brown mushroom; tall and umbrella-like
-     */
+    /// Big brown mushroom; tall and umbrella-like
     BROWN_MUSHROOM,
-    /**
-     * Swamp tree (regular with vines on the side)
-     */
+    /// Swamp tree (regular with vines on the side)
     SWAMP,
-    /**
-     * Acacia tree.
-     */
+    /// Acacia tree.
     ACACIA,
-    /**
-     * Dark Oak tree.
-     */
+    /// Dark Oak tree.
     DARK_OAK,
-    /**
-     * Mega redwood tree; 4 blocks wide and tall
-     */
+    /// Mega redwood tree; 4 blocks wide and tall
     MEGA_REDWOOD,
-    /**
-     * Mega pine tree
-     */
+    /// Mega pine tree
     MEGA_PINE,
-    /**
-     * Tall birch tree
-     */
+    /// Tall birch tree
     TALL_BIRCH,
-    /**
-     * Large plant native to The End
-     */
+    /// Large plant native to The End
     CHORUS_PLANT,
-    /**
-     * Large crimson fungus native to the nether
-     */
+    /// Large crimson fungus native to the nether
     CRIMSON_FUNGUS,
-    /**
-     * Large warped fungus native to the nether
-     */
+    /// Large warped fungus native to the nether
     WARPED_FUNGUS,
-    /**
-     * Tree with large roots which grows above lush caves
-     */
+    /// Tree with large roots which grows above lush caves
     AZALEA,
-    /**
-     * Mangrove tree
-     */
+    /// Mangrove tree
     MANGROVE,
-    /**
-     * Tall mangrove tree
-     */
+    /// Tall mangrove tree
     TALL_MANGROVE,
-    /**
-     * Cherry tree
-     */
+    /// Cherry tree
     CHERRY,
-    /**
-     * Pale oak tree
-     */
+    /// Pale oak tree
     PALE_OAK,
-    /**
-     * Pale oak tree with a creaking heart
-     */
+    /// Pale oak tree with a creaking heart
     PALE_OAK_CREAKING,
-    /**
-     * Poplar tree
-     */
+    /// Poplar tree
     POPLAR,
 }

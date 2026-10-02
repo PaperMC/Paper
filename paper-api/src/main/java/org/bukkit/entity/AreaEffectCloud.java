@@ -11,268 +11,200 @@ import org.bukkit.projectiles.ProjectileSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents an area effect cloud which will imbue a potion effect onto
- * entities which enter it.
- */
+/// Represents an area effect cloud which will imbue a potion effect onto
+/// entities which enter it.
 public interface AreaEffectCloud extends Entity {
 
-    /**
-     * Gets the duration which this cloud will exist for (in ticks).
-     *
-     * @return cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
-     */
+    /// Gets the duration which this cloud will exist for (in ticks).
+    ///
+    /// @return cloud duration or [PotionEffect#INFINITE_DURATION] for no duration
     int getDuration();
 
-    /**
-     * Sets the duration which this cloud will exist for (in ticks).
-     *
-     * @param duration cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
-     */
+    /// Sets the duration which this cloud will exist for (in ticks).
+    ///
+    /// @param duration cloud duration or [PotionEffect#INFINITE_DURATION] for no duration
     void setDuration(int duration);
 
-    /**
-     * Gets the time which an entity has to be exposed to the cloud before the
-     * effect is applied.
-     *
-     * @return wait time
-     */
+    /// Gets the time which an entity has to be exposed to the cloud before the
+    /// effect is applied.
+    ///
+    /// @return wait time
     int getWaitTime();
 
-    /**
-     * Sets the time which an entity has to be exposed to the cloud before the
-     * effect is applied.
-     *
-     * @param waitTime wait time
-     */
+    /// Sets the time which an entity has to be exposed to the cloud before the
+    /// effect is applied.
+    ///
+    /// @param waitTime wait time
     void setWaitTime(int waitTime);
 
-    /**
-     * Gets the time that an entity will be immune from subsequent exposure.
-     *
-     * @return reapplication delay
-     */
+    /// Gets the time that an entity will be immune from subsequent exposure.
+    ///
+    /// @return reapplication delay
     int getReapplicationDelay();
 
-    /**
-     * Sets the time that an entity will be immune from subsequent exposure.
-     *
-     * @param delay reapplication delay
-     */
+    /// Sets the time that an entity will be immune from subsequent exposure.
+    ///
+    /// @param delay reapplication delay
     void setReapplicationDelay(int delay);
 
-    /**
-     * Gets the amount that the duration of this cloud will decrease by when it
-     * applies an effect to an entity.
-     *
-     * @return duration on use delta
-     */
+    /// Gets the amount that the duration of this cloud will decrease by when it
+    /// applies an effect to an entity.
+    ///
+    /// @return duration on use delta
     int getDurationOnUse();
 
-    /**
-     * Sets the amount that the duration of this cloud will decrease by when it
-     * applies an effect to an entity.
-     *
-     * @param duration duration on use delta
-     */
+    /// Sets the amount that the duration of this cloud will decrease by when it
+    /// applies an effect to an entity.
+    ///
+    /// @param duration duration on use delta
     void setDurationOnUse(int duration);
 
-    /**
-     * Gets the initial radius of the cloud.
-     *
-     * @return radius
-     */
+    /// Gets the initial radius of the cloud.
+    ///
+    /// @return radius
     float getRadius();
 
-    /**
-     * Sets the initial radius of the cloud.
-     *
-     * @param radius radius
-     */
+    /// Sets the initial radius of the cloud.
+    ///
+    /// @param radius radius
     void setRadius(float radius);
 
-    /**
-     * Gets the amount that the radius of this cloud will decrease by when it
-     * applies an effect to an entity.
-     *
-     * @return radius on use delta
-     */
+    /// Gets the amount that the radius of this cloud will decrease by when it
+    /// applies an effect to an entity.
+    ///
+    /// @return radius on use delta
     float getRadiusOnUse();
 
-    /**
-     * Sets the amount that the radius of this cloud will decrease by when it
-     * applies an effect to an entity.
-     *
-     * @param radius radius on use delta
-     */
+    /// Sets the amount that the radius of this cloud will decrease by when it
+    /// applies an effect to an entity.
+    ///
+    /// @param radius radius on use delta
     void setRadiusOnUse(float radius);
 
-    /**
-     * Gets the amount that the radius of this cloud will decrease by each tick.
-     *
-     * @return radius per tick delta
-     */
+    /// Gets the amount that the radius of this cloud will decrease by each tick.
+    ///
+    /// @return radius per tick delta
     float getRadiusPerTick();
 
-    /**
-     * Sets the amount that the radius of this cloud will decrease by each tick.
-     *
-     * @param radius per tick delta
-     */
+    /// Sets the amount that the radius of this cloud will decrease by each tick.
+    ///
+    /// @param radius per tick delta
     void setRadiusPerTick(float radius);
 
-    /**
-     * Gets the particle which this cloud will be composed of
-     *
-     * @return particle the set particle type
-     */
+    /// Gets the particle which this cloud will be composed of
+    ///
+    /// @return particle the set particle type
     @NotNull
     Particle getParticle();
 
-    /**
-     * Sets the particle which this cloud will be composed of
-     *
-     * @param particle the new particle type
-     */
+    /// Sets the particle which this cloud will be composed of
+    ///
+    /// @param particle the new particle type
     void setParticle(@NotNull Particle particle);
 
-    /**
-     * Sets the particle which this cloud will be composed of
-     *
-     * @param <T> type of particle data (see {@link Particle#getDataType()})
-     * @param particle the new particle type
-     * @param data the data to use for the particle or null,
-     *             the type of this depends on {@link Particle#getDataType()}
-     */
+    /// Sets the particle which this cloud will be composed of
+    ///
+    /// @param <T> type of particle data (see [Particle#getDataType()])
+    /// @param particle the new particle type
+    /// @param data the data to use for the particle or null,
+    ///             the type of this depends on [Particle#getDataType()]
     <T> void setParticle(@NotNull Particle particle, @Nullable T data);
 
-    /**
-     * Sets the underlying potion data
-     *
-     * @param data PotionData to set the base potion state to
-     * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
-     */
+    /// Sets the underlying potion data
+    ///
+    /// @param data PotionData to set the base potion state to
+    /// @deprecated Upgraded / extended potions are now their own [PotionType] use [#setBasePotionType] instead.
     @Deprecated(since = "1.20.6", forRemoval = true)
     void setBasePotionData(@Nullable PotionData data);
 
-    /**
-     * Returns the potion data about the base potion
-     *
-     * @return a PotionData object
-     * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
-     */
+    /// Returns the potion data about the base potion
+    ///
+    /// @return a PotionData object
+    /// @deprecated Upgraded / extended potions are now their own [PotionType] use [#getBasePotionType()] instead.
     @Nullable
     @Deprecated(since = "1.20.6", forRemoval = true)
     PotionData getBasePotionData();
 
-    /**
-     * Sets the underlying potion type
-     *
-     * @param type PotionType to set the base potion state to
-     */
+    /// Sets the underlying potion type
+    ///
+    /// @param type PotionType to set the base potion state to
     void setBasePotionType(@Nullable PotionType type);
 
-    /**
-     * Returns the potion type about the base potion
-     *
-     * @return a PotionType object
-     */
+    /// Returns the potion type about the base potion
+    ///
+    /// @return a PotionType object
     @Nullable
     PotionType getBasePotionType();
 
-    /**
-     * Checks for the presence of custom potion effects.
-     *
-     * @return true if custom potion effects are applied
-     */
+    /// Checks for the presence of custom potion effects.
+    ///
+    /// @return true if custom potion effects are applied
     boolean hasCustomEffects();
 
-    /**
-     * Gets an immutable list containing all custom potion effects applied to
-     * this cloud.
-     * <p>
-     * Plugins should check that hasCustomEffects() returns true before calling
-     * this method.
-     *
-     * @return the immutable list of custom potion effects
-     */
+    /// Gets an immutable list containing all custom potion effects applied to
+    /// this cloud.
+    ///
+    /// Plugins should check that hasCustomEffects() returns true before calling
+    /// this method.
+    ///
+    /// @return the immutable list of custom potion effects
     @NotNull
     List<PotionEffect> getCustomEffects();
 
-    /**
-     * Adds a custom potion effect to this cloud.
-     *
-     * @param effect the potion effect to add
-     * @param overwrite true if any existing effect of the same type should be
-     * overwritten
-     * @return true if the effect was added as a result of this call
-     */
+    /// Adds a custom potion effect to this cloud.
+    ///
+    /// @param effect the potion effect to add
+    /// @param overwrite true if any existing effect of the same type should be
+    /// overwritten
+    /// @return true if the effect was added as a result of this call
     boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite);
 
-    /**
-     * Removes a custom potion effect from this cloud.
-     *
-     * @param type the potion effect type to remove
-     * @return true if the effect was removed as a result of this call
-     */
+    /// Removes a custom potion effect from this cloud.
+    ///
+    /// @param type the potion effect type to remove
+    /// @return true if the effect was removed as a result of this call
     boolean removeCustomEffect(@NotNull PotionEffectType type);
 
-    /**
-     * Checks for a specific custom potion effect type on this cloud.
-     *
-     * @param type the potion effect type to check for
-     * @return true if the potion has this effect
-     */
+    /// Checks for a specific custom potion effect type on this cloud.
+    ///
+    /// @param type the potion effect type to check for
+    /// @return true if the potion has this effect
     boolean hasCustomEffect(@NotNull PotionEffectType type);
 
-    /**
-     * Removes all custom potion effects from this cloud.
-     */
+    /// Removes all custom potion effects from this cloud.
     void clearCustomEffects();
 
-    /**
-     * Gets the color of this cloud. Will be applied as a tint to its particles.
-     *
-     * @return cloud color
-     */
+    /// Gets the color of this cloud. Will be applied as a tint to its particles.
+    ///
+    /// @return cloud color
     @NotNull
     Color getColor();
 
-    /**
-     * Sets the color of this cloud. Will be applied as a tint to its particles.
-     *
-     * @param color cloud color or {@code null} to reset to default
-     */
+    /// Sets the color of this cloud. Will be applied as a tint to its particles.
+    ///
+    /// @param color cloud color or `null` to reset to default
     void setColor(@Nullable Color color);
 
-    /**
-     * Retrieve the original source of this cloud.
-     *
-     * @return the {@link ProjectileSource} that threw the LingeringPotion
-     */
+    /// Retrieve the original source of this cloud.
+    ///
+    /// @return the [ProjectileSource] that threw the LingeringPotion
     @Nullable
     public ProjectileSource getSource();
 
-    /**
-     * Set the original source of this cloud.
-     *
-     * @param source the {@link ProjectileSource} that threw the LingeringPotion
-     */
+    /// Set the original source of this cloud.
+    ///
+    /// @param source the [ProjectileSource] that threw the LingeringPotion
     public void setSource(@Nullable ProjectileSource source);
 
     // Paper start - owner API
-    /**
-     * Get the entity UUID for the owner of this area effect cloud.
-     *
-     * @return the entity owner uuid or null
-     */
+    /// Get the entity UUID for the owner of this area effect cloud.
+    ///
+    /// @return the entity owner uuid or null
     @Nullable java.util.UUID getOwnerUniqueId();
 
-    /**
-     * Sets the entity UUID for the owner of this area effect cloud.
-     *
-     * @param ownerUuid the entity owner uuid or null to clear
-     */
+    /// Sets the entity UUID for the owner of this area effect cloud.
+    ///
+    /// @param ownerUuid the entity owner uuid or null to clear
     void setOwnerUniqueId(@Nullable java.util.UUID ownerUuid);
     // Paper end
 }

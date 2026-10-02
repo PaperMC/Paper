@@ -7,12 +7,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a block is destroyed as a result of being burnt by fire.
- * <p>
- * If this event is cancelled, the block will not be destroyed as a
- * result of being burnt by fire.
- */
+/// Called when a block is destroyed as a result of being burnt by fire.
+///
+/// If this event is cancelled, the block will not be destroyed as a
+/// result of being burnt by fire.
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,12 +30,10 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
         this.ignitingBlock = ignitingBlock;
     }
 
-    /**
-     * Gets the block which ignited this block.
-     *
-     * @return The Block that ignited and burned this block, or {@code null} if no
-     * source block exists
-     */
+    /// Gets the block which ignited this block.
+    ///
+    /// @return The Block that ignited and burned this block, or `null` if no
+    /// source block exists
     @Nullable
     public Block getIgnitingBlock() {
         return this.ignitingBlock;

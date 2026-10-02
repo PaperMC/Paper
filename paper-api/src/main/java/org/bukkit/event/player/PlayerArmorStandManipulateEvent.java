@@ -8,10 +8,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player interacts with an armor stand and will either swap, retrieve or
- * place an item.
- */
+/// Called when a player interacts with an armor stand and will either swap, retrieve or
+/// place an item.
 public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -33,56 +31,48 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
         this(player, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
     }
 
-    /**
-     * Returns the item held by the player.
-     * <p>
-     * If this item is empty and the armor stand item is also empty, there will be no
-     * transaction between the player and the armor stand. If the player's item is empty
-     * but the armor stand item is not, the player's item will be placed on the armor
-     * stand. If both items are not empty, the items will be swapped.
-     * <p>
-     * In the case that this event is cancelled, the original items will remain the same.
-     * @return the item held by the player.
-     */
+    /// Returns the item held by the player.
+    ///
+    /// If this item is empty and the armor stand item is also empty, there will be no
+    /// transaction between the player and the armor stand. If the player's item is empty
+    /// but the armor stand item is not, the player's item will be placed on the armor
+    /// stand. If both items are not empty, the items will be swapped.
+    ///
+    /// In the case that this event is cancelled, the original items will remain the same.
+    /// @return the item held by the player.
     @NotNull
     public ItemStack getPlayerItem() {
         return this.playerItem;
     }
 
-    /**
-     * Returns the item held by the armor stand.
-     * <p>
-     * If this item is empty and the player's item is also empty, there will be no
-     * transaction between the player and the armor stand. If the player's item is empty
-     * but the armor stand item is not, then the player will obtain the armor stand item.
-     * In the case that the player's item is not empty but the armor stand item is empty,
-     * the player's item will be placed on the armor stand. If both items are not empty,
-     * the items will be swapped.
-     * <p>
-     * In the case that the event is cancelled the original items will remain the same.
-     * @return the item held by the armor stand.
-     */
+    /// Returns the item held by the armor stand.
+    ///
+    /// If this item is empty and the player's item is also empty, there will be no
+    /// transaction between the player and the armor stand. If the player's item is empty
+    /// but the armor stand item is not, then the player will obtain the armor stand item.
+    /// In the case that the player's item is not empty but the armor stand item is empty,
+    /// the player's item will be placed on the armor stand. If both items are not empty,
+    /// the items will be swapped.
+    ///
+    /// In the case that the event is cancelled the original items will remain the same.
+    /// @return the item held by the armor stand.
     @NotNull
     public ItemStack getArmorStandItem() {
         return this.armorStandItem;
     }
 
-    /**
-     * Returns the raw item slot of the armor stand in this event.
-     *
-     * @return the index of the item obtained or placed of the armor stand.
-     */
+    /// Returns the raw item slot of the armor stand in this event.
+    ///
+    /// @return the index of the item obtained or placed of the armor stand.
     @NotNull
     public EquipmentSlot getSlot() {
         return this.slot;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Note that this is not the hand of the armor stand that was changed, but rather
-     * the hand used by the player to swap items with the armor stand.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Note that this is not the hand of the armor stand that was changed, but rather
+    /// the hand used by the player to swap items with the armor stand.
     @NotNull
     @Override
     public EquipmentSlot getHand() {

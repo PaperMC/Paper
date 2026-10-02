@@ -14,15 +14,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when TNT block is about to turn into {@link TNTPrimed}
- * <p>
- * Cancelling it won't turn TNT into {@link TNTPrimed} and leaves
- * the TNT block as-is
- *
- * @author Mark Vainomaa
- * @deprecated use {@link org.bukkit.event.block.TNTPrimeEvent}
- */
+/// Called when TNT block is about to turn into [TNTPrimed]
+///
+/// Cancelling it won't turn TNT into [TNTPrimed] and leaves
+/// the TNT block as-is
+///
+/// @author Mark Vainomaa
+/// @deprecated use [org.bukkit.event.block.TNTPrimeEvent]
 @Deprecated(forRemoval = true, since = "1.19.4")
 @Warning(propagate = false)
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {
@@ -41,45 +39,37 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
         this.primerEntity = primerEntity;
     }
 
-    /**
-     * Gets the TNT prime reason
-     *
-     * @return Prime reason
-     */
+    /// Gets the TNT prime reason
+    ///
+    /// @return Prime reason
     @NotNull
     public PrimeReason getReason() {
         return this.reason;
     }
 
-    /**
-     * Gets the TNT primer {@link Entity}.
-     * <p>
-     * It's {@code null} if {@link #getReason()} is {@link PrimeReason#REDSTONE} or {@link PrimeReason#FIRE}.
-     * It's not {@code null} if {@link #getReason()} is {@link PrimeReason#ITEM} or {@link PrimeReason#PROJECTILE}
-     * It might be {@code null} if {@link #getReason()} is {@link PrimeReason#EXPLOSION}
-     *
-     * @return The {@link Entity} who primed the TNT
-     */
+    /// Gets the TNT primer [Entity].
+    ///
+    /// It's `null` if [#getReason()] is [PrimeReason#REDSTONE] or [PrimeReason#FIRE].
+    /// It's not `null` if [#getReason()] is [PrimeReason#ITEM] or [PrimeReason#PROJECTILE]
+    /// It might be `null` if [#getReason()] is [PrimeReason#EXPLOSION]
+    ///
+    /// @return The [Entity] who primed the TNT
     @Nullable
     public Entity getPrimerEntity() {
         return this.primerEntity;
     }
 
-    /**
-     * Gets whether spawning {@link TNTPrimed} should be cancelled or not
-     *
-     * @return Whether spawning {@link TNTPrimed} should be cancelled or not
-     */
+    /// Gets whether spawning [TNTPrimed] should be cancelled or not
+    ///
+    /// @return Whether spawning [TNTPrimed] should be cancelled or not
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * Sets whether to cancel spawning {@link TNTPrimed} or not
-     *
-     * @param cancel whether spawning {@link TNTPrimed} should be cancelled or not
-     */
+    /// Sets whether to cancel spawning [TNTPrimed] or not
+    ///
+    /// @param cancel whether spawning [TNTPrimed] should be cancelled or not
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
@@ -97,31 +87,21 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
     }
 
     public enum PrimeReason {
-        /**
-         * When TNT prime was caused by other explosion (chain reaction)
-         */
+        /// When TNT prime was caused by other explosion (chain reaction)
         EXPLOSION,
 
-        /**
-         * When TNT prime was caused by fire
-         */
+        /// When TNT prime was caused by fire
         FIRE,
 
-        /**
-         * When {@link Player} used {@link Material#FLINT_AND_STEEL} or
-         * {@link Material#FIRE_CHARGE} on given TNT block
-         */
+        /// When [Player] used [Material#FLINT_AND_STEEL] or
+        /// [Material#FIRE_CHARGE] on given TNT block
         ITEM,
 
-        /**
-         * When TNT prime was caused by an {@link Entity} shooting TNT
-         * using a bow with {@link Enchantment#FLAME} enchantment
-         */
+        /// When TNT prime was caused by an [Entity] shooting TNT
+        /// using a bow with [Enchantment#FLAME] enchantment
         PROJECTILE,
 
-        /**
-         * When redstone power triggered the TNT prime
-         */
+        /// When redstone power triggered the TNT prime
         REDSTONE
     }
 }

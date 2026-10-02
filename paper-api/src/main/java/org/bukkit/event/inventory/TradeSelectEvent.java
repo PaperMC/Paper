@@ -7,13 +7,11 @@ import org.bukkit.inventory.view.MerchantView;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called whenever a player clicks a new trade on the trades
- * sidebar.
- * <p>
- * This event allows the user to get the index of the trade, letting them get
- * the MerchantRecipe via the Merchant.
- */
+/// This event is called whenever a player clicks a new trade on the trades
+/// sidebar.
+///
+/// This event allows the user to get the index of the trade, letting them get
+/// the MerchantRecipe via the Merchant.
 public class TradeSelectEvent extends InventoryInteractEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,11 +30,9 @@ public class TradeSelectEvent extends InventoryInteractEvent {
         return (MerchantInventory) super.getInventory();
     }
 
-    /**
-     * Get the Merchant involved.
-     *
-     * @return the Merchant
-     */
+    /// Get the Merchant involved.
+    ///
+    /// @return the Merchant
     @NotNull
     public Merchant getMerchant() {
         return this.getInventory().getMerchant();
@@ -48,11 +44,9 @@ public class TradeSelectEvent extends InventoryInteractEvent {
         return (MerchantView) super.getView();
     }
 
-    /**
-     * Used to get the index of the trade the player clicked on.
-     *
-     * @return The index of the trade clicked by the player
-     */
+    /// Used to get the index of the trade the player clicked on.
+    ///
+    /// @return The index of the trade clicked by the player
     public int getIndex() {
         return this.index;
     }

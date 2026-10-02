@@ -8,11 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores all data related to the bartering interaction with a piglin.
- * <br>
- * Called when a piglin completes a barter.
- */
+/// Stores all data related to the bartering interaction with a piglin.
+///
+/// Called when a piglin completes a barter.
 public class PiglinBarterEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -36,21 +34,17 @@ public class PiglinBarterEvent extends EntityEvent implements Cancellable {
         return (Piglin) this.entity;
     }
 
-    /**
-     * Gets the input of the barter.
-     *
-     * @return The item that was used to barter with
-     */
+    /// Gets the input of the barter.
+    ///
+    /// @return The item that was used to barter with
     @NotNull
     public ItemStack getInput() {
         return this.input.clone();
     }
 
-    /**
-     * Returns a mutable list representing the outcome of the barter.
-     *
-     * @return A mutable list of the item the player will receive
-     */
+    /// Returns a mutable list representing the outcome of the barter.
+    ///
+    /// @return A mutable list of the item the player will receive
     @NotNull
     public List<ItemStack> getOutcome() {
         return this.outcome;

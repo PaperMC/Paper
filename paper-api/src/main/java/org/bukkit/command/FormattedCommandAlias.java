@@ -10,11 +10,9 @@ import org.bukkit.Bukkit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public class FormattedCommandAlias extends Command {
     private final String[] formatStrings;

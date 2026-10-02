@@ -8,10 +8,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Additional lines to include in an item's tooltip.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
- */
+/// Additional lines to include in an item's tooltip.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
 @ApiStatus.NonExtendable
 public interface ItemLore {
 
@@ -25,55 +23,43 @@ public interface ItemLore {
         return ItemComponentTypesBridge.bridge().lore();
     }
 
-    /**
-     * Lists the components that are added to an item's tooltip.
-     *
-     * @return component list
-     */
+    /// Lists the components that are added to an item's tooltip.
+    ///
+    /// @return component list
     @Contract(pure = true)
     @Unmodifiable List<Component> lines();
 
-    /**
-     * Lists the styled components (example: italicized and purple) that are added to an item's tooltip.
-     *
-     * @return component list
-     */
+    /// Lists the styled components (example: italicized and purple) that are added to an item's tooltip.
+    ///
+    /// @return component list
     @Contract(pure = true)
     @Unmodifiable List<Component> styledLines();
 
-    /**
-     * Builder for {@link ItemLore}.
-     */
+    /// Builder for [ItemLore].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemLore> {
 
-        /**
-         * Sets the components of this lore.
-         *
-         * @param lines components
-         * @return the builder for chaining
-         * @see #lines()
-         */
+        /// Sets the components of this lore.
+        ///
+        /// @param lines components
+        /// @return the builder for chaining
+        /// @see #lines()
         @Contract(value = "_ -> this", mutates = "this")
         Builder lines(List<? extends ComponentLike> lines);
 
-        /**
-         * Adds a component to the lore.
-         *
-         * @param line component
-         * @return the builder for chaining
-         * @see #lines()
-         */
+        /// Adds a component to the lore.
+        ///
+        /// @param line component
+        /// @return the builder for chaining
+        /// @see #lines()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addLine(ComponentLike line);
 
-        /**
-         * Adds components to the lore.
-         *
-         * @param lines components
-         * @return the builder for chaining
-         * @see #lines()
-         */
+        /// Adds components to the lore.
+        ///
+        /// @param lines components
+        /// @return the builder for chaining
+        /// @see #lines()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addLines(List<? extends ComponentLike> lines);
     }

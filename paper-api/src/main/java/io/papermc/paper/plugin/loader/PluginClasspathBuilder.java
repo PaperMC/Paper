@@ -7,28 +7,24 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * A mutable builder that may be used to collect and register all {@link ClassPathLibrary} instances a
- * {@link PluginLoader} aims to provide to its plugin at runtime.
- */
+/// A mutable builder that may be used to collect and register all [ClassPathLibrary] instances a
+/// [PluginLoader] aims to provide to its plugin at runtime.
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginClasspathBuilder {
 
-    /**
-     * Adds a new classpath library to this classpath builder.
-     * <p>
-     * As a builder, this method does not invoke {@link ClassPathLibrary#register(LibraryStore)} and
-     * may hence be run without invoking potential IO performed by a {@link ClassPathLibrary} during resolution.
-     * <p>
-     * The paper api provides pre implemented {@link ClassPathLibrary} types that allow easy inclusion of existing
-     * libraries on disk or on remote maven repositories.
-     *
-     * @param classPathLibrary the library instance to add to this builder
-     * @return self
-     * @see io.papermc.paper.plugin.loader.library.impl.JarLibrary
-     * @see io.papermc.paper.plugin.loader.library.impl.MavenLibraryResolver
-     */
+    /// Adds a new classpath library to this classpath builder.
+    ///
+    /// As a builder, this method does not invoke [ClassPathLibrary#register(LibraryStore)] and
+    /// may hence be run without invoking potential IO performed by a [ClassPathLibrary] during resolution.
+    ///
+    /// The paper api provides pre implemented [ClassPathLibrary] types that allow easy inclusion of existing
+    /// libraries on disk or on remote maven repositories.
+    ///
+    /// @param classPathLibrary the library instance to add to this builder
+    /// @return self
+    /// @see io.papermc.paper.plugin.loader.library.impl.JarLibrary
+    /// @see io.papermc.paper.plugin.loader.library.impl.MavenLibraryResolver
     @Contract("_ -> this")
     PluginClasspathBuilder addLibrary(ClassPathLibrary classPathLibrary);
 

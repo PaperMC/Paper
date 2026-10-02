@@ -49,12 +49,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents a registry of Bukkit objects that may be retrieved by
- * {@link NamespacedKey}.
- *
- * @param <T> type of item in the registry
- */
+/// Represents a registry of Bukkit objects that may be retrieved by
+/// [NamespacedKey].
+///
+/// @param <T> type of item in the registry
 @NullMarked
 public interface Registry<T extends Keyed> extends Iterable<T> {
 
@@ -68,13 +66,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), () -> "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
     }
 
-    /**
-     * Server advancements.
-     *
-     * @see Bukkit#getAdvancement(NamespacedKey)
-     * @see Bukkit#advancementIterator()
-     * @deprecated use {@link Bukkit#getAdvancement(NamespacedKey)} and {@link Bukkit#advancementIterator()}
-     */
+    /// Server advancements.
+    ///
+    /// @see Bukkit#getAdvancement(NamespacedKey)
+    /// @see Bukkit#advancementIterator()
+    /// @deprecated use [Bukkit#getAdvancement(NamespacedKey)] and [Bukkit#advancementIterator()]
     @Deprecated(since = "1.21.4", forRemoval = true)
     Registry<Advancement> ADVANCEMENT = new NotARegistry<>() {
 
@@ -88,49 +84,37 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return Bukkit.advancementIterator();
         }
     };
-    /**
-     * Server art.
-     *
-     * @see Art
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#PAINTING_VARIANT}
-     */
+    /// Server art.
+    ///
+    /// @see Art
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#PAINTING_VARIANT]
     @Deprecated(since = "1.21.3") // Paper
     Registry<Art> ART = legacyRegistryFor(Art.class);
-    /**
-     * Attribute.
-     *
-     * @see Attribute
-     */
+    /// Attribute.
+    ///
+    /// @see Attribute
     Registry<Attribute> ATTRIBUTE = registryFor(RegistryKey.ATTRIBUTE);
-    /**
-     * Server banner patterns.
-     *
-     * @see PatternType
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#BANNER_PATTERN}
-     */
+    /// Server banner patterns.
+    ///
+    /// @see PatternType
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#BANNER_PATTERN]
     @Deprecated(since = "1.21") // Paper
     Registry<PatternType> BANNER_PATTERN = legacyRegistryFor(PatternType.class);
-    /**
-     * Server biomes.
-     *
-     * @see Biome
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#BIOME}
-     */
+    /// Server biomes.
+    ///
+    /// @see Biome
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#BIOME]
     @Deprecated(since = "1.21.3") // Paper
     Registry<Biome> BIOME = legacyRegistryFor(Biome.class);
-    /**
-     * Server block types.
-     *
-     * @see BlockType
-     */
+    /// Server block types.
+    ///
+    /// @see BlockType
     Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
-    /**
-     * Custom boss bars.
-     *
-     * @see Bukkit#getBossBar(org.bukkit.NamespacedKey)
-     * @see Bukkit#getBossBars()
-     * @deprecated use {@link Bukkit#getBossBar(NamespacedKey)} and {@link Bukkit#getBossBars()}
-     */
+    /// Custom boss bars.
+    ///
+    /// @see Bukkit#getBossBar(org.bukkit.NamespacedKey)
+    /// @see Bukkit#getBossBars()
+    /// @deprecated use [Bukkit#getBossBar(NamespacedKey)] and [Bukkit#getBossBars()]
     @Deprecated(since = "1.21.4", forRemoval = true)
     Registry<KeyedBossBar> BOSS_BARS = new NotARegistry<>() {
 
@@ -144,159 +128,113 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return Bukkit.getBossBars();
         }
     };
-    /**
-     * Server cat types.
-     *
-     * @see Cat.Type
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#CAT_VARIANT}
-     */
+    /// Server cat types.
+    ///
+    /// @see Cat.Type
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#CAT_VARIANT]
     @Deprecated(since = "1.21.5")
     Registry<Cat.Type> CAT_VARIANT = legacyRegistryFor(Cat.Type.class);
-    /**
-     * Server enchantments.
-     *
-     * @see Enchantment
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#ENCHANTMENT}
-     */
+    /// Server enchantments.
+    ///
+    /// @see Enchantment
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#ENCHANTMENT]
     @Deprecated(since = "1.21")
     Registry<Enchantment> ENCHANTMENT = legacyRegistryFor(Enchantment.class);
-    /**
-     * Server entity types.
-     *
-     * @see EntityType
-     */
+    /// Server entity types.
+    ///
+    /// @see EntityType
     Registry<EntityType> ENTITY_TYPE = registryFor(RegistryKey.ENTITY_TYPE);
-    /**
-     * Server instruments.
-     *
-     * @see MusicInstrument
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#INSTRUMENT}
-     */
+    /// Server instruments.
+    ///
+    /// @see MusicInstrument
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#INSTRUMENT]
     @Deprecated(since = "1.21.2")
     Registry<MusicInstrument> INSTRUMENT = legacyRegistryFor(MusicInstrument.class);
-    /**
-     * Server item types.
-     *
-     * @see ItemType
-     */
+    /// Server item types.
+    ///
+    /// @see ItemType
     Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
-    /**
-     * Default server loot tables.
-     *
-     * @see LootTables
-     */
+    /// Default server loot tables.
+    ///
+    /// @see LootTables
     Registry<LootTables> LOOT_TABLES = new SimpleRegistry<>(LootTables.class);
-    /**
-     * Server materials.
-     *
-     * @see Material
-     */
+    /// Server materials.
+    ///
+    /// @see Material
     Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
-    /**
-     * Server menus.
-     *
-     * @see MenuType
-     */
+    /// Server menus.
+    ///
+    /// @see MenuType
     Registry<MenuType> MENU = registryFor(RegistryKey.MENU);
-    /**
-     * Server mob effects.
-     *
-     * @see PotionEffectType
-     */
+    /// Server mob effects.
+    ///
+    /// @see PotionEffectType
     Registry<PotionEffectType> MOB_EFFECT = registryFor(RegistryKey.MOB_EFFECT);
-    /**
-     * Server particles.
-     *
-     * @see Particle
-     */
+    /// Server particles.
+    ///
+    /// @see Particle
     Registry<Particle> PARTICLE_TYPE = registryFor(RegistryKey.PARTICLE_TYPE); // Paper
-    /**
-     * Server potions.
-     *
-     * @see PotionType
-     */
+    /// Server potions.
+    ///
+    /// @see PotionType
     Registry<PotionType> POTION = registryFor(RegistryKey.POTION); // Paper
-    /**
-     * Server statistics.
-     *
-     * @see Statistic
-     */
+    /// Server statistics.
+    ///
+    /// @see Statistic
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
-    /**
-     * Server structures.
-     *
-     * @see Structure
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#STRUCTURE}
-     */
+    /// Server structures.
+    ///
+    /// @see Structure
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#STRUCTURE]
     @Deprecated(since = "1.20.6") // Paper
     Registry<Structure> STRUCTURE = legacyRegistryFor(Structure.class);
-    /**
-     * Server structure types.
-     *
-     * @see StructureType
-     */
+    /// Server structure types.
+    ///
+    /// @see StructureType
     Registry<StructureType> STRUCTURE_TYPE = registryFor(RegistryKey.STRUCTURE_TYPE);
-    /**
-     * Sound events.
-     *
-     * @see Sound
-     */
+    /// Sound events.
+    ///
+    /// @see Sound
     Registry<Sound> SOUND_EVENT = registryFor(RegistryKey.SOUND_EVENT);
-    /**
-     * Trim materials.
-     *
-     * @see TrimMaterial
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#TRIM_MATERIAL}
-     */
+    /// Trim materials.
+    ///
+    /// @see TrimMaterial
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#TRIM_MATERIAL]
     @Deprecated(since = "1.20.6") // Paper
     Registry<TrimMaterial> TRIM_MATERIAL = legacyRegistryFor(TrimMaterial.class);
-    /**
-     * Trim patterns.
-     *
-     * @see TrimPattern
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#TRIM_PATTERN}
-     */
+    /// Trim patterns.
+    ///
+    /// @see TrimPattern
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#TRIM_PATTERN]
     @Deprecated(since = "1.20.6")
     Registry<TrimPattern> TRIM_PATTERN = legacyRegistryFor(TrimPattern.class);
-    /**
-     * Damage types.
-     *
-     * @see DamageType
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#DAMAGE_TYPE}
-     */
+    /// Damage types.
+    ///
+    /// @see DamageType
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#DAMAGE_TYPE]
     @Deprecated(since = "1.20.6")
     Registry<DamageType> DAMAGE_TYPE = legacyRegistryFor(DamageType.class);
-    /**
-     * Jukebox songs.
-     *
-     * @see JukeboxSong
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#JUKEBOX_SONG}
-     */
+    /// Jukebox songs.
+    ///
+    /// @see JukeboxSong
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#JUKEBOX_SONG]
     @Deprecated(since = "1.21")
     Registry<JukeboxSong> JUKEBOX_SONG = legacyRegistryFor(JukeboxSong.class);
-    /**
-     * Villager profession.
-     *
-     * @see Villager.Profession
-     */
+    /// Villager profession.
+    ///
+    /// @see Villager.Profession
     Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
-    /**
-     * Point of interest types.
-     *
-     * @see PoiType
-     */
+    /// Point of interest types.
+    ///
+    /// @see PoiType
     Registry<PoiType> POINT_OF_INTEREST_TYPE = registryFor(RegistryKey.POINT_OF_INTEREST_TYPE);
-    /**
-     * Villager type.
-     *
-     * @see Villager.Type
-     */
+    /// Villager type.
+    ///
+    /// @see Villager.Type
     Registry<Villager.Type> VILLAGER_TYPE = registryFor(RegistryKey.VILLAGER_TYPE);
-    /**
-     * Memory Keys.
-     *
-     * @see MemoryKey
-     */
+    /// Memory Keys.
+    ///
+    /// @see MemoryKey
     Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
@@ -314,100 +252,74 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return MemoryKey.getByKey(key);
         }
     };
-    /**
-     * Server fluids.
-     *
-     * @see Fluid
-     */
+    /// Server fluids.
+    ///
+    /// @see Fluid
     Registry<Fluid> FLUID = registryFor(RegistryKey.FLUID);
-    /**
-     * Frog variants.
-     *
-     * @see Frog.Variant
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#FROG_VARIANT}
-     */
+    /// Frog variants.
+    ///
+    /// @see Frog.Variant
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#FROG_VARIANT]
     @Deprecated(since = "1.21.5")
     Registry<Frog.Variant> FROG_VARIANT = legacyRegistryFor(Frog.Variant.class);
-    /**
-     * Wolf variants.
-     *
-     * @see Wolf.Variant
-     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#WOLF_VARIANT}
-     */
+    /// Wolf variants.
+    ///
+    /// @see Wolf.Variant
+    /// @deprecated use [RegistryAccess#getRegistry(RegistryKey)] with [RegistryKey#WOLF_VARIANT]
     @Deprecated(since = "1.20.6")
     Registry<Wolf.Variant> WOLF_VARIANT = legacyRegistryFor(Wolf.Variant.class);
-    /**
-     * Map cursor types.
-     *
-     * @see MapCursor.Type
-     */
+    /// Map cursor types.
+    ///
+    /// @see MapCursor.Type
     Registry<MapCursor.Type> MAP_DECORATION_TYPE = registryFor(RegistryKey.MAP_DECORATION_TYPE);
-    /**
-     * Game events.
-     *
-     * @see GameEvent
-     * @see io.papermc.paper.registry.event.RegistryEvents#GAME_EVENT
-     */
+    /// Game events.
+    ///
+    /// @see GameEvent
+    /// @see io.papermc.paper.registry.event.RegistryEvents#GAME_EVENT
     Registry<GameEvent> GAME_EVENT = registryFor(RegistryKey.GAME_EVENT);
-    /**
-     * Data component types.
-     *
-     * @see DataComponentType
-     */
+    /// Data component types.
+    ///
+    /// @see DataComponentType
     Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
-    /**
-     * Game rules.
-     *
-     * @see GameRule
-     */
+    /// Game rules.
+    ///
+    /// @see GameRule
     Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
-    /**
-     * @apiNote use {@link #MOB_EFFECT} instead
-     * @hidden
-     */
+    /// @apiNote use [#MOB_EFFECT] instead
+    /// @hidden
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<PotionEffectType> EFFECT = MOB_EFFECT;
-    /**
-     * @apiNote use {@link #MOB_EFFECT} instead
-     * @hidden
-     */
+    /// @apiNote use [#MOB_EFFECT] instead
+    /// @hidden
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
-    /**
-     * @apiNote use {@link #SOUND_EVENT}
-     * @hidden
-     */
+    /// @apiNote use [#SOUND_EVENT]
+    /// @hidden
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<Sound> SOUNDS = registryFor(RegistryKey.SOUND_EVENT);
     //</editor-fold>
 
-    /**
-     * Get the object by its key.
-     *
-     * @param key non-null key
-     * @return item or null if it does not exist
-     */
+    /// Get the object by its key.
+    ///
+    /// @param key non-null key
+    /// @return item or null if it does not exist
     @Nullable T get(NamespacedKey key);
     // Paper start
 
-    /**
-     * Get the object by its key.
-     *
-     * @param key non-null key
-     * @return item or null if it does not exist
-     */
+    /// Get the object by its key.
+    ///
+    /// @param key non-null key
+    /// @return item or null if it does not exist
     default @Nullable T get(final Key key) {
         return key instanceof final NamespacedKey nsKey ? this.get(nsKey) : this.get(new NamespacedKey(key.namespace(), key.value()));
     }
 
-    /**
-     * Get the object by its typed key.
-     *
-     * @param typedKey non-null typed key
-     * @return item or null if it does not exist
-     */
+    /// Get the object by its typed key.
+    ///
+    /// @param typedKey non-null typed key
+    /// @return item or null if it does not exist
     default @Nullable T get(final TypedKey<T> typedKey) {
         Preconditions.checkArgument(typedKey != null, "typedKey cannot be null");
         return this.get(typedKey.key());
@@ -416,13 +328,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
     // Paper start - improve Registry
 
-    /**
-     * Gets the object by its key or throws if it doesn't exist.
-     *
-     * @param key the key to get the object of in this registry
-     * @return the object for the key
-     * @throws NoSuchElementException if the key doesn't point to an object in the registry
-     */
+    /// Gets the object by its key or throws if it doesn't exist.
+    ///
+    /// @param key the key to get the object of in this registry
+    /// @return the object for the key
+    /// @throws NoSuchElementException if the key doesn't point to an object in the registry
     default T getOrThrow(final net.kyori.adventure.key.Key key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
         final T value = this.get(key);
@@ -432,13 +342,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return value;
     }
 
-    /**
-     * Gets the object by its key or throws if it doesn't exist.
-     *
-     * @param key the key to get the object of in this registry
-     * @return the object for the key
-     * @throws NoSuchElementException if the key doesn't point to an object in the registry
-     */
+    /// Gets the object by its key or throws if it doesn't exist.
+    ///
+    /// @param key the key to get the object of in this registry
+    /// @return the object for the key
+    /// @throws NoSuchElementException if the key doesn't point to an object in the registry
     default T getOrThrow(final TypedKey<T> key) {
         final T value = this.get(key);
         if (value == null) {
@@ -447,18 +355,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return value;
     }
 
-    /**
-     * Gets the key for this object or throws if it doesn't exist.
-     * <p>
-     * Some types can exist without being in a registry
-     * and such will have no key associated with them. This
-     * method throw an exception if it isn't in this registry.
-     *
-     * @param value the value to get the key of in this registry
-     * @return the key for the value
-     * @throws NoSuchElementException if the value doesn't exist in this registry
-     * @see #getKey(Keyed)
-     */
+    /// Gets the key for this object or throws if it doesn't exist.
+    ///
+    /// Some types can exist without being in a registry
+    /// and such will have no key associated with them. This
+    /// method throw an exception if it isn't in this registry.
+    ///
+    /// @param value the value to get the key of in this registry
+    /// @return the key for the value
+    /// @throws NoSuchElementException if the value doesn't exist in this registry
+    /// @see #getKey(Keyed)
     default NamespacedKey getKeyOrThrow(final T value) {
         final NamespacedKey key = this.getKey(value);
         if (key == null) {
@@ -467,105 +373,87 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return key;
     }
 
-    /**
-     * Get the key for this object.
-     * <p>
-     * Some types can exist without being in a registry
-     * and such will have no key associated with them. This
-     * method will return null.
-     *
-     * @param value the value to get the key of in this registry
-     * @return the key for the value or null if not in the registry
-     * @see #getKeyOrThrow(Keyed)
-     */
+    /// Get the key for this object.
+    ///
+    /// Some types can exist without being in a registry
+    /// and such will have no key associated with them. This
+    /// method will return null.
+    ///
+    /// @param value the value to get the key of in this registry
+    /// @return the key for the value or null if not in the registry
+    /// @see #getKeyOrThrow(Keyed)
     @Nullable NamespacedKey getKey(T value);
     // Paper end - improve Registry
 
     // Paper start - RegistrySet API
-    /**
-     * Checks if this registry has a tag with the given key.
-     *
-     * @param key the key to check for
-     * @return true if this registry has a tag with the given key, false otherwise
-     * @throws UnsupportedOperationException if this registry doesn't have or support tags
-     * @see #getTag(TagKey)
-     */
+    /// Checks if this registry has a tag with the given key.
+    ///
+    /// @param key the key to check for
+    /// @return true if this registry has a tag with the given key, false otherwise
+    /// @throws UnsupportedOperationException if this registry doesn't have or support tags
+    /// @see #getTag(TagKey)
     boolean hasTag(TagKey<T> key);
 
-    /**
-     * Gets the named registry set (tag) for the given key.
-     *
-     * @param key the key to get the tag for
-     * @return the tag for the key
-     * @throws NoSuchElementException if no tag with the given key is found
-     * @throws UnsupportedOperationException    if this registry doesn't have or support tags
-     * @see #hasTag(TagKey)
-     * @see #getTagValues(TagKey)
-     */
+    /// Gets the named registry set (tag) for the given key.
+    ///
+    /// @param key the key to get the tag for
+    /// @return the tag for the key
+    /// @throws NoSuchElementException if no tag with the given key is found
+    /// @throws UnsupportedOperationException    if this registry doesn't have or support tags
+    /// @see #hasTag(TagKey)
+    /// @see #getTagValues(TagKey)
     Tag<T> getTag(TagKey<T> key);
 
-    /**
-     * Gets the named registry set (tag) for the given key and resolves it with this registry.
-     *
-     * @param key the key to get the tag for
-     * @return the resolved values
-     * @throws NoSuchElementException        if no tag with the given key is found
-     * @throws UnsupportedOperationException if this registry doesn't have or support tags
-     * @see #getTag(TagKey)
-     * @see Tag#resolve(Registry)
-     */
+    /// Gets the named registry set (tag) for the given key and resolves it with this registry.
+    ///
+    /// @param key the key to get the tag for
+    /// @return the resolved values
+    /// @throws NoSuchElementException        if no tag with the given key is found
+    /// @throws UnsupportedOperationException if this registry doesn't have or support tags
+    /// @see #getTag(TagKey)
+    /// @see Tag#resolve(Registry)
     default Collection<T> getTagValues(final TagKey<T> key) {
         Tag<T> tag = this.getTag(key);
         return tag.resolve(this);
     }
 
-    /**
-     * Gets all the tags in this registry.
-     *
-     * @return a stream of all tags in this registry
-     * @throws UnsupportedOperationException if this registry doesn't have or support tags
-     */
+    /// Gets all the tags in this registry.
+    ///
+    /// @return a stream of all tags in this registry
+    /// @throws UnsupportedOperationException if this registry doesn't have or support tags
     Collection<Tag<T>> getTags();
     // Paper end - RegistrySet API
 
-    /**
-     * Get the object by its key.
-     * <p>
-     * If there is no object with the given key, an exception will be thrown.
-     *
-     * @param key to get the object from
-     * @return object with the given key
-     * @throws NoSuchElementException if there is no object with the given key
-     */
+    /// Get the object by its key.
+    ///
+    /// If there is no object with the given key, an exception will be thrown.
+    ///
+    /// @param key to get the object from
+    /// @return object with the given key
+    /// @throws NoSuchElementException if there is no object with the given key
     default T getOrThrow(final NamespacedKey key) {
         return this.getOrThrow((Key) key);
     }
 
-    /**
-     * Returns a new stream, which contains all registry items, which are registered to the registry.
-     *
-     * @return a stream of all registry items
-     */
+    /// Returns a new stream, which contains all registry items, which are registered to the registry.
+    ///
+    /// @return a stream of all registry items
     Stream<T> stream();
 
-    /**
-     * Returns a new stream, which contains all registry keys, which are registered to the registry.
-     *
-     * @return a stream of all registry keys
-     */
+    /// Returns a new stream, which contains all registry keys, which are registered to the registry.
+    ///
+    /// @return a stream of all registry keys
     Stream<NamespacedKey> keyStream();
 
-    /**
-     * Attempts to match the registered object with the given key.
-     * <p>
-     * This will attempt to find a reasonable match based on the provided input
-     * and may do so through unspecified means.
-     *
-     * @param input non-null input
-     * @return registered object or null if does not exist
-     * @deprecated this method's behavior is broken and not useful. If you want to get an object
-     * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
-     */
+    /// Attempts to match the registered object with the given key.
+    ///
+    /// This will attempt to find a reasonable match based on the provided input
+    /// and may do so through unspecified means.
+    ///
+    /// @param input non-null input
+    /// @return registered object or null if does not exist
+    /// @deprecated this method's behavior is broken and not useful. If you want to get an object
+    /// based on its vanilla name, or a key, wrap it in a [NamespacedKey] object and use [#get(NamespacedKey)]
     @Deprecated(forRemoval = true)
     default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
@@ -575,16 +463,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return (namespacedKey != null) ? this.get(namespacedKey) : null;
     }
 
-    /**
-     * Gets the size of the registry.
-     *
-     * @return the size of the registry
-     */
+    /// Gets the size of the registry.
+    ///
+    /// @return the size of the registry
     int size();
 
-    /**
-     * @hidden
-     */
+    /// @hidden
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -635,9 +519,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
-    /**
-     * @hidden
-     */
+    /// @hidden
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 

@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a chunk is unloaded
- */
+/// Called when a chunk is unloaded
 public class ChunkUnloadEvent extends ChunkEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,20 +23,16 @@ public class ChunkUnloadEvent extends ChunkEvent {
         this.saveChunk = save;
     }
 
-    /**
-     * Return whether this chunk will be saved to disk.
-     *
-     * @return chunk save status
-     */
+    /// Return whether this chunk will be saved to disk.
+    ///
+    /// @return chunk save status
     public boolean isSaveChunk() {
         return this.saveChunk;
     }
 
-    /**
-     * Set whether this chunk will be saved to disk.
-     *
-     * @param saveChunk chunk save status
-     */
+    /// Set whether this chunk will be saved to disk.
+    ///
+    /// @param saveChunk chunk save status
     public void setSaveChunk(boolean saveChunk) {
         this.saveChunk = saveChunk;
     }

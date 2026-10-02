@@ -6,9 +6,7 @@ import org.bukkit.generator.BlockPopulator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a chunk is loaded
- */
+/// Called when a chunk is loaded
 public class ChunkLoadEvent extends ChunkEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -21,14 +19,12 @@ public class ChunkLoadEvent extends ChunkEvent {
         this.newChunk = newChunk;
     }
 
-    /**
-     * Gets if this chunk was newly created or not.
-     * <p>
-     * <b>Note:</b> Do not use this to generated blocks in a newly generated chunk.
-     * Use a {@link BlockPopulator} instead.
-     *
-     * @return {@code true} if the chunk is new, otherwise {@code false}
-     */
+    /// Gets if this chunk was newly created or not.
+    ///
+    /// **Note:** Do not use this to generated blocks in a newly generated chunk.
+    /// Use a [BlockPopulator] instead.
+    ///
+    /// @return `true` if the chunk is new, otherwise `false`
     public boolean isNewChunk() {
         return this.newChunk;
     }

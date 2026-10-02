@@ -5,33 +5,25 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Generic Builder for InventoryView's with no special attributes or parameters
- *
- * @param <V> the type of InventoryView created from this builder
- */
+/// Generic Builder for InventoryView's with no special attributes or parameters
+///
+/// @param <V> the type of InventoryView created from this builder
 public interface InventoryViewBuilder<V extends InventoryView> {
 
-    /**
-     * Makes a copy of this builder
-     *
-     * @return a copy of this builder
-     */
+    /// Makes a copy of this builder
+    ///
+    /// @return a copy of this builder
     InventoryViewBuilder<V> copy();
 
-    /**
-     * Sets the title of the builder
-     *
-     * @param title the title, or null for a default title
-     * @return this builder
-     */
+    /// Sets the title of the builder
+    ///
+    /// @param title the title, or null for a default title
+    /// @return this builder
     InventoryViewBuilder<V> title(@Nullable final Component title);
 
-    /**
-     * Builds this builder into a InventoryView
-     *
-     * @param player the player to assign to the view
-     * @return the created InventoryView
-     */
+    /// Builds this builder into a InventoryView
+    ///
+    /// @param player the player to assign to the view
+    /// @return the created InventoryView
     V build(final HumanEntity player);
 }

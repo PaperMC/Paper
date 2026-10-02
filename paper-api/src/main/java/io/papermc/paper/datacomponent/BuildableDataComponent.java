@@ -8,11 +8,9 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface BuildableDataComponent<C extends BuildableDataComponent<C, B>, B extends DataComponentBuilder<C>> {
 
-    /**
-     * Creates a new builder from this data component.
-     *
-     * @return a new builder
-     */
+    /// Creates a new builder from this data component.
+    ///
+    /// @return a new builder
     @Contract(value = "-> new", pure = true)
     B toBuilder();
 }

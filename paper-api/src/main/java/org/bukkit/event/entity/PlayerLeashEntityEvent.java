@@ -9,9 +9,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called immediately prior to a creature being leashed by a player.
- */
+/// Called immediately prior to a creature being leashed by a player.
 public class PlayerLeashEntityEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -37,41 +35,33 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
         this(entity, leashHolder, leasher, EquipmentSlot.HAND);
     }
 
-    /**
-     * Returns the entity that is holding the leash.
-     *
-     * @return The leash holder
-     */
+    /// Returns the entity that is holding the leash.
+    ///
+    /// @return The leash holder
     @NotNull
     public Entity getLeashHolder() {
         return this.leashHolder;
     }
 
-    /**
-     * Returns the entity being leashed.
-     *
-     * @return The entity
-     */
+    /// Returns the entity being leashed.
+    ///
+    /// @return The entity
     @NotNull
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Returns the player involved in this event
-     *
-     * @return Player who is involved in this event
-     */
+    /// Returns the player involved in this event
+    ///
+    /// @return Player who is involved in this event
     @NotNull
     public final Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Returns the hand used by the player to leash the entity.
-     *
-     * @return the hand
-     */
+    /// Returns the hand used by the player to leash the entity.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;

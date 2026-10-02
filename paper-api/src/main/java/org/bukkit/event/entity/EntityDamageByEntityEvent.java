@@ -8,9 +8,7 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity is damaged by an entity
- */
+/// Called when an entity is damaged by an entity
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
 
     private final Entity damager;
@@ -51,35 +49,29 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
         this.critical = critical;
     }
 
-    /**
-     * Returns the entity that damaged the defender.
-     *
-     * @return Entity that damaged the defender.
-     */
+    /// Returns the entity that damaged the defender.
+    ///
+    /// @return Entity that damaged the defender.
     @NotNull
     public Entity getDamager() {
         return this.damager;
     }
 
-    /**
-     * Shows this damage instance was critical.
-     * The damage instance can be critical if the attacking player met the respective conditions.
-     * Furthermore, arrows may also cause a critical damage event if the arrow {@link org.bukkit.entity.AbstractArrow#isCritical()}.
-     *
-     * @return if the hit was critical.
-     * @see <a href="https://minecraft.wiki/wiki/Damage#Critical_hit">https://minecraft.wiki/wiki/Damage#Critical_hit</a>
-     */
+    /// Shows this damage instance was critical.
+    /// The damage instance can be critical if the attacking player met the respective conditions.
+    /// Furthermore, arrows may also cause a critical damage event if the arrow [org.bukkit.entity.AbstractArrow#isCritical()].
+    ///
+    /// @return if the hit was critical.
+    /// @see <a href="https://minecraft.wiki/wiki/Damage#Critical_hit">https://minecraft.wiki/wiki/Damage#Critical_hit</a>
     public boolean isCritical() {
         return this.critical;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The {@link DamageSource#getDirectEntity()} may be different from the {@link #getDamager()}
-     * if the damage source did not originally include a damager entity, but one was included
-     * for this event {@link #getDamager()}.
-     */
+    /// {@inheritDoc}
+    ///
+    /// The [DamageSource#getDirectEntity()] may be different from the [#getDamager()]
+    /// if the damage source did not originally include a damager entity, but one was included
+    /// for this event [#getDamager()].
     @Override
     public @NotNull DamageSource getDamageSource() {
         return super.getDamageSource();

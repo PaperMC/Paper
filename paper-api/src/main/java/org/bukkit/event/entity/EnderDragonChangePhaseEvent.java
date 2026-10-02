@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an EnderDragon switches controller phase.
- */
+/// Called when an EnderDragon switches controller phase.
 public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -33,32 +31,26 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
         return (EnderDragon) this.entity;
     }
 
-    /**
-     * Gets the current phase that the dragon is in. This method will return null
-     * when a dragon is first spawned and hasn't yet been assigned a phase.
-     *
-     * @return the current dragon phase
-     */
+    /// Gets the current phase that the dragon is in. This method will return null
+    /// when a dragon is first spawned and hasn't yet been assigned a phase.
+    ///
+    /// @return the current dragon phase
     @Nullable
     public EnderDragon.Phase getCurrentPhase() {
         return this.currentPhase;
     }
 
-    /**
-     * Gets the new phase that the dragon will switch to.
-     *
-     * @return the new dragon phase
-     */
+    /// Gets the new phase that the dragon will switch to.
+    ///
+    /// @return the new dragon phase
     @NotNull
     public EnderDragon.Phase getNewPhase() {
         return this.newPhase;
     }
 
-    /**
-     * Sets the new phase for the ender dragon.
-     *
-     * @param newPhase the new dragon phase
-     */
+    /// Sets the new phase for the ender dragon.
+    ///
+    /// @param newPhase the new dragon phase
     public void setNewPhase(@NotNull EnderDragon.Phase newPhase) {
         Preconditions.checkArgument(newPhase != null, "New dragon phase cannot be null");
         this.newPhase = newPhase;

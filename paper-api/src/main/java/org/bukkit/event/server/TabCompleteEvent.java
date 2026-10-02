@@ -14,19 +14,17 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a {@link CommandSender} of any description (ie: player or
- * console) attempts to tab complete.
- * <br>
- * Note that due to client changes, if the sender is a Player, this event will
- * only begin to fire once command arguments are specified, not commands
- * themselves. Plugins wishing to remove commands from tab completion are
- * advised to ensure the client does not have permission for the relevant
- * commands, or use {@link PlayerCommandSendEvent}.
- *
- * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
- * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
- */
+/// Called when a [CommandSender] of any description (ie: player or
+/// console) attempts to tab complete.
+///
+/// Note that due to client changes, if the sender is a Player, this event will
+/// only begin to fire once command arguments are specified, not commands
+/// themselves. Plugins wishing to remove commands from tab completion are
+/// advised to ensure the client does not have permission for the relevant
+/// commands, or use [PlayerCommandSendEvent].
+///
+/// @apiNote Only called for bukkit API commands [org.bukkit.command.Command] and
+/// [org.bukkit.command.CommandExecutor] and not for brigadier commands ([io.papermc.paper.command.brigadier.Commands]).
 public class TabCompleteEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -53,59 +51,47 @@ public class TabCompleteEvent extends Event implements Cancellable {
         this.location = location;
     }
 
-    /**
-     * Get the sender completing this command.
-     *
-     * @return the {@link CommandSender} instance
-     */
+    /// Get the sender completing this command.
+    ///
+    /// @return the [CommandSender] instance
     @NotNull
     public CommandSender getSender() {
         return this.sender;
     }
 
-    /**
-     * Return the entire buffer which formed the basis of this completion.
-     *
-     * @return command buffer, as entered
-     */
+    /// Return the entire buffer which formed the basis of this completion.
+    ///
+    /// @return command buffer, as entered
     @NotNull
     public String getBuffer() {
         return this.buffer;
     }
 
-    /**
-     * The list of completions which will be offered to the sender. Completions may be ordered alphanumerically later on in the tab completion process.
-     * This list is mutable and reflects what will be offered.
-     *
-     * @return a list of offered completions
-     */
+    /// The list of completions which will be offered to the sender. Completions may be ordered alphanumerically later on in the tab completion process.
+    /// This list is mutable and reflects what will be offered.
+    ///
+    /// @return a list of offered completions
     @NotNull
     public List<String> getCompletions() {
         return this.completions;
     }
 
-    /**
-     * Set the completions offered, overriding any already set.
-     * <br>
-     * The passed collection will be cloned to a new List. You must call {@link #getCompletions()} to mutate from here
-     *
-     * @param completions the new completions
-     */
+    /// Set the completions offered, overriding any already set.
+    ///
+    /// The passed collection will be cloned to a new List. You must call [#getCompletions()] to mutate from here
+    ///
+    /// @param completions the new completions
     public void setCompletions(@NotNull List<String> completions) {
         Preconditions.checkArgument(completions != null, "completions cannot be null");
         this.completions = new ArrayList<>(completions);
     }
 
-    /**
-     * @return {@code true} if it is a command being tab completed, {@code false} if it is a chat message.
-     */
+    /// @return `true` if it is a command being tab completed, `false` if it is a chat message.
     public boolean isCommand() {
         return this.isCommand;
     }
 
-    /**
-     * @return The position looked at by the sender, or {@code null} if none
-     */
+    /// @return The position looked at by the sender, or `null` if none
     @Nullable
     public Location getLocation() {
         return this.location != null ? this.location.clone() : null;

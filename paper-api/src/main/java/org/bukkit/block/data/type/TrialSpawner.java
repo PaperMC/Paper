@@ -3,40 +3,30 @@ package org.bukkit.block.data.type;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * 'trial_spawner_state' indicates the current operational phase of the spawner.
-  * <br>
- * 'ominous' indicates if the block has ominous effects.
- */
+/// 'trial\_spawner\_state' indicates the current operational phase of the spawner.
+///
+/// 'ominous' indicates if the block has ominous effects.
 public interface TrialSpawner extends BlockData {
 
-    /**
-     * Gets the value of the 'trial_spawner_state' property.
-     *
-     * @return the 'trial_spawner_state' value
-     */
+    /// Gets the value of the 'trial\_spawner\_state' property.
+    ///
+    /// @return the 'trial\_spawner\_state' value
     @NotNull
     State getTrialSpawnerState();
 
-    /**
-     * Sets the value of the 'trial_spawner_state' property.
-     *
-     * @param state the new 'trial_spawner_state' value
-     */
+    /// Sets the value of the 'trial\_spawner\_state' property.
+    ///
+    /// @param state the new 'trial\_spawner\_state' value
     void setTrialSpawnerState(@NotNull State state);
 
-    /**
-     * Gets the value of the 'ominous' property.
-     *
-     * @return the 'ominous' value
-     */
+    /// Gets the value of the 'ominous' property.
+    ///
+    /// @return the 'ominous' value
     boolean isOminous();
 
-    /**
-     * Sets the value of the 'ominous' property.
-     *
-     * @param ominous the new 'ominous' value
-     */
+    /// Sets the value of the 'ominous' property.
+    ///
+    /// @param ominous the new 'ominous' value
     void setOminous(boolean ominous);
 
     public enum State {

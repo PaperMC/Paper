@@ -7,229 +7,162 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-/**
- * Represents a display entity which is designed to only have a visual function.
- */
+/// Represents a display entity which is designed to only have a visual function.
 public interface Display extends Entity {
 
-    /**
-     * Gets the transformation applied to this display.
-     *
-     * @return the transformation
-     */
+    /// Gets the transformation applied to this display.
+    ///
+    /// @return the transformation
     @NotNull
     public Transformation getTransformation();
 
-    /**
-     * Sets the transformation applied to this display
-     *
-     * @param transformation the new transformation
-     */
+    /// Sets the transformation applied to this display
+    ///
+    /// @param transformation the new transformation
     public void setTransformation(@NotNull Transformation transformation);
 
-    /**
-     * Sets the raw transformation matrix applied to this display
-     *
-     * @param transformationMatrix the transformation matrix
-     */
+    /// Sets the raw transformation matrix applied to this display
+    ///
+    /// @param transformationMatrix the transformation matrix
     public void setTransformationMatrix(@NotNull Matrix4f transformationMatrix);
 
-    /**
-     * Gets the interpolation duration of this display.
-     *
-     * @return interpolation duration
-     */
+    /// Gets the interpolation duration of this display.
+    ///
+    /// @return interpolation duration
     public int getInterpolationDuration();
 
-    /**
-     * Sets the interpolation duration of this display.
-     *
-     * @param duration new duration
-     */
+    /// Sets the interpolation duration of this display.
+    ///
+    /// @param duration new duration
     public void setInterpolationDuration(int duration);
 
-    /**
-     * Gets the teleport duration of this display.
-     * <ul>
-     *     <li>0 means that updates are applied immediately.</li>
-     *     <li>1 means that the display entity will move from current position to the updated one over one tick.</li>
-     *     <li>Higher values spread the movement over multiple ticks.</li>
-     * </ul>
-     *
-     * @return teleport duration
-     */
+    /// Gets the teleport duration of this display.
+    ///
+    ///   - 0 means that updates are applied immediately.
+    ///   - 1 means that the display entity will move from current position to the updated one over one tick.
+    ///   - Higher values spread the movement over multiple ticks.
+    ///
+    /// @return teleport duration
     public int getTeleportDuration();
 
-    /**
-     * Sets the teleport duration of this display.
-     *
-     * @param duration new duration
-     * @throws IllegalArgumentException if duration is not between 0 and 59
-     * @see #getTeleportDuration()
-     */
+    /// Sets the teleport duration of this display.
+    ///
+    /// @param duration new duration
+    /// @throws IllegalArgumentException if duration is not between 0 and 59
+    /// @see #getTeleportDuration()
     public void setTeleportDuration(int duration);
 
-    /**
-     * Gets the view distance/range of this display.
-     *
-     * @return view range
-     */
+    /// Gets the view distance/range of this display.
+    ///
+    /// @return view range
     public float getViewRange();
 
-    /**
-     * Sets the view distance/range of this display.
-     *
-     * @param range new range
-     */
+    /// Sets the view distance/range of this display.
+    ///
+    /// @param range new range
     public void setViewRange(float range);
 
-    /**
-     * Gets the shadow radius of this display.
-     *
-     * @return radius
-     */
+    /// Gets the shadow radius of this display.
+    ///
+    /// @return radius
     public float getShadowRadius();
 
-    /**
-     * Sets the shadow radius of this display.
-     *
-     * @param radius new radius
-     */
+    /// Sets the shadow radius of this display.
+    ///
+    /// @param radius new radius
     public void setShadowRadius(float radius);
 
-    /**
-     * Gets the shadow strength of this display.
-     *
-     * @return shadow strength
-     */
+    /// Gets the shadow strength of this display.
+    ///
+    /// @return shadow strength
     public float getShadowStrength();
 
-    /**
-     * Sets the shadow strength of this display.
-     *
-     * @param strength new strength
-     */
+    /// Sets the shadow strength of this display.
+    ///
+    /// @param strength new strength
     public void setShadowStrength(float strength);
 
-    /**
-     * Gets the width of this display.
-     *
-     * @return width
-     */
+    /// Gets the width of this display.
+    ///
+    /// @return width
     public float getDisplayWidth();
 
-    /**
-     * Sets the width of this display.
-     *
-     * @param width new width
-     */
+    /// Sets the width of this display.
+    ///
+    /// @param width new width
     public void setDisplayWidth(float width);
 
-    /**
-     * Gets the height of this display.
-     *
-     * @return height
-     */
+    /// Gets the height of this display.
+    ///
+    /// @return height
     public float getDisplayHeight();
 
-    /**
-     * Sets the height of this display.
-     *
-     * @param height new height
-     */
+    /// Sets the height of this display.
+    ///
+    /// @param height new height
     public void setDisplayHeight(float height);
 
-    /**
-     * Gets the amount of ticks before client-side interpolation will commence.
-     *
-     * @return interpolation delay ticks
-     */
+    /// Gets the amount of ticks before client-side interpolation will commence.
+    ///
+    /// @return interpolation delay ticks
     public int getInterpolationDelay();
 
-    /**
-     * Sets the amount of ticks before client-side interpolation will commence.
-     *
-     * @param ticks interpolation delay ticks
-     */
+    /// Sets the amount of ticks before client-side interpolation will commence.
+    ///
+    /// @param ticks interpolation delay ticks
     public void setInterpolationDelay(int ticks);
 
-    /**
-     * Gets the billboard setting of this entity.
-     *
-     * The billboard setting controls the automatic rotation of the entity to
-     * face the player.
-     *
-     * @return billboard setting
-     */
+    /// Gets the billboard setting of this entity.
+    /// The billboard setting controls the automatic rotation of the entity to
+    /// face the player.
+    ///
+    /// @return billboard setting
     @NotNull
     public Billboard getBillboard();
 
-    /**
-     * Sets the billboard setting of this entity.
-     *
-     * The billboard setting controls the automatic rotation of the entity to
-     * face the player.
-     *
-     * @param billboard new setting
-     */
+    /// Sets the billboard setting of this entity.
+    /// The billboard setting controls the automatic rotation of the entity to
+    /// face the player.
+    ///
+    /// @param billboard new setting
     public void setBillboard(@NotNull Billboard billboard);
 
-    /**
-     * Gets the scoreboard team overridden glow color of this display.
-     *
-     * @return glow color
-     */
+    /// Gets the scoreboard team overridden glow color of this display.
+    ///
+    /// @return glow color
     @Nullable
     public Color getGlowColorOverride();
 
-    /**
-     * Sets the scoreboard team overridden glow color of this display.
-     *
-     * @param color new color
-     */
+    /// Sets the scoreboard team overridden glow color of this display.
+    ///
+    /// @param color new color
     public void setGlowColorOverride(@Nullable Color color);
 
-    /**
-     * Gets the brightness override of the entity.
-     *
-     * @return brightness override, if set
-     */
+    /// Gets the brightness override of the entity.
+    ///
+    /// @return brightness override, if set
     @Nullable
     public Brightness getBrightness();
 
-    /**
-     * Sets the brightness override of the entity.
-     *
-     * @param brightness new brightness override
-     */
+    /// Sets the brightness override of the entity.
+    ///
+    /// @param brightness new brightness override
     public void setBrightness(@Nullable Brightness brightness);
 
-    /**
-     * Describes the axes/points around which the entity can pivot.
-     */
+    /// Describes the axes/points around which the entity can pivot.
     public enum Billboard {
 
-        /**
-         * No rotation (default).
-         */
+        /// No rotation (default).
         FIXED,
-        /**
-         * Can pivot around vertical axis.
-         */
+        /// Can pivot around vertical axis.
         VERTICAL,
-        /**
-         * Can pivot around horizontal axis.
-         */
+        /// Can pivot around horizontal axis.
         HORIZONTAL,
-        /**
-         * Can pivot around center point.
-         */
+        /// Can pivot around center point.
         CENTER;
     }
 
-    /**
-     * Represents the brightness rendering parameters of the entity.
-     */
+    /// Represents the brightness rendering parameters of the entity.
     public static class Brightness {
 
         private final int blockLight;
@@ -243,20 +176,16 @@ public interface Display extends Entity {
             this.skyLight = skyLight;
         }
 
-        /**
-         * Gets the block lighting component of this brightness.
-         *
-         * @return block light, between 0-15
-         */
+        /// Gets the block lighting component of this brightness.
+        ///
+        /// @return block light, between 0-15
         public int getBlockLight() {
             return this.blockLight;
         }
 
-        /**
-         * Gets the sky lighting component of this brightness.
-         *
-         * @return sky light, between 0-15
-         */
+        /// Gets the sky lighting component of this brightness.
+        ///
+        /// @return sky light, between 0-15
         public int getSkyLight() {
             return this.skyLight;
         }

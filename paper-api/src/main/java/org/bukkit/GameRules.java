@@ -5,9 +5,7 @@ import net.kyori.adventure.key.KeyPattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * All the vanilla gamerules
- */
+/// All the vanilla gamerules
 @NullMarked
 public final class GameRules {
 

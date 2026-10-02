@@ -9,15 +9,13 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset.
- *
- * @deprecated In modern Minecraft, this does not properly represent spear attacks and additionally does not
- * cover the wide range of ways that the cooldown may be reset.
- * <p>
- * Additionally, the cancellation of event is misleading as the client will reset the cooldown manually.
- * So there is no way for the server to control this.
- */
+/// Called when processing a player's attack on an entity when the player's attack strength cooldown is reset.
+///
+/// @deprecated In modern Minecraft, this does not properly represent spear attacks and additionally does not
+/// cover the wide range of ways that the cooldown may be reset.
+///
+/// Additionally, the cancellation of event is misleading as the client will reset the cooldown manually.
+/// So there is no way for the server to control this.
 @NullMarked
 @Deprecated(since = "26.1", forRemoval = true)
 @Warning(value = true, propagate = false)
@@ -37,39 +35,31 @@ public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements
         this.cooledAttackStrength = cooledAttackStrength;
     }
 
-    /**
-     * Get the value of the players cooldown attack strength when they initiated the attack
-     *
-     * @return returns the original player cooldown value
-     */
+    /// Get the value of the players cooldown attack strength when they initiated the attack
+    ///
+    /// @return returns the original player cooldown value
     public float getCooledAttackStrength() {
         return this.cooledAttackStrength;
     }
 
-    /**
-     * Returns the entity attacked by the player
-     *
-     * @return the entity attacked by the player
-     */
+    /// Returns the entity attacked by the player
+    ///
+    /// @return the entity attacked by the player
     public Entity getAttackedEntity() {
         return this.attackedEntity;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If an attack cooldown event is cancelled, the players attack strength will remain at the same value instead of being reset.
-     */
+    /// {@inheritDoc}
+    ///
+    /// If an attack cooldown event is cancelled, the players attack strength will remain at the same value instead of being reset.
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Cancelling this event will prevent the target player from having their cooldown reset from attacking this entity
-     */
+    /// {@inheritDoc}
+    ///
+    /// Cancelling this event will prevent the target player from having their cooldown reset from attacking this entity
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

@@ -7,9 +7,7 @@ import java.util.logging.Logger;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
- */
+/// Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
 @NullMarked
 public class PaperPluginLogger extends Logger {
 

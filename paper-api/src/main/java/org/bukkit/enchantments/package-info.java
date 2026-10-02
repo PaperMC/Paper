@@ -1,7 +1,5 @@
-/**
- * Classes relating to the specialized enhancements to {@link
- * org.bukkit.inventory.ItemStack item stacks}, as part of the {@link
- * org.bukkit.inventory.meta.ItemMeta meta data}.
- */
+/// Classes relating to the specialized enhancements to
+/// [`item stacks`][org.bukkit.inventory.ItemStack], as part of the
+/// [`meta data`][org.bukkit.inventory.meta.ItemMeta].
 package org.bukkit.enchantments;
 

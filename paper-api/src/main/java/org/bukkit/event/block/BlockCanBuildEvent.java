@@ -9,17 +9,15 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when we try to place a block, to see if we can build it here or not.
- * <p>
- * Note:
- * <ul>
- * <li>The Block returned by getBlock() is the block we are trying to place
- *     on, not the block we are trying to place.
- * <li>If you want to figure out what is being placed, use {@link
- *     #getMaterial()} instead.
- * </ul>
- */
+/// Called when we try to place a block, to see if we can build it here or not.
+///
+/// Note:
+///
+///   - The Block returned by getBlock() is the block we are trying to place
+///     on, not the block we are trying to place.
+///   - If you want to figure out what is being placed, use
+///     [#getMaterial()] instead.
+///
 public class BlockCanBuildEvent extends BlockEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -50,66 +48,54 @@ public class BlockCanBuildEvent extends BlockEvent {
         this.hand = hand;
     }
 
-    /**
-     * Gets the player who placed the block involved in this event.
-     * <br>
-     * May be {@code null} for legacy calls of the event.
-     *
-     * @return The Player who placed the block involved in this event
-     */
+    /// Gets the player who placed the block involved in this event.
+    ///
+    /// May be `null` for legacy calls of the event.
+    ///
+    /// @return The Player who placed the block involved in this event
     @Nullable
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets the Material that we are trying to place.
-     *
-     * @return The Material that we are trying to place
-     */
+    /// Gets the Material that we are trying to place.
+    ///
+    /// @return The Material that we are trying to place
     @NotNull
     public Material getMaterial() {
         return this.blockData.getMaterial();
     }
 
-    /**
-     * Gets the BlockData that we are trying to place.
-     *
-     * @return The BlockData that we are trying to place
-     */
+    /// Gets the BlockData that we are trying to place.
+    ///
+    /// @return The BlockData that we are trying to place
     @NotNull
     public BlockData getBlockData() {
         return this.blockData.clone();
     }
 
-    /**
-     * Gets the hand the player will use to place the block
-     *
-     * @return the EquipmentSlot representing the players hand.
-     */
+    /// Gets the hand the player will use to place the block
+    ///
+    /// @return the EquipmentSlot representing the players hand.
     @NotNull
     public org.bukkit.inventory.EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Gets whether the block can be built here.
-     * <p>
-     * By default, returns Minecraft's answer on whether the block can be
-     * built here or not.
-     *
-     * @return boolean whether the block can be built
-     */
+    /// Gets whether the block can be built here.
+    ///
+    /// By default, returns Minecraft's answer on whether the block can be
+    /// built here or not.
+    ///
+    /// @return boolean whether the block can be built
     public boolean isBuildable() {
         return this.buildable;
     }
 
-    /**
-     * Sets whether the block can be built here or not.
-     *
-     * @param cancel {@code true} if you want to allow the block to be built here
-     *     despite Minecraft's default behaviour
-     */
+    /// Sets whether the block can be built here or not.
+    ///
+    /// @param cancel`true` if you want to allow the block to be built here
+    ///     despite Minecraft's default behaviour
     public void setBuildable(boolean cancel) {
         this.buildable = cancel;
     }

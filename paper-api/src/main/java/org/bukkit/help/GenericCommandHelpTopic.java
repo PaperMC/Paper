@@ -7,12 +7,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Lacking an alternative, the help system will create instances of
- * GenericCommandHelpTopic for each command in the server's CommandMap. You
- * can use this class as a base class for custom help topics, or as an example
- * for how to write your own.
- */
+/// Lacking an alternative, the help system will create instances of
+/// GenericCommandHelpTopic for each command in the server's CommandMap. You
+/// can use this class as a base class for custom help topics, or as an example
+/// for how to write your own.
 public class GenericCommandHelpTopic extends HelpTopic {
 
     protected Command command;

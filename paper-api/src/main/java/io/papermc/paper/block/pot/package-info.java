@@ -1,6 +1,4 @@
-/**
- * Classes relevant to pot blocks.
- */
+/// Classes relevant to pot blocks.
 @NullMarked
 package io.papermc.paper.block.pot;
 

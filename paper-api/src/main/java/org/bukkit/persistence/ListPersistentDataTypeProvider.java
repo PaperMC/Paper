@@ -5,10 +5,8 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A provider for list persistent data types that represent the known primitive
- * types exposed by {@link PersistentDataType}.
- */
+/// A provider for list persistent data types that represent the known primitive
+/// types exposed by [PersistentDataType].
 public final class ListPersistentDataTypeProvider {
 
     private static final ListPersistentDataType<Byte, Byte> BYTE = new ListPersistentDataTypeImpl<>(PersistentDataType.BYTE);
@@ -29,162 +27,134 @@ public final class ListPersistentDataTypeProvider {
     ListPersistentDataTypeProvider() {
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of bytes.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of bytes.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Byte, Byte> bytes() {
         return BYTE;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of shorts.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of shorts.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Short, Short> shorts() {
         return SHORT;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of integers.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of integers.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Integer, Integer> integers() {
         return INTEGER;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of longs.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of longs.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Long, Long> longs() {
         return LONG;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of floats.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of floats.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Float, Float> floats() {
         return FLOAT;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of doubles.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of doubles.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Double, Double> doubles() {
         return DOUBLE;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of booleans.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of booleans.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<Byte, Boolean> booleans() {
         return BOOLEAN;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of strings.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of strings.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<String, String> strings() {
         return STRING;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of byte arrays.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of byte arrays.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<byte[], byte[]> byteArrays() {
         return BYTE_ARRAY;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of int arrays.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of int arrays.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<int[], int[]> integerArrays() {
         return INTEGER_ARRAY;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * storing lists of long arrays.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// storing lists of long arrays.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<long[], long[]> longArrays() {
         return LONG_ARRAY;
     }
 
-    /**
-     * Provides a shared {@link ListPersistentDataType} that is capable of
-     * persistent data containers.
-     *
-     * @return the persistent data type.
-     */
+    /// Provides a shared [ListPersistentDataType] that is capable of
+    /// persistent data containers.
+    ///
+    /// @return the persistent data type.
     @NotNull
     public ListPersistentDataType<PersistentDataContainer, PersistentDataContainer> dataContainers() {
         return DATA_CONTAINER;
     }
 
-    /**
-     * Constructs a new list persistent data type given any persistent data type
-     * for its elements.
-     *
-     * @param elementType the persistent data type that is capable of
-     * writing/reading the elements of the list.
-     * @param <P> the generic type of the primitives stored in the list.
-     * @param <C> the generic type of the complex values yielded back by the
-     * persistent data types.
-     * @return the created list persistent data type.
-     */
+    /// Constructs a new list persistent data type given any persistent data type
+    /// for its elements.
+    ///
+    /// @param elementType the persistent data type that is capable of
+    /// writing/reading the elements of the list.
+    /// @param <P> the generic type of the primitives stored in the list.
+    /// @param <C> the generic type of the complex values yielded back by the
+    /// persistent data types.
+    /// @return the created list persistent data type.
     @NotNull
     public <P, C> ListPersistentDataType<P, C> listTypeFrom(@NotNull final PersistentDataType<P, C> elementType) {
         return new ListPersistentDataTypeImpl<>(elementType);
     }
 
-    /**
-     * A private implementation of the {@link ListPersistentDataType} that uses
-     * {@link Collections2} for conversion from/to the primitive list.
-     *
-     * @param <P> the generic type of the primitives stored in the list.
-     * @param <C> the generic type of the complex values yielded back by the
-     * persistent data types.
-     */
+    /// A private implementation of the [ListPersistentDataType] that uses
+    /// [Collections2] for conversion from/to the primitive list.
+    ///
+    /// @param <P> the generic type of the primitives stored in the list.
+    /// @param <C> the generic type of the complex values yielded back by the
+    /// persistent data types.
     private static final class ListPersistentDataTypeImpl<P, C> implements ListPersistentDataType<P, C> {
 
         @NotNull

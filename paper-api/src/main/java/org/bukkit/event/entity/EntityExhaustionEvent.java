@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a human entity experiences exhaustion.
- * <br>
- * An exhaustion level greater than 4.0 causes a decrease in saturation by 1.
- */
+/// Called when a human entity experiences exhaustion.
+///
+/// An exhaustion level greater than 4.0 causes a decrease in saturation by 1.
 public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -33,34 +31,28 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
         return (HumanEntity) super.entity;
     }
 
-    /**
-     * Gets the {@link ExhaustionReason} for this event
-     *
-     * @return the exhaustion reason
-     */
+    /// Gets the [ExhaustionReason] for this event
+    ///
+    /// @return the exhaustion reason
     @NotNull
     public ExhaustionReason getExhaustionReason() {
         return this.exhaustionReason;
     }
 
-    /**
-     * Get the amount of exhaustion to add to the player's current exhaustion.
-     *
-     * @return amount of exhaustion
-     */
+    /// Get the amount of exhaustion to add to the player's current exhaustion.
+    ///
+    /// @return amount of exhaustion
     public float getExhaustion() {
         return this.exhaustion;
     }
 
-    /**
-     * Set the exhaustion to apply to the player.
-     * <p>
-     * The maximum exhaustion that a player can have is 40. No error will be
-     * thrown if this limit is hit. This value may be negative, but there is
-     * unknown behavior for when exhaustion is below 0.
-     *
-     * @param exhaustion new exhaustion to add
-     */
+    /// Set the exhaustion to apply to the player.
+    ///
+    /// The maximum exhaustion that a player can have is 40. No error will be
+    /// thrown if this limit is hit. This value may be negative, but there is
+    /// unknown behavior for when exhaustion is below 0.
+    ///
+    /// @param exhaustion new exhaustion to add
     public void setExhaustion(float exhaustion) {
         this.exhaustion = exhaustion;
     }
@@ -75,73 +67,41 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    /**
-     * The reason for why a EntityExhaustionEvent takes place
-     */
+    /// The reason for why a EntityExhaustionEvent takes place
     public enum ExhaustionReason {
 
-        /**
-         * Player mines a block
-         */
+        /// Player mines a block
         BLOCK_MINED,
-        /**
-         * Player has the hunger potion effect
-         */
+        /// Player has the hunger potion effect
         HUNGER_EFFECT,
-        /**
-         * Player takes damage
-         */
+        /// Player takes damage
         DAMAGED,
-        /**
-         * Player attacks another entity
-         */
+        /// Player attacks another entity
         ATTACK,
-        /**
-         * Player is sprint jumping
-         */
+        /// Player is sprint jumping
         JUMP_SPRINT,
-        /**
-         * Player jumps
-         */
+        /// Player jumps
         JUMP,
-        /**
-         * Player swims one centimeter
-         */
+        /// Player swims one centimeter
         SWIM,
-        /**
-         * Player walks underwater one centimeter
-         */
+        /// Player walks underwater one centimeter
         WALK_UNDERWATER,
-        /**
-         * Player moves on the surface of water one centimeter
-         */
+        /// Player moves on the surface of water one centimeter
         WALK_ON_WATER,
-        /**
-         * Player sprints one centimeter
-         */
+        /// Player sprints one centimeter
         SPRINT,
-        /**
-         * Player crouches one centimeter (does not effect exhaustion, but fires
-         * nonetheless)
-         */
+        /// Player crouches one centimeter (does not effect exhaustion, but fires
+        /// nonetheless)
         CROUCH,
-        /**
-         * Player walks one centimeter (does not effect exhaustion, but fires
-         * nonetheless)
-         */
+        /// Player walks one centimeter (does not effect exhaustion, but fires
+        /// nonetheless)
         WALK,
-        /**
-         * Player regenerated health
-         */
+        /// Player regenerated health
         REGEN,
-        /**
-         * Player was affected by an enchantment
-         * @see <a href="https://minecraft.wiki/w/Enchantment_definition#apply_exhaustion">Minecraft Wiki: Enchantment Effects "apply_exhaustion"</a>
-         */
+        /// Player was affected by an enchantment
+        /// @see <a href="https://minecraft.wiki/w/Enchantment_definition#apply_exhaustion">Minecraft Wiki: Enchantment Effects "apply_exhaustion"</a>
         ENCHANTMENT_EFFECT,
-        /**
-         * Unknown exhaustion reason
-         */
+        /// Unknown exhaustion reason
         UNKNOWN
     }
 

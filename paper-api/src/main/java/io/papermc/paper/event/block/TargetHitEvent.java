@@ -10,13 +10,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a Target Block is hit by a projectile.
- * <p>
- * Cancelling this event will stop the Target from emitting a redstone signal,
- * and in the case that the shooter is a player, will stop them from receiving
- * advancement criteria.
- */
+/// Called when a Target Block is hit by a projectile.
+///
+/// Cancelling this event will stop the Target from emitting a redstone signal,
+/// and in the case that the shooter is a player, will stop them from receiving
+/// advancement criteria.
 @NullMarked
 public class TargetHitEvent extends ProjectileHitEvent {
 
@@ -30,20 +28,16 @@ public class TargetHitEvent extends ProjectileHitEvent {
         this.signalStrength = signalStrength;
     }
 
-    /**
-     * Gets the strength of the redstone signal to be emitted by the Target block
-     *
-     * @return the strength of the redstone signal to be emitted
-     */
+    /// Gets the strength of the redstone signal to be emitted by the Target block
+    ///
+    /// @return the strength of the redstone signal to be emitted
     public @Range(from = 0, to = 15) int getSignalStrength() {
         return this.signalStrength;
     }
 
-    /**
-     * Sets the strength of the redstone signal to be emitted by the Target block
-     *
-     * @param signalStrength the strength of the redstone signal to be emitted
-     */
+    /// Sets the strength of the redstone signal to be emitted by the Target block
+    ///
+    /// @param signalStrength the strength of the redstone signal to be emitted
     public void setSignalStrength(final @Range(from = 0, to = 15) int signalStrength) {
         Preconditions.checkArgument(signalStrength >= 0 && signalStrength <= 15, "Signal strength out of range (%s), must be in range [0,15]", signalStrength);
         this.signalStrength = signalStrength;

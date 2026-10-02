@@ -9,11 +9,9 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a Creeper is ignited either by a
- * flint and steel, {@link Creeper#ignite()} or
- * {@link Creeper#setIgnited(boolean)}.
- */
+/// Called when a Creeper is ignited either by a
+/// flint and steel, [Creeper#ignite()] or
+/// [Creeper#setIgnited(boolean)].
 @NullMarked
 public class CreeperIgniteEvent extends EntityIgniteEvent {
 

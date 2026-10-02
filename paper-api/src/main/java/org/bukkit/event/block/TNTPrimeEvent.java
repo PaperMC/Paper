@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a block of TNT in the world become primed.
- * <p>
- * If this event is cancelled, the block of TNT will not become primed.
- */
+/// Called when a block of TNT in the world become primed.
+///
+/// If this event is cancelled, the block of TNT will not become primed.
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,33 +29,27 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
         this.primingBlock = primingBlock;
     }
 
-    /**
-     * Get the cause of the TNT becoming primed.
-     *
-     * @return the cause
-     */
+    /// Get the cause of the TNT becoming primed.
+    ///
+    /// @return the cause
     @NotNull
     public PrimeCause getCause() {
         return this.igniteCause;
     }
 
-    /**
-     * Get the entity that caused the TNT to be primed.
-     *
-     * @return the entity that caused the TNT to be primed, or {@code null} if it was
-     * not caused by an entity.
-     */
+    /// Get the entity that caused the TNT to be primed.
+    ///
+    /// @return the entity that caused the TNT to be primed, or `null` if it was
+    /// not caused by an entity.
     @Nullable
     public Entity getPrimingEntity() {
         return this.primingEntity;
     }
 
-    /**
-     * Get the block that caused the TNT to be primed.
-     *
-     * @return the block that caused the TNT to be primed, or {@code null} if it was not
-     * caused by a block.
-     */
+    /// Get the block that caused the TNT to be primed.
+    ///
+    /// @return the block that caused the TNT to be primed, or `null` if it was not
+    /// caused by a block.
     @Nullable
     public Block getPrimingBlock() {
         return this.primingBlock;
@@ -84,44 +76,28 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to represent the cause of a TNT block becoming primed.
-     */
+    /// An enum to represent the cause of a TNT block becoming primed.
     public enum PrimeCause {
 
-        /**
-         * When TNT is primed by fire spreading.
-         */
+        /// When TNT is primed by fire spreading.
         FIRE,
-        /**
-         * When TNT is primed by a redstone signal.
-         */
+        /// When TNT is primed by a redstone signal.
         REDSTONE,
-        /**
-         * When TNT is primed by a player interacting with it directly.
-         */
+        /// When TNT is primed by a player interacting with it directly.
         PLAYER,
-        /**
-         * When TNT is primed by a nearby explosion.
-         */
+        /// When TNT is primed by a nearby explosion.
         EXPLOSION,
-        /**
-         * When TNT is primed after getting hit with a burning projectile.
-         */
+        /// When TNT is primed after getting hit with a burning projectile.
         PROJECTILE,
-        /**
-         * When TNT with the unstable block state set to {@code true} is broken.
-         * <p>
-         * Note: Canceling a prime event with this cause will stop the primed
-         * TNT from spawning but will not stop the block from being broken.
-         */
+        /// When TNT with the unstable block state set to `true` is broken.
+        ///
+        /// Note: Canceling a prime event with this cause will stop the primed
+        /// TNT from spawning but will not stop the block from being broken.
         BLOCK_BREAK,
-        /**
-         * When TNT is primed by a dispenser holding flint and steel.
-         * <p>
-         * Note: This event is not called for a dispenser dispensing TNT
-         * directly.
-         */
+        /// When TNT is primed by a dispenser holding flint and steel.
+        ///
+        /// Note: This event is not called for a dispenser dispensing TNT
+        /// directly.
         DISPENSER;
     }
 }

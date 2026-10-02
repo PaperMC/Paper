@@ -10,12 +10,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a generic Mojang game event.
- * <br>
- * Specific Bukkit events should be used where possible, this event is mainly
- * used internally by Sculk sensors.
- */
+/// Represents a generic Mojang game event.
+///
+/// Specific Bukkit events should be used where possible, this event is mainly
+/// used internally by Sculk sensors.
 public class GenericGameEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -36,50 +34,40 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
         this.radius = radius;
     }
 
-    /**
-     * Get the underlying event.
-     *
-     * @return the event
-     */
+    /// Get the underlying event.
+    ///
+    /// @return the event
     @NotNull
     public GameEvent getEvent() {
         return this.event;
     }
 
-    /**
-     * Get the location where the event occurred.
-     *
-     * @return event location
-     */
+    /// Get the location where the event occurred.
+    ///
+    /// @return event location
     @NotNull
     public Location getLocation() {
         return this.location.clone();
     }
 
-    /**
-     * Get the entity which triggered this event, if present.
-     *
-     * @return triggering entity or {@code null}
-     */
+    /// Get the entity which triggered this event, if present.
+    ///
+    /// @return triggering entity or `null`
     @Nullable
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Get the block radius to which this event will be broadcast.
-     *
-     * @return broadcast radius
-     */
+    /// Get the block radius to which this event will be broadcast.
+    ///
+    /// @return broadcast radius
     public int getRadius() {
         return this.radius;
     }
 
-    /**
-     * Set the radius to which the event should be broadcast.
-     *
-     * @param radius radius, must be greater than or equal to 0
-     */
+    /// Set the radius to which the event should be broadcast.
+    ///
+    /// @param radius radius, must be greater than or equal to 0
     public void setRadius(int radius) {
         Preconditions.checkArgument(radius >= 0, "Radius must be >= 0");
         this.radius = radius;

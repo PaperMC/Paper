@@ -31,11 +31,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when the server is requesting to fill in properties of an incomplete profile, such as textures.
- * <p>
- * Allows plugins to pre-populate cached properties and avoid a call to the Mojang API
- */
+/// Fired when the server is requesting to fill in properties of an incomplete profile, such as textures.
+///
+/// Allows plugins to pre-populate cached properties and avoid a call to the Mojang API
 @NullMarked
 public class PreFillProfileEvent extends Event {
 
@@ -49,20 +47,16 @@ public class PreFillProfileEvent extends Event {
         this.profile = profile;
     }
 
-    /**
-     * @return The profile that needs its properties filled
-     */
+    /// @return The profile that needs its properties filled
     public PlayerProfile getPlayerProfile() {
         return this.profile;
     }
 
-    /**
-     * Sets the properties on the profile, avoiding the call to the Mojang API
-     * Same as .getPlayerProfile().setProperties(properties);
-     *
-     * @param properties The properties to set/append
-     * @see PlayerProfile#setProperties(Collection)
-     */
+    /// Sets the properties on the profile, avoiding the call to the Mojang API
+    /// Same as .getPlayerProfile().setProperties(properties);
+    ///
+    /// @param properties The properties to set/append
+    /// @see PlayerProfile#setProperties(Collection)
     public void setProperties(final Collection<ProfileProperty> properties) {
         this.profile.setProperties(properties);
     }

@@ -6,12 +6,10 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a bat attempts to sleep or wake up from its slumber.
- * <p>
- * If this event is cancelled, the Bat will not toggle its sleep
- * state.
- */
+/// Called when a bat attempts to sleep or wake up from its slumber.
+///
+/// If this event is cancelled, the Bat will not toggle its sleep
+/// state.
 public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -26,11 +24,9 @@ public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
         this.awake = awake;
     }
 
-    /**
-     * Get whether the bat is attempting to awaken.
-     *
-     * @return {@code true} if trying to awaken, {@code false} otherwise
-     */
+    /// Get whether the bat is attempting to awaken.
+    ///
+    /// @return `true` if trying to awaken, `false` otherwise
     public boolean isAwake() {
         return this.awake;
     }

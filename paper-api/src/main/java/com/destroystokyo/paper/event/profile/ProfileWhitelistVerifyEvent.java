@@ -33,12 +33,10 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Fires when the server needs to verify if a player is whitelisted.
- * <p>
- * Plugins may override/control the servers whitelist with this event,
- * and dynamically change the kick message.
- */
+/// Fires when the server needs to verify if a player is whitelisted.
+///
+/// Plugins may override/control the servers whitelist with this event,
+/// and dynamically change the kick message.
 @NullMarked
 public class ProfileWhitelistVerifyEvent extends Event {
 
@@ -59,72 +57,54 @@ public class ProfileWhitelistVerifyEvent extends Event {
         this.kickMessage = kickMessage;
     }
 
-    /**
-     * @return the currently planned message to send to the user if they are not whitelisted
-     * @deprecated use {@link #kickMessage()}
-     */
+    /// @return the currently planned message to send to the user if they are not whitelisted
+    /// @deprecated use [#kickMessage()]
     @Deprecated
     public @Nullable String getKickMessage() {
         return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.kickMessage);
     }
 
-    /**
-     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
-     * @deprecated Use {@link #kickMessage(Component)}
-     */
+    /// @param kickMessage The message to send to the player on kick if not whitelisted. May set to `null` to use the server configured default
+    /// @deprecated Use [#kickMessage(Component)]
     @Deprecated
     public void setKickMessage(final @Nullable String kickMessage) {
         this.kickMessage(kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
     }
 
-    /**
-     * @return the currently planned message to send to the user if they are not whitelisted
-     */
+    /// @return the currently planned message to send to the user if they are not whitelisted
     @Contract(pure = true)
     public @Nullable Component kickMessage() {
         return this.kickMessage;
     }
 
-    /**
-     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
-     */
+    /// @param kickMessage The message to send to the player on kick if not whitelisted. May set to `null` to use the server configured default
     public void kickMessage(final @Nullable Component kickMessage) {
         this.kickMessage = kickMessage;
     }
 
-    /**
-     * @return The profile of the player trying to connect
-     */
+    /// @return The profile of the player trying to connect
     public PlayerProfile getPlayerProfile() {
         return this.profile;
     }
 
-    /**
-     * @return Whether the player is whitelisted to play on this server (whitelist may be off is why it's true)
-     */
+    /// @return Whether the player is whitelisted to play on this server (whitelist may be off is why it's true)
     public boolean isWhitelisted() {
         return this.whitelisted;
     }
 
-    /**
-     * Changes the players whitelisted state. {@code false} will deny the login
-     *
-     * @param whitelisted The new whitelisted state
-     */
+    /// Changes the players whitelisted state. `false` will deny the login
+    ///
+    /// @param whitelisted The new whitelisted state
     public void setWhitelisted(final boolean whitelisted) {
         this.whitelisted = whitelisted;
     }
 
-    /**
-     * @return if the player obtained whitelist status by having op
-     */
+    /// @return if the player obtained whitelist status by having op
     public boolean isOp() {
         return this.isOp;
     }
 
-    /**
-     * @return if the server even has whitelist on
-     */
+    /// @return if the server even has whitelist on
     public boolean isWhitelistEnabled() {
         return this.whitelistEnabled;
     }

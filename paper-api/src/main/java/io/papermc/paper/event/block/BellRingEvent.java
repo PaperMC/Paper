@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a bell is rung.
- *
- * @deprecated use {@link org.bukkit.event.block.BellRingEvent}
- */
+/// Called when a bell is rung.
+///
+/// @deprecated use [org.bukkit.event.block.BellRingEvent]
 @Deprecated(since = "1.19.4")
 @Warning(propagate = false)
 public class BellRingEvent extends org.bukkit.event.block.BellRingEvent {

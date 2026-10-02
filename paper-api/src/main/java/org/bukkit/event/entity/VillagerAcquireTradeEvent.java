@@ -7,9 +7,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called whenever a villager acquires a new trade.
- */
+/// Called whenever a villager acquires a new trade.
 public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,21 +27,17 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
         return (AbstractVillager) this.entity;
     }
 
-    /**
-     * Get the recipe to be acquired.
-     *
-     * @return the new recipe
-     */
+    /// Get the recipe to be acquired.
+    ///
+    /// @return the new recipe
     @NotNull
     public MerchantRecipe getRecipe() {
         return this.recipe;
     }
 
-    /**
-     * Set the recipe to be acquired.
-     *
-     * @param recipe the new recipe
-     */
+    /// Set the recipe to be acquired.
+    ///
+    /// @param recipe the new recipe
     public void setRecipe(@NotNull MerchantRecipe recipe) {
         this.recipe = recipe;
     }

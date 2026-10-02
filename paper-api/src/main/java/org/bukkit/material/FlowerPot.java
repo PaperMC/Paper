@@ -4,18 +4,14 @@ import org.bukkit.GrassSpecies;
 import org.bukkit.Material;
 import org.bukkit.TreeSpecies;
 
-/**
- * Represents a flower pot.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a flower pot.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class FlowerPot extends MaterialData {
 
-    /**
-     * Default constructor for a flower pot.
-     */
+    /// Default constructor for a flower pot.
     public FlowerPot() {
         super(Material.LEGACY_FLOWER_POT);
     }
@@ -24,22 +20,18 @@ public class FlowerPot extends MaterialData {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public FlowerPot(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Get the material in the flower pot
-     *
-     * @return material MaterialData for the block currently in the flower pot
-     *     or null if empty
-     */
+    /// Get the material in the flower pot
+    ///
+    /// @return material MaterialData for the block currently in the flower pot
+    ///     or null if empty
     public MaterialData getContents() {
         switch (getData()) {
             case 1:
@@ -69,11 +61,9 @@ public class FlowerPot extends MaterialData {
         }
     }
 
-    /**
-     * Set the contents of the flower pot
-     *
-     * @param materialData MaterialData of the block to put in the flower pot.
-     */
+    /// Set the contents of the flower pot
+    ///
+    /// @param materialData MaterialData of the block to put in the flower pot.
     public void setContents(MaterialData materialData) {
         Material mat = materialData.getItemType();
 

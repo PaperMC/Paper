@@ -33,14 +33,11 @@ import co.aikar.timings.TimingsManager;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 
-/**
- * This is here for legacy purposes incase any plugin used it.
- *
- * If you use this, migrate ASAP as this will be removed in the future!
- *
- * @deprecated
- * @see co.aikar.timings.Timings#of
- */
+/// This is here for legacy purposes incase any plugin used it.
+/// If you use this, migrate ASAP as this will be removed in the future!
+///
+/// @deprecated
+/// @see co.aikar.timings.Timings#of
 @Deprecated(forRemoval = true)
 public final class CustomTimingsHandler {
     private final Timing handler;

@@ -29,9 +29,7 @@ import org.bukkit.plugin.SimplePluginManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A ClassLoader for plugins, to allow shared classes across multiple plugins
- */
+/// A ClassLoader for plugins, to allow shared classes across multiple plugins
 @org.jetbrains.annotations.ApiStatus.Internal // Paper
 public final class PluginClassLoader extends URLClassLoader implements io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader { // Paper
     private final JavaPluginLoader loader;
@@ -55,9 +53,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         ClassLoader.registerAsParallelCapable();
     }
 
-    /**
-     * @hidden
-     */
+    /// @hidden
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, JarFile jarFile, io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext) throws IOException, InvalidPluginException, MalformedURLException { // Paper - use JarFile provided by SpigotPluginProvider
         super(file.getName(), new URL[] {file.toURI().toURL()}, parent);

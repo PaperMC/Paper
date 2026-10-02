@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores data for thunder state changing in a world
- */
+/// Stores data for thunder state changing in a world
 public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,20 +29,16 @@ public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
         this(world, newThunderState, Cause.UNKNOWN);
     }
 
-    /**
-     * Gets the state of thunder that the world is being set to
-     *
-     * @return {@code true} if the weather is being set to thundering, {@code false} otherwise
-     */
+    /// Gets the state of thunder that the world is being set to
+    ///
+    /// @return `true` if the weather is being set to thundering, `false` otherwise
     public boolean toThunderState() {
         return this.newThunderState;
     }
 
-    /**
-     * Gets the cause of the weather change.
-     *
-     * @return the weather change cause
-     */
+    /// Gets the cause of the weather change.
+    ///
+    /// @return the weather change cause
     @NotNull
     public Cause getCause() {
         return this.cause;

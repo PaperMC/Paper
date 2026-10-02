@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player toggles their sprinting state
- */
+/// Called when a player toggles their sprinting state
 public class PlayerToggleSprintEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,11 +20,9 @@ public class PlayerToggleSprintEvent extends PlayerEvent implements Cancellable 
         this.isSprinting = isSprinting;
     }
 
-    /**
-     * Gets whether the player is now sprinting or not.
-     *
-     * @return sprinting state
-     */
+    /// Gets whether the player is now sprinting or not.
+    ///
+    /// @return sprinting state
     public boolean isSprinting() {
         return this.isSprinting;
     }

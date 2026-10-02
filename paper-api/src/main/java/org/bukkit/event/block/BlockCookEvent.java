@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an ItemStack is successfully cooked in a block.
- */
+/// Called when an ItemStack is successfully cooked in a block.
 public class BlockCookEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -36,40 +34,32 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
         this.recipe = recipe;
     }
 
-    /**
-     * Gets the smelted ItemStack for this event
-     *
-     * @return smelting source ItemStack
-     */
+    /// Gets the smelted ItemStack for this event
+    ///
+    /// @return smelting source ItemStack
     @NotNull
     public ItemStack getSource() {
         return this.source;
     }
 
-    /**
-     * Gets the resultant ItemStack for this event
-     *
-     * @return smelting result ItemStack
-     */
+    /// Gets the resultant ItemStack for this event
+    ///
+    /// @return smelting result ItemStack
     @NotNull
     public ItemStack getResult() {
         return this.result;
     }
 
-    /**
-     * Sets the resultant ItemStack for this event
-     *
-     * @param result new result ItemStack
-     */
+    /// Sets the resultant ItemStack for this event
+    ///
+    /// @param result new result ItemStack
     public void setResult(@NotNull ItemStack result) {
         this.result = result;
     }
 
-    /**
-     * Gets the cooking recipe associated with this event.
-     *
-     * @return the recipe
-     */
+    /// Gets the cooking recipe associated with this event.
+    ///
+    /// @return the recipe
     @Nullable
     public org.bukkit.inventory.CookingRecipe<?> getRecipe() {
         return this.recipe;

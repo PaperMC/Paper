@@ -4,9 +4,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a vehicle-related event.
- */
+/// Represents a vehicle-related event.
 public abstract class VehicleEvent extends Event {
 
     protected Vehicle vehicle;
@@ -15,11 +13,9 @@ public abstract class VehicleEvent extends Event {
         this.vehicle = vehicle;
     }
 
-    /**
-     * Get the vehicle.
-     *
-     * @return the vehicle
-     */
+    /// Get the vehicle.
+    ///
+    /// @return the vehicle
     @NotNull
     public final Vehicle getVehicle() {
         return this.vehicle;

@@ -1,6 +1,2 @@
-/**
- * Classes related to creating or using {@link org.bukkit.structure.Structure
- * structures} without creating {@link org.bukkit.block.Structure Structure
- * blocks} in the world.
- */
+/// Classes related to creating or using [`structures`][org.bukkit.structure.Structure] without creating [`Structure blocks`][org.bukkit.block.Structure] in the world.
 package org.bukkit.structure;

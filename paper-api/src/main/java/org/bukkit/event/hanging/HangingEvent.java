@@ -5,9 +5,7 @@ import org.bukkit.event.Event;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a hanging entity-related event.
- */
+/// Represents a hanging entity-related event.
 public abstract class HangingEvent extends Event {
 
     protected Hanging hanging;
@@ -16,11 +14,9 @@ public abstract class HangingEvent extends Event {
         this.hanging = painting;
     }
 
-    /**
-     * Gets the hanging entity involved in this event.
-     *
-     * @return the hanging entity
-     */
+    /// Gets the hanging entity involved in this event.
+    ///
+    /// @return the hanging entity
     @NotNull
     public Hanging getEntity() {
         return this.hanging;

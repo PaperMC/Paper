@@ -7,11 +7,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a player animation event
- *
- * @deprecated use {@link io.papermc.paper.event.player.PlayerArmSwingEvent}
- */
+/// Represents a player animation event
+///
+/// @deprecated use [io.papermc.paper.event.player.PlayerArmSwingEvent]
 @Deprecated(since = "26.3")
 @Warning(propagate = false)
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
@@ -33,11 +31,9 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
         this.animationType = playerAnimationType;
     }
 
-    /**
-     * Get the type of this animation event
-     *
-     * @return the animation type
-     */
+    /// Get the type of this animation event
+    ///
+    /// @return the animation type
     @NotNull
     public PlayerAnimationType getAnimationType() {
         return this.animationType;

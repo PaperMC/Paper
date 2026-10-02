@@ -5,9 +5,7 @@ import org.bukkit.inventory.SmithingInventory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when the recipe of an Item is completed inside a smithing table.
- */
+/// Called when the recipe of an Item is completed inside a smithing table.
 public class SmithItemEvent extends InventoryClickEvent {
 
     @ApiStatus.Internal

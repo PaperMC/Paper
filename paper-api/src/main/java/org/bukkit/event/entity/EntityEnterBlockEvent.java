@@ -7,14 +7,12 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an {@link Entity} enters a block and is stored in that block.
- * <p>
- * This event is called for bees entering a bee hive.
- * <br>
- * It is not called when a silverfish "enters" a stone block. For that listen to
- * the {@link EntityChangeBlockEvent}.
- */
+/// Called when an [Entity] enters a block and is stored in that block.
+///
+/// This event is called for bees entering a bee hive.
+///
+/// It is not called when a silverfish "enters" a stone block. For that listen to
+/// the [EntityChangeBlockEvent].
 public class EntityEnterBlockEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -30,11 +28,9 @@ public class EntityEnterBlockEvent extends EntityEvent implements Cancellable {
         this.block = block;
     }
 
-    /**
-     * Get the block the entity will enter.
-     *
-     * @return the block
-     */
+    /// Get the block the entity will enter.
+    ///
+    /// @return the block
     @NotNull
     public Block getBlock() {
         return this.block;

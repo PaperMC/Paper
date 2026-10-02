@@ -12,31 +12,27 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A mutable axis aligned bounding box (AABB).
- * <p>
- * This basically represents a rectangular box (specified by minimum and maximum
- * corners) that can for example be used to describe the position and extents of
- * an object (such as an entity, block, or rectangular region) in 3D space. Its
- * edges and faces are parallel to the axes of the cartesian coordinate system.
- * <p>
- * The bounding box may be degenerate (one or more sides having the length 0).
- * <p>
- * Because bounding boxes are mutable, storing them long term may be dangerous
- * if they get modified later. If you want to keep around a bounding box, it may
- * be wise to call {@link #clone()} in order to get a copy.
- */
+/// A mutable axis aligned bounding box (AABB).
+///
+/// This basically represents a rectangular box (specified by minimum and maximum
+/// corners) that can for example be used to describe the position and extents of
+/// an object (such as an entity, block, or rectangular region) in 3D space. Its
+/// edges and faces are parallel to the axes of the cartesian coordinate system.
+///
+/// The bounding box may be degenerate (one or more sides having the length 0).
+///
+/// Because bounding boxes are mutable, storing them long term may be dangerous
+/// if they get modified later. If you want to keep around a bounding box, it may
+/// be wise to call [#clone()] in order to get a copy.
 @SerializableAs("BoundingBox")
 public class BoundingBox implements Cloneable, ConfigurationSerializable {
 
-    /**
-     * Creates a new bounding box using the coordinates of the given vectors as
-     * corners.
-     *
-     * @param corner1 the first corner
-     * @param corner2 the second corner
-     * @return the bounding box
-     */
+    /// Creates a new bounding box using the coordinates of the given vectors as
+    /// corners.
+    ///
+    /// @param corner1 the first corner
+    /// @param corner2 the second corner
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Vector corner1, @NotNull Vector corner2) {
         Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
@@ -44,14 +40,12 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return new BoundingBox(corner1.getX(), corner1.getY(), corner1.getZ(), corner2.getX(), corner2.getY(), corner2.getZ());
     }
 
-    /**
-     * Creates a new bounding box using the coordinates of the given locations
-     * as corners.
-     *
-     * @param corner1 the first corner
-     * @param corner2 the second corner
-     * @return the bounding box
-     */
+    /// Creates a new bounding box using the coordinates of the given locations
+    /// as corners.
+    ///
+    /// @param corner1 the first corner
+    /// @param corner2 the second corner
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Location corner1, @NotNull Location corner2) {
         Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
@@ -60,16 +54,14 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return new BoundingBox(corner1.getX(), corner1.getY(), corner1.getZ(), corner2.getX(), corner2.getY(), corner2.getZ());
     }
 
-    /**
-     * Creates a new bounding box using the coordinates of the given blocks as
-     * corners.
-     * <p>
-     * The bounding box will be sized to fully contain both blocks.
-     *
-     * @param corner1 the first corner block
-     * @param corner2 the second corner block
-     * @return the bounding box
-     */
+    /// Creates a new bounding box using the coordinates of the given blocks as
+    /// corners.
+    ///
+    /// The bounding box will be sized to fully contain both blocks.
+    ///
+    /// @param corner1 the first corner block
+    /// @param corner2 the second corner block
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Block corner1, @NotNull Block corner2) {
         Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
@@ -93,42 +85,36 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    /**
-     * Creates a new 1x1x1 sized bounding box containing the given block.
-     *
-     * @param block the block
-     * @return the bounding box
-     */
+    /// Creates a new 1x1x1 sized bounding box containing the given block.
+    ///
+    /// @param block the block
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Block block) {
         Preconditions.checkArgument(block != null, "Block is null!");
         return new BoundingBox(block.getX(), block.getY(), block.getZ(), block.getX() + 1, block.getY() + 1, block.getZ() + 1);
     }
 
-    /**
-     * Creates a new bounding box using the given center and extents.
-     *
-     * @param center the center
-     * @param x 1/2 the size of the bounding box along the x axis
-     * @param y 1/2 the size of the bounding box along the y axis
-     * @param z 1/2 the size of the bounding box along the z axis
-     * @return the bounding box
-     */
+    /// Creates a new bounding box using the given center and extents.
+    ///
+    /// @param center the center
+    /// @param x 1/2 the size of the bounding box along the x axis
+    /// @param y 1/2 the size of the bounding box along the y axis
+    /// @param z 1/2 the size of the bounding box along the z axis
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Vector center, double x, double y, double z) {
         Preconditions.checkArgument(center != null, "Center is null!");
         return new BoundingBox(center.getX() - x, center.getY() - y, center.getZ() - z, center.getX() + x, center.getY() + y, center.getZ() + z);
     }
 
-    /**
-     * Creates a new bounding box using the given center and extents.
-     *
-     * @param center the center
-     * @param x 1/2 the size of the bounding box along the x axis
-     * @param y 1/2 the size of the bounding box along the y axis
-     * @param z 1/2 the size of the bounding box along the z axis
-     * @return the bounding box
-     */
+    /// Creates a new bounding box using the given center and extents.
+    ///
+    /// @param center the center
+    /// @param x 1/2 the size of the bounding box along the x axis
+    /// @param y 1/2 the size of the bounding box along the y axis
+    /// @param z 1/2 the size of the bounding box along the z axis
+    /// @return the bounding box
     @NotNull
     public static BoundingBox of(@NotNull Location center, double x, double y, double z) {
         Preconditions.checkArgument(center != null, "Center is null!");
@@ -142,39 +128,33 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
     private double maxY;
     private double maxZ;
 
-    /**
-     * Creates a new (degenerate) bounding box with all corner coordinates at
-     * <code>0</code>.
-     */
+    /// Creates a new (degenerate) bounding box with all corner coordinates at
+    /// `0`.
     public BoundingBox() {
         this.resize(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
     }
 
-    /**
-     * Creates a new bounding box from the given corner coordinates.
-     *
-     * @param x1 the first corner's x value
-     * @param y1 the first corner's y value
-     * @param z1 the first corner's z value
-     * @param x2 the second corner's x value
-     * @param y2 the second corner's y value
-     * @param z2 the second corner's z value
-     */
+    /// Creates a new bounding box from the given corner coordinates.
+    ///
+    /// @param x1 the first corner's x value
+    /// @param y1 the first corner's y value
+    /// @param z1 the first corner's z value
+    /// @param x2 the second corner's x value
+    /// @param y2 the second corner's y value
+    /// @param z2 the second corner's z value
     public BoundingBox(double x1, double y1, double z1, double x2, double y2, double z2) {
         this.resize(x1, y1, z1, x2, y2, z2);
     }
 
-    /**
-     * Resizes this bounding box.
-     *
-     * @param x1 the first corner's x value
-     * @param y1 the first corner's y value
-     * @param z1 the first corner's z value
-     * @param x2 the second corner's x value
-     * @param y2 the second corner's y value
-     * @param z2 the second corner's z value
-     * @return this bounding box (resized)
-     */
+    /// Resizes this bounding box.
+    ///
+    /// @param x1 the first corner's x value
+    /// @param y1 the first corner's y value
+    /// @param z1 the first corner's z value
+    /// @param x2 the second corner's x value
+    /// @param y2 the second corner's y value
+    /// @param z2 the second corner's z value
+    /// @return this bounding box (resized)
     @NotNull
     public BoundingBox resize(double x1, double y1, double z1, double x2, double y2, double z2) {
         NumberConversions.checkFinite(x1, "x1 not finite");
@@ -193,181 +173,145 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this;
     }
 
-    /**
-     * Gets the minimum x value.
-     *
-     * @return the minimum x value
-     */
+    /// Gets the minimum x value.
+    ///
+    /// @return the minimum x value
     public double getMinX() {
         return minX;
     }
 
-    /**
-     * Gets the minimum y value.
-     *
-     * @return the minimum y value
-     */
+    /// Gets the minimum y value.
+    ///
+    /// @return the minimum y value
     public double getMinY() {
         return minY;
     }
 
-    /**
-     * Gets the minimum z value.
-     *
-     * @return the minimum z value
-     */
+    /// Gets the minimum z value.
+    ///
+    /// @return the minimum z value
     public double getMinZ() {
         return minZ;
     }
 
-    /**
-     * Gets the minimum corner as vector.
-     *
-     * @return the minimum corner as vector
-     */
+    /// Gets the minimum corner as vector.
+    ///
+    /// @return the minimum corner as vector
     @NotNull
     public Vector getMin() {
         return new Vector(minX, minY, minZ);
     }
 
-    /**
-     * Gets the maximum x value.
-     *
-     * @return the maximum x value
-     */
+    /// Gets the maximum x value.
+    ///
+    /// @return the maximum x value
     public double getMaxX() {
         return maxX;
     }
 
-    /**
-     * Gets the maximum y value.
-     *
-     * @return the maximum y value
-     */
+    /// Gets the maximum y value.
+    ///
+    /// @return the maximum y value
     public double getMaxY() {
         return maxY;
     }
 
-    /**
-     * Gets the maximum z value.
-     *
-     * @return the maximum z value
-     */
+    /// Gets the maximum z value.
+    ///
+    /// @return the maximum z value
     public double getMaxZ() {
         return maxZ;
     }
 
-    /**
-     * Gets the maximum corner as vector.
-     *
-     * @return the maximum corner vector
-     */
+    /// Gets the maximum corner as vector.
+    ///
+    /// @return the maximum corner vector
     @NotNull
     public Vector getMax() {
         return new Vector(maxX, maxY, maxZ);
     }
 
-    /**
-     * Gets the width of the bounding box in the x direction.
-     *
-     * @return the width in the x direction
-     */
+    /// Gets the width of the bounding box in the x direction.
+    ///
+    /// @return the width in the x direction
     public double getWidthX() {
         return (this.maxX - this.minX);
     }
 
-    /**
-     * Gets the width of the bounding box in the z direction.
-     *
-     * @return the width in the z direction
-     */
+    /// Gets the width of the bounding box in the z direction.
+    ///
+    /// @return the width in the z direction
     public double getWidthZ() {
         return (this.maxZ - this.minZ);
     }
 
-    /**
-     * Gets the height of the bounding box.
-     *
-     * @return the height
-     */
+    /// Gets the height of the bounding box.
+    ///
+    /// @return the height
     public double getHeight() {
         return (this.maxY - this.minY);
     }
 
-    /**
-     * Gets the volume of the bounding box.
-     *
-     * @return the volume
-     */
+    /// Gets the volume of the bounding box.
+    ///
+    /// @return the volume
     public double getVolume() {
         return (this.getHeight() * this.getWidthX() * this.getWidthZ());
     }
 
-    /**
-     * Gets the x coordinate of the center of the bounding box.
-     *
-     * @return the center's x coordinate
-     */
+    /// Gets the x coordinate of the center of the bounding box.
+    ///
+    /// @return the center's x coordinate
     public double getCenterX() {
         return (this.minX + this.getWidthX() * 0.5D);
     }
 
-    /**
-     * Gets the y coordinate of the center of the bounding box.
-     *
-     * @return the center's y coordinate
-     */
+    /// Gets the y coordinate of the center of the bounding box.
+    ///
+    /// @return the center's y coordinate
     public double getCenterY() {
         return (this.minY + this.getHeight() * 0.5D);
     }
 
-    /**
-     * Gets the z coordinate of the center of the bounding box.
-     *
-     * @return the center's z coordinate
-     */
+    /// Gets the z coordinate of the center of the bounding box.
+    ///
+    /// @return the center's z coordinate
     public double getCenterZ() {
         return (this.minZ + this.getWidthZ() * 0.5D);
     }
 
-    /**
-     * Gets the center of the bounding box.
-     *
-     * @return the center
-     */
+    /// Gets the center of the bounding box.
+    ///
+    /// @return the center
     @NotNull
     public Vector getCenter() {
         return new Vector(this.getCenterX(), this.getCenterY(), this.getCenterZ());
     }
 
-    /**
-     * Copies another bounding box.
-     *
-     * @param other the other bounding box
-     * @return this bounding box
-     */
+    /// Copies another bounding box.
+    ///
+    /// @param other the other bounding box
+    /// @return this bounding box
     @NotNull
     public BoundingBox copy(@NotNull BoundingBox other) {
         Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.resize(other.getMinX(), other.getMinY(), other.getMinZ(), other.getMaxX(), other.getMaxY(), other.getMaxZ());
     }
 
-    /**
-     * Expands this bounding box by the given values in the corresponding
-     * directions.
-     * <p>
-     * Negative values will shrink the bounding box in the corresponding
-     * direction. Shrinking will be limited to the point where the affected
-     * opposite faces would meet if they shrank at uniform speeds.
-     *
-     * @param negativeX the amount of expansion in the negative x direction
-     * @param negativeY the amount of expansion in the negative y direction
-     * @param negativeZ the amount of expansion in the negative z direction
-     * @param positiveX the amount of expansion in the positive x direction
-     * @param positiveY the amount of expansion in the positive y direction
-     * @param positiveZ the amount of expansion in the positive z direction
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box by the given values in the corresponding
+    /// directions.
+    ///
+    /// Negative values will shrink the bounding box in the corresponding
+    /// direction. Shrinking will be limited to the point where the affected
+    /// opposite faces would meet if they shrank at uniform speeds.
+    ///
+    /// @param negativeX the amount of expansion in the negative x direction
+    /// @param negativeY the amount of expansion in the negative y direction
+    /// @param negativeZ the amount of expansion in the negative z direction
+    /// @param positiveX the amount of expansion in the positive x direction
+    /// @param positiveY the amount of expansion in the positive y direction
+    /// @param positiveZ the amount of expansion in the positive z direction
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(double negativeX, double negativeY, double negativeZ, double positiveX, double positiveY, double positiveZ) {
         if (negativeX == 0.0D && negativeY == 0.0D && negativeZ == 0.0D && positiveX == 0.0D && positiveY == 0.0D && positiveZ == 0.0D) {
@@ -417,36 +361,32 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.resize(newMinX, newMinY, newMinZ, newMaxX, newMaxY, newMaxZ);
     }
 
-    /**
-     * Expands this bounding box uniformly by the given values in both positive
-     * and negative directions.
-     * <p>
-     * Negative values will shrink the bounding box. Shrinking will be limited
-     * to the bounding box's current size.
-     *
-     * @param x the amount of expansion in both positive and negative x
-     * direction
-     * @param y the amount of expansion in both positive and negative y
-     * direction
-     * @param z the amount of expansion in both positive and negative z
-     * direction
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box uniformly by the given values in both positive
+    /// and negative directions.
+    ///
+    /// Negative values will shrink the bounding box. Shrinking will be limited
+    /// to the bounding box's current size.
+    ///
+    /// @param x the amount of expansion in both positive and negative x
+    /// direction
+    /// @param y the amount of expansion in both positive and negative y
+    /// direction
+    /// @param z the amount of expansion in both positive and negative z
+    /// direction
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(double x, double y, double z) {
         return this.expand(x, y, z, x, y, z);
     }
 
-    /**
-     * Expands this bounding box uniformly by the given values in both positive
-     * and negative directions.
-     * <p>
-     * Negative values will shrink the bounding box. Shrinking will be limited
-     * to the bounding box's current size.
-     *
-     * @param expansion the expansion values
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box uniformly by the given values in both positive
+    /// and negative directions.
+    ///
+    /// Negative values will shrink the bounding box. Shrinking will be limited
+    /// to the bounding box's current size.
+    ///
+    /// @param expansion the expansion values
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(@NotNull Vector expansion) {
         Preconditions.checkArgument(expansion != null, "Expansion is null!");
@@ -456,33 +396,29 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.expand(x, y, z, x, y, z);
     }
 
-    /**
-     * Expands this bounding box uniformly by the given value in all directions.
-     * <p>
-     * A negative value will shrink the bounding box. Shrinking will be limited
-     * to the bounding box's current size.
-     *
-     * @param expansion the amount of expansion
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box uniformly by the given value in all directions.
+    ///
+    /// A negative value will shrink the bounding box. Shrinking will be limited
+    /// to the bounding box's current size.
+    ///
+    /// @param expansion the amount of expansion
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(double expansion) {
         return this.expand(expansion, expansion, expansion, expansion, expansion, expansion);
     }
 
-    /**
-     * Expands this bounding box in the specified direction.
-     * <p>
-     * The magnitude of the direction will scale the expansion. A negative
-     * expansion value will shrink the bounding box in this direction. Shrinking
-     * will be limited to the bounding box's current size.
-     *
-     * @param dirX the x direction component
-     * @param dirY the y direction component
-     * @param dirZ the z direction component
-     * @param expansion the amount of expansion
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box in the specified direction.
+    ///
+    /// The magnitude of the direction will scale the expansion. A negative
+    /// expansion value will shrink the bounding box in this direction. Shrinking
+    /// will be limited to the bounding box's current size.
+    ///
+    /// @param dirX the x direction component
+    /// @param dirY the y direction component
+    /// @param dirZ the z direction component
+    /// @param expansion the amount of expansion
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(double dirX, double dirY, double dirZ, double expansion) {
         if (expansion == 0.0D) return this;
@@ -497,34 +433,30 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.expand(negativeX, negativeY, negativeZ, positiveX, positiveY, positiveZ);
     }
 
-    /**
-     * Expands this bounding box in the specified direction.
-     * <p>
-     * The magnitude of the direction will scale the expansion. A negative
-     * expansion value will shrink the bounding box in this direction. Shrinking
-     * will be limited to the bounding box's current size.
-     *
-     * @param direction the direction
-     * @param expansion the amount of expansion
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box in the specified direction.
+    ///
+    /// The magnitude of the direction will scale the expansion. A negative
+    /// expansion value will shrink the bounding box in this direction. Shrinking
+    /// will be limited to the bounding box's current size.
+    ///
+    /// @param direction the direction
+    /// @param expansion the amount of expansion
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(@NotNull Vector direction, double expansion) {
         Preconditions.checkArgument(direction != null, "Direction is null!");
         return this.expand(direction.getX(), direction.getY(), direction.getZ(), expansion);
     }
 
-    /**
-     * Expands this bounding box in the direction specified by the given block
-     * face.
-     * <p>
-     * A negative expansion value will shrink the bounding box in this
-     * direction. Shrinking will be limited to the bounding box's current size.
-     *
-     * @param blockFace the block face
-     * @param expansion the amount of expansion
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box in the direction specified by the given block
+    /// face.
+    ///
+    /// A negative expansion value will shrink the bounding box in this
+    /// direction. Shrinking will be limited to the bounding box's current size.
+    ///
+    /// @param blockFace the block face
+    /// @param expansion the amount of expansion
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expand(@NotNull BlockFace blockFace, double expansion) {
         Preconditions.checkArgument(blockFace != null, "Block face is null!");
@@ -533,49 +465,43 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.expand(blockFace.getDirection(), expansion);
     }
 
-    /**
-     * Expands this bounding box in the specified direction.
-     * <p>
-     * Negative values will expand the bounding box in the negative direction,
-     * positive values will expand it in the positive direction. The magnitudes
-     * of the direction components determine the corresponding amounts of
-     * expansion.
-     *
-     * @param dirX the x direction component
-     * @param dirY the y direction component
-     * @param dirZ the z direction component
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box in the specified direction.
+    ///
+    /// Negative values will expand the bounding box in the negative direction,
+    /// positive values will expand it in the positive direction. The magnitudes
+    /// of the direction components determine the corresponding amounts of
+    /// expansion.
+    ///
+    /// @param dirX the x direction component
+    /// @param dirY the y direction component
+    /// @param dirZ the z direction component
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expandDirectional(double dirX, double dirY, double dirZ) {
         return this.expand(dirX, dirY, dirZ, 1.0D);
     }
 
-    /**
-     * Expands this bounding box in the specified direction.
-     * <p>
-     * Negative values will expand the bounding box in the negative direction,
-     * positive values will expand it in the positive direction. The magnitude
-     * of the direction vector determines the amount of expansion.
-     *
-     * @param direction the direction and magnitude of the expansion
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box in the specified direction.
+    ///
+    /// Negative values will expand the bounding box in the negative direction,
+    /// positive values will expand it in the positive direction. The magnitude
+    /// of the direction vector determines the amount of expansion.
+    ///
+    /// @param direction the direction and magnitude of the expansion
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox expandDirectional(@NotNull Vector direction) {
         Preconditions.checkArgument(direction != null, "Expansion is null!");
         return this.expand(direction.getX(), direction.getY(), direction.getZ(), 1.0D);
     }
 
-    /**
-     * Expands this bounding box to contain (or border) the specified position.
-     *
-     * @param posX the x position value
-     * @param posY the y position value
-     * @param posZ the z position value
-     * @return this bounding box (now expanded)
-     * @see #contains(double, double, double)
-     */
+    /// Expands this bounding box to contain (or border) the specified position.
+    ///
+    /// @param posX the x position value
+    /// @param posY the y position value
+    /// @param posZ the z position value
+    /// @return this bounding box (now expanded)
+    /// @see #contains(double, double, double)
     @NotNull
     public BoundingBox union(double posX, double posY, double posZ) {
         double newMinX = Math.min(this.minX, posX);
@@ -590,39 +516,33 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.resize(newMinX, newMinY, newMinZ, newMaxX, newMaxY, newMaxZ);
     }
 
-    /**
-     * Expands this bounding box to contain (or border) the specified position.
-     *
-     * @param position the position
-     * @return this bounding box (now expanded)
-     * @see #contains(double, double, double)
-     */
+    /// Expands this bounding box to contain (or border) the specified position.
+    ///
+    /// @param position the position
+    /// @return this bounding box (now expanded)
+    /// @see #contains(double, double, double)
     @NotNull
     public BoundingBox union(@NotNull Vector position) {
         Preconditions.checkArgument(position != null, "Position is null!");
         return this.union(position.getX(), position.getY(), position.getZ());
     }
 
-    /**
-     * Expands this bounding box to contain (or border) the specified position.
-     *
-     * @param position the position
-     * @return this bounding box (now expanded)
-     * @see #contains(double, double, double)
-     */
+    /// Expands this bounding box to contain (or border) the specified position.
+    ///
+    /// @param position the position
+    /// @return this bounding box (now expanded)
+    /// @see #contains(double, double, double)
     @NotNull
     public BoundingBox union(@NotNull Location position) {
         Preconditions.checkArgument(position != null, "Position is null!");
         return this.union(position.getX(), position.getY(), position.getZ());
     }
 
-    /**
-     * Expands this bounding box to contain both this and the given bounding
-     * box.
-     *
-     * @param other the other bounding box
-     * @return this bounding box (now expanded)
-     */
+    /// Expands this bounding box to contain both this and the given bounding
+    /// box.
+    ///
+    /// @param other the other bounding box
+    /// @return this bounding box (now expanded)
     @NotNull
     public BoundingBox union(@NotNull BoundingBox other) {
         Preconditions.checkArgument(other != null, "Other bounding box is null!");
@@ -636,14 +556,12 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.resize(newMinX, newMinY, newMinZ, newMaxX, newMaxY, newMaxZ);
     }
 
-    /**
-     * Resizes this bounding box to represent the intersection of this and the
-     * given bounding box.
-     *
-     * @param other the other bounding box
-     * @return this bounding box (now representing the intersection)
-     * @throws IllegalArgumentException if the bounding boxes don't overlap
-     */
+    /// Resizes this bounding box to represent the intersection of this and the
+    /// given bounding box.
+    ///
+    /// @param other the other bounding box
+    /// @return this bounding box (now representing the intersection)
+    /// @throws IllegalArgumentException if the bounding boxes don't overlap
     @NotNull
     public BoundingBox intersection(@NotNull BoundingBox other) {
         Preconditions.checkArgument(other != null, "Other bounding box is null!");
@@ -657,14 +575,12 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return this.resize(newMinX, newMinY, newMinZ, newMaxX, newMaxY, newMaxZ);
     }
 
-    /**
-     * Shifts this bounding box by the given amounts.
-     *
-     * @param shiftX the shift in x direction
-     * @param shiftY the shift in y direction
-     * @param shiftZ the shift in z direction
-     * @return this bounding box (now shifted)
-     */
+    /// Shifts this bounding box by the given amounts.
+    ///
+    /// @param shiftX the shift in x direction
+    /// @param shiftY the shift in y direction
+    /// @param shiftZ the shift in z direction
+    /// @return this bounding box (now shifted)
     @NotNull
     public BoundingBox shift(double shiftX, double shiftY, double shiftZ) {
         if (shiftX == 0.0D && shiftY == 0.0D && shiftZ == 0.0D) return this;
@@ -672,24 +588,20 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
                 this.maxX + shiftX, this.maxY + shiftY, this.maxZ + shiftZ);
     }
 
-    /**
-     * Shifts this bounding box by the given amounts.
-     *
-     * @param shift the shift
-     * @return this bounding box (now shifted)
-     */
+    /// Shifts this bounding box by the given amounts.
+    ///
+    /// @param shift the shift
+    /// @return this bounding box (now shifted)
     @NotNull
     public BoundingBox shift(@NotNull Vector shift) {
         Preconditions.checkArgument(shift != null, "Shift is null!");
         return this.shift(shift.getX(), shift.getY(), shift.getZ());
     }
 
-    /**
-     * Shifts this bounding box by the given amounts.
-     *
-     * @param shift the shift
-     * @return this bounding box (now shifted)
-     */
+    /// Shifts this bounding box by the given amounts.
+    ///
+    /// @param shift the shift
+    /// @return this bounding box (now shifted)
     @NotNull
     public BoundingBox shift(@NotNull Location shift) {
         Preconditions.checkArgument(shift != null, "Shift is null!");
@@ -702,31 +614,27 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
                 && this.minZ < maxZ && this.maxZ > minZ;
     }
 
-    /**
-     * Checks if this bounding box overlaps with the given bounding box.
-     * <p>
-     * Bounding boxes that are only intersecting at the borders are not
-     * considered overlapping.
-     *
-     * @param other the other bounding box
-     * @return <code>true</code> if overlapping
-     */
+    /// Checks if this bounding box overlaps with the given bounding box.
+    ///
+    /// Bounding boxes that are only intersecting at the borders are not
+    /// considered overlapping.
+    ///
+    /// @param other the other bounding box
+    /// @return `true` if overlapping
     public boolean overlaps(@NotNull BoundingBox other) {
         Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.overlaps(other.minX, other.minY, other.minZ, other.maxX, other.maxY, other.maxZ);
     }
 
-    /**
-     * Checks if this bounding box overlaps with the bounding box that is
-     * defined by the given corners.
-     * <p>
-     * Bounding boxes that are only intersecting at the borders are not
-     * considered overlapping.
-     *
-     * @param min the first corner
-     * @param max the second corner
-     * @return <code>true</code> if overlapping
-     */
+    /// Checks if this bounding box overlaps with the bounding box that is
+    /// defined by the given corners.
+    ///
+    /// Bounding boxes that are only intersecting at the borders are not
+    /// considered overlapping.
+    ///
+    /// @param min the first corner
+    /// @param max the second corner
+    /// @return `true` if overlapping
     public boolean overlaps(@NotNull Vector min, @NotNull Vector max) {
         Preconditions.checkArgument(min != null, "Min is null!");
         Preconditions.checkArgument(max != null, "Max is null!");
@@ -740,38 +648,34 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
                 Math.max(x1, x2), Math.max(y1, y2), Math.max(z1, z2));
     }
 
-    /**
-     * Checks if this bounding box contains the specified position.
-     * <p>
-     * Positions exactly on the minimum borders of the bounding box are
-     * considered to be inside the bounding box, while positions exactly on the
-     * maximum borders are considered to be outside. This allows bounding boxes
-     * to reside directly next to each other with positions always only residing
-     * in exactly one of them.
-     *
-     * @param x the position's x coordinates
-     * @param y the position's y coordinates
-     * @param z the position's z coordinates
-     * @return <code>true</code> if the bounding box contains the position
-     */
+    /// Checks if this bounding box contains the specified position.
+    ///
+    /// Positions exactly on the minimum borders of the bounding box are
+    /// considered to be inside the bounding box, while positions exactly on the
+    /// maximum borders are considered to be outside. This allows bounding boxes
+    /// to reside directly next to each other with positions always only residing
+    /// in exactly one of them.
+    ///
+    /// @param x the position's x coordinates
+    /// @param y the position's y coordinates
+    /// @param z the position's z coordinates
+    /// @return `true` if the bounding box contains the position
     public boolean contains(double x, double y, double z) {
         return x >= this.minX && x < this.maxX
                 && y >= this.minY && y < this.maxY
                 && z >= this.minZ && z < this.maxZ;
     }
 
-    /**
-     * Checks if this bounding box contains the specified position.
-     * <p>
-     * Positions exactly on the minimum borders of the bounding box are
-     * considered to be inside the bounding box, while positions exactly on the
-     * maximum borders are considered to be outside. This allows bounding boxes
-     * to reside directly next to each other with positions always only residing
-     * in exactly one of them.
-     *
-     * @param position the position
-     * @return <code>true</code> if the bounding box contains the position
-     */
+    /// Checks if this bounding box contains the specified position.
+    ///
+    /// Positions exactly on the minimum borders of the bounding box are
+    /// considered to be inside the bounding box, while positions exactly on the
+    /// maximum borders are considered to be outside. This allows bounding boxes
+    /// to reside directly next to each other with positions always only residing
+    /// in exactly one of them.
+    ///
+    /// @param position the position
+    /// @return `true` if the bounding box contains the position
     public boolean contains(@NotNull Vector position) {
         Preconditions.checkArgument(position != null, "Position is null!");
         return this.contains(position.getX(), position.getY(), position.getZ());
@@ -783,27 +687,23 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
                 && this.minZ <= minZ && this.maxZ >= maxZ;
     }
 
-    /**
-     * Checks if this bounding box fully contains the given bounding box.
-     *
-     * @param other the other bounding box
-     * @return <code>true</code> if the bounding box contains the given bounding
-     * box
-     */
+    /// Checks if this bounding box fully contains the given bounding box.
+    ///
+    /// @param other the other bounding box
+    /// @return `true` if the bounding box contains the given bounding
+    /// box
     public boolean contains(@NotNull BoundingBox other) {
         Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.contains(other.minX, other.minY, other.minZ, other.maxX, other.maxY, other.maxZ);
     }
 
-    /**
-     * Checks if this bounding box fully contains the bounding box that is
-     * defined by the given corners.
-     *
-     * @param min the first corner
-     * @param max the second corner
-     * @return <code>true</code> if the bounding box contains the specified
-     *     bounding box
-     */
+    /// Checks if this bounding box fully contains the bounding box that is
+    /// defined by the given corners.
+    ///
+    /// @param min the first corner
+    /// @param max the second corner
+    /// @return `true` if the bounding box contains the specified
+    ///     bounding box
     public boolean contains(@NotNull Vector min, @NotNull Vector max) {
         Preconditions.checkArgument(min != null, "Min is null!");
         Preconditions.checkArgument(max != null, "Max is null!");
@@ -817,18 +717,16 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
                 Math.max(x1, x2), Math.max(y1, y2), Math.max(z1, z2));
     }
 
-    /**
-     * Calculates the intersection of this bounding box with the specified line
-     * segment.
-     * <p>
-     * Intersections at edges and corners yield one of the affected block faces
-     * as hit result, but it is not defined which of them.
-     *
-     * @param start the start position
-     * @param direction the ray direction
-     * @param maxDistance the maximum distance
-     * @return the ray trace hit result, or <code>null</code> if there is no hit
-     */
+    /// Calculates the intersection of this bounding box with the specified line
+    /// segment.
+    ///
+    /// Intersections at edges and corners yield one of the affected block faces
+    /// as hit result, but it is not defined which of them.
+    ///
+    /// @param start the start position
+    /// @param direction the ray direction
+    /// @param maxDistance the maximum distance
+    /// @return the ray trace hit result, or `null` if there is no hit
     @Nullable
     public RayTraceResult rayTrace(@NotNull Vector start, @NotNull Vector direction, double maxDistance) {
         Preconditions.checkArgument(start != null, "Start is null!");
@@ -1005,11 +903,9 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         return builder.toString();
     }
 
-    /**
-     * Creates a copy of this bounding box.
-     *
-     * @return the cloned bounding box
-     */
+    /// Creates a copy of this bounding box.
+    ///
+    /// @return the cloned bounding box
     @NotNull
     @Override
     public BoundingBox clone() {

@@ -5,14 +5,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * A collection of anonymous values relating to a registry. These
- * are values of the same type as the registry, but will not be found
- * in the registry, hence, anonymous. Created via {@link RegistrySet#valueSet(io.papermc.paper.registry.RegistryKey, Iterable)} or
- * in the context of a {@link io.papermc.paper.registry.RegistryBuilder},
- * there are methods to create them like {@link DialogRegistryEntry.Builder#registryValueSet()}.
- * @param <T> registry value type
- */
+/// A collection of anonymous values relating to a registry. These
+/// are values of the same type as the registry, but will not be found
+/// in the registry, hence, anonymous. Created via [RegistrySet#valueSet(io.papermc.paper.registry.RegistryKey, Iterable)] or
+/// in the context of a [io.papermc.paper.registry.RegistryBuilder],
+/// there are methods to create them like [DialogRegistryEntry.Builder#registryValueSet()].
+/// @param <T> registry value type
 public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
 
     @Override
@@ -20,11 +18,9 @@ public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> 
         return this.values().size();
     }
 
-    /**
-     * Get the collection of values in this direct set.
-     *
-     * @return the values
-     */
+    /// Get the collection of values in this direct set.
+    ///
+    /// @return the values
     @Unmodifiable Collection<T> values();
 
     @Override

@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Called when entities are loaded.
- * <br>
- * The provided chunk may or may not be loaded.
- */
+/// Called when entities are loaded.
+///
+/// The provided chunk may or may not be loaded.
 public class EntitiesLoadEvent extends ChunkEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,11 +23,9 @@ public class EntitiesLoadEvent extends ChunkEvent {
         this.entities = entities;
     }
 
-    /**
-     * Get the entities which are being loaded.
-     *
-     * @return unmodifiable list of loaded entities.
-     */
+    /// Get the entities which are being loaded.
+    ///
+    /// @return unmodifiable list of loaded entities.
     @NotNull
     public @Unmodifiable List<Entity> getEntities() {
         return this.entities;

@@ -11,9 +11,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This class performs ray tracing and iterates along blocks on a line
- */
+/// This class performs ray tracing and iterates along blocks on a line
 public class BlockIterator implements Iterator<Block> {
 
     private final World world;
@@ -38,21 +36,18 @@ public class BlockIterator implements Iterator<Block> {
     private BlockFace secondFace;
     private BlockFace thirdFace;
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param world The world to use for tracing
-     * @param start A Vector giving the initial location for the trace
-     * @param direction A Vector pointing in the direction for the trace
-     * @param yOffset The trace begins vertically offset from the start vector
-     *     by this value
-     * @param maxDistance This is the maximum distance in blocks for the
-     *     trace. Setting this value above 140 may lead to problems with
-     *     unloaded chunks. A value of 0 indicates no limit
-     *
-     */
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param world The world to use for tracing
+    /// @param start A Vector giving the initial location for the trace
+    /// @param direction A Vector pointing in the direction for the trace
+    /// @param yOffset The trace begins vertically offset from the start vector
+    ///     by this value
+    /// @param maxDistance This is the maximum distance in blocks for the
+    ///     trace. Setting this value above 140 may lead to problems with
+    ///     unloaded chunks. A value of 0 indicates no limit
     public BlockIterator(@NotNull World world, @NotNull Vector start, @NotNull Vector direction, double yOffset, int maxDistance) {
         Preconditions.checkArgument(world != null, "world must not be null");
         Preconditions.checkArgument(start != null, "start must not be null");
@@ -226,90 +221,71 @@ public class BlockIterator implements Iterator<Block> {
         return getPosition(direction.getZ(), position.getZ(), block.getZ());
     }
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param loc The location for the start of the ray trace
-     * @param yOffset The trace begins vertically offset from the start vector
-     *     by this value
-     * @param maxDistance This is the maximum distance in blocks for the
-     *     trace. Setting this value above 140 may lead to problems with
-     *     unloaded chunks. A value of 0 indicates no limit
-     */
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param loc The location for the start of the ray trace
+    /// @param yOffset The trace begins vertically offset from the start vector
+    ///     by this value
+    /// @param maxDistance This is the maximum distance in blocks for the
+    ///     trace. Setting this value above 140 may lead to problems with
+    ///     unloaded chunks. A value of 0 indicates no limit
     public BlockIterator(@NotNull Location loc, double yOffset, int maxDistance) {
         this(loc.getWorld(), loc.toVector(), loc.getDirection(), yOffset, maxDistance);
     }
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param loc The location for the start of the ray trace
-     * @param yOffset The trace begins vertically offset from the start vector
-     *     by this value
-     */
-
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param loc The location for the start of the ray trace
+    /// @param yOffset The trace begins vertically offset from the start vector
+    ///     by this value
     public BlockIterator(@NotNull Location loc, double yOffset) {
         this(loc.getWorld(), loc.toVector(), loc.getDirection(), yOffset, 0);
     }
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param loc The location for the start of the ray trace
-     */
-
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param loc The location for the start of the ray trace
     public BlockIterator(@NotNull Location loc) {
         this(loc, 0D);
     }
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param entity Information from the entity is used to set up the trace
-     * @param maxDistance This is the maximum distance in blocks for the
-     *     trace. Setting this value above 140 may lead to problems with
-     *     unloaded chunks. A value of 0 indicates no limit
-     */
-
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param entity Information from the entity is used to set up the trace
+    /// @param maxDistance This is the maximum distance in blocks for the
+    ///     trace. Setting this value above 140 may lead to problems with
+    ///     unloaded chunks. A value of 0 indicates no limit
     public BlockIterator(@NotNull LivingEntity entity, int maxDistance) {
         this(entity.getLocation(), entity.getEyeHeight(), maxDistance);
     }
 
-    /**
-     * Constructs the BlockIterator.
-     * <p>
-     * This considers all blocks as 1x1x1 in size.
-     *
-     * @param entity Information from the entity is used to set up the trace
-     */
-
+    /// Constructs the BlockIterator.
+    ///
+    /// This considers all blocks as 1x1x1 in size.
+    ///
+    /// @param entity Information from the entity is used to set up the trace
     public BlockIterator(@NotNull LivingEntity entity) {
         this(entity, 0);
     }
 
-    /**
-     * Returns true if the iteration has more elements
-     */
-
+    /// Returns true if the iteration has more elements
     @Override
     public boolean hasNext() {
         scan();
         return currentBlock != -1;
     }
 
-    /**
-     * Returns the next Block in the trace
-     *
-     * @return the next Block in the trace
-     */
+    /// Returns the next Block in the trace
+    ///
+    /// @return the next Block in the trace
     @Override
     @NotNull
     public Block next() throws NoSuchElementException {

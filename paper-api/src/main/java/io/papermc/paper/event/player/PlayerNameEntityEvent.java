@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when the player is attempting to rename a mob
- */
+/// Called when the player is attempting to rename a mob
 @NullMarked
 public class PlayerNameEntityEvent extends PlayerEvent implements Cancellable {
 
@@ -32,56 +30,44 @@ public class PlayerNameEntityEvent extends PlayerEvent implements Cancellable {
         this.persistent = persistent;
     }
 
-    /**
-     * Gets the name to be given to the entity.
-     *
-     * @return the name
-     */
+    /// Gets the name to be given to the entity.
+    ///
+    /// @return the name
     public @Nullable Component getName() {
         return this.name;
     }
 
-    /**
-     * Sets the name to be given to the entity.
-     *
-     * @param name the name
-     */
+    /// Sets the name to be given to the entity.
+    ///
+    /// @param name the name
     public void setName(final @Nullable Component name) {
         this.name = name;
     }
 
-    /**
-     * Gets the entity involved in this event.
-     *
-     * @return the entity
-     */
+    /// Gets the entity involved in this event.
+    ///
+    /// @return the entity
     public LivingEntity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Sets the entity involved in this event.
-     *
-     * @param entity the entity
-     */
+    /// Sets the entity involved in this event.
+    ///
+    /// @param entity the entity
     public void setEntity(final LivingEntity entity) {
         this.entity = entity;
     }
 
-    /**
-     * Gets whether this will set the mob to be persistent.
-     *
-     * @return persistent
-     */
+    /// Gets whether this will set the mob to be persistent.
+    ///
+    /// @return persistent
     public boolean isPersistent() {
         return this.persistent;
     }
 
-    /**
-     * Sets whether this will set the mob to be persistent.
-     *
-     * @param persistent persistent
-     */
+    /// Sets whether this will set the mob to be persistent.
+    ///
+    /// @param persistent persistent
     public void setPersistent(final boolean persistent) {
         this.persistent = persistent;
     }

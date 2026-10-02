@@ -50,10 +50,8 @@ import static co.aikar.timings.TimingsManager.FULL_SERVER_TICK;
 import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
 import static co.aikar.util.JSONUtil.*;
 
-/**
- * @hidden
- * @deprecated Timings will be removed in the future
- */
+/// @hidden
+/// @deprecated Timings will be removed in the future
 @Deprecated(forRemoval = true)
 @SuppressWarnings({"deprecation", "SuppressionAnnotation", "Convert2Lambda", "Anonymous2MethodRef"})
 public class TimingHistory {

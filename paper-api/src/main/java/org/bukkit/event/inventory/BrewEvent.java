@@ -10,10 +10,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when the brewing of the contents inside the Brewing Stand is
- * complete.
- */
+/// Called when the brewing of the contents inside the Brewing Stand is
+/// complete.
 public class BrewEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,38 +30,32 @@ public class BrewEvent extends BlockEvent implements Cancellable {
         this.fuelLevel = fuelLevel;
     }
 
-    /**
-     * Gets the contents of the Brewing Stand.
-     *
-     * @return the contents
-     * @apiNote The brewer inventory still holds the items found prior to
-     * the finalization of the brewing process, e.g. the plain water bottles.
-     */
+    /// Gets the contents of the Brewing Stand.
+    ///
+    /// @return the contents
+    /// @apiNote The brewer inventory still holds the items found prior to
+    /// the finalization of the brewing process, e.g. the plain water bottles.
     @NotNull
     public BrewerInventory getContents() {
         return this.contents;
     }
 
-    /**
-     * Gets the resulting items in the Brewing Stand.
-     * <p>
-     * The returned list, in case of a server-created event instance, is
-     * mutable. Any changes in the returned list will reflect in the brewing
-     * result if the event is not cancelled. If the size of the list is reduced,
-     * remaining items will be set to air.
-     *
-     * @return List of {@link ItemStack} resulting for this operation
-     */
+    /// Gets the resulting items in the Brewing Stand.
+    ///
+    /// The returned list, in case of a server-created event instance, is
+    /// mutable. Any changes in the returned list will reflect in the brewing
+    /// result if the event is not cancelled. If the size of the list is reduced,
+    /// remaining items will be set to air.
+    ///
+    /// @return List of [ItemStack] resulting for this operation
     @NotNull
     public List<ItemStack> getResults() {
         return this.results;
     }
 
-    /**
-     * Gets the remaining fuel level.
-     *
-     * @return the remaining fuel
-     */
+    /// Gets the remaining fuel level.
+    ///
+    /// @return the remaining fuel
     public int getFuelLevel() {
         return this.fuelLevel;
     }

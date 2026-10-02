@@ -8,9 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * This event is called when the code of conduct is potentially sent to the player.
- */
+/// This event is called when the code of conduct is potentially sent to the player.
 @NullMarked
 public class PlayerCodeOfConductSendEvent extends Event {
 
@@ -25,29 +23,23 @@ public class PlayerCodeOfConductSendEvent extends Event {
         this.codeOfConduct = codeOfConduct;
     }
 
-    /**
-     * Gets the connection that will receive the code of conduct.
-     *
-     * @return connection
-     */
+    /// Gets the connection that will receive the code of conduct.
+    ///
+    /// @return connection
     public PlayerCommonConnection getConnection() {
         return connection;
     }
 
-    /**
-     * Gets the code of conduct to be sent.
-     *
-     * @return the code of conduct or null if none will be sent
-     */
+    /// Gets the code of conduct to be sent.
+    ///
+    /// @return the code of conduct or null if none will be sent
     public @Nullable String getCodeOfConduct() {
         return this.codeOfConduct;
     }
 
-    /**
-     * Sets the code of conduct to be sent.
-     *
-     * @param codeOfConduct the code of conduct or null to not send one
-     */
+    /// Sets the code of conduct to be sent.
+    ///
+    /// @param codeOfConduct the code of conduct or null to not send one
     public void setCodeOfConduct(final @Nullable String codeOfConduct) {
         this.codeOfConduct = codeOfConduct;
     }

@@ -42,10 +42,8 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 
 import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 
-/**
- * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryComposeEvent}
- * handlers for each applicable registry.
- */
+/// Holds providers for [RegistryEntryAddEvent] and [RegistryComposeEvent]
+/// handlers for each applicable registry.
 public final class RegistryEvents {
 
     // Start generate - RegistryEvents

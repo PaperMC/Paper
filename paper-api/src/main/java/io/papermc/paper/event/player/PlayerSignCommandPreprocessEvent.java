@@ -8,12 +8,10 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a {@link Player} clicks a side on a sign that causes a command to run.
- * <p>
- * This command is run with elevated permissions which allows players to access commands on signs they wouldn't
- * normally be able to run.
- */
+/// Called when a [Player] clicks a side on a sign that causes a command to run.
+///
+/// This command is run with elevated permissions which allows players to access commands on signs they wouldn't
+/// normally be able to run.
 @NullMarked
 public class PlayerSignCommandPreprocessEvent extends PlayerCommandPreprocessEvent {
 
@@ -27,20 +25,16 @@ public class PlayerSignCommandPreprocessEvent extends PlayerCommandPreprocessEve
         this.side = side;
     }
 
-    /**
-     * Gets the sign that the command originated from.
-     *
-     * @return the sign
-     */
+    /// Gets the sign that the command originated from.
+    ///
+    /// @return the sign
     public Sign getSign() {
         return this.sign;
     }
 
-    /**
-     * Gets the side of the sign that the command originated from.
-     *
-     * @return the sign side
-     */
+    /// Gets the side of the sign that the command originated from.
+    ///
+    /// @return the sign side
     public Side getSide() {
         return this.side;
     }

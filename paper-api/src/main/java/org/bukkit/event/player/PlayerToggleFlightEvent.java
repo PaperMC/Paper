@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player toggles their flying state
- */
+/// Called when a player toggles their flying state
 public class PlayerToggleFlightEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,11 +20,9 @@ public class PlayerToggleFlightEvent extends PlayerEvent implements Cancellable 
         this.isFlying = isFlying;
     }
 
-    /**
-     * Returns whether the player is trying to start or stop flying.
-     *
-     * @return flying state
-     */
+    /// Returns whether the player is trying to start or stop flying.
+    ///
+    /// @return flying state
     public boolean isFlying() {
         return this.isFlying;
     }

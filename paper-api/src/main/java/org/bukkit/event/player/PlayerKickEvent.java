@@ -9,9 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a player gets kicked from the server
- */
+/// Called when a player gets kicked from the server
 @NullMarked
 public class PlayerKickEvent extends PlayerEvent implements Cancellable {
 
@@ -49,89 +47,71 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         this.cause = cause;
     }
 
-    /**
-     * Gets the reason why the player is getting kicked
-     *
-     * @return string kick reason
-     */
+    /// Gets the reason why the player is getting kicked
+    ///
+    /// @return string kick reason
     public Component reason() {
         return this.kickReason;
     }
 
-    /**
-     * Sets the reason why the player is getting kicked
-     *
-     * @param kickReason kick reason
-     */
+    /// Sets the reason why the player is getting kicked
+    ///
+    /// @param kickReason kick reason
     public void reason(Component kickReason) {
         this.kickReason = kickReason;
     }
 
-    /**
-     * Gets the reason why the player is getting kicked
-     *
-     * @return string kick reason
-     * @deprecated in favour of {@link #reason()}
-     */
+    /// Gets the reason why the player is getting kicked
+    ///
+    /// @return string kick reason
+    /// @deprecated in favour of [#reason()]
     @Deprecated
     public String getReason() {
         return LegacyComponentSerializer.legacySection().serialize(this.kickReason);
     }
 
-    /**
-     * Sets the reason why the player is getting kicked
-     *
-     * @param kickReason kick reason
-     * @deprecated in favour of {@link #reason(Component)}
-     */
+    /// Sets the reason why the player is getting kicked
+    ///
+    /// @param kickReason kick reason
+    /// @deprecated in favour of [#reason(Component)]
     @Deprecated
     public void setReason(String kickReason) {
         this.kickReason = LegacyComponentSerializer.legacySection().deserialize(kickReason);
     }
 
-    /**
-     * Gets the leave message send to all online players
-     *
-     * @return string kick reason
-     */
+    /// Gets the leave message send to all online players
+    ///
+    /// @return string kick reason
     public @Nullable Component leaveMessage() {
         return this.leaveMessage;
     }
 
-    /**
-     * Sets the leave message send to all online players
-     *
-     * @param leaveMessage leave message. If {@code null}, no message will be sent
-     */
+    /// Sets the leave message send to all online players
+    ///
+    /// @param leaveMessage leave message. If `null`, no message will be sent
     public void leaveMessage(@Nullable Component leaveMessage) {
         this.leaveMessage = leaveMessage;
     }
 
-    /**
-     * Gets the leave message send to all online players
-     *
-     * @return string kick reason
-     * @deprecated in favour of {@link #leaveMessage()}
-     */
+    /// Gets the leave message send to all online players
+    ///
+    /// @return string kick reason
+    /// @deprecated in favour of [#leaveMessage()]
     @Deprecated
     public @Nullable String getLeaveMessage() {
         return LegacyComponentSerializer.legacySection().serializeOrNull(this.leaveMessage);
     }
 
-    /**
-     * Sets the leave message send to all online players
-     *
-     * @param leaveMessage leave message. If {@code null}, no message will be sent
-     * @deprecated in favour of {@link #leaveMessage(Component)}
-     */
+    /// Sets the leave message send to all online players
+    ///
+    /// @param leaveMessage leave message. If `null`, no message will be sent
+    /// @deprecated in favour of [#leaveMessage(Component)]
     @Deprecated
     public void setLeaveMessage(@Nullable String leaveMessage) {
         this.leaveMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(leaveMessage);
     }
 
-    /**
-     * Gets the cause of this kick
-     */
+    /// Gets the cause of this kick
     public PlayerKickEvent.Cause getCause() {
         return this.cause;
     }
@@ -183,18 +163,12 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         SELF_INTERACTION,
         DUPLICATE_LOGIN,
         RESOURCE_PACK_REJECTION,
-        /**
-         * Spigot's restart command
-         */
+        /// Spigot's restart command
         RESTART_COMMAND,
-        /**
-         * Fallback cause
-         */
+        /// Fallback cause
         UNKNOWN;
 
-        /**
-         * @deprecated use {@link #KICKED}, kicks can also occur through the server management protocol.
-         */
+        /// @deprecated use [#KICKED], kicks can also occur through the server management protocol.
         @Deprecated(since = "26.2")
         public static final Cause KICK_COMMAND = KICKED;
     }

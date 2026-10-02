@@ -1,4 +1,2 @@
-/**
- * Interfaces for various {@link org.bukkit.entity.Boat} types.
- */
+/// Interfaces for various [org.bukkit.entity.Boat] types.
 package org.bukkit.entity.boat;

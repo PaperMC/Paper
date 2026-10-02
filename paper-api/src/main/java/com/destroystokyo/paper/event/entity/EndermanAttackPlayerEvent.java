@@ -31,12 +31,10 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when an Enderman determines if it should attack a player or not.
- * <p>
- * Starts off cancelled if the player is wearing a pumpkin head or is not looking
- * at the Enderman, according to Vanilla rules.
- */
+/// Fired when an Enderman determines if it should attack a player or not.
+///
+/// Starts off cancelled if the player is wearing a pumpkin head or is not looking
+/// at the Enderman, according to Vanilla rules.
 @NullMarked
 public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellable {
 
@@ -51,38 +49,30 @@ public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellabl
         this.player = player;
     }
 
-    /**
-     * The enderman considering attacking
-     *
-     * @return The enderman considering attacking
-     */
+    /// The enderman considering attacking
+    ///
+    /// @return The enderman considering attacking
     @Override
     public Enderman getEntity() {
         return (Enderman) super.getEntity();
     }
 
-    /**
-     * The player the Enderman is considering attacking
-     *
-     * @return The player the Enderman is considering attacking
-     */
+    /// The player the Enderman is considering attacking
+    ///
+    /// @return The player the Enderman is considering attacking
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * @return If cancelled, the enderman will not attack
-     */
+    /// @return If cancelled, the enderman will not attack
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <br>
-     * Cancels if the Enderman will attack this player
-     */
+    /// {@inheritDoc}
+    ///
+    /// Cancels if the Enderman will attack this player
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

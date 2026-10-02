@@ -9,12 +9,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Fired when an Entity decides to start moving towards a location.
- * <p>
- * This event does not fire for the entities actual movement. Only when it
- * is choosing to start moving to a location.
- */
+/// Fired when an Entity decides to start moving towards a location.
+///
+/// This event does not fire for the entities actual movement. Only when it
+/// is choosing to start moving to a location.
 @NullMarked
 public class EntityPathfindEvent extends EntityEvent implements Cancellable {
 
@@ -31,34 +29,28 @@ public class EntityPathfindEvent extends EntityEvent implements Cancellable {
         this.location = location;
     }
 
-    /**
-     * The Entity that is pathfinding.
-     *
-     * @return The Entity that is pathfinding.
-     */
+    /// The Entity that is pathfinding.
+    ///
+    /// @return The Entity that is pathfinding.
     @Override
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * If the Entity is trying to pathfind to an entity, this is the entity in relation.
-     * <br>
-     * Otherwise, this will return {@code null}.
-     *
-     * @return The entity target or {@code null}
-     */
+    /// If the Entity is trying to pathfind to an entity, this is the entity in relation.
+    ///
+    /// Otherwise, this will return `null`.
+    ///
+    /// @return The entity target or `null`
     public @Nullable Entity getTargetEntity() {
         return this.targetEntity;
     }
 
-    /**
-     * The Location of where the entity is about to move to.
-     * <br>
-     * Note that if the target happened to of been an entity
-     *
-     * @return Location of where the entity is trying to pathfind to.
-     */
+    /// The Location of where the entity is about to move to.
+    ///
+    /// Note that if the target happened to of been an entity
+    ///
+    /// @return Location of where the entity is trying to pathfind to.
     public Location getLoc() {
         return this.location.clone();
     }

@@ -6,11 +6,9 @@ import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an {@link Entity} breaks a door
- * <p>
- * Cancelling the event will cause the event to be delayed
- */
+/// Called when an [Entity] breaks a door
+///
+/// Cancelling the event will cause the event to be delayed
 public class EntityBreakDoorEvent extends EntityChangeBlockEvent {
 
     @ApiStatus.Internal

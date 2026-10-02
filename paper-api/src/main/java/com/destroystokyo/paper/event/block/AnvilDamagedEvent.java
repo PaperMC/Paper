@@ -11,9 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when an anvil is damaged from being used
- */
+/// Called when an anvil is damaged from being used
 @NullMarked
 public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
 
@@ -33,38 +31,30 @@ public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
         return (AnvilInventory) super.getInventory();
     }
 
-    /**
-     * Gets the new state of damage on the anvil
-     *
-     * @return Damage state
-     */
+    /// Gets the new state of damage on the anvil
+    ///
+    /// @return Damage state
     public DamageState getDamageState() {
         return this.damageState;
     }
 
-    /**
-     * Sets the new state of damage on the anvil
-     *
-     * @param damageState Damage state
-     */
+    /// Sets the new state of damage on the anvil
+    ///
+    /// @param damageState Damage state
     public void setDamageState(final DamageState damageState) {
         this.damageState = damageState;
     }
 
-    /**
-     * Gets if anvil is breaking on this use
-     *
-     * @return {@code true} if breaking
-     */
+    /// Gets if anvil is breaking on this use
+    ///
+    /// @return `true` if breaking
     public boolean isBreaking() {
         return this.damageState == DamageState.BROKEN;
     }
 
-    /**
-     * Sets if anvil is breaking on this use
-     *
-     * @param breaking {@code true} if breaking
-     */
+    /// Sets if anvil is breaking on this use
+    ///
+    /// @param breaking`true` if breaking
     public void setBreaking(final boolean breaking) {
         if (breaking) {
             this.damageState = DamageState.BROKEN;
@@ -92,9 +82,7 @@ public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * Represents the amount of damage on an anvil block
-     */
+    /// Represents the amount of damage on an anvil block
     public enum DamageState {
         FULL(Material.ANVIL),
         CHIPPED(Material.CHIPPED_ANVIL),
@@ -107,33 +95,27 @@ public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
             this.material = material;
         }
 
-        /**
-         * Get block material of this state
-         *
-         * @return Material
-         */
+        /// Get block material of this state
+        ///
+        /// @return Material
         public Material getMaterial() {
             return this.material;
         }
 
-        /**
-         * Get damaged state by block data
-         *
-         * @param blockData Block data
-         * @return DamageState
-         * @throws IllegalArgumentException If non anvil block data is given
-         */
+        /// Get damaged state by block data
+        ///
+        /// @param blockData Block data
+        /// @return DamageState
+        /// @throws IllegalArgumentException If non anvil block data is given
         public static DamageState getState(final @Nullable BlockData blockData) {
             return blockData == null ? BROKEN : getState(blockData.getMaterial());
         }
 
-        /**
-         * Get damaged state by block material
-         *
-         * @param material Block material
-         * @return DamageState
-         * @throws IllegalArgumentException If non anvil material is given
-         */
+        /// Get damaged state by block material
+        ///
+        /// @param material Block material
+        /// @return DamageState
+        /// @throws IllegalArgumentException If non anvil material is given
         public static DamageState getState(final @Nullable Material material) {
             if (material == null) {
                 return BROKEN;

@@ -18,11 +18,9 @@ public class PlayerArmSwingEvent extends PlayerAnimationEvent {
         this.equipmentSlot = equipmentSlot;
     }
 
-    /**
-     * Returns the hand of the arm swing.
-     *
-     * @return the hand
-     */
+    /// Returns the hand of the arm swing.
+    ///
+    /// @return the hand
     public EquipmentSlot getHand() {
         return this.equipmentSlot;
     }

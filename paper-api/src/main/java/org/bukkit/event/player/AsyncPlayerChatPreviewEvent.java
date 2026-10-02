@@ -7,13 +7,11 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Used to format chat for chat preview. If this event is used, then the result
- * of the corresponding {@link AsyncPlayerChatEvent} <b>must</b> be formatted in
- * the same way.
- *
- * @deprecated chat previews have been removed
- */
+/// Used to format chat for chat preview. If this event is used, then the result
+/// of the corresponding [AsyncPlayerChatEvent] **must** be formatted in
+/// the same way.
+///
+/// @deprecated chat previews have been removed
 @Deprecated(since = "1.19.1")
 @Warning(value = true, propagate = false)
 public class AsyncPlayerChatPreviewEvent extends AsyncPlayerChatEvent {

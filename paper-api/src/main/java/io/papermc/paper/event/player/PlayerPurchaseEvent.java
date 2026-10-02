@@ -10,9 +10,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player trades with a standalone merchant GUI.
- */
+/// Called when a player trades with a standalone merchant GUI.
 @NullMarked
 public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
 
@@ -34,62 +32,48 @@ public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
         this.increaseTradeUses = increaseTradeUses;
     }
 
-    /**
-     * Gets the merchant that the player is trading with
-     *
-     * @return the merchant
-     */
+    /// Gets the merchant that the player is trading with
+    ///
+    /// @return the merchant
     public Merchant getMerchant() {
         return merchant;
     }
 
-    /**
-     * Gets the associated trade with this event
-     *
-     * @return the trade
-     */
+    /// Gets the associated trade with this event
+    ///
+    /// @return the trade
     public MerchantRecipe getTrade() {
         return this.trade;
     }
 
-    /**
-     * Sets the trade. This is then used to determine the next prices
-     *
-     * @param trade the trade to use
-     */
+    /// Sets the trade. This is then used to determine the next prices
+    ///
+    /// @param trade the trade to use
     public void setTrade(final MerchantRecipe trade) {
         Preconditions.checkArgument(trade != null, "Trade cannot be null!");
         this.trade = trade;
     }
 
-    /**
-     * @return will trade try to reward exp
-     */
+    /// @return will trade try to reward exp
     public boolean isRewardingExp() {
         return this.rewardExp;
     }
 
-    /**
-     * Sets whether the trade will try to reward exp
-     *
-     * @param rewardExp try to reward exp
-     */
+    /// Sets whether the trade will try to reward exp
+    ///
+    /// @param rewardExp try to reward exp
     public void setRewardExp(final boolean rewardExp) {
         this.rewardExp = rewardExp;
     }
 
-    /**
-     * @return whether the trade will count as a use of the trade
-     */
+    /// @return whether the trade will count as a use of the trade
     public boolean willIncreaseTradeUses() {
         return this.increaseTradeUses;
     }
 
-    /**
-     * Sets whether the trade will count as a use
-     *
-     * @param increaseTradeUses {@code true} to count, {@code false} otherwise
-     */
+    /// Sets whether the trade will count as a use
+    ///
+    /// @param increaseTradeUses`true` to count, `false` otherwise
     public void setIncreaseTradeUses(final boolean increaseTradeUses) {
         this.increaseTradeUses = increaseTradeUses;
     }

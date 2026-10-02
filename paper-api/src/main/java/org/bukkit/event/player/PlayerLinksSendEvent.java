@@ -8,9 +8,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when the list of links is sent to the player.
- */
+/// This event is called when the list of links is sent to the player.
 public class PlayerLinksSendEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,20 +22,16 @@ public class PlayerLinksSendEvent extends Event {
         this.links = links;
     }
 
-    /**
-     * Gets the connection that received the links.
-     * @return connection
-     */
+    /// Gets the connection that received the links.
+    /// @return connection
     @NotNull
     public PlayerCommonConnection getConnection() {
         return connection;
     }
 
-    /**
-     * Gets the links to be sent, for modification.
-     *
-     * @return the links
-     */
+    /// Gets the links to be sent, for modification.
+    ///
+    /// @return the links
     @NotNull
     public ServerLinks getLinks() {
         return this.links;

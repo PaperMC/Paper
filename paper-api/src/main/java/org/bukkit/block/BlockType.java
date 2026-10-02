@@ -130,65 +130,51 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents a block type.
- */
+/// Represents a block type.
 @NullMarked
 public interface BlockType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add translatable & feature flag API
 
-    /**
-     * Typed represents a subtype of {@link BlockType}s that have a known block
-     * data type at compile time.
-     *
-     * @param <B> the generic type of the block data that represents the block
-     * type.
-     */
+    /// Typed represents a subtype of [BlockType]s that have a known block
+    /// data type at compile time.
+    ///
+    /// @param <B> the generic type of the block data that represents the block
+    /// type.
     interface Typed<B extends BlockData> extends BlockType {
 
-        /**
-         * Gets the BlockData class of this BlockType
-         *
-         * @return the BlockData class of this BlockType
-         */
+        /// Gets the BlockData class of this BlockType
+        ///
+        /// @return the BlockData class of this BlockType
         @Override
         Class<B> getBlockDataClass();
 
-        /**
-         * Creates a new {@link BlockData} instance for this block type, with
-         * all properties initialized to unspecified defaults.
-         *
-         * @param consumer consumer to run on new instance before returning
-         * @return new data instance
-         */
+        /// Creates a new [BlockData] instance for this block type, with
+        /// all properties initialized to unspecified defaults.
+        ///
+        /// @param consumer consumer to run on new instance before returning
+        /// @return new data instance
         B createBlockData(@Nullable Consumer<? super B> consumer);
 
-        /**
-         * Creates a new {@link BlockData} instance for this block type, with all
-         * properties initialized to unspecified defaults.
-         *
-         * @return new data instance
-         */
+        /// Creates a new [BlockData] instance for this block type, with all
+        /// properties initialized to unspecified defaults.
+        ///
+        /// @return new data instance
         @Override
         B createBlockData();
 
-        /**
-         * Creates a collection of {@link BlockData} instances for this block type, with all
-         * possible combinations of properties values.
-         *
-         * @return new block data collection
-         */
+        /// Creates a collection of [BlockData] instances for this block type, with all
+        /// possible combinations of properties values.
+        ///
+        /// @return new block data collection
         @Override
         @Unmodifiable Collection<B> createBlockDataStates();
 
-        /**
-         * Creates a new {@link BlockData} instance for this block type, with all
-         * properties initialized to unspecified defaults, except for those provided
-         * in data.
-         *
-         * @param data data string
-         * @return new data instance
-         * @throws IllegalArgumentException if the specified data is not valid
-         */
+        /// Creates a new [BlockData] instance for this block type, with all
+        /// properties initialized to unspecified defaults, except for those provided
+        /// in data.
+        ///
+        /// @param data data string
+        /// @return new data instance
+        /// @throws IllegalArgumentException if the specified data is not valid
         B createBlockData(@Nullable String data);
     }
 
@@ -2774,216 +2760,173 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
         return (B) Registry.BLOCK.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * Yields this block type as a typed version of itself with a plain {@link BlockData} representing it.
-     *
-     * @return the typed block type.
-     */
+    /// Yields this block type as a typed version of itself with a plain [BlockData] representing it.
+    ///
+    /// @return the typed block type.
     BlockType.Typed<BlockData> typed();
 
-    /**
-     * Yields this block type as a typed version of itself with a specific {@link BlockData} representing it.
-     *
-     * @param blockDataType the class type of the {@link BlockData} to type this {@link BlockType} with.
-     * @param <B>          the generic type of the block data to type this block type with.
-     * @return the typed block type.
-     */
+    /// Yields this block type as a typed version of itself with a specific [BlockData] representing it.
+    ///
+    /// @param blockDataType the class type of the [BlockData] to type this [BlockType] with.
+    /// @param <B>          the generic type of the block data to type this block type with.
+    /// @return the typed block type.
     <B extends BlockData> BlockType.Typed<B> typed(Class<B> blockDataType);
 
-    /**
-     * Returns true if this BlockType has a corresponding {@link ItemType}.
-     *
-     * @return true if there is a corresponding ItemType, otherwise false
-     * @see #getItemType()
-     */
+    /// Returns true if this BlockType has a corresponding [ItemType].
+    ///
+    /// @return true if there is a corresponding ItemType, otherwise false
+    /// @see #getItemType()
     boolean hasItemType();
 
-    /**
-     * Returns the corresponding {@link ItemType} for the given BlockType.
-     * <p>
-     * If there is no corresponding {@link ItemType} an error will be thrown.
-     * <p>This is <b>NOT</b> the same as the {@link ItemType} with the same key,
-     * but instead is the item associated with this block if this block
-     * can be represented with an item.</p>
-     *
-     * @return the corresponding ItemType
-     * @see #hasItemType()
-     * @see BlockData#getPlacementMaterial()
-     */
+    /// Returns the corresponding [ItemType] for the given BlockType.
+    ///
+    /// If there is no corresponding [ItemType] an error will be thrown.
+    ///
+    /// This is **NOT** the same as the [ItemType] with the same key,
+    /// but instead is the item associated with this block if this block
+    /// can be represented with an item.
+    ///
+    /// @return the corresponding ItemType
+    /// @see #hasItemType()
+    /// @see BlockData#getPlacementMaterial()
     ItemType getItemType();
 
-    /**
-     * Gets the BlockData class of this BlockType
-     *
-     * @return the BlockData class of this BlockType
-     */
+    /// Gets the BlockData class of this BlockType
+    ///
+    /// @return the BlockData class of this BlockType
     Class<? extends BlockData> getBlockDataClass();
 
-    /**
-     * Creates a new {@link BlockData} instance for this block type, with all
-     * properties initialized to unspecified defaults.
-     *
-     * @return new data instance
-     */
+    /// Creates a new [BlockData] instance for this block type, with all
+    /// properties initialized to unspecified defaults.
+    ///
+    /// @return new data instance
     BlockData createBlockData();
 
-    /**
-     * Creates a collection of {@link BlockData} instances for this block type, with all
-     * possible combinations of properties values.
-     *
-     * @return new block data collection
-     */
+    /// Creates a collection of [BlockData] instances for this block type, with all
+    /// possible combinations of properties values.
+    ///
+    /// @return new block data collection
     @Unmodifiable Collection<? extends BlockData> createBlockDataStates();
 
-    /**
-     * Creates a new {@link BlockData} instance for this block type, with all
-     * properties initialized to unspecified defaults, except for those provided
-     * in data.
-     *
-     * @param data data string
-     * @return new data instance
-     * @throws IllegalArgumentException if the specified data is not valid
-     */
+    /// Creates a new [BlockData] instance for this block type, with all
+    /// properties initialized to unspecified defaults, except for those provided
+    /// in data.
+    ///
+    /// @param data data string
+    /// @return new data instance
+    /// @throws IllegalArgumentException if the specified data is not valid
     BlockData createBlockData(@Nullable String data);
 
-    /**
-     * Check if the block type is solid (can be built upon)
-     *
-     * @return True if this block type is solid
-     */
+    /// Check if the block type is solid (can be built upon)
+    ///
+    /// @return True if this block type is solid
     boolean isSolid();
 
-    /**
-     * Check if the block type can catch fire
-     *
-     * @return True if this block type can catch fire
-     */
+    /// Check if the block type can catch fire
+    ///
+    /// @return True if this block type can catch fire
     boolean isFlammable();
 
-    /**
-     * Check if the block type can burn away
-     *
-     * @return True if this block type can burn away
-     */
+    /// Check if the block type can burn away
+    ///
+    /// @return True if this block type can burn away
     boolean isBurnable();
 
-    /**
-     * Check if the block type occludes light in the lighting engine.
-     * <p>
-     * Generally speaking, most full blocks will occlude light. Non-full blocks are
-     * not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific
-     * full blocks such as barriers or spawners which block light despite their texture.
-     * <p>
-     * An occluding block will have the following effects:
-     * <ul>
-     *   <li>Chests cannot be opened if an occluding block is above it.
-     *   <li>Mobs cannot spawn inside of occluding blocks.
-     *   <li>Only occluding blocks can be "powered" ({@link Block#isBlockPowered()}).
-     * </ul>
-     * This list may be inconclusive. For a full list of the side effects of an occluding
-     * block, see the <a href="https://minecraft.wiki/w/Opacity">Minecraft Wiki</a>.
-     *
-     * @return True if this block type occludes light
-     */
+    /// Check if the block type occludes light in the lighting engine.
+    ///
+    /// Generally speaking, most full blocks will occlude light. Non-full blocks are
+    /// not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific
+    /// full blocks such as barriers or spawners which block light despite their texture.
+    ///
+    /// An occluding block will have the following effects:
+    ///
+    ///   - Chests cannot be opened if an occluding block is above it.
+    ///   - Mobs cannot spawn inside of occluding blocks.
+    ///   - Only occluding blocks can be "powered" ([Block#isBlockPowered()]).
+    ///
+    /// This list may be inconclusive. For a full list of the side effects of an occluding
+    /// block, see the [Minecraft Wiki](https://minecraft.wiki/w/Opacity).
+    ///
+    /// @return True if this block type occludes light
     boolean isOccluding();
 
-    /**
-     * @return True if this block type is affected by gravity.
-     */
+    /// @return True if this block type is affected by gravity.
     boolean hasGravity();
 
-    /**
-     * Checks if this block type can be interacted with.
-     * <p>
-     * Interactable block types include those with functionality when they are
-     * interacted with by a player such as chests, furnaces, etc.
-     * <p>
-     * Some blocks such as piston heads and stairs are considered interactable
-     * though may not perform any additional functionality.
-     * <p>
-     * Note that the interactability of some block types may be dependant on their
-     * state as well. This method will return true if there is at least one
-     * state in which additional interact handling is performed for the
-     * block type.
-     *
-     * @deprecated This method is not comprehensive and does not accurately reflect what block types are
-     * interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
-     * checks being true.
-     *
-     * @return true if this block type can be interacted with.
-     */
+    /// Checks if this block type can be interacted with.
+    ///
+    /// Interactable block types include those with functionality when they are
+    /// interacted with by a player such as chests, furnaces, etc.
+    ///
+    /// Some blocks such as piston heads and stairs are considered interactable
+    /// though may not perform any additional functionality.
+    ///
+    /// Note that the interactability of some block types may be dependant on their
+    /// state as well. This method will return true if there is at least one
+    /// state in which additional interact handling is performed for the
+    /// block type.
+    ///
+    /// @deprecated This method is not comprehensive and does not accurately reflect what block types are
+    /// interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
+    /// checks being true.
+    ///
+    /// @return true if this block type can be interacted with.
     @Deprecated // Paper
     boolean isInteractable();
 
-    /**
-     * Obtains the block's hardness level (also known as "strength").
-     * <br>
-     * This number is used to calculate the time required to break each block.
-     *
-     * @return the hardness of that block type.
-     */
+    /// Obtains the block's hardness level (also known as "strength").
+    ///
+    /// This number is used to calculate the time required to break each block.
+    ///
+    /// @return the hardness of that block type.
     float getHardness();
 
-    /**
-     * Obtains the blast resistance value (also known as block "durability").
-     * <br>
-     * This value is used in explosions to calculate whether a block should be
-     * broken or not.
-     *
-     * @return the blast resistance of that block type.
-     */
+    /// Obtains the blast resistance value (also known as block "durability").
+    ///
+    /// This value is used in explosions to calculate whether a block should be
+    /// broken or not.
+    ///
+    /// @return the blast resistance of that block type.
     float getBlastResistance();
 
-    /**
-     * Returns a value that represents how 'slippery' the block is.
-     * <p>
-     * Blocks with higher slipperiness, like {@link BlockType#ICE} can be slid on
-     * further by the player and other entities.
-     * <p>
-     * Most blocks have a default slipperiness of {@code 0.6f}.
-     *
-     * @return the slipperiness of this block
-     */
+    /// Returns a value that represents how 'slippery' the block is.
+    ///
+    /// Blocks with higher slipperiness, like [BlockType#ICE] can be slid on
+    /// further by the player and other entities.
+    ///
+    /// Most blocks have a default slipperiness of `0.6f`.
+    ///
+    /// @return the slipperiness of this block
     float getSlipperiness();
 
-    /**
-     * Check if the block type is an air block.
-     *
-     * @return True if this block type is an air block.
-     */
+    /// Check if the block type is an air block.
+    ///
+    /// @return True if this block type is an air block.
     boolean isAir();
 
-    /**
-     * Gets if the BlockType is enabled by the features in a world.
-     *
-     * @param world the world to check
-     * @return true if this BlockType can be used in this World.
-     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
-     */
+    /// Gets if the BlockType is enabled by the features in a world.
+    ///
+    /// @param world the world to check
+    /// @return true if this BlockType can be used in this World.
+    /// @deprecated use [io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)]
     @Deprecated(forRemoval = true, since = "1.21.1") // Paper
     boolean isEnabledByFeature(World world);
 
-    /**
-     * Tries to convert this BlockType into a Material
-     *
-     * @return the converted Material or null
-     * @deprecated only for internal use
-     */
+    /// Tries to convert this BlockType into a Material
+    ///
+    /// @return the converted Material or null
+    /// @deprecated only for internal use
     @Nullable
     @Deprecated(since = "1.20.6")
     Material asMaterial();
 
-    /**
-     * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
-     */
+    /// @deprecated use [#translationKey()] and [net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)]
     @Deprecated(forRemoval = true)
     @Override
     String getTranslationKey();
 
-    /**
-     * Checks if this block type has collision.
-     * <p>
-     * @return false if this block never has collision, true if it <b>might</b> have collision
-     */
+    /// Checks if this block type has collision.
+    ///
+    /// @return false if this block never has collision, true if it **might** have collision
     boolean hasCollision();
 }

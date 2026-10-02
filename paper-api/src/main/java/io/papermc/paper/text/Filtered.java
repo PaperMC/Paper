@@ -5,12 +5,10 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Denotes that this type is filterable by the client, and may be shown differently
- * depending on the player's set configuration.
- *
- * @param <T> type of value
- */
+/// Denotes that this type is filterable by the client, and may be shown differently
+/// depending on the player's set configuration.
+///
+/// @param <T> type of value
 @NullMarked
 public interface Filtered<T> {
 

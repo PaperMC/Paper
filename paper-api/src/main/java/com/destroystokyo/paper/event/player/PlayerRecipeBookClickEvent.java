@@ -8,9 +8,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player clicks a recipe in the recipe book
- */
+/// Called when a player clicks a recipe in the recipe book
 @NullMarked
 public class PlayerRecipeBookClickEvent extends PlayerEvent implements Cancellable {
 
@@ -28,40 +26,32 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent implements Cancellab
         this.makeAll = makeAll;
     }
 
-    /**
-     * Gets the namespaced key of the recipe that was clicked by the player
-     *
-     * @return The namespaced key of the recipe
-     */
+    /// Gets the namespaced key of the recipe that was clicked by the player
+    ///
+    /// @return The namespaced key of the recipe
     public NamespacedKey getRecipe() {
         return this.recipe;
     }
 
-    /**
-     * Changes what recipe is requested. This sets the requested recipe to the recipe with the given key
-     *
-     * @param recipe The key of the recipe that should be requested
-     */
+    /// Changes what recipe is requested. This sets the requested recipe to the recipe with the given key
+    ///
+    /// @param recipe The key of the recipe that should be requested
     public void setRecipe(final NamespacedKey recipe) {
         this.recipe = recipe;
     }
 
-    /**
-     * Gets a boolean which indicates whether the player requested to make the maximum amount of results. This is
-     * {@code true} if shift is pressed while the recipe is clicked in the recipe book
-     *
-     * @return {@code true} if shift is pressed while the recipe is clicked
-     */
+    /// Gets a boolean which indicates whether the player requested to make the maximum amount of results. This is
+    /// `true` if shift is pressed while the recipe is clicked in the recipe book
+    ///
+    /// @return `true` if shift is pressed while the recipe is clicked
     public boolean isMakeAll() {
         return this.makeAll;
     }
 
-    /**
-     * Sets whether the maximum amount of results should be made. If this is {@code true}, the request is handled as if
-     * the player had pressed shift while clicking on the recipe
-     *
-     * @param makeAll {@code true} if the request should attempt to make the maximum amount of results
-     */
+    /// Sets whether the maximum amount of results should be made. If this is `true`, the request is handled as if
+    /// the player had pressed shift while clicking on the recipe
+    ///
+    /// @param makeAll`true` if the request should attempt to make the maximum amount of results
     public void setMakeAll(final boolean makeAll) {
         this.makeAll = makeAll;
     }

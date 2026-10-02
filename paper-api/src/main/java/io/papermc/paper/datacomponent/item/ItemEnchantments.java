@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Stores a list of enchantments and their levels on an item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTMENTS
- * @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
- */
+/// Stores a list of enchantments and their levels on an item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTMENTS
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
 @ApiStatus.NonExtendable
 public interface ItemEnchantments {
 
@@ -26,38 +24,30 @@ public interface ItemEnchantments {
         return ItemComponentTypesBridge.bridge().enchantments();
     }
 
-    /**
-     * Enchantments currently present on this item.
-     *
-     * @return enchantments
-     */
+    /// Enchantments currently present on this item.
+    ///
+    /// @return enchantments
     @Contract(pure = true)
     @Unmodifiable Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments();
 
-    /**
-     * Builder for {@link ItemEnchantments}.
-     */
+    /// Builder for [ItemEnchantments].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemEnchantments> {
 
-        /**
-         * Adds an enchantment with the given level to this component.
-         *
-         * @param enchantment enchantment
-         * @param level level
-         * @return the builder for chaining
-         * @see #enchantments()
-         */
+        /// Adds an enchantment with the given level to this component.
+        ///
+        /// @param enchantment enchantment
+        /// @param level level
+        /// @return the builder for chaining
+        /// @see #enchantments()
         @Contract(value = "_, _ -> this", mutates = "this")
         Builder add(Enchantment enchantment, @IntRange(from = 1, to = 255) int level);
 
-        /**
-         * Adds enchantments with the given level to this component.
-         *
-         * @param enchantments enchantments
-         * @return the builder for chaining
-         * @see #enchantments()
-         */
+        /// Adds enchantments with the given level to this component.
+        ///
+        /// @param enchantments enchantments
+        /// @return the builder for chaining
+        /// @see #enchantments()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
     }

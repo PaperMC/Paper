@@ -27,9 +27,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-/**
- * @hidden
- */
+/// @hidden
 @SuppressWarnings("MissingJavadoc")
 @ApiStatus.Internal
 public interface DialogInstancesProvider {

@@ -8,10 +8,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Raid} is triggered (e.g: a player with Bad Omen effect
- * enters a village).
- */
+/// Called when a [Raid] is triggered (e.g: a player with Bad Omen effect
+/// enters a village).
 public class RaidTriggerEvent extends RaidEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,11 +23,9 @@ public class RaidTriggerEvent extends RaidEvent implements Cancellable {
         this.player = player;
     }
 
-    /**
-     * Returns the player who triggered the raid.
-     *
-     * @return triggering player
-     */
+    /// Returns the player who triggered the raid.
+    ///
+    /// @return triggering player
     @NotNull
     public Player getPlayer() {
         return this.player;

@@ -6,9 +6,7 @@ import org.bukkit.event.block.BlockEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a block tries to dispense an item, but its inventory is empty.
- */
+/// Called when a block tries to dispense an item, but its inventory is empty.
 @NullMarked
 public class BlockFailedDispenseEvent extends BlockEvent {
 
@@ -21,25 +19,19 @@ public class BlockFailedDispenseEvent extends BlockEvent {
         super(block);
     }
 
-    /**
-     * @return if the effect should be played
-     */
+    /// @return if the effect should be played
     public boolean shouldPlayEffect() {
         return this.shouldPlayEffect;
     }
 
-    /**
-     * Sets if the effect for empty dispensers should be played
-     *
-     * @param playEffect if the effect should be played
-     */
+    /// Sets if the effect for empty dispensers should be played
+    ///
+    /// @param playEffect if the effect should be played
     public void shouldPlayEffect(final boolean playEffect) {
         this.shouldPlayEffect = playEffect;
     }
 
-    /**
-     * @return {@link #shouldPlayEffect()}
-     */
+    /// @return [#shouldPlayEffect()]
     @Override
     public boolean callEvent() {
         super.callEvent();

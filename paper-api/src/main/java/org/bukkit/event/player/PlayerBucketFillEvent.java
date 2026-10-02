@@ -10,9 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player fills a bucket
- */
+/// Called when a player fills a bucket
 public class PlayerBucketFillEvent extends PlayerBucketEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

@@ -18,9 +18,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores data for damage events
- */
+/// Stores data for damage events
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -68,29 +66,25 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         this.damageSource = damageSource;
     }
 
-    /**
-     * Gets the original damage for the specified modifier, as defined at this
-     * event's construction.
-     *
-     * @param type the modifier
-     * @return the original damage
-     */
+    /// Gets the original damage for the specified modifier, as defined at this
+    /// event's construction.
+    ///
+    /// @param type the modifier
+    /// @return the original damage
     public double getOriginalDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
         final Double damage = this.originals.get(type);
         return (damage != null) ? damage : 0;
     }
 
-    /**
-     * Sets the damage for the specified modifier.
-     *
-     * @param type the damage modifier
-     * @param damage the scalar value of the damage's modifier
-     * @throws UnsupportedOperationException if the caller does not support
-     *     the particular DamageModifier, or to rephrase, when {@link
-     *     #isApplicable(DamageModifier)} returns false
-     * @see #getFinalDamage()
-     */
+    /// Sets the damage for the specified modifier.
+    ///
+    /// @param type the damage modifier
+    /// @param damage the scalar value of the damage's modifier
+    /// @throws UnsupportedOperationException if the caller does not support
+    ///     the particular DamageModifier, or to rephrase, when
+    /// [#isApplicable(DamageModifier)] returns false
+    /// @see #getFinalDamage()
     public void setDamage(@NotNull DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
         if (!this.modifiers.containsKey(type)) {
@@ -99,50 +93,42 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         this.modifiers.put(type, damage);
     }
 
-    /**
-     * Gets the damage change for some modifier
-     *
-     * @param type the damage modifier
-     * @return The raw amount of damage caused by the event
-     * @see DamageModifier#BASE
-     */
+    /// Gets the damage change for some modifier
+    ///
+    /// @param type the damage modifier
+    /// @return The raw amount of damage caused by the event
+    /// @see DamageModifier#BASE
     public double getDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
         final Double damage = this.modifiers.get(type);
         return damage == null ? 0 : damage;
     }
 
-    /**
-     * This checks to see if a particular modifier is valid for this event's
-     * caller, such that, {@link #setDamage(DamageModifier, double)} will not
-     * throw an {@link UnsupportedOperationException}.
-     * <p>
-     * {@link DamageModifier#BASE} is always applicable.
-     *
-     * @param type the modifier
-     * @return {@code true} if the modifier is supported by the caller, {@code false} otherwise
-     */
+    /// This checks to see if a particular modifier is valid for this event's
+    /// caller, such that, [#setDamage(DamageModifier, double)] will not
+    /// throw an [UnsupportedOperationException].
+    ///
+    /// [DamageModifier#BASE] is always applicable.
+    ///
+    /// @param type the modifier
+    /// @return `true` if the modifier is supported by the caller, `false` otherwise
     public boolean isApplicable(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
         return this.modifiers.containsKey(type);
     }
 
-    /**
-     * Gets the raw amount of damage caused by the event
-     *
-     * @return The raw amount of damage caused by the event
-     * @see DamageModifier#BASE
-     */
+    /// Gets the raw amount of damage caused by the event
+    ///
+    /// @return The raw amount of damage caused by the event
+    /// @see DamageModifier#BASE
     public double getDamage() {
         return this.getDamage(DamageModifier.BASE);
     }
 
-    /**
-     * Gets the amount of damage caused by the event after all damage
-     * reduction is applied.
-     *
-     * @return the amount of damage caused by the event
-     */
+    /// Gets the amount of damage caused by the event after all damage
+    /// reduction is applied.
+    ///
+    /// @return the amount of damage caused by the event
     public final double getFinalDamage() {
         double damage = 0;
         for (DamageModifier modifier : MODIFIERS) {
@@ -151,15 +137,13 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         return damage;
     }
 
-    /**
-     * Sets the raw amount of damage caused by the event.
-     * <p>
-     * For compatibility this also recalculates the modifiers and scales
-     * them by the difference between the modifier for the previous damage
-     * value and the new one.
-     *
-     * @param damage The raw amount of damage caused by the event
-     */
+    /// Sets the raw amount of damage caused by the event.
+    ///
+    /// For compatibility this also recalculates the modifiers and scales
+    /// them by the difference between the modifier for the previous damage
+    /// value and the new one.
+    ///
+    /// @param damage The raw amount of damage caused by the event
     public void setDamage(double damage) {
         // These have to happen in the same order as the server calculates them, keep the enum sorted
         double remaining = damage;
@@ -188,29 +172,25 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         this.setDamage(DamageModifier.BASE, damage);
     }
 
-    /**
-     * Gets the cause of the damage.
-     * <p>
-     * While a DamageCause may indicate a specific Bukkit-assigned cause of damage,
-     * {@link #getDamageSource()} may expose additional types of damage such as custom
-     * damage types provided by data packs, as well as any direct or indirect entities,
-     * locations, or other contributing factors to the damage being inflicted. The
-     * alternative is generally preferred, but DamageCauses provided to this event
-     * should largely encompass most common use cases for developers if a simple cause
-     * is required.
-     *
-     * @return a DamageCause value detailing the cause of the damage.
-     */
+    /// Gets the cause of the damage.
+    ///
+    /// While a DamageCause may indicate a specific Bukkit-assigned cause of damage,
+    /// [#getDamageSource()] may expose additional types of damage such as custom
+    /// damage types provided by data packs, as well as any direct or indirect entities,
+    /// locations, or other contributing factors to the damage being inflicted. The
+    /// alternative is generally preferred, but DamageCauses provided to this event
+    /// should largely encompass most common use cases for developers if a simple cause
+    /// is required.
+    ///
+    /// @return a DamageCause value detailing the cause of the damage.
     @NotNull
     public DamageCause getCause() {
         return this.cause;
     }
 
-    /**
-     * Get the source of damage.
-     *
-     * @return a DamageSource detailing the source of the damage.
-     */
+    /// Get the source of damage.
+    ///
+    /// @return a DamageSource detailing the source of the damage.
     @NotNull
     public DamageSource getDamageSource() {
         return this.damageSource;
@@ -237,280 +217,191 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the types of modifier
-     *
-     * @deprecated This API is responsible for a large number of implementation
-     * problems and is in general unsustainable to maintain.
-     */
+    /// An enum to specify the types of modifier
+    ///
+    /// @deprecated This API is responsible for a large number of implementation
+    /// problems and is in general unsustainable to maintain.
     @Deprecated(since = "1.12")
     public enum DamageModifier {
-        /**
-         * This represents the amount of damage being done, also known as the
-         * raw {@link EntityDamageEvent#getDamage()}.
-         */
+        /// This represents the amount of damage being done, also known as the
+        /// raw [EntityDamageEvent#getDamage()].
         BASE,
         INVULNERABILITY_REDUCTION, // Paper - fix invulnerability reduction in EntityDamageEvent - needs to be right under BASE as it's the first reduction all others are based on
-        /**
-         * This represents the damage increased by freezing status.
-         */
+        /// This represents the damage increased by freezing status.
         FREEZING,
-        /**
-         * This represents the damage reduced by a wearing a helmet when hit
-         * by a falling block.
-         */
+        /// This represents the damage reduced by a wearing a helmet when hit
+        /// by a falling block.
         HARD_HAT,
-        /**
-         * This represents  the damage reduction caused by blocking, only present for
-         * {@link Player Players}.
-         */
+        /// This represents  the damage reduction caused by blocking, only present for
+        /// [`Players`][Player].
         BLOCKING,
-        /**
-         * This represents the damage reduction caused by wearing armor.
-         */
+        /// This represents the damage reduction caused by wearing armor.
         ARMOR,
-        /**
-         * This represents the damage reduction caused by the Resistance potion effect.
-         */
+        /// This represents the damage reduction caused by the Resistance potion effect.
         RESISTANCE,
-        /**
-         * This represents the damage reduction caused by the combination of:
-         * <ul>
-         * <li>
-         *     Armor enchantments
-         * </li><li>
-         *     Witch's potion resistance
-         * </li>
-         * </ul>
-         */
+        /// This represents the damage reduction caused by the combination of:
+        ///
+        ///   - Armor enchantments
+        ///   - Witch's potion resistance
+        ///
         MAGIC,
-        /**
-         * This represents the damage reduction caused by the absorption potion
-         * effect.
-         */
+        /// This represents the damage reduction caused by the absorption potion
+        /// effect.
         ABSORPTION,
         ;
     }
 
-    /**
-     * An enum to specify the cause of the damage
-     */
+    /// An enum to specify the cause of the damage
     public enum DamageCause {
 
-        /**
-         * Damage caused by /kill command.
-         * <p>
-         * Damage: {@link Float#MAX_VALUE}
-         */
+        /// Damage caused by /kill command.
+        ///
+        /// Damage: [Float#MAX_VALUE]
         KILL,
-        /**
-         * Damage caused by the World Border.
-         * <p>
-         * Damage: {@link WorldBorder#getDamageAmount()} <!-- todo not accurate -->
-         */
+        /// Damage caused by the World Border.
+        ///
+        /// Damage: [WorldBorder#getDamageAmount()]
         WORLD_BORDER,
-        /**
-         * Damage caused when an entity contacts another entity (sulfur cube) or block (cactus, dripstone stalagmite,
-         * berry bush, campfire, magma block).
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused when an entity contacts another entity (sulfur cube) or block (cactus, dripstone stalagmite,
+        /// berry bush, campfire, magma block).
+        ///
+        /// Damage: variable
         CONTACT,
-        /**
-         * Damage caused when an entity attacks another entity.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused when an entity attacks another entity.
+        ///
+        /// Damage: variable
         ENTITY_ATTACK,
-        /**
-         * Damage caused when an entity attacks another entity in a sweep attack.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused when an entity attacks another entity in a sweep attack.
+        ///
+        /// Damage: variable
         ENTITY_SWEEP_ATTACK,
-        /**
-         * Damage caused when attacked by a projectile.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused when attacked by a projectile.
+        ///
+        /// Damage: variable
         PROJECTILE,
-        /**
-         * Damage caused by being put in a block.
-         * <p>
-         * Damage: 1
-         */
+        /// Damage caused by being put in a block.
+        ///
+        /// Damage: 1
         SUFFOCATION,
-        /**
-         * Damage caused when an entity falls a distance greater than the {@link org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE safe fall distance}.
-         * <p>
-         * Damage: fall height - {@link org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE safe fall distance} <!-- todo not accurate -->
-         */
+        /// Damage caused when an entity falls a distance greater than the [`safe fall distance`][org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE].
+        ///
+        /// Damage: fall height - [`safe fall distance`][org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE]
         FALL,
-        /**
-         * Damage caused by direct exposure to fire.
-         * <p>
-         * Damage: 1 or 2 (for soul fire)
-         */
+        /// Damage caused by direct exposure to fire.
+        ///
+        /// Damage: 1 or 2 (for soul fire)
         FIRE,
-        /**
-         * Damage caused due to burns caused by fire.
-         * <p>
-         * Damage: 1
-         */
+        /// Damage caused due to burns caused by fire.
+        ///
+        /// Damage: 1
         FIRE_TICK,
-        /**
-         * Damage caused due to a snowman melting.
-         * <p>
-         * Damage: 1
-         */
+        /// Damage caused due to a snowman melting.
+        ///
+        /// Damage: 1
         MELTING,
-        /**
-         * Damage caused by direct exposure to lava.
-         * <p>
-         * Damage: 4
-         */
+        /// Damage caused by direct exposure to lava.
+        ///
+        /// Damage: 4
         LAVA,
-        /**
-         * Damage caused by running out of air while in water.
-         * <p>
-         * Damage: 1 or 2
-         */
+        /// Damage caused by running out of air while in water.
+        ///
+        /// Damage: 1 or 2
         DROWNING,
-        /**
-         * Damage caused by being in the area when a block explodes.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused by being in the area when a block explodes.
+        ///
+        /// Damage: variable
         BLOCK_EXPLOSION,
-        /**
-         * Damage caused by being in the area when an entity, such as a
-         * Creeper, explodes.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused by being in the area when an entity, such as a
+        /// Creeper, explodes.
+        ///
+        /// Damage: variable
         ENTITY_EXPLOSION,
-        /**
-         * Damage caused by falling into the void.
-         * <p>
-         * Damage: {@link org.bukkit.World#getVoidDamageAmount()}
-         */
+        /// Damage caused by falling into the void.
+        ///
+        /// Damage: [org.bukkit.World#getVoidDamageAmount()]
         VOID,
-        /**
-         * Damage caused by being struck by lightning.
-         * <p>
-         * Damage: 5 or {@link Float#MAX_VALUE} for turtle
-         */
+        /// Damage caused by being struck by lightning.
+        ///
+        /// Damage: 5 or [Float#MAX_VALUE] for turtle
         LIGHTNING,
-        /**
-         * Damage caused by committing suicide.
-         * <p>
-         * <b>Note:</b> This is currently only used by plugins, default commands
-         * like /minecraft:kill use {@link #KILL} to damage players.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused by committing suicide.
+        ///
+        /// **Note:** This is currently only used by plugins, default commands
+        /// like /minecraft:kill use [#KILL] to damage players.
+        ///
+        /// Damage: variable
         SUICIDE,
-        /**
-         * Damage caused by starving due to having an empty hunger bar.
-         * <p>
-         * Damage: 1
-         */
+        /// Damage caused by starving due to having an empty hunger bar.
+        ///
+        /// Damage: 1
         STARVATION,
-        /**
-         * Damage caused due to an ongoing poison effect.
-         * <p>
-         * Damage: 1
-         */
+        /// Damage caused due to an ongoing poison effect.
+        ///
+        /// Damage: 1
         POISON,
-        /**
-         * Damage caused by being hit by a damage potion or spell.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused by being hit by a damage potion or spell.
+        ///
+        /// Damage: variable
         MAGIC,
-        /**
-         * Damage caused by Wither potion effect
-         */
+        /// Damage caused by Wither potion effect
         WITHER,
-        /**
-         * Damage caused by being hit by a falling block which deals damage.
-         * <p>
-         * <b>Note:</b> Not every block deals damage
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused by being hit by a falling block which deals damage.
+        ///
+        /// **Note:** Not every block deals damage
+        ///
+        /// Damage: variable
         FALLING_BLOCK,
-        /**
-         * Damage caused in retaliation to another attack by the {@link org.bukkit.enchantments.Enchantment#THORNS}
-         * enchantment or guardian.
-         * <p>
-         * Damage: 1-5 (thorns) or 2 (guardian)
-         */
+        /// Damage caused in retaliation to another attack by the [org.bukkit.enchantments.Enchantment#THORNS]
+        /// enchantment or guardian.
+        ///
+        /// Damage: 1-5 (thorns) or 2 (guardian)
         THORNS,
-        /**
-         * Damage caused by a dragon breathing fire.
-         * <p>
-         * Damage: variable
-         *
-         * @deprecated never used without help of commands or plugins,
-         * {@link #ENTITY_ATTACK} will be used instead
-         */
+        /// Damage caused by a dragon breathing fire.
+        ///
+        /// Damage: variable
+        ///
+        /// @deprecated never used without help of commands or plugins,
+        /// [#ENTITY_ATTACK] will be used instead
         @Deprecated(since = "1.21.5")
         DRAGON_BREATH,
-        /**
-         * Damage caused when an entity runs into a wall.
-         * <p>
-         * Damage: variable
-         */
+        /// Damage caused when an entity runs into a wall.
+        ///
+        /// Damage: variable
         FLY_INTO_WALL,
-        /**
-         * Damage caused when an entity steps on {@link Material#MAGMA_BLOCK}.
-         * <p>
-         * Damage: 1
-         *
-         * @deprecated use {@link #CONTACT}, the block will be exposed in the event
-         */
+        /// Damage caused when an entity steps on [Material#MAGMA_BLOCK].
+        ///
+        /// Damage: 1
+        ///
+        /// @deprecated use [#CONTACT], the block will be exposed in the event
         @Deprecated(since = "26.2")
         HOT_FLOOR,
-        /**
-         * Damage caused when an entity steps on {@link Material#CAMPFIRE} or {@link Material#SOUL_CAMPFIRE}.
-         * <p>
-         * Damage: 1 or 2 (for soul fire)
-         *
-         * @deprecated use {@link #CONTACT}, the block will be exposed in the event
-         */
+        /// Damage caused when an entity steps on [Material#CAMPFIRE] or [Material#SOUL_CAMPFIRE].
+        ///
+        /// Damage: 1 or 2 (for soul fire)
+        ///
+        /// @deprecated use [#CONTACT], the block will be exposed in the event
         @Deprecated(since = "26.2")
         CAMPFIRE,
-        /**
-         * Damage caused when an entity is colliding with too many entities due
-         * to the {@link org.bukkit.GameRules#MAX_ENTITY_CRAMMING}.
-         * <p>
-         * Damage: 6
-         */
+        /// Damage caused when an entity is colliding with too many entities due
+        /// to the [org.bukkit.GameRules#MAX_ENTITY_CRAMMING].
+        ///
+        /// Damage: 6
         CRAMMING,
-        /**
-         * Damage caused when an entity that should be in water is not.
-         * <p>
-         * Damage: 1 or 2
-         */
+        /// Damage caused when an entity that should be in water is not.
+        ///
+        /// Damage: 1 or 2
         DRYOUT,
-        /**
-         * Damage caused from freezing.
-         * <p>
-         * Damage: 1 or 5 (for {@link org.bukkit.Tag#ENTITY_TYPES_FREEZE_HURTS_EXTRA_TYPES sensitive} entities)
-         */
+        /// Damage caused from freezing.
+        ///
+        /// Damage: 1 or 5 (for [`sensitive`][org.bukkit.Tag#ENTITY_TYPES_FREEZE_HURTS_EXTRA_TYPES] entities)
         FREEZE,
-        /**
-         * Damage caused by the Sonic Boom attack from {@link org.bukkit.entity.Warden}.
-         * <p>
-         * Damage: 10
-         */
+        /// Damage caused by the Sonic Boom attack from [org.bukkit.entity.Warden].
+        ///
+        /// Damage: 10
         SONIC_BOOM,
-        /**
-         * Custom damage.
-         * <p>
-         * Damage: variable
-         */
+        /// Custom damage.
+        ///
+        /// Damage: variable
         CUSTOM;
     }
 }

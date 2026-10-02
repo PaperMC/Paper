@@ -4,10 +4,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the item absorbed by a sulfur cube.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#SULFUR_CUBE_CONTENT
- */
+/// Holds the item absorbed by a sulfur cube.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#SULFUR_CUBE_CONTENT
 @ApiStatus.NonExtendable
 public interface SulfurCubeContent {
 
@@ -16,11 +14,9 @@ public interface SulfurCubeContent {
         return ItemComponentTypesBridge.bridge().sulfurCubeContent(absorbedItem);
     }
 
-    /**
-     * Gets the item absorbed by the cube.
-     *
-     * @return the item absorbed
-     */
+    /// Gets the item absorbed by the cube.
+    ///
+    /// @return the item absorbed
     @Contract(pure = true)
     ItemStack absorbedItem();
 }

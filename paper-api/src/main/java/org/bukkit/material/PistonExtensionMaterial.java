@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Material data for the piston extension block
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Material data for the piston extension block
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class PistonExtensionMaterial extends MaterialData implements Attachable {
 
@@ -16,11 +14,9 @@ public class PistonExtensionMaterial extends MaterialData implements Attachable 
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public PistonExtensionMaterial(final Material type, final byte data) {
         super(type, data);
@@ -72,20 +68,16 @@ public class PistonExtensionMaterial extends MaterialData implements Attachable 
         }
     }
 
-    /**
-     * Checks if this piston extension is sticky, and returns true if so
-     *
-     * @return true if this piston is "sticky", or false
-     */
+    /// Checks if this piston extension is sticky, and returns true if so
+    ///
+    /// @return true if this piston is "sticky", or false
     public boolean isSticky() {
         return (getData() & 8) == 8;
     }
 
-    /**
-     * Sets whether or not this extension is sticky
-     *
-     * @param sticky true if sticky, otherwise false
-     */
+    /// Sets whether or not this extension is sticky
+    ///
+    /// @param sticky true if sticky, otherwise false
     public void setSticky(boolean sticky) {
         setData((byte) (sticky ? (getData() | 0x8) : (getData() & ~0x8)));
     }

@@ -8,11 +8,9 @@ import org.bukkit.entity.PigZombie;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores data for pigs being zapped
- *
- * @deprecated use {@link EntityZapEvent}
- */
+/// Stores data for pigs being zapped
+///
+/// @deprecated use [EntityZapEvent]
 @Deprecated(since = "26.2")
 @Warning(propagate = false)
 public class PigZapEvent extends EntityZapEvent {
@@ -28,25 +26,21 @@ public class PigZapEvent extends EntityZapEvent {
         return (Pig) this.entity;
     }
 
-    /**
-     * Gets the bolt which is striking the pig.
-     *
-     * @return lightning entity
-     * @deprecated use {@link EntityZapEvent#getBolt()}
-     */
+    /// Gets the bolt which is striking the pig.
+    ///
+    /// @return lightning entity
+    /// @deprecated use [EntityZapEvent#getBolt()]
     @NotNull
     @Deprecated(since = "26.2")
     public LightningStrike getLightning() {
         return super.getBolt();
     }
 
-    /**
-     * Gets the zombified piglin that will replace the pig, provided the event is
-     * not cancelled first.
-     *
-     * @return resulting entity
-     * @deprecated use {@link EntityZapEvent#getReplacementEntity()}
-     */
+    /// Gets the zombified piglin that will replace the pig, provided the event is
+    /// not cancelled first.
+    ///
+    /// @return resulting entity
+    /// @deprecated use [EntityZapEvent#getReplacementEntity()]
     @NotNull
     @Deprecated(since = "1.13.2")
     public PigZombie getPigZombie() {

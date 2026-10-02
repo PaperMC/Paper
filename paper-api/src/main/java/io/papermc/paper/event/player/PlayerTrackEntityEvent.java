@@ -8,14 +8,12 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Is called when a {@link Player} tracks an {@link Entity}.
- * <p>
- * If cancelled entity is not shown to the player and interaction in both directions is not possible.
- * <p>
- * Adding or removing entities from the world at the point in time this event is called is completely
- * unsupported and should be avoided.
- */
+/// Is called when a [Player] tracks an [Entity].
+///
+/// If cancelled entity is not shown to the player and interaction in both directions is not possible.
+///
+/// Adding or removing entities from the world at the point in time this event is called is completely
+/// unsupported and should be avoided.
 @NullMarked
 public class PlayerTrackEntityEvent extends PlayerEvent implements Cancellable {
 
@@ -30,11 +28,9 @@ public class PlayerTrackEntityEvent extends PlayerEvent implements Cancellable {
         this.entity = entity;
     }
 
-    /**
-     * Gets the entity that will be tracked
-     *
-     * @return the entity tracked
-     */
+    /// Gets the entity that will be tracked
+    ///
+    /// @return the entity tracked
     public Entity getEntity() {
         return this.entity;
     }

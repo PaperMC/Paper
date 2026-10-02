@@ -8,148 +8,114 @@ import org.bukkit.block.BlockState;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A limited region is used in world generation for features which are
- * going over a chunk. For example, trees or ores.
- *
- * Use {@link #getBuffer()} to know how much you can go beyond the central
- * chunk. The buffer zone may or may not be already populated.
- *
- * The coordinates are <b>absolute</b> from the world origin.
- */
+/// A limited region is used in world generation for features which are
+/// going over a chunk. For example, trees or ores.
+/// Use [#getBuffer()] to know how much you can go beyond the central
+/// chunk. The buffer zone may or may not be already populated.
+/// The coordinates are **absolute** from the world origin.
 public interface LimitedRegion extends RegionAccessor {
 
-    /**
-     * Gets the buffer around the central chunk which is accessible.
-     * The returned value is in normal world coordinate scale.
-     * <p>
-     * For example: If the method returns 16 you have a working area of 48x48.
-     *
-     * @return The buffer in X and Z direction
-     */
+    /// Gets the buffer around the central chunk which is accessible.
+    /// The returned value is in normal world coordinate scale.
+    ///
+    /// For example: If the method returns 16 you have a working area of 48x48.
+    ///
+    /// @return The buffer in X and Z direction
     int getBuffer();
 
-    /**
-     * Checks if the given {@link Location} is in the region.
-     *
-     * @param location the location to check
-     * @return true if the location is in the region, otherwise false.
-     */
+    /// Checks if the given [Location] is in the region.
+    ///
+    /// @param location the location to check
+    /// @return true if the location is in the region, otherwise false.
     boolean isInRegion(@NotNull Location location);
 
-    /**
-     * Checks if the given coordinates are in the region.
-     *
-     * @param x X-coordinate to check
-     * @param y Y-coordinate to check
-     * @param z Z-coordinate to check
-     * @return true if the coordinates are in the region, otherwise false.
-     */
+    /// Checks if the given coordinates are in the region.
+    ///
+    /// @param x X-coordinate to check
+    /// @param y Y-coordinate to check
+    /// @param z Z-coordinate to check
+    /// @return true if the coordinates are in the region, otherwise false.
     boolean isInRegion(int x, int y, int z);
 
-    /**
-     * Gets a list of all tile entities in the limited region including the
-     * buffer zone.
-     *
-     * @return a list of tile entities.
-     */
+    /// Gets a list of all tile entities in the limited region including the
+    /// buffer zone.
+    ///
+    /// @return a list of tile entities.
     @NotNull
     List<BlockState> getTileEntities();
 
-    /**
-     * Sets the {@link BlockState} at a location.
-     *
-     * @param x X coordinate.
-     * @param y Y coordinate.
-     * @param z Z coordinate.
-     * @param state The block state.
-     */
+    /// Sets the [BlockState] at a location.
+    ///
+    /// @param x X coordinate.
+    /// @param y Y coordinate.
+    /// @param z Z coordinate.
+    /// @param state The block state.
     void setBlockState(int x, int y, int z, @NotNull BlockState state);
 
-    /**
-     * Sets the {@link BlockState} at a location.
-     *
-     * @param location Location to set block state.
-     * @param state The block state.
-     */
+    /// Sets the [BlockState] at a location.
+    ///
+    /// @param location Location to set block state.
+    /// @param state The block state.
     default void setBlockState(@NotNull Vector location, @NotNull BlockState state) {
         this.setBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ(), state);
     }
 
-    /**
-     * Schedules a block update at (x, y, z).
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     * @param z Z coordinate
-     */
+    /// Schedules a block update at (x, y, z).
+    ///
+    /// @param x X coordinate
+    /// @param y Y coordinate
+    /// @param z Z coordinate
     void scheduleBlockUpdate(int x, int y, int z);
 
-    /**
-     * Schedules a block update at a vector location.
-     *
-     * @param location {@link Vector} representing the position of the block to update.
-     */
+    /// Schedules a block update at a vector location.
+    ///
+    /// @param location [Vector] representing the position of the block to update.
     default void scheduleBlockUpdate(@NotNull Vector location) {
         this.scheduleBlockUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    /**
-     * Schedules a fluid update at (x, y, z).
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     * @param z Z coordinate
-     */
+    /// Schedules a fluid update at (x, y, z).
+    ///
+    /// @param x X coordinate
+    /// @param y Y coordinate
+    /// @param z Z coordinate
     void scheduleFluidUpdate(int x, int y, int z);
 
-    /**
-     * Schedules a fluid update at a vector location.
-     *
-     * @param location {@link Vector} representing the position of the block to update.
-     */
+    /// Schedules a fluid update at a vector location.
+    ///
+    /// @param location [Vector] representing the position of the block to update.
     default void scheduleFluidUpdate(@NotNull Vector location) {
         this.scheduleFluidUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    /**
-     * Gets the {@link World} object this region represents.
-     * <p>
-     * Do <b>not</b> attempt to read from/write to this world! Doing so during generation <b>will cause a deadlock!</b>
-     *
-     * @return The {@link World} object that this region represents.
-     */
+    /// Gets the [World] object this region represents.
+    ///
+    /// Do **not** attempt to read from/write to this world! Doing so during generation **will cause a deadlock!**
+    ///
+    /// @return The [World] object that this region represents.
     @NotNull
     World getWorld();
 
-    /**
-     * Gets the X-coordinate of the chunk in the center of the region.
-     *
-     * @return The center chunk's X coordinate.
-     */
+    /// Gets the X-coordinate of the chunk in the center of the region.
+    ///
+    /// @return The center chunk's X coordinate.
     int getCenterChunkX();
 
-    /**
-     * Gets the X-coordinate of the block in the center of the region.
-     *
-     * @return The center chunk's X coordinate.
-     */
+    /// Gets the X-coordinate of the block in the center of the region.
+    ///
+    /// @return The center chunk's X coordinate.
     default int getCenterBlockX() {
         return this.getCenterChunkX() << 4;
     }
 
-    /**
-     * Gets the Z-coordinate of the chunk in the center of the region.
-     *
-     * @return The center chunk's Z coordinate.
-     */
+    /// Gets the Z-coordinate of the chunk in the center of the region.
+    ///
+    /// @return The center chunk's Z coordinate.
     int getCenterChunkZ();
 
-    /**
-     * Gets the Z-coordinate of the block in the center of the region.
-     *
-     * @return The center chunk's Z coordinate.
-     */
+    /// Gets the Z-coordinate of the block in the center of the region.
+    ///
+    /// @return The center chunk's Z coordinate.
     default int getCenterBlockZ() {
         return this.getCenterChunkZ() << 4;
     }

@@ -11,9 +11,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Thrown when a player executes a command that is not defined
- */
+/// Thrown when a player executes a command that is not defined
 @NullMarked
 public class UnknownCommandEvent extends Event {
 
@@ -31,74 +29,60 @@ public class UnknownCommandEvent extends Event {
         this.message = message;
     }
 
-    /**
-     * Gets the CommandSender
-     *
-     * @return sender of the command
-     */
+    /// Gets the CommandSender
+    ///
+    /// @return sender of the command
     public CommandSender getSender() {
         return this.commandSource.getSender();
     }
 
-    /**
-     * Gets the command source associated with this event
-     *
-     * @return the {@link CommandSourceStack}
-     */
+    /// Gets the command source associated with this event
+    ///
+    /// @return the [CommandSourceStack]
     public CommandSourceStack getCommandSource() {
         return this.commandSource;
     }
 
-    /**
-     * Gets the command that was sent
-     *
-     * @return command sent
-     */
+    /// Gets the command that was sent
+    ///
+    /// @return command sent
     public String getCommandLine() {
         return this.commandLine;
     }
 
-    /**
-     * Gets the message that will be returned
-     *
-     * @return unknown command message
-     * @deprecated use {@link #message()}
-     */
+    /// Gets the message that will be returned
+    ///
+    /// @return unknown command message
+    /// @deprecated use [#message()]
     @Deprecated
     public @Nullable String getMessage() {
         return this.message == null ? null : LegacyComponentSerializer.legacySection().serialize(this.message);
     }
 
-    /**
-     * Sets the message that will be returned
-     * <p>
-     * Set to {@code null} to avoid any message being sent
-     *
-     * @param message the message to be returned, or {@code null}
-     * @deprecated use {@link #message(Component)}
-     */
+    /// Sets the message that will be returned
+    ///
+    /// Set to `null` to avoid any message being sent
+    ///
+    /// @param message the message to be returned, or `null`
+    /// @deprecated use [#message(Component)]
     @Deprecated
     public void setMessage(@Nullable String message) {
         this.message(message == null ? null : LegacyComponentSerializer.legacySection().deserialize(message));
     }
 
-    /**
-     * Gets the message that will be returned
-     *
-     * @return unknown command message
-     */
+    /// Gets the message that will be returned
+    ///
+    /// @return unknown command message
     @Contract(pure = true)
     public @Nullable Component message() {
         return this.message;
     }
 
-    /**
-     * Sets the message that will be returned
-     * <p>
-     * Set to {@code null} to avoid any message being sent
-     *
-     * @param message the message to be returned, or {@code null}
-     */
+    /// Sets the message that will be returned
+    ///
+    /// Set to `null` to avoid any message being sent
+    ///
+    /// @param message the message to be returned, or `null`
     public void message(@Nullable Component message) {
         this.message = message;
     }

@@ -10,16 +10,14 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This event will fire when a player is finishing consuming an item (food,
- * potion, milk bucket).
- * <br>
- * If the ItemStack is modified the server will use the effects of the new
- * item and not remove the original one from the player's inventory.
- * <br>
- * If the event is cancelled the effect will not be applied and the item will
- * not be removed from the player's inventory.
- */
+/// This event will fire when a player is finishing consuming an item (food,
+/// potion, milk bucket).
+///
+/// If the ItemStack is modified the server will use the effects of the new
+/// item and not remove the original one from the player's inventory.
+///
+/// If the event is cancelled the effect will not be applied and the item will
+/// not be removed from the player's inventory.
 public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -44,23 +42,19 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
         this(player, item, EquipmentSlot.HAND);
     }
 
-    /**
-     * Gets the item that is being consumed. Modifying the returned item will
-     * have no effect, you must use {@link
-     * #setItem(org.bukkit.inventory.ItemStack)} instead.
-     *
-     * @return an ItemStack for the item being consumed
-     */
+    /// Gets the item that is being consumed. Modifying the returned item will
+    /// have no effect, you must use
+    /// [#setItem(org.bukkit.inventory.ItemStack)] instead.
+    ///
+    /// @return an ItemStack for the item being consumed
     @NotNull
     public ItemStack getItem() {
         return this.item.clone();
     }
 
-    /**
-     * Set the item being consumed
-     *
-     * @param item the item being consumed
-     */
+    /// Set the item being consumed
+    ///
+    /// @param item the item being consumed
     public void setItem(@Nullable ItemStack item) {
         if (item == null) {
             this.item = new ItemStack(Material.AIR);
@@ -69,33 +63,27 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
         }
     }
 
-    /**
-     * Get the hand used to consume the item.
-     *
-     * @return the hand
-     */
+    /// Get the hand used to consume the item.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Return the custom item stack that will replace the consumed item, or {@code null} if no
-     * custom replacement has been set (which means the default replacement will be used).
-     *
-     * @return The custom item stack that will replace the consumed item or {@code null}
-     */
+    /// Return the custom item stack that will replace the consumed item, or `null` if no
+    /// custom replacement has been set (which means the default replacement will be used).
+    ///
+    /// @return The custom item stack that will replace the consumed item or `null`
     @Nullable
     public ItemStack getReplacement() {
         return this.replacement;
     }
 
-    /**
-     * Set a custom item stack to replace the consumed item. Pass {@code null} to clear any custom
-     * stack that has been set and use the default replacement.
-     *
-     * @param replacement Replacement item to set, {@code null} to clear any custom stack and use default
-     */
+    /// Set a custom item stack to replace the consumed item. Pass `null` to clear any custom
+    /// stack that has been set and use the default replacement.
+    ///
+    /// @param replacement Replacement item to set, `null` to clear any custom stack and use default
     public void setReplacement(@Nullable ItemStack replacement) {
         this.replacement = replacement;
     }

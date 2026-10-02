@@ -2,9 +2,7 @@ package org.bukkit.scoreboard;
 
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Locations for displaying objectives to the player
- */
+/// Locations for displaying objectives to the player
 @NullMarked
 public enum DisplaySlot {
     // Start generate - DisplaySlot
@@ -37,11 +35,9 @@ public enum DisplaySlot {
         this.id = id;
     }
 
-    /**
-     * Get the string id of this display slot.
-     *
-     * @return the string id
-     */
+    /// Get the string id of this display slot.
+    ///
+    /// @return the string id
     public String getId() {
         return this.id;
     }

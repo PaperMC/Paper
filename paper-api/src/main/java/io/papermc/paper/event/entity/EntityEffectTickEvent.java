@@ -8,13 +8,11 @@ import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * An event that is triggered when an entity receives a potion effect instantly
- * or when the potion effect is applied on each tick (e.g. every 25 ticks for Poison level 1).
- * <p>
- * For example, this event may be called when an entity regenerates health
- * or takes poison damage as a result of a potion effect.
- */
+/// An event that is triggered when an entity receives a potion effect instantly
+/// or when the potion effect is applied on each tick (e.g. every 25 ticks for Poison level 1).
+///
+/// For example, this event may be called when an entity regenerates health
+/// or takes poison damage as a result of a potion effect.
 @NullMarked
 public class EntityEffectTickEvent extends EntityEvent implements Cancellable {
 
@@ -36,20 +34,16 @@ public class EntityEffectTickEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) super.getEntity();
     }
 
-    /**
-     * Gets the type of the potion effect associated with this event.
-     *
-     * @return the {@link PotionEffectType} of the effect
-     */
+    /// Gets the type of the potion effect associated with this event.
+    ///
+    /// @return the [PotionEffectType] of the effect
     public PotionEffectType getType() {
         return type;
     }
 
-    /**
-     * Gets the amplifier level of the potion effect associated with this event.
-     *
-     * @return the amplifier level of the potion effect
-     */
+    /// Gets the amplifier level of the potion effect associated with this event.
+    ///
+    /// @return the amplifier level of the potion effect
     public int getAmplifier() {
         return amplifier;
     }

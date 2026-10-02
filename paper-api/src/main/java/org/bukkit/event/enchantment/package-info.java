@@ -1,6 +1,4 @@
-/**
- * {@link org.bukkit.event.Event Events} triggered from an {@link
- * org.bukkit.inventory.EnchantingInventory enchantment table}.
- */
+/// [`Events`][org.bukkit.event.Event] triggered from an
+/// [`enchantment table`][org.bukkit.inventory.EnchantingInventory].
 package org.bukkit.event.enchantment;
 

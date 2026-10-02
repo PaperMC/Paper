@@ -8,12 +8,10 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents an event that is called when a player right clicks an entity.
- *
- * @apiNote this event is no longer called without being a {@link PlayerInteractAtEntityEvent}, it's therefore
- * recommended to listen to that event instead which hold more informations.
- */
+/// Represents an event that is called when a player right clicks an entity.
+///
+/// @apiNote this event is no longer called without being a [PlayerInteractAtEntityEvent], it's therefore
+/// recommended to listen to that event instead which hold more informations.
 @ApiStatus.Obsolete
 public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellable {
 
@@ -36,21 +34,17 @@ public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellabl
         this.hand = hand;
     }
 
-    /**
-     * Gets the entity that was right-clicked by the player.
-     *
-     * @return entity right clicked by player
-     */
+    /// Gets the entity that was right-clicked by the player.
+    ///
+    /// @return entity right clicked by player
     @NotNull
     public Entity getRightClicked() {
         return this.clickedEntity;
     }
 
-    /**
-     * The hand used to perform this interaction.
-     *
-     * @return the hand used to interact
-     */
+    /// The hand used to perform this interaction.
+    ///
+    /// @return the hand used to interact
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;

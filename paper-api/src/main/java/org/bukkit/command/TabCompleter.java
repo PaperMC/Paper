@@ -5,32 +5,28 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a class which can suggest tab completions for commands.
- *
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// Represents a class which can suggest tab completions for commands.
+///
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public interface TabCompleter {
 
-    /**
-     * Requests a list of possible completions for a command argument.
-     *
-     * @param sender Source of the command.  For players tab-completing a
-     *     command inside of a command block, this will be the player, not
-     *     the command block.
-     * @param command Command which was executed
-     * @param label Alias of the command which was used
-     * @param args The arguments passed to the command, including final
-     *     partial argument to be completed
-     * @return A List of possible completions for the final argument, or null
-     *     to default to the command executor
-     * @apiNote plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
-     */
+    /// Requests a list of possible completions for a command argument.
+    ///
+    /// @param sender Source of the command.  For players tab-completing a
+    ///     command inside of a command block, this will be the player, not
+    ///     the command block.
+    /// @param command Command which was executed
+    /// @param label Alias of the command which was used
+    /// @param args The arguments passed to the command, including final
+    ///     partial argument to be completed
+    /// @return A List of possible completions for the final argument, or null
+    ///     to default to the command executor
+    /// @apiNote plugin developers should prefer to use the
+    ///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+    ///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
     @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args);

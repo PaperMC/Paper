@@ -8,9 +8,7 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a fluid type.
- */
+/// Represents a fluid type.
 public interface Fluid extends OldEnum<Fluid>, Keyed {
 
     // Start generate - Fluid
@@ -30,11 +28,9 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
         return Registry.FLUID.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * @param name of the fluid.
-     * @return the fluid with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
+    /// @param name of the fluid.
+    /// @return the fluid with the given name.
+    /// @deprecated only for backwards compatibility, use [Registry#get(NamespacedKey)] instead.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid valueOf(@NotNull String name) {
@@ -44,10 +40,8 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
         return fluid;
     }
 
-    /**
-     * @return an array of all known fluids.
-     * @deprecated use {@link Registry#stream()}.
-     */
+    /// @return an array of all known fluids.
+    /// @deprecated use [Registry#stream()].
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid[] values() {

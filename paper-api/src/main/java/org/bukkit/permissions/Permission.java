@@ -13,10 +13,8 @@ import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a unique permission that may be attached to a {@link
- * Permissible}
- */
+/// Represents a unique permission that may be attached to a
+/// [Permissible]
 public class Permission {
     public static final PermissionDefault DEFAULT_PERMISSION = PermissionDefault.OP;
 
@@ -67,49 +65,41 @@ public class Permission {
         }
     }
 
-    /**
-     * Returns the unique fully qualified name of this Permission
-     *
-     * @return Fully qualified name
-     */
+    /// Returns the unique fully qualified name of this Permission
+    ///
+    /// @return Fully qualified name
     @NotNull
     public String getName() {
         return name;
     }
 
-    /**
-     * Gets the children of this permission.
-     * <p>
-     * If you change this map in any form, you must call {@link
-     * #recalculatePermissibles()} to recalculate all {@link Permissible}s
-     *
-     * @return Permission children
-     */
+    /// Gets the children of this permission.
+    ///
+    /// If you change this map in any form, you must call
+    /// [#recalculatePermissibles()] to recalculate all [Permissible]s
+    ///
+    /// @return Permission children
     @NotNull
     public Map<String, Boolean> getChildren() {
         return children;
     }
 
-    /**
-     * Gets the default value of this permission.
-     *
-     * @return Default value of this permission.
-     */
+    /// Gets the default value of this permission.
+    ///
+    /// @return Default value of this permission.
     @NotNull
     public PermissionDefault getDefault() {
         return defaultValue;
     }
 
-    /**
-     * Sets the default value of this permission.
-     * <p>
-     * This will not be saved to disk, and is a temporary operation until the
-     * server reloads permissions. Changing this default will cause all {@link
-     * Permissible}s that contain this permission to recalculate their
-     * permissions
-     *
-     * @param value The new default to set
-     */
+    /// Sets the default value of this permission.
+    ///
+    /// This will not be saved to disk, and is a temporary operation until the
+    /// server reloads permissions. Changing this default will cause all
+    /// [Permissible]s that contain this permission to recalculate their
+    /// permissions
+    ///
+    /// @param value The new default to set
     public void setDefault(@NotNull PermissionDefault value) {
         if (defaultValue == null) {
             throw new IllegalArgumentException("Default value cannot be null");
@@ -119,24 +109,20 @@ public class Permission {
         recalculatePermissibles();
     }
 
-    /**
-     * Gets a brief description of this permission, may be empty
-     *
-     * @return Brief description of this permission
-     */
+    /// Gets a brief description of this permission, may be empty
+    ///
+    /// @return Brief description of this permission
     @NotNull
     public String getDescription() {
         return description;
     }
 
-    /**
-     * Sets the description of this permission.
-     * <p>
-     * This will not be saved to disk, and is a temporary operation until the
-     * server reloads permissions.
-     *
-     * @param value The new description to set
-     */
+    /// Sets the description of this permission.
+    ///
+    /// This will not be saved to disk, and is a temporary operation until the
+    /// server reloads permissions.
+    ///
+    /// @param value The new description to set
     public void setDescription(@Nullable String value) {
         if (value == null) {
             description = "";
@@ -145,25 +131,21 @@ public class Permission {
         }
     }
 
-    /**
-     * Gets a set containing every {@link Permissible} that has this
-     * permission.
-     * <p>
-     * This set cannot be modified.
-     *
-     * @return Set containing permissibles with this permission
-     */
+    /// Gets a set containing every [Permissible] that has this
+    /// permission.
+    ///
+    /// This set cannot be modified.
+    ///
+    /// @return Set containing permissibles with this permission
     @NotNull
     public Set<Permissible> getPermissibles() {
         return Bukkit.getServer().getPluginManager().getPermissionSubscriptions(name);
     }
 
-    /**
-     * Recalculates all {@link Permissible}s that contain this permission.
-     * <p>
-     * This should be called after modifying the children, and is
-     * automatically called after modifying the default value
-     */
+    /// Recalculates all [Permissible]s that contain this permission.
+    ///
+    /// This should be called after modifying the children, and is
+    /// automatically called after modifying the default value
     public void recalculatePermissibles() {
         Set<Permissible> perms = getPermissibles();
 
@@ -174,16 +156,14 @@ public class Permission {
         }
     }
 
-    /**
-     * Adds this permission to the specified parent permission.
-     * <p>
-     * If the parent permission does not exist, it will be created and
-     * registered.
-     *
-     * @param name Name of the parent permission
-     * @param value The value to set this permission to
-     * @return Parent permission it created or loaded
-     */
+    /// Adds this permission to the specified parent permission.
+    ///
+    /// If the parent permission does not exist, it will be created and
+    /// registered.
+    ///
+    /// @param name Name of the parent permission
+    /// @param value The value to set this permission to
+    /// @return Parent permission it created or loaded
     @NotNull
     public Permission addParent(@NotNull String name, boolean value) {
         PluginManager pm = Bukkit.getServer().getPluginManager();
@@ -201,36 +181,31 @@ public class Permission {
         return perm;
     }
 
-    /**
-     * Adds this permission to the specified parent permission.
-     *
-     * @param perm Parent permission to register with
-     * @param value The value to set this permission to
-     */
+    /// Adds this permission to the specified parent permission.
+    ///
+    /// @param perm Parent permission to register with
+    /// @param value The value to set this permission to
     public void addParent(@NotNull Permission perm, boolean value) {
         perm.getChildren().put(getName(), value);
         perm.recalculatePermissibles();
     }
 
-    /**
-     * Loads a list of Permissions from a map of data, usually used from
-     * retrieval from a yaml file.
-     * <p>
-     * The data may contain a list of name:data, where the data contains the
-     * following keys:
-     * <ul>
-     * <li>default: Boolean true or false. If not specified, false.
-     * <li>children: {@code Map<String, Boolean>} of child permissions. If not
-     *     specified, empty list.
-     * <li>description: Short string containing a very small description of
-     *     this description. If not specified, empty string.
-     * </ul>
-     *
-     * @param data Map of permissions
-     * @param error An error message to show if a permission is invalid. May contain "%s" format tag, which will be replaced with the name of invalid permission.
-     * @param def Default permission value to use if missing
-     * @return Permission object
-     */
+    /// Loads a list of Permissions from a map of data, usually used from
+    /// retrieval from a yaml file.
+    ///
+    /// The data may contain a list of name:data, where the data contains the
+    /// following keys:
+    ///
+    ///   - default: Boolean true or false. If not specified, false.
+    ///   - children: `Map<String, Boolean>` of child permissions. If not
+    ///     specified, empty list.
+    ///   - description: Short string containing a very small description of
+    ///     this description. If not specified, empty string.
+    ///
+    /// @param data Map of permissions
+    /// @param error An error message to show if a permission is invalid. May contain "%s" format tag, which will be replaced with the name of invalid permission.
+    /// @param def Default permission value to use if missing
+    /// @return Permission object
     @NotNull
     public static List<Permission> loadPermissions(@NotNull Map<?, ?> data, @NotNull String error, @Nullable PermissionDefault def) {
         List<Permission> result = new ArrayList<Permission>();
@@ -246,47 +221,41 @@ public class Permission {
         return result;
     }
 
-    /**
-     * Loads a Permission from a map of data, usually used from retrieval from
-     * a yaml file.
-     * <p>
-     * The data may contain the following keys:
-     * <ul>
-     * <li>default: Boolean true or false. If not specified, false.
-     * <li>children: {@code Map<String, Boolean>} of child permissions. If not
-     *     specified, empty list.
-     * <li>description: Short string containing a very small description of
-     *     this description. If not specified, empty string.
-     * </ul>
-     *
-     * @param name Name of the permission
-     * @param data Map of keys
-     * @return Permission object
-     */
+    /// Loads a Permission from a map of data, usually used from retrieval from
+    /// a yaml file.
+    ///
+    /// The data may contain the following keys:
+    ///
+    ///   - default: Boolean true or false. If not specified, false.
+    ///   - children: `Map<String, Boolean>` of child permissions. If not
+    ///     specified, empty list.
+    ///   - description: Short string containing a very small description of
+    ///     this description. If not specified, empty string.
+    ///
+    /// @param name Name of the permission
+    /// @param data Map of keys
+    /// @return Permission object
     @NotNull
     public static Permission loadPermission(@NotNull String name, @NotNull Map<String, Object> data) {
         return loadPermission(name, data, DEFAULT_PERMISSION, null);
     }
 
-    /**
-     * Loads a Permission from a map of data, usually used from retrieval from
-     * a yaml file.
-     * <p>
-     * The data may contain the following keys:
-     * <ul>
-     * <li>default: Boolean true or false. If not specified, false.
-     * <li>children: {@code Map<String, Boolean>} of child permissions. If not
-     *     specified, empty list.
-     * <li>description: Short string containing a very small description of
-     *     this description. If not specified, empty string.
-     * </ul>
-     *
-     * @param name Name of the permission
-     * @param data Map of keys
-     * @param def Default permission value to use if not set
-     * @param output A list to append any created child-Permissions to, may be null
-     * @return Permission object
-     */
+    /// Loads a Permission from a map of data, usually used from retrieval from
+    /// a yaml file.
+    ///
+    /// The data may contain the following keys:
+    ///
+    ///   - default: Boolean true or false. If not specified, false.
+    ///   - children: `Map<String, Boolean>` of child permissions. If not
+    ///     specified, empty list.
+    ///   - description: Short string containing a very small description of
+    ///     this description. If not specified, empty string.
+    ///
+    /// @param name Name of the permission
+    /// @param data Map of keys
+    /// @param def Default permission value to use if not set
+    /// @param output A list to append any created child-Permissions to, may be null
+    /// @return Permission object
     @NotNull
     public static Permission loadPermission(@NotNull String name, @NotNull Map<?, ?> data, @Nullable PermissionDefault def, @Nullable List<Permission> output) {
         Preconditions.checkArgument(name != null, "Name cannot be null");

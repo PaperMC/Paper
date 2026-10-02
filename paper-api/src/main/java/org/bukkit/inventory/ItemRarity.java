@@ -3,10 +3,8 @@ package org.bukkit.inventory;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 
-/**
- * An item's rarity determines the default color of its name. This enum is
- * ordered from least rare to most rare.
- */
+/// An item's rarity determines the default color of its name. This enum is
+/// ordered from least rare to most rare.
 public enum ItemRarity {
 
     // Start generate - ItemRarity
@@ -22,11 +20,9 @@ public enum ItemRarity {
         this.color = color;
     }
 
-    /**
-     * Gets the color formatting associated with this rarity.
-     *
-     * @return the color
-     */
+    /// Gets the color formatting associated with this rarity.
+    ///
+    /// @return the color
     public @org.jetbrains.annotations.NotNull TextColor color() {
         return this.color;
     }

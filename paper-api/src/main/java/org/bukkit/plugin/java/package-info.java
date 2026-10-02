@@ -1,6 +1,4 @@
-/**
- * Classes for handling {@link org.bukkit.plugin.Plugin plugins} written in
- * java.
- */
+/// Classes for handling [`plugins`][org.bukkit.plugin.Plugin] written in
+/// java.
 package org.bukkit.plugin.java;
 

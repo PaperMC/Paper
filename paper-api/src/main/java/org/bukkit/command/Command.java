@@ -19,13 +19,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a Command, which executes various tasks upon user input
- *
- * @apiNote plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
- */
+/// Represents a Command, which executes various tasks upon user input
+///
+/// @apiNote plugin developers should prefer to use the
+///     [Brigadier command API](https://docs.papermc.io/paper/dev/command-api/basics/introduction/).
+///     For a direct alternative to Bukkit commands, [Basic commands](https://docs.papermc.io/paper/dev/command-api/misc/basic-command/) are recommended
 @ApiStatus.Obsolete(since = "26.3")
 public abstract class Command {
     private String name;
@@ -38,14 +36,10 @@ public abstract class Command {
     protected String usageMessage;
     private String permission;
     private net.kyori.adventure.text.Component permissionMessage; // Paper
-    /**
-     * @deprecated Timings will be removed in the future
-     */
+    /// @deprecated Timings will be removed in the future
     @Deprecated(forRemoval = true)
     public co.aikar.timings.Timing timings; // Paper
-    /**
-     * @deprecated Timings will be removed in the future
-     */
+    /// @deprecated Timings will be removed in the future
     @Deprecated(forRemoval = true)
     @NotNull public String getTimingName() {return getName();} // Paper
 
@@ -63,44 +57,38 @@ public abstract class Command {
         this.activeAliases = new ArrayList<String>(aliases);
     }
 
-    /**
-     * Executes the command, returning its success
-     *
-     * @param sender Source object which is executing this command
-     * @param commandLabel The alias of the command used
-     * @param args All arguments passed to the command, split via ' '
-     * @return true if the command was successful, otherwise false
-     */
+    /// Executes the command, returning its success
+    ///
+    /// @param sender Source object which is executing this command
+    /// @param commandLabel The alias of the command used
+    /// @param args All arguments passed to the command, split via ' '
+    /// @return true if the command was successful, otherwise false
     public abstract boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String @NotNull [] args);
 
-    /**
-     * Executed on tab completion for this command, returning a list of
-     * options the player can tab through.
-     *
-     * @param sender Source object which is executing this command
-     * @param alias the alias being used
-     * @param args All arguments passed to the command, split via ' '
-     * @return a list of tab-completions for the specified arguments. This
-     *     will never be null. List may be immutable.
-     * @throws IllegalArgumentException if sender, alias, or args is null
-     */
+    /// Executed on tab completion for this command, returning a list of
+    /// options the player can tab through.
+    ///
+    /// @param sender Source object which is executing this command
+    /// @param alias the alias being used
+    /// @param args All arguments passed to the command, split via ' '
+    /// @return a list of tab-completions for the specified arguments. This
+    ///     will never be null. List may be immutable.
+    /// @throws IllegalArgumentException if sender, alias, or args is null
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String @NotNull [] args) throws IllegalArgumentException {
         return tabComplete0(sender, alias, args, null);
     }
 
-    /**
-     * Executed on tab completion for this command, returning a list of
-     * options the player can tab through.
-     *
-     * @param sender Source object which is executing this command
-     * @param alias the alias being used
-     * @param args All arguments passed to the command, split via ' '
-     * @param location The position looked at by the sender, or null if none
-     * @return a list of tab-completions for the specified arguments. This
-     *     will never be null. List may be immutable.
-     * @throws IllegalArgumentException if sender, alias, or args is null
-     */
+    /// Executed on tab completion for this command, returning a list of
+    /// options the player can tab through.
+    ///
+    /// @param sender Source object which is executing this command
+    /// @param alias the alias being used
+    /// @param args All arguments passed to the command, split via ' '
+    /// @param location The position looked at by the sender, or null if none
+    /// @return a list of tab-completions for the specified arguments. This
+    ///     will never be null. List may be immutable.
+    /// @throws IllegalArgumentException if sender, alias, or args is null
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String @NotNull [] args, @Nullable Location location) throws IllegalArgumentException {
         return tabComplete(sender, alias, args);
@@ -132,27 +120,23 @@ public abstract class Command {
         return matchedPlayers;
     }
 
-    /**
-     * Returns the name of this command
-     *
-     * @return Name of this command
-     */
+    /// Returns the name of this command
+    ///
+    /// @return Name of this command
     @NotNull
     public String getName() {
         return name;
     }
 
-    /**
-     * Sets the name of this command.
-     * <p>
-     * May only be used before registering the command.
-     * Will return true if the new name is set, and false
-     * if the command has already been registered.
-     *
-     * @param name New command name
-     * @return returns true if the name change happened instantly or false if
-     *     the command was already registered
-     */
+    /// Sets the name of this command.
+    ///
+    /// May only be used before registering the command.
+    /// Will return true if the new name is set, and false
+    /// if the command has already been registered.
+    ///
+    /// @param name New command name
+    /// @return returns true if the name change happened instantly or false if
+    ///     the command was already registered
     public boolean setName(@NotNull String name) {
         if (!isRegistered()) {
             this.name = (name == null) ? "" : name;
@@ -161,37 +145,31 @@ public abstract class Command {
         return false;
     }
 
-    /**
-     * Gets the permission required by users to be able to perform this
-     * command
-     *
-     * @return Permission name, or null if none
-     */
+    /// Gets the permission required by users to be able to perform this
+    /// command
+    ///
+    /// @return Permission name, or null if none
     @Nullable
     public String getPermission() {
         return permission;
     }
 
-    /**
-     * Sets the permission required by users to be able to perform this
-     * command
-     *
-     * @param permission Permission name or null
-     */
+    /// Sets the permission required by users to be able to perform this
+    /// command
+    ///
+    /// @param permission Permission name or null
     public void setPermission(@Nullable String permission) {
         this.permission = permission;
     }
 
-    /**
-     * Tests the given {@link CommandSender} to see if they can perform this
-     * command.
-     * <p>
-     * If they do not have permission, they will be informed that they cannot
-     * do this.
-     *
-     * @param target User to test
-     * @return true if they can use it, otherwise false
-     */
+    /// Tests the given [CommandSender] to see if they can perform this
+    /// command.
+    ///
+    /// If they do not have permission, they will be informed that they cannot
+    /// do this.
+    ///
+    /// @param target User to test
+    /// @return true if they can use it, otherwise false
     public boolean testPermission(@NotNull CommandSender target) {
         if (testPermissionSilent(target)) {
             return true;
@@ -207,15 +185,13 @@ public abstract class Command {
         return false;
     }
 
-    /**
-     * Tests the given {@link CommandSender} to see if they can perform this
-     * command.
-     * <p>
-     * No error is sent to the sender.
-     *
-     * @param target User to test
-     * @return true if they can use it, otherwise false
-     */
+    /// Tests the given [CommandSender] to see if they can perform this
+    /// command.
+    ///
+    /// No error is sent to the sender.
+    ///
+    /// @param target User to test
+    /// @return true if they can use it, otherwise false
     public boolean testPermissionSilent(@NotNull CommandSender target) {
         if ((permission == null) || (permission.length() == 0)) {
             return true;
@@ -230,27 +206,23 @@ public abstract class Command {
         return false;
     }
 
-    /**
-     * Returns the label for this command
-     *
-     * @return Label of this command
-     */
+    /// Returns the label for this command
+    ///
+    /// @return Label of this command
     @NotNull
     public String getLabel() {
         return label;
     }
 
-    /**
-     * Sets the label of this command.
-     * <p>
-     * May only be used before registering the command.
-     * Will return true if the new name is set, and false
-     * if the command has already been registered.
-     *
-     * @param name The command's name
-     * @return returns true if the name change happened instantly or false if
-     *     the command was already registered
-     */
+    /// Sets the label of this command.
+    ///
+    /// May only be used before registering the command.
+    /// Will return true if the new name is set, and false
+    /// if the command has already been registered.
+    ///
+    /// @param name The command's name
+    /// @return returns true if the name change happened instantly or false if
+    ///     the command was already registered
     public boolean setLabel(@NotNull String name) {
         if (name == null) {
             name = "";
@@ -263,14 +235,12 @@ public abstract class Command {
         return false;
     }
 
-    /**
-     * Registers this command to a CommandMap.
-     * Once called it only allows changes the registered CommandMap
-     *
-     * @param commandMap the CommandMap to register this command to
-     * @return true if the registration was successful (the current registered
-     *     CommandMap was the passed CommandMap or null) false otherwise
-     */
+    /// Registers this command to a CommandMap.
+    /// Once called it only allows changes the registered CommandMap
+    ///
+    /// @param commandMap the CommandMap to register this command to
+    /// @return true if the registration was successful (the current registered
+    ///     CommandMap was the passed CommandMap or null) false otherwise
     public boolean register(@NotNull CommandMap commandMap) {
         if (allowChangesFrom(commandMap)) {
             this.commandMap = commandMap;
@@ -280,15 +250,13 @@ public abstract class Command {
         return false;
     }
 
-    /**
-     * Unregisters this command from the passed CommandMap applying any
-     * outstanding changes
-     *
-     * @param commandMap the CommandMap to unregister
-     * @return true if the unregistration was successful (the current
-     *     registered CommandMap was the passed CommandMap or null) false
-     *     otherwise
-     */
+    /// Unregisters this command from the passed CommandMap applying any
+    /// outstanding changes
+    ///
+    /// @param commandMap the CommandMap to unregister
+    /// @return true if the unregistration was successful (the current
+    ///     registered CommandMap was the passed CommandMap or null) false
+    ///     otherwise
     public boolean unregister(@NotNull CommandMap commandMap) {
         if (allowChangesFrom(commandMap)) {
             this.commandMap = null;
@@ -304,72 +272,60 @@ public abstract class Command {
         return (null == this.commandMap || this.commandMap == commandMap);
     }
 
-    /**
-     * Returns the current registered state of this command
-     *
-     * @return true if this command is currently registered false otherwise
-     */
+    /// Returns the current registered state of this command
+    ///
+    /// @return true if this command is currently registered false otherwise
     public boolean isRegistered() {
         return (null != this.commandMap);
     }
 
-    /**
-     * Returns a list of active aliases of this command
-     *
-     * @return List of aliases
-     */
+    /// Returns a list of active aliases of this command
+    ///
+    /// @return List of aliases
     @NotNull
     public List<String> getAliases() {
         return activeAliases;
     }
 
-    /**
-     * Returns a message to be displayed on a failed permission check for this
-     * command
-     *
-     * @return Permission check failed message
-     * @deprecated permission messages have not worked for player-executed
-     * commands since 1.13 as clients without permission to execute a command
-     * are unaware of its existence and therefore will not send an unknown
-     * command execution to the server. This message will only ever be shown to
-     * consoles or when this command is executed with
-     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     */
+    /// Returns a message to be displayed on a failed permission check for this
+    /// command
+    ///
+    /// @return Permission check failed message
+    /// @deprecated permission messages have not worked for player-executed
+    /// commands since 1.13 as clients without permission to execute a command
+    /// are unaware of its existence and therefore will not send an unknown
+    /// command execution to the server. This message will only ever be shown to
+    /// consoles or when this command is executed with
+    /// [Bukkit#dispatchCommand(CommandSender, String)].
     @Deprecated(since = "1.20.4")
     @Nullable
     public String getPermissionMessage() {
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(permissionMessage); // Paper
     }
 
-    /**
-     * Gets a brief description of this command
-     *
-     * @return Description of this command
-     */
+    /// Gets a brief description of this command
+    ///
+    /// @return Description of this command
     @NotNull
     public String getDescription() {
         return description;
     }
 
-    /**
-     * Gets an example usage of this command
-     *
-     * @return One or more example usages
-     */
+    /// Gets an example usage of this command
+    ///
+    /// @return One or more example usages
     @NotNull
     public String getUsage() {
         return usageMessage;
     }
 
-    /**
-     * Sets the list of aliases to request on registration for this command.
-     * This is not effective outside of defining aliases in the {@link
-     * PluginDescriptionFile#getCommands()} (under the
-     * `<code>aliases</code>' node) is equivalent to this method.
-     *
-     * @param aliases aliases to register to this command
-     * @return this command object, for chaining
-     */
+    /// Sets the list of aliases to request on registration for this command.
+    /// This is not effective outside of defining aliases in the
+    /// [PluginDescriptionFile#getCommands()] (under the
+    /// \``aliases`' node) is equivalent to this method.
+    ///
+    /// @param aliases aliases to register to this command
+    /// @return this command object, for chaining
     @NotNull
     public Command setAliases(@NotNull List<String> aliases) {
         this.aliases = aliases;
@@ -379,33 +335,29 @@ public abstract class Command {
         return this;
     }
 
-    /**
-     * Sets a brief description of this command. Defining a description in the
-     * {@link PluginDescriptionFile#getCommands()} (under the
-     * `<code>description</code>' node) is equivalent to this method.
-     *
-     * @param description new command description
-     * @return this command object, for chaining
-     */
+    /// Sets a brief description of this command. Defining a description in the
+    /// [PluginDescriptionFile#getCommands()] (under the
+    /// \``description`' node) is equivalent to this method.
+    ///
+    /// @param description new command description
+    /// @return this command object, for chaining
     @NotNull
     public Command setDescription(@NotNull String description) {
         this.description = (description == null) ? "" : description;
         return this;
     }
 
-    /**
-     * Sets the message sent when a permission check fails
-     *
-     * @param permissionMessage new permission message, null to indicate
-     *     default message, or an empty string to indicate no message
-     * @return this command object, for chaining
-     * @deprecated permission messages have not worked for player-executed
-     * commands since 1.13 as clients without permission to execute a command
-     * are unaware of its existence and therefore will not send an unknown
-     * command execution to the server. This message will only ever be shown to
-     * consoles or when this command is executed with
-     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     */
+    /// Sets the message sent when a permission check fails
+    ///
+    /// @param permissionMessage new permission message, null to indicate
+    ///     default message, or an empty string to indicate no message
+    /// @return this command object, for chaining
+    /// @deprecated permission messages have not worked for player-executed
+    /// commands since 1.13 as clients without permission to execute a command
+    /// are unaware of its existence and therefore will not send an unknown
+    /// command execution to the server. This message will only ever be shown to
+    /// consoles or when this command is executed with
+    /// [Bukkit#dispatchCommand(CommandSender, String)].
     @Deprecated(since = "1.20.4")
     @NotNull
     public Command setPermissionMessage(@Nullable String permissionMessage) {
@@ -413,45 +365,39 @@ public abstract class Command {
         return this;
     }
 
-    /**
-     * Sets the example usage of this command
-     *
-     * @param usage new example usage
-     * @return this command object, for chaining
-     */
+    /// Sets the example usage of this command
+    ///
+    /// @param usage new example usage
+    /// @return this command object, for chaining
     @NotNull
     public Command setUsage(@NotNull String usage) {
         this.usageMessage = (usage == null) ? "" : usage;
         return this;
     }
     // Paper start
-    /**
-     * Gets the permission message.
-     *
-     * @return the permission message
-     * @deprecated permission messages have not worked for player-executed
-     * commands since 1.13 as clients without permission to execute a command
-     * are unaware of its existence and therefore will not send an unknown
-     * command execution to the server. This message will only ever be shown to
-     * consoles or when this command is executed with
-     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     */
+    /// Gets the permission message.
+    ///
+    /// @return the permission message
+    /// @deprecated permission messages have not worked for player-executed
+    /// commands since 1.13 as clients without permission to execute a command
+    /// are unaware of its existence and therefore will not send an unknown
+    /// command execution to the server. This message will only ever be shown to
+    /// consoles or when this command is executed with
+    /// [Bukkit#dispatchCommand(CommandSender, String)].
     @Deprecated
     public net.kyori.adventure.text.@Nullable Component permissionMessage() {
         return this.permissionMessage;
     }
 
-    /**
-     * Sets the permission message.
-     *
-     * @param permissionMessage the permission message
-     * @deprecated permission messages have not worked for player-executed
-     * commands since 1.13 as clients without permission to execute a command
-     * are unaware of its existence and therefore will not send an unknown
-     * command execution to the server. This message will only ever be shown to
-     * consoles or when this command is executed with
-     * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     */
+    /// Sets the permission message.
+    ///
+    /// @param permissionMessage the permission message
+    /// @deprecated permission messages have not worked for player-executed
+    /// commands since 1.13 as clients without permission to execute a command
+    /// are unaware of its existence and therefore will not send an unknown
+    /// command execution to the server. This message will only ever be shown to
+    /// consoles or when this command is executed with
+    /// [Bukkit#dispatchCommand(CommandSender, String)].
     @Deprecated
     public void permissionMessage(net.kyori.adventure.text.@Nullable Component permissionMessage) {
         this.permissionMessage = permissionMessage;

@@ -7,9 +7,7 @@ import org.bukkit.inventory.Recipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when the recipe of an Item is completed inside a crafting matrix.
- */
+/// Called when the recipe of an Item is completed inside a crafting matrix.
 public class CraftItemEvent extends InventoryClickEvent {
 
     private final Recipe recipe;
@@ -32,9 +30,7 @@ public class CraftItemEvent extends InventoryClickEvent {
         return (CraftingInventory) super.getInventory();
     }
 
-    /**
-     * @return A copy of the current recipe on the crafting matrix.
-     */
+    /// @return A copy of the current recipe on the crafting matrix.
     @NotNull
     public Recipe getRecipe() {
         return this.recipe;

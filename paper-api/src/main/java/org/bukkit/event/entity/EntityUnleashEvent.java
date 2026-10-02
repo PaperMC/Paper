@@ -6,17 +6,15 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called immediately prior to an entity being unleashed.
- * <p>
- * Cancelling this event when either:
- * <ul>
- *     <li>the leashed entity dies,</li>
- *     <li>the entity changes dimension, or</li>
- *     <li>the client has disconnected the leash</li>
- * </ul>
- * will have no effect.
- */
+/// Called immediately prior to an entity being unleashed.
+///
+/// Cancelling this event when either:
+///
+///   - the leashed entity dies,
+///   - the entity changes dimension, or
+///   - the client has disconnected the leash
+///
+/// will have no effect.
 public class EntityUnleashEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -39,30 +37,24 @@ public class EntityUnleashEvent extends EntityEvent implements Cancellable {
         this.dropLeash = dropLeash;
     }
 
-    /**
-     * Returns the reason for the unleashing.
-     *
-     * @return The reason
-     */
+    /// Returns the reason for the unleashing.
+    ///
+    /// @return The reason
     @NotNull
     public UnleashReason getReason() {
         return this.reason;
     }
 
-    /**
-     * Returns whether a leash item will be dropped.
-     *
-     * @return Whether the leash item will be dropped
-     */
+    /// Returns whether a leash item will be dropped.
+    ///
+    /// @return Whether the leash item will be dropped
     public boolean isDropLeash() {
         return this.dropLeash;
     }
 
-    /**
-     * Sets whether a leash item should be dropped.
-     *
-     * @param dropLeash Whether the leash item should be dropped
-     */
+    /// Sets whether a leash item should be dropped.
+    ///
+    /// @param dropLeash Whether the leash item should be dropped
     public void setDropLeash(boolean dropLeash) {
         this.dropLeash = dropLeash;
     }
@@ -89,22 +81,14 @@ public class EntityUnleashEvent extends EntityEvent implements Cancellable {
     }
 
     public enum UnleashReason {
-        /**
-         * When the entity's leashholder has died or logged out, and so is
-         * unleashed
-         */
+        /// When the entity's leashholder has died or logged out, and so is
+        /// unleashed
         HOLDER_GONE,
-        /**
-         * When the entity's leashholder attempts to unleash it
-         */
+        /// When the entity's leashholder attempts to unleash it
         PLAYER_UNLEASH,
-        /**
-         * When the entity's leashholder is more than 10 blocks away
-         */
+        /// When the entity's leashholder is more than 10 blocks away
         DISTANCE,
-        /**
-         * When the leashed entity is removed from the game
-         */
+        /// When the leashed entity is removed from the game
         LEASHED_GONE,
         UNKNOWN;
     }

@@ -8,10 +8,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when the fluid level of a block changes due to changes in adjacent
- * blocks.
- */
+/// Called when the fluid level of a block changes due to changes in adjacent
+/// blocks.
 public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,22 +23,18 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
         this.newData = newData;
     }
 
-    /**
-     * Gets the new data of the changed block.
-     *
-     * @return new data
-     */
+    /// Gets the new data of the changed block.
+    ///
+    /// @return new data
     @NotNull
     public BlockData getNewData() {
         return this.newData;
     }
 
-    /**
-     * Sets the new data of the changed block. Must be of the same Material as
-     * the old one.
-     *
-     * @param newData the new data
-     */
+    /// Sets the new data of the changed block. Must be of the same Material as
+    /// the old one.
+    ///
+    /// @param newData the new data
     public void setNewData(@NotNull BlockData newData) {
         Preconditions.checkArgument(newData != null, "newData null");
         Preconditions.checkArgument(this.newData.getMaterial().equals(newData.getMaterial()), "Cannot change fluid type");

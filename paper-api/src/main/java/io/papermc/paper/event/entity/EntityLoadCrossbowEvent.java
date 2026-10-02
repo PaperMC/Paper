@@ -9,9 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a LivingEntity loads a crossbow with a projectile.
- */
+/// Called when a LivingEntity loads a crossbow with a projectile.
 @NullMarked
 public class EntityLoadCrossbowEvent extends EntityEvent implements Cancellable {
 
@@ -35,34 +33,26 @@ public class EntityLoadCrossbowEvent extends EntityEvent implements Cancellable 
         return (LivingEntity) super.getEntity();
     }
 
-    /**
-     * Gets the crossbow {@link ItemStack} being loaded.
-     *
-     * @return the crossbow involved in this event
-     */
+    /// Gets the crossbow [ItemStack] being loaded.
+    ///
+    /// @return the crossbow involved in this event
     public ItemStack getCrossbow() {
         return this.crossbow;
     }
 
-    /**
-     * Gets the hand from which the crossbow was loaded.
-     *
-     * @return the hand
-     */
+    /// Gets the hand from which the crossbow was loaded.
+    ///
+    /// @return the hand
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * @return should the itemstack be consumed
-     */
+    /// @return should the itemstack be consumed
     public boolean shouldConsumeItem() {
         return this.consumeItem;
     }
 
-    /**
-     * @param consume should the item be consumed
-     */
+    /// @param consume should the item be consumed
     public void setConsumeItem(final boolean consume) {
         this.consumeItem = consume;
     }
@@ -72,10 +62,8 @@ public class EntityLoadCrossbowEvent extends EntityEvent implements Cancellable 
         return this.cancelled;
     }
 
-    /**
-     * Set whether to cancel the crossbow being loaded. If canceled, the
-     * projectile that would be loaded into the crossbow will not be consumed.
-     */
+    /// Set whether to cancel the crossbow being loaded. If canceled, the
+    /// projectile that would be loaded into the crossbow will not be consumed.
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

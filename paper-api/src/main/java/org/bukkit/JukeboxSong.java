@@ -7,9 +7,7 @@ import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a song which may play in a Jukebox.
- */
+/// Represents a song which may play in a Jukebox.
 @NullMarked
 public interface JukeboxSong extends Keyed, Translatable {
 
@@ -63,39 +61,29 @@ public interface JukeboxSong extends Keyed, Translatable {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
-    /**
-     * @deprecated this method assumes that jukebox song description will
-     * always be a translatable component which is not guaranteed.
-     */
+    /// @deprecated this method assumes that jukebox song description will
+    /// always be a translatable component which is not guaranteed.
     @Override
     @Deprecated(forRemoval = true)
     String getTranslationKey();
 
-    /**
-     * Gets the sound for this song.
-     *
-     * @return the sound
-     */
+    /// Gets the sound for this song.
+    ///
+    /// @return the sound
     Sound getSound();
 
-    /**
-     * Gets the description for this song.
-     *
-     * @return the description
-     */
+    /// Gets the description for this song.
+    ///
+    /// @return the description
     Component getDescription();
 
-    /**
-     * Gets the length in seconds for this song.
-     *
-     * @return the length in seconds
-     */
+    /// Gets the length in seconds for this song.
+    ///
+    /// @return the length in seconds
     float getLengthInSeconds();
 
-    /**
-     * Gets the comparator output for this song.
-     *
-     * @return the comparator output
-     */
+    /// Gets the comparator output for this song.
+    ///
+    /// @return the comparator output
     int getComparatorOutput();
 }

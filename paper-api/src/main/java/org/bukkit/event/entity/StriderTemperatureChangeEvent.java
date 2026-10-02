@@ -6,10 +6,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Strider}'s temperature has changed as a result of
- * entering or exiting blocks it considers warm.
- */
+/// Called when a [Strider]'s temperature has changed as a result of
+/// entering or exiting blocks it considers warm.
 public class StriderTemperatureChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,11 +27,9 @@ public class StriderTemperatureChangeEvent extends EntityEvent implements Cancel
         return (Strider) this.entity;
     }
 
-    /**
-     * Get the Strider's new shivering state.
-     *
-     * @return the new shivering state
-     */
+    /// Get the Strider's new shivering state.
+    ///
+    /// @return the new shivering state
     public boolean isShivering() {
         return this.shivering;
     }

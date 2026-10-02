@@ -4,9 +4,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the two types of coal
- */
+/// Represents the two types of coal
 @Deprecated(forRemoval = true, since = "1.13")
 public enum CoalType {
     COAL(0x0),
@@ -19,25 +17,21 @@ public enum CoalType {
         this.data = (byte) data;
     }
 
-    /**
-     * Gets the associated data value representing this type of coal
-     *
-     * @return A byte containing the data value of this coal type
-     * @deprecated Magic value
-     */
+    /// Gets the associated data value representing this type of coal
+    ///
+    /// @return A byte containing the data value of this coal type
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
 
-    /**
-     * Gets the type of coal with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link CoalType} representing the given value, or null if
-     *     it doesn't exist
-     * @deprecated Magic value
-     */
+    /// Gets the type of coal with the given data value
+    ///
+    /// @param data Data value to fetch
+    /// @return The [CoalType] representing the given value, or null if
+    ///     it doesn't exist
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Nullable
     public static CoalType getByData(final byte data) {

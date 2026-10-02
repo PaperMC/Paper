@@ -2,12 +2,10 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 
-/**
- * Represents redstone wire
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents redstone wire
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class RedstoneWire extends MaterialData implements Redstone {
     public RedstoneWire() {
@@ -18,22 +16,18 @@ public class RedstoneWire extends MaterialData implements Redstone {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public RedstoneWire(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current state of this Material, indicating if it's powered or
-     * unpowered
-     *
-     * @return true if powered, otherwise false
-     */
+    /// Gets the current state of this Material, indicating if it's powered or
+    /// unpowered
+    ///
+    /// @return true if powered, otherwise false
     @Override
     public boolean isPowered() {
         return getData() > 0;

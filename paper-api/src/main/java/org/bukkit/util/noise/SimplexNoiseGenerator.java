@@ -5,14 +5,12 @@ import java.util.Random;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Generates simplex-based noise.
- * <p>
- * This is a modified version of the freely published version in the paper by
- * Stefan Gustavson at
- * <a href="http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf">
- * http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf</a>
- */
+/// Generates simplex-based noise.
+///
+/// This is a modified version of the freely published version in the paper by
+/// Stefan Gustavson at
+/// [
+/// http://staffwww.itn.liu.se/\~stegu/simplexnoise/simplexnoise.pdf](http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf)
 public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     protected static final double SQRT_3 = Math.sqrt(3);
     protected static final double SQRT_5 = Math.sqrt(5);
@@ -50,29 +48,23 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
         super();
     }
 
-    /**
-     * Creates a seeded simplex noise generator for the given world
-     *
-     * @param world World to construct this generator for
-     */
+    /// Creates a seeded simplex noise generator for the given world
+    ///
+    /// @param world World to construct this generator for
     public SimplexNoiseGenerator(@NotNull World world) {
         this(new Random(world.getSeed()));
     }
 
-    /**
-     * Creates a seeded simplex noise generator for the given seed
-     *
-     * @param seed Seed to construct this generator for
-     */
+    /// Creates a seeded simplex noise generator for the given seed
+    ///
+    /// @param seed Seed to construct this generator for
     public SimplexNoiseGenerator(long seed) {
         this(new Random(seed));
     }
 
-    /**
-     * Creates a seeded simplex noise generator with the given Random
-     *
-     * @param rand Random to construct with
-     */
+    /// Creates a seeded simplex noise generator with the given Random
+    ///
+    /// @param rand Random to construct with
     public SimplexNoiseGenerator(@NotNull Random rand) {
         super(rand);
         offsetW = rand.nextDouble() * 256;
@@ -90,52 +82,44 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
         return g[0] * x + g[1] * y + g[2] * z + g[3] * w;
     }
 
-    /**
-     * Computes and returns the 1D unseeded simplex noise for the given
-     * coordinates in 1D space
-     *
-     * @param xin X coordinate
-     * @return Noise at given location, from range -1 to 1
-     */
+    /// Computes and returns the 1D unseeded simplex noise for the given
+    /// coordinates in 1D space
+    ///
+    /// @param xin X coordinate
+    /// @return Noise at given location, from range -1 to 1
     public static double getNoise(double xin) {
         return instance.noise(xin);
     }
 
-    /**
-     * Computes and returns the 2D unseeded simplex noise for the given
-     * coordinates in 2D space
-     *
-     * @param xin X coordinate
-     * @param yin Y coordinate
-     * @return Noise at given location, from range -1 to 1
-     */
+    /// Computes and returns the 2D unseeded simplex noise for the given
+    /// coordinates in 2D space
+    ///
+    /// @param xin X coordinate
+    /// @param yin Y coordinate
+    /// @return Noise at given location, from range -1 to 1
     public static double getNoise(double xin, double yin) {
         return instance.noise(xin, yin);
     }
 
-    /**
-     * Computes and returns the 3D unseeded simplex noise for the given
-     * coordinates in 3D space
-     *
-     * @param xin X coordinate
-     * @param yin Y coordinate
-     * @param zin Z coordinate
-     * @return Noise at given location, from range -1 to 1
-     */
+    /// Computes and returns the 3D unseeded simplex noise for the given
+    /// coordinates in 3D space
+    ///
+    /// @param xin X coordinate
+    /// @param yin Y coordinate
+    /// @param zin Z coordinate
+    /// @return Noise at given location, from range -1 to 1
     public static double getNoise(double xin, double yin, double zin) {
         return instance.noise(xin, yin, zin);
     }
 
-    /**
-     * Computes and returns the 4D simplex noise for the given coordinates in
-     * 4D space
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     * @param z Z coordinate
-     * @param w W coordinate
-     * @return Noise at given location, from range -1 to 1
-     */
+    /// Computes and returns the 4D simplex noise for the given coordinates in
+    /// 4D space
+    ///
+    /// @param x X coordinate
+    /// @param y Y coordinate
+    /// @param z Z coordinate
+    /// @param w W coordinate
+    /// @return Noise at given location, from range -1 to 1
     public static double getNoise(double x, double y, double z, double w) {
         return instance.noise(x, y, z, w);
     }
@@ -355,16 +339,14 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
         return 70.0 * (n0 + n1 + n2);
     }
 
-    /**
-     * Computes and returns the 4D simplex noise for the given coordinates in
-     * 4D space
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     * @param z Z coordinate
-     * @param w W coordinate
-     * @return Noise at given location, from range -1 to 1
-     */
+    /// Computes and returns the 4D simplex noise for the given coordinates in
+    /// 4D space
+    ///
+    /// @param x X coordinate
+    /// @param y Y coordinate
+    /// @param z Z coordinate
+    /// @param w W coordinate
+    /// @return Noise at given location, from range -1 to 1
     public double noise(double x, double y, double z, double w) {
         x += offsetX;
         y += offsetY;
@@ -511,11 +493,9 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
         return 27.0 * (n0 + n1 + n2 + n3 + n4);
     }
 
-    /**
-     * Gets the singleton unseeded instance of this generator
-     *
-     * @return Singleton
-     */
+    /// Gets the singleton unseeded instance of this generator
+    ///
+    /// @return Singleton
     @NotNull
     public static SimplexNoiseGenerator getInstance() {
         return instance;

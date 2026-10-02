@@ -8,9 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 import java.util.Objects;
 
-/**
- * Called when a player changes their locale in the client settings.
- */
+/// Called when a player changes their locale in the client settings.
 public class PlayerLocaleChangeEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,21 +23,17 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
         this.adventure$locale = Objects.requireNonNullElse(Translator.parseLocale(locale), Locale.US);
     }
 
-    /**
-     * @return the player's new locale
-     * @see Player#getLocale()
-     * @deprecated in favour of {@link #locale()}
-     */
+    /// @return the player's new locale
+    /// @see Player#getLocale()
+    /// @deprecated in favour of [#locale()]
     @NotNull
     @Deprecated
     public String getLocale() {
         return this.locale;
     }
 
-    /**
-     * @see Player#locale()
-     * @return the player's new locale
-     */
+    /// @see Player#locale()
+    /// @return the player's new locale
     public @NotNull Locale locale() {
         return this.adventure$locale;
     }

@@ -8,9 +8,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called prior to an entity being unleashed due to a player's action.
- */
+/// Called prior to an entity being unleashed due to a player's action.
 public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Cancellable {
 
     private final Player player;
@@ -37,21 +35,17 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
         this(entity, player, EquipmentSlot.HAND);
     }
 
-    /**
-     * Returns the player who is unleashing the entity.
-     *
-     * @return The player
-     */
+    /// Returns the player who is unleashing the entity.
+    ///
+    /// @return The player
     @NotNull
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Get the hand used by the player to unleash the entity.
-     *
-     * @return the hand
-     */
+    /// Get the hand used by the player to unleash the entity.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;

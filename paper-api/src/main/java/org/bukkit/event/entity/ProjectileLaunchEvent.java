@@ -6,9 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a projectile is launched.
- */
+/// Called when a projectile is launched.
 public class ProjectileLaunchEvent extends EntitySpawnEvent implements Cancellable {
 
     private boolean cancelled;

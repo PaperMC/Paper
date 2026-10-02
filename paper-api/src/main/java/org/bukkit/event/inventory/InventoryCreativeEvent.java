@@ -6,11 +6,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when a player in creative mode puts down or picks up
- * an item in their inventory / hotbar and when they drop items from their
- * Inventory while in creative mode.
- */
+/// This event is called when a player in creative mode puts down or picks up
+/// an item in their inventory / hotbar and when they drop items from their
+/// Inventory while in creative mode.
 public class InventoryCreativeEvent extends InventoryClickEvent {
 
     private ItemStack item;

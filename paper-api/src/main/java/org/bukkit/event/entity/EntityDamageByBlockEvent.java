@@ -11,13 +11,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an entity is damaged by a block
- * <p>
- * For explosions, the Block returned by {@link #getDamager()} has
- * already been cleared. See {@link #getDamagerBlockState()} for a snapshot
- * of the block if it has already been changed.
- */
+/// Called when an entity is damaged by a block
+///
+/// For explosions, the Block returned by [#getDamager()] has
+/// already been cleared. See [#getDamagerBlockState()] for a snapshot
+/// of the block if it has already been changed.
 public class EntityDamageByBlockEvent extends EntityDamageEvent {
 
     private final Block damager;
@@ -50,24 +48,20 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
         this.damagerState = damagerState;
     }
 
-    /**
-     * Returns the block that damaged the player.
-     *
-     * @return Block that damaged the player
-     */
+    /// Returns the block that damaged the player.
+    ///
+    /// @return Block that damaged the player
     @Nullable
     public Block getDamager() {
         return this.damager;
     }
 
-    /**
-     * Returns the captured BlockState of the block that damaged the player.
-     * <p>
-     * This block state is not placed so {@link BlockState#isPlaced()}
-     * will be {@code false}.
-     *
-     * @return the block state
-     */
+    /// Returns the captured BlockState of the block that damaged the player.
+    ///
+    /// This block state is not placed so [BlockState#isPlaced()]
+    /// will be `false`.
+    ///
+    /// @return the block state
     @Nullable
     public BlockState getDamagerBlockState() {
         return this.damagerState;

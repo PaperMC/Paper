@@ -7,10 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Holds the contents of an item container.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER
- */
+/// Holds the contents of an item container.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER
 @ApiStatus.NonExtendable
 public interface ItemContainerContents {
 
@@ -24,34 +22,28 @@ public interface ItemContainerContents {
         return ItemComponentTypesBridge.bridge().itemContainerContents();
     }
 
-    /**
-     * Gets the contents of the container.
-     *
-     * @return the contents
-     */
+    /// Gets the contents of the container.
+    ///
+    /// @return the contents
     @Contract(value = "-> new", pure = true)
     @Unmodifiable List<ItemStack> contents();
 
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemContainerContents> {
 
-        /**
-         * Adds an item stack to the container.
-         *
-         * @param stack the item stack
-         * @return the builder for chaining
-         * @see #contents()
-         */
+        /// Adds an item stack to the container.
+        ///
+        /// @param stack the item stack
+        /// @return the builder for chaining
+        /// @see #contents()
         @Contract(value = "_ -> this", mutates = "this")
         Builder add(ItemStack stack);
 
-        /**
-         * Adds item stacks to the container.
-         *
-         * @param stacks the item stacks
-         * @return the builder for chaining
-         * @see #contents()
-         */
+        /// Adds item stacks to the container.
+        ///
+        /// @param stacks the item stacks
+        /// @return the builder for chaining
+        /// @see #contents()
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<ItemStack> stacks);
     }

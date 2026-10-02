@@ -14,9 +14,7 @@ import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Paper API-specific methods for working with {@link Component}s and related.
- */
+/// Paper API-specific methods for working with [Component]s and related.
 @NullMarked
 public final class PaperComponents {
 
@@ -24,138 +22,124 @@ public final class PaperComponents {
         throw new RuntimeException("PaperComponents is not to be instantiated!");
     }
 
-    /**
-     * Resolves a component with a specific command sender and subject.
-     * <p>
-     * Note that in Vanilla, elevated permissions are usually required to use
-     * '@' selectors in various component types, but this method should not
-     * check such permissions from the sender.
-     * <p>
-     * A {@link CommandSender} argument is required to resolve:
-     * <ul>
-     *     <li>{@link net.kyori.adventure.text.NBTComponent}</li>
-     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
-     *     <li>{@link net.kyori.adventure.text.SelectorComponent}</li>
-     * </ul>
-     * A {@link Entity} argument is optional to help resolve:
-     * <ul>
-     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
-     * </ul>
-     * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
-     *
-     * @param input the component to resolve
-     * @param context the command sender to resolve with
-     * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
-     * @return the resolved component
-     * @throws IOException if a syntax error tripped during resolving
-     */
+    /// Resolves a component with a specific command sender and subject.
+    ///
+    /// Note that in Vanilla, elevated permissions are usually required to use
+    /// '@' selectors in various component types, but this method should not
+    /// check such permissions from the sender.
+    ///
+    /// A [CommandSender] argument is required to resolve:
+    ///
+    ///   - [net.kyori.adventure.text.NBTComponent]
+    ///   - [net.kyori.adventure.text.ScoreComponent]
+    ///   - [net.kyori.adventure.text.SelectorComponent]
+    ///
+    /// A [Entity] argument is optional to help resolve:
+    ///
+    ///   - [net.kyori.adventure.text.ScoreComponent]
+    ///
+    /// [net.kyori.adventure.text.TranslatableComponent]s don't require any extra arguments.
+    ///
+    /// @param input the component to resolve
+    /// @param context the command sender to resolve with
+    /// @param scoreboardSubject the scoreboard subject to use (for use with [net.kyori.adventure.text.ScoreComponent]s)
+    /// @return the resolved component
+    /// @throws IOException if a syntax error tripped during resolving
     public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject) throws IOException {
         return resolveWithContext(input, context, scoreboardSubject, true);
     }
 
-    /**
-     * Resolves a component with a specific command sender and subject.
-     * <p>
-     * Note that in Vanilla, elevated permissions are required to use
-     * '@' selectors in various component types. If the boolean {@code bypassPermissions}
-     * argument is {@code false}, the {@link CommandSender} argument will be used to query
-     * those permissions.
-     * <p>
-     * A {@link CommandSender} argument is required to resolve:
-     * <ul>
-     *     <li>{@link net.kyori.adventure.text.NBTComponent}</li>
-     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
-     *     <li>{@link net.kyori.adventure.text.SelectorComponent}</li>
-     * </ul>
-     * A {@link Entity} argument is optional to help resolve:
-     * <ul>
-     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
-     * </ul>
-     * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
-     *
-     * @param input the component to resolve
-     * @param context the command sender to resolve with
-     * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
-     * @param bypassPermissions true to bypass permissions checks for resolving components
-     * @return the resolved component
-     * @throws IOException if a syntax error tripped during resolving
-     */
+    /// Resolves a component with a specific command sender and subject.
+    ///
+    /// Note that in Vanilla, elevated permissions are required to use
+    /// '@' selectors in various component types. If the boolean `bypassPermissions`
+    /// argument is `false`, the [CommandSender] argument will be used to query
+    /// those permissions.
+    ///
+    /// A [CommandSender] argument is required to resolve:
+    ///
+    ///   - [net.kyori.adventure.text.NBTComponent]
+    ///   - [net.kyori.adventure.text.ScoreComponent]
+    ///   - [net.kyori.adventure.text.SelectorComponent]
+    ///
+    /// A [Entity] argument is optional to help resolve:
+    ///
+    ///   - [net.kyori.adventure.text.ScoreComponent]
+    ///
+    /// [net.kyori.adventure.text.TranslatableComponent]s don't require any extra arguments.
+    ///
+    /// @param input the component to resolve
+    /// @param context the command sender to resolve with
+    /// @param scoreboardSubject the scoreboard subject to use (for use with [net.kyori.adventure.text.ScoreComponent]s)
+    /// @param bypassPermissions true to bypass permissions checks for resolving components
+    /// @return the resolved component
+    /// @throws IOException if a syntax error tripped during resolving
     public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         return InternalAPIBridge.get().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
     }
 
-    /**
-     * Return a component flattener that can use game data to resolve extra information about components.
-     *
-     * @return a component flattener
-     */
+    /// Return a component flattener that can use game data to resolve extra information about components.
+    ///
+    /// @return a component flattener
     public static ComponentFlattener flattener() {
         return InternalAPIBridge.get().componentFlattener();
     }
 
-    /**
-     * Get a serializer for {@link Component}s that will convert components to
-     * a plain-text string.
-     *
-     * <p>Implementations may provide a serializer capable of processing any
-     * information that requires access to implementation details.</p>
-     *
-     * @return a serializer to plain text
-     * @deprecated use {@link PlainTextComponentSerializer#plainText()}
-     */
+    /// Get a serializer for [Component]s that will convert components to
+    /// a plain-text string.
+    ///
+    /// Implementations may provide a serializer capable of processing any
+    /// information that requires access to implementation details.
+    ///
+    /// @return a serializer to plain text
+    /// @deprecated use [PlainTextComponentSerializer#plainText()]
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static PlainTextComponentSerializer plainTextSerializer() {
         return PlainTextComponentSerializer.plainText();
     }
 
-    /**
-     * Get a serializer for {@link Component}s that will convert to and from the
-     * standard JSON serialization format using Gson.
-     *
-     * <p>Implementations may provide a serializer capable of processing any
-     * information that requires implementation details, such as legacy
-     * (pre-1.16) hover events.</p>
-     *
-     * @return a json component serializer
-     * @deprecated use {@link GsonComponentSerializer#gson()}
-     */
+    /// Get a serializer for [Component]s that will convert to and from the
+    /// standard JSON serialization format using Gson.
+    ///
+    /// Implementations may provide a serializer capable of processing any
+    /// information that requires implementation details, such as legacy
+    /// (pre-1.16) hover events.
+    ///
+    /// @return a json component serializer
+    /// @deprecated use [GsonComponentSerializer#gson()]
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer gsonSerializer() {
         return GsonComponentSerializer.gson();
     }
 
-    /**
-     * Get a serializer for {@link Component}s that will convert to and from the
-     * standard JSON serialization format using Gson, downsampling any RGB colors
-     * to their nearest {@link NamedTextColor} counterpart.
-     *
-     * <p>Implementations may provide a serializer capable of processing any
-     * information that requires implementation details, such as legacy
-     * (pre-1.16) hover events.</p>
-     *
-     * @return a json component serializer
-     * @deprecated use {@link GsonComponentSerializer#colorDownsamplingGson()}
-     */
+    /// Get a serializer for [Component]s that will convert to and from the
+    /// standard JSON serialization format using Gson, downsampling any RGB colors
+    /// to their nearest [NamedTextColor] counterpart.
+    ///
+    /// Implementations may provide a serializer capable of processing any
+    /// information that requires implementation details, such as legacy
+    /// (pre-1.16) hover events.
+    ///
+    /// @return a json component serializer
+    /// @deprecated use [GsonComponentSerializer#colorDownsamplingGson()]
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer colorDownsamplingGsonSerializer() {
         return GsonComponentSerializer.colorDownsamplingGson();
     }
 
-    /**
-     * Get a serializer for {@link Component}s that will convert to and from the
-     * legacy component format used by Bukkit. This serializer uses the
-     * {@link LegacyComponentSerializer.Builder#useUnusualXRepeatedCharacterHexFormat()}
-     * option to match upstream behavior.
-     *
-     * <p>This legacy serializer uses the standard section symbol to mark
-     * formatting characters.</p>
-     *
-     * <p>Implementations may provide a serializer capable of processing any
-     * information that requires access to implementation details.</p>
-     *
-     * @return a section serializer
-     * @deprecated use {@link LegacyComponentSerializer#legacySection()}
-     */
+    /// Get a serializer for [Component]s that will convert to and from the
+    /// legacy component format used by Bukkit. This serializer uses the
+    /// [LegacyComponentSerializer.Builder#useUnusualXRepeatedCharacterHexFormat()]
+    /// option to match upstream behavior.
+    ///
+    /// This legacy serializer uses the standard section symbol to mark
+    /// formatting characters.
+    ///
+    /// Implementations may provide a serializer capable of processing any
+    /// information that requires access to implementation details.
+    ///
+    /// @return a section serializer
+    /// @deprecated use [LegacyComponentSerializer#legacySection()]
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static LegacyComponentSerializer legacySectionSerializer() {
         return LegacyComponentSerializer.legacySection();

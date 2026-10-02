@@ -6,55 +6,42 @@ import org.bukkit.entity.Cat;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * A data-centric version-specific registry entry for the {@link Cat.Type} type.
- */
+/// A data-centric version-specific registry entry for the [Cat.Type] type.
 @ApiStatus.NonExtendable
 public interface CatTypeRegistryEntry {
 
-    /**
-     * Provides the client texture asset of the cat type, which represents the texture to use.
-     *
-     * @return the client texture asset
-     */
+    /// Provides the client texture asset of the cat type, which represents the texture to use.
+    ///
+    /// @return the client texture asset
     ClientTextureAsset clientTextureAsset();
 
-    /**
-     * Provides the client texture asset of the cat type for baby cats.
-     *
-     * @return the baby client texture asset
-     */
+    /// Provides the client texture asset of the cat type for baby cats.
+    ///
+    /// @return the baby client texture asset
     ClientTextureAsset babyClientTextureAsset();
 
-    /**
-     * A mutable builder for the {@link CatTypeRegistryEntry} plugins may change in applicable registry events.
-     * <p>
-     * The following values are required for each builder:
-     * <ul>
-     *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
-     *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
-     * </ul>
-     */
+    /// A mutable builder for the [CatTypeRegistryEntry] plugins may change in applicable registry events.
+    ///
+    /// The following values are required for each builder:
+    ///
+    ///   - [#clientTextureAsset(ClientTextureAsset)]
+    ///   - [#babyClientTextureAsset(ClientTextureAsset)]
     @ApiStatus.NonExtendable
     interface Builder extends CatTypeRegistryEntry, RegistryBuilder<Cat.Type> {
 
-        /**
-         * Sets the client texture asset of the cat type, which is the location of the texture to use.
-         *
-         * @param clientTextureAsset the client texture asset
-         * @return this builder instance
-         * @see CatTypeRegistryEntry#clientTextureAsset()
-         */
+        /// Sets the client texture asset of the cat type, which is the location of the texture to use.
+        ///
+        /// @param clientTextureAsset the client texture asset
+        /// @return this builder instance
+        /// @see CatTypeRegistryEntry#clientTextureAsset()
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
 
-        /**
-         * Sets the client texture asset of the cat type for baby cats.
-         *
-         * @param babyClientTextureAsset the baby client texture asset
-         * @return this builder instance
-         * @see CatTypeRegistryEntry#babyClientTextureAsset()
-         */
+        /// Sets the client texture asset of the cat type for baby cats.
+        ///
+        /// @param babyClientTextureAsset the baby client texture asset
+        /// @return this builder instance
+        /// @see CatTypeRegistryEntry#babyClientTextureAsset()
         @Contract(value = "_ -> this", mutates = "this")
         Builder babyClientTextureAsset(ClientTextureAsset babyClientTextureAsset);
     }

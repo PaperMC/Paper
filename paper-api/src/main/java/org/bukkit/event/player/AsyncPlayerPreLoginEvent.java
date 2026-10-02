@@ -11,21 +11,19 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Stores details for players attempting to log in.
- * <p>
- * This event is asynchronous, and not run using main thread.
- * <p>
- * This event is fired after the server has successfully completed
- * Mojang authentication. The event is still fired if the server is in offline mode.
- * <p>
- * When this event is fired, the player's locale is not
- * available. Therefore, any translatable component will be
- * rendered with the default locale, {@link java.util.Locale#US}.
- * <p>
- * Consider rendering any translatable yourself with {@link net.kyori.adventure.translation.GlobalTranslator#render}
- * if the client's language is known.
- */
+/// Stores details for players attempting to log in.
+///
+/// This event is asynchronous, and not run using main thread.
+///
+/// This event is fired after the server has successfully completed
+/// Mojang authentication. The event is still fired if the server is in offline mode.
+///
+/// When this event is fired, the player's locale is not
+/// available. Therefore, any translatable component will be
+/// rendered with the default locale, [java.util.Locale#US].
+///
+/// Consider rendering any translatable yourself with [net.kyori.adventure.translation.GlobalTranslator#render]
+/// if the client's language is known.
 public class AsyncPlayerPreLoginEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -81,236 +79,192 @@ public class AsyncPlayerPreLoginEvent extends Event {
         this.playerLoginConnection = playerLoginConnection;
     }
 
-    /**
-     * Gets the current result of the login, as an enum
-     *
-     * @return Current Result of the login
-     */
+    /// Gets the current result of the login, as an enum
+    ///
+    /// @return Current Result of the login
     @NotNull
     public Result getLoginResult() {
         return this.result;
     }
 
-    /**
-     * Gets the current result of the login, as an enum
-     *
-     * @return Current Result of the login
-     * @see #getLoginResult()
-     * @deprecated This method uses a deprecated enum from {@link
-     *     PlayerPreLoginEvent}
-     */
+    /// Gets the current result of the login, as an enum
+    ///
+    /// @return Current Result of the login
+    /// @see #getLoginResult()
+    /// @deprecated This method uses a deprecated enum from
+    /// [PlayerPreLoginEvent]
     @Deprecated(since = "1.3.2")
     @NotNull
     public PlayerPreLoginEvent.Result getResult() {
         return this.result == null ? null : this.result.old(); // todo a lot of nullability issues in this class + player profile
     }
 
-    /**
-     * Sets the new result of the login, as an enum
-     *
-     * @param result New result to set
-     */
+    /// Sets the new result of the login, as an enum
+    ///
+    /// @param result New result to set
     public void setLoginResult(@NotNull final Result result) {
         this.result = result;
     }
 
-    /**
-     * Sets the new result of the login, as an enum
-     *
-     * @param result New result to set
-     * @see #setLoginResult(Result)
-     * @deprecated This method uses a deprecated enum from {@link
-     *     PlayerPreLoginEvent}
-     */
+    /// Sets the new result of the login, as an enum
+    ///
+    /// @param result New result to set
+    /// @see #setLoginResult(Result)
+    /// @deprecated This method uses a deprecated enum from
+    /// [PlayerPreLoginEvent]
     @Deprecated(since = "1.3.2")
     public void setResult(@NotNull final PlayerPreLoginEvent.Result result) {
         this.result = result == null ? null : Result.valueOf(result.name());
     }
 
-    /**
-     * Gets the current kick message that will be used when the outcome is not allowed
-     *
-     * @return Current kick message
-     */
+    /// Gets the current kick message that will be used when the outcome is not allowed
+    ///
+    /// @return Current kick message
     @NotNull
     public Component kickMessage() {
         return this.message;
     }
 
-    /**
-     * Sets the kick message to display when the outcome is not allowed
-     *
-     * @param message New kick message
-     */
+    /// Sets the kick message to display when the outcome is not allowed
+    ///
+    /// @param message New kick message
     public void kickMessage(@NotNull final Component message) {
         this.message = message;
     }
 
-    /**
-     * Disallows the player from logging in, with the given reason
-     *
-     * @param result New result for disallowing the player
-     * @param message Kick message to display to the user
-     */
+    /// Disallows the player from logging in, with the given reason
+    ///
+    /// @param result New result for disallowing the player
+    /// @param message Kick message to display to the user
     public void disallow(@NotNull final Result result, @NotNull final Component message) {
         this.result = result;
         this.message = message;
     }
 
-    /**
-     * Disallows the player from logging in, with the given reason
-     *
-     * @param result New result for disallowing the player
-     * @param message Kick message to display to the user
-     * @deprecated This method uses a deprecated enum from {@link
-     *     PlayerPreLoginEvent}
-     * @see #disallow(Result, Component)
-     */
+    /// Disallows the player from logging in, with the given reason
+    ///
+    /// @param result New result for disallowing the player
+    /// @param message Kick message to display to the user
+    /// @deprecated This method uses a deprecated enum from
+    /// [PlayerPreLoginEvent]
+    /// @see #disallow(Result, Component)
     @Deprecated
     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final net.kyori.adventure.text.Component message) {
         this.result = result == null ? null : Result.valueOf(result.name());
         this.message = message;
     }
 
-    /**
-     * Gets the current kick message that will be used when the outcome is not allowed
-     *
-     * @return Current kick message
-     * @deprecated in favour of {@link #kickMessage()}
-     */
+    /// Gets the current kick message that will be used when the outcome is not allowed
+    ///
+    /// @return Current kick message
+    /// @deprecated in favour of [#kickMessage()]
     @NotNull
     @Deprecated
     public String getKickMessage() {
         return LegacyComponentSerializer.legacySection().serialize(this.message);
     }
 
-    /**
-     * Sets the kick message to display when the outcome is not allowed
-     *
-     * @param message New kick message
-     * @deprecated in favour of {@link #kickMessage(Component)}
-     */
+    /// Sets the kick message to display when the outcome is not allowed
+    ///
+    /// @param message New kick message
+    /// @deprecated in favour of [#kickMessage(Component)]
     @Deprecated
     public void setKickMessage(@NotNull final String message) {
         this.message = LegacyComponentSerializer.legacySection().deserialize(message);
     }
 
-    /**
-     * Allows the player to log in
-     */
+    /// Allows the player to log in
     public void allow() {
         this.result = Result.ALLOWED;
         this.message = Component.empty();
     }
 
-    /**
-     * Disallows the player from logging in, with the given reason
-     *
-     * @param result New result for disallowing the player
-     * @param message Kick message to display to the user
-     * @deprecated in favour of {@link #disallow(org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result, Component)}
-     */
+    /// Disallows the player from logging in, with the given reason
+    ///
+    /// @param result New result for disallowing the player
+    /// @param message Kick message to display to the user
+    /// @deprecated in favour of [#disallow(org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result, Component)]
     @Deprecated
     public void disallow(@NotNull final Result result, @NotNull final String message) {
         this.result = result;
         this.message = LegacyComponentSerializer.legacySection().deserialize(message);
     }
 
-    /**
-     * Disallows the player from logging in, with the given reason
-     *
-     * @param result New result for disallowing the player
-     * @param message Kick message to display to the user
-     * @see #disallow(Result, Component)
-     * @deprecated This method uses a deprecated enum from {@link
-     *     PlayerPreLoginEvent}
-     */
+    /// Disallows the player from logging in, with the given reason
+    ///
+    /// @param result New result for disallowing the player
+    /// @param message Kick message to display to the user
+    /// @see #disallow(Result, Component)
+    /// @deprecated This method uses a deprecated enum from
+    /// [PlayerPreLoginEvent]
     @Deprecated(since = "1.3.2")
     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
         this.result = result == null ? null : Result.valueOf(result.name());
         this.message = LegacyComponentSerializer.legacySection().deserialize(message);
     }
 
-    /**
-     * Gets the player's name.
-     *
-     * @return the player's name
-     */
+    /// Gets the player's name.
+    ///
+    /// @return the player's name
     @NotNull
     public String getName() {
         return this.profile.getName();
     }
 
-    /**
-     * Gets the player IP address.
-     *
-     * @return The IP address
-     */
+    /// Gets the player IP address.
+    ///
+    /// @return The IP address
     @NotNull
     public InetAddress getAddress() {
         return this.ipAddress;
     }
 
-    /**
-     * Gets the player's unique ID.
-     *
-     * @return The unique ID
-     */
+    /// Gets the player's unique ID.
+    ///
+    /// @return The unique ID
     @NotNull
     public UUID getUniqueId() {
         return this.profile.getId();
     }
 
-    /**
-     * Gets the PlayerProfile of the player logging in
-     * @return The Profile
-     */
+    /// Gets the PlayerProfile of the player logging in
+    /// @return The Profile
     @NotNull
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
         return this.profile;
     }
 
-    /**
-     * Changes the PlayerProfile the player will login as
-     * @param profile The profile to use
-     */
+    /// Changes the PlayerProfile the player will login as
+    /// @param profile The profile to use
     public void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
         this.profile = profile;
     }
 
-    /**
-     * Gets the raw address of the player logging in
-     * @return The address
-     */
+    /// Gets the raw address of the player logging in
+    /// @return The address
     @NotNull
     public InetAddress getRawAddress() {
         return this.rawAddress;
     }
 
-    /**
-     * Gets the hostname that the player used to connect to the server, or
-     * blank if unknown
-     *
-     * @return The hostname
-     */
+    /// Gets the hostname that the player used to connect to the server, or
+    /// blank if unknown
+    ///
+    /// @return The hostname
     @NotNull
     public String getHostname() {
         return this.hostname;
     }
 
-    /**
-     * Gets if this connection has been transferred from another server.
-     *
-     * @return {@code true} if the connection has been transferred
-     */
+    /// Gets if this connection has been transferred from another server.
+    ///
+    /// @return `true` if the connection has been transferred
     public boolean isTransferred() {
         return this.transferred;
     }
 
-    /**
-     * Gets the connection for the player logging in.
-     * @return connection
-     */
+    /// Gets the connection for the player logging in.
+    /// @return connection
     @NotNull
     public PlayerLoginConnection getConnection() {
         return playerLoginConnection;
@@ -327,31 +281,19 @@ public class AsyncPlayerPreLoginEvent extends Event {
         return HANDLER_LIST;
     }
 
-    /**
-     * Basic kick reasons for communicating to plugins
-     */
+    /// Basic kick reasons for communicating to plugins
     public enum Result {
 
-        /**
-         * The player is allowed to log in
-         */
+        /// The player is allowed to log in
         ALLOWED,
-        /**
-         * The player is not allowed to log in, due to the server being full
-         */
+        /// The player is not allowed to log in, due to the server being full
         KICK_FULL,
-        /**
-         * The player is not allowed to log in, due to them being banned
-         */
+        /// The player is not allowed to log in, due to them being banned
         KICK_BANNED,
-        /**
-         * The player is not allowed to log in, due to them not being on the
-         * white list
-         */
+        /// The player is not allowed to log in, due to them not being on the
+        /// white list
         KICK_WHITELIST,
-        /**
-         * The player is not allowed to log in, for reasons undefined
-         */
+        /// The player is not allowed to log in, for reasons undefined
         KICK_OTHER;
 
         @Deprecated(since = "1.3.2")

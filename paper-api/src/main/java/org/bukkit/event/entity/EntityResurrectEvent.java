@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an entity dies and may have the opportunity to be resurrected.
- * Will be called in a cancelled state if the entity does not have a totem
- * equipped.
- */
+/// Called when an entity dies and may have the opportunity to be resurrected.
+/// Will be called in a cancelled state if the entity does not have a totem
+/// equipped.
 public class EntityResurrectEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -39,12 +37,10 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Get the hand in which the totem of undying was found, or {@code null} if the
-     * entity did not have a totem of undying.
-     *
-     * @return the hand, or {@code null}
-     */
+    /// Get the hand in which the totem of undying was found, or `null` if the
+    /// entity did not have a totem of undying.
+    ///
+    /// @return the hand, or `null`
     @Nullable
     public EquipmentSlot getHand() {
         return this.hand;

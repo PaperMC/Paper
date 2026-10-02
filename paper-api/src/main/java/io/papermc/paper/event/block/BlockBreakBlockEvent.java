@@ -8,11 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a block forces another block to break and drop items.
- * <p>
- * Currently called for piston's and liquid flows.
- */
+/// Called when a block forces another block to break and drop items.
+///
+/// Currently called for piston's and liquid flows.
 @NullMarked
 public class BlockBreakBlockEvent extends BlockExpEvent {
 
@@ -28,20 +26,16 @@ public class BlockBreakBlockEvent extends BlockExpEvent {
         this.drops = drops;
     }
 
-    /**
-     * Gets a mutable list of drops for this event
-     *
-     * @return the drops
-     */
+    /// Gets a mutable list of drops for this event
+    ///
+    /// @return the drops
     public List<ItemStack> getDrops() {
         return this.drops;
     }
 
-    /**
-     * Gets the block that cause this (e.g. a piston, or adjacent liquid)
-     *
-     * @return the source
-     */
+    /// Gets the block that cause this (e.g. a piston, or adjacent liquid)
+    ///
+    /// @return the source
     public Block getSource() {
         return this.source;
     }

@@ -7,11 +7,9 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when an entity jumps
- * <p>
- * Cancelling the event will stop the entity from jumping
- */
+/// Called when an entity jumps
+///
+/// Cancelling the event will stop the entity from jumping
 @NullMarked
 public class EntityJumpEvent extends EntityEvent implements Cancellable {
 

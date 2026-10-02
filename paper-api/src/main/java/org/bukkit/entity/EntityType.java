@@ -208,9 +208,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
     ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     // End generate - EntityType
-    /**
-     * An unknown entity without an Entity Class
-     */
+    /// An unknown entity without an Entity Class
     UNKNOWN(null, null, -1, false);
 
     private final String name;
@@ -246,12 +244,10 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         this.key = (name == null) ? null : NamespacedKey.minecraft(name);
     }
 
-    /**
-     * Gets the entity type name.
-     *
-     * @return the entity type's name
-     * @deprecated Magic value
-     */
+    /// Gets the entity type name.
+    ///
+    /// @return the entity type's name
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     @Nullable
     public String getName() {
@@ -271,24 +267,20 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return clazz;
     }
 
-    /**
-     * Gets the entity type id.
-     *
-     * @return the raw type id
-     * @deprecated Magic value
-     */
+    /// Gets the entity type id.
+    ///
+    /// @return the raw type id
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2", forRemoval = true)
     public short getTypeId() {
         return typeId;
     }
 
-    /**
-     * Gets an entity type from its name.
-     *
-     * @param name the entity type's name
-     * @return the matching entity type or null
-     * @apiNote Internal Use Only
-     */
+    /// Gets an entity type from its name.
+    ///
+    /// @param name the entity type's name
+    /// @return the matching entity type or null
+    /// @apiNote Internal Use Only
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Contract("null -> null")
     @Nullable
@@ -299,13 +291,11 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return NAME_MAP.get(name.toLowerCase(Locale.ROOT));
     }
 
-    /**
-     * Gets an entity from its id.
-     *
-     * @param id the raw type id
-     * @return the matching entity type or null
-     * @deprecated Magic value
-     */
+    /// Gets an entity from its id.
+    ///
+    /// @param id the raw type id
+    /// @return the matching entity type or null
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2", forRemoval = true)
     @Nullable
     public static EntityType fromId(int id) {
@@ -315,14 +305,12 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return ID_MAP.get((short) id);
     }
 
-    /**
-     * Some entities cannot be spawned using {@link
-     * World#spawnEntity(Location, EntityType)} or {@link
-     * World#spawn(Location, Class)}, usually because they require additional
-     * information in order to spawn.
-     *
-     * @return False if the entity type cannot be spawned
-     */
+    /// Some entities cannot be spawned using
+    /// [World#spawnEntity(Location, EntityType)] or
+    /// [World#spawn(Location, Class)], usually because they require additional
+    /// information in order to spawn.
+    ///
+    /// @return False if the entity type cannot be spawned
     public boolean isSpawnable() {
         return independent;
     }
@@ -339,31 +327,25 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     // Paper start
-    /**
-     * @throws IllegalArgumentException if the entity does not have a translation key
-     */
+    /// @throws IllegalArgumentException if the entity does not have a translation key
     @Override
     public @NotNull String translationKey() {
         Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
         return InternalAPIBridge.get().getTranslationKey(this);
     }
 
-    /**
-     * Gets the spawn category of this entity type.
-     *
-     * @return the spawn category
-     * @throws IllegalArgumentException if the entity does not have a spawn category
-     */
+    /// Gets the spawn category of this entity type.
+    ///
+    /// @return the spawn category
+    /// @throws IllegalArgumentException if the entity does not have a spawn category
     public @NotNull SpawnCategory getSpawnCategory() {
         Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have a spawn category");
         return InternalAPIBridge.get().getSpawnCategory(this);
     }
 
-    /**
-     * Checks if the entity type has default attributes.
-     *
-     * @return true if it has default attributes
-     */
+    /// Checks if the entity type has default attributes.
+    ///
+    /// @return true if it has default attributes
     public boolean hasDefaultAttributes() {
         if (this == UNKNOWN) {
             return false;
@@ -371,12 +353,10 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return InternalAPIBridge.get().hasDefaultEntityAttributes(this.key);
     }
 
-    /**
-     * Gets the default attributes for the entity type.
-     *
-     * @return an unmodifiable instance of Attributable for reading default attributes.
-     * @throws IllegalArgumentException if it doesn't have default attributes (use {@link #hasDefaultAttributes()} first)
-     */
+    /// Gets the default attributes for the entity type.
+    ///
+    /// @return an unmodifiable instance of Attributable for reading default attributes.
+    /// @throws IllegalArgumentException if it doesn't have default attributes (use [#hasDefaultAttributes()] first)
     public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
         Preconditions.checkArgument(this.hasDefaultAttributes(), this.key + " doesn't have default attributes");
         return InternalAPIBridge.get().getDefaultEntityAttributes(this.key);

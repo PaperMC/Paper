@@ -1,5 +1,3 @@
-/**
- * Classes to represent the source of a projectile
- */
+/// Classes to represent the source of a projectile
 package org.bukkit.projectiles;
 

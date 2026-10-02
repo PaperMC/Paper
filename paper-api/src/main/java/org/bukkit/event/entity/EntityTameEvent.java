@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when a LivingEntity is tamed
- */
+/// Thrown when a LivingEntity is tamed
 public class EntityTameEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,11 +27,9 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets the owning AnimalTamer
-     *
-     * @return the owning AnimalTamer
-     */
+    /// Gets the owning AnimalTamer
+    ///
+    /// @return the owning AnimalTamer
     @NotNull
     public AnimalTamer getOwner() {
         return this.owner;

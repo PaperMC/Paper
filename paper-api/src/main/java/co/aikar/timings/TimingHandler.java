@@ -163,9 +163,7 @@ class TimingHandler implements Timing {
         }
     }
 
-    /**
-     * Reset this timer, setting all values to zero.
-     */
+    /// Reset this timer, setting all values to zero.
     void reset(boolean full) {
         record.reset();
         if (full) {
@@ -194,9 +192,7 @@ class TimingHandler implements Timing {
         return id;
     }
 
-    /**
-     * This is simply for the Closeable interface so it can be used with try-with-resources ()
-     */
+    /// This is simply for the Closeable interface so it can be used with try-with-resources ()
     @Override
     public void close() {
         stopTimingIfSync();

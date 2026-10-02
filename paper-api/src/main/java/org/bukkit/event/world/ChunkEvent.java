@@ -3,9 +3,7 @@ package org.bukkit.event.world;
 import org.bukkit.Chunk;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a Chunk related event
- */
+/// Represents a Chunk related event
 public abstract class ChunkEvent extends WorldEvent {
 
     protected Chunk chunk;
@@ -15,11 +13,9 @@ public abstract class ChunkEvent extends WorldEvent {
         this.chunk = chunk;
     }
 
-    /**
-     * Gets the chunk being loaded/unloaded
-     *
-     * @return Chunk that triggered this event
-     */
+    /// Gets the chunk being loaded/unloaded
+    ///
+    /// @return Chunk that triggered this event
     @NotNull
     public Chunk getChunk() {
         return this.chunk;

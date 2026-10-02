@@ -10,13 +10,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a block is damaged by a player.
- * <p>
- * If this event is cancelled, the block will not be damaged.
- *
- * @see BlockDamageAbortEvent
- */
+/// Called when a block is damaged by a player.
+///
+/// If this event is cancelled, the block will not be damaged.
+///
+/// @see BlockDamageAbortEvent
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -43,51 +41,41 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
         this.player = player;
     }
 
-    /**
-     * Gets the player damaging the block involved in this event.
-     *
-     * @return The player damaging the block involved in this event
-     */
+    /// Gets the player damaging the block involved in this event.
+    ///
+    /// @return The player damaging the block involved in this event
     @NotNull
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets if the block is set to instantly break when damaged by the player.
-     *
-     * @return {@code true} if the block should instantly break when damaged by the
-     *     player
-     */
+    /// Gets if the block is set to instantly break when damaged by the player.
+    ///
+    /// @return `true` if the block should instantly break when damaged by the
+    ///     player
     public boolean getInstaBreak() {
         return this.instaBreak;
     }
 
-    /**
-     * Sets if the block should instantly break when damaged by the player.
-     *
-     * @param instaBreak {@code true} if you want the block to instantly break when damaged
-     *     by the player
-     */
+    /// Sets if the block should instantly break when damaged by the player.
+    ///
+    /// @param instaBreak`true` if you want the block to instantly break when damaged
+    ///     by the player
     public void setInstaBreak(boolean instaBreak) {
         this.instaBreak = instaBreak;
     }
 
-    /**
-     * Gets the ItemStack for the item currently in the player's hand.
-     *
-     * @return The ItemStack for the item currently in the player's hand
-     */
+    /// Gets the ItemStack for the item currently in the player's hand.
+    ///
+    /// @return The ItemStack for the item currently in the player's hand
     @NotNull
     public ItemStack getItemInHand() {
         return this.itemInHand;
     }
 
-    /**
-     * Gets the BlockFace the player is interacting with.
-     *
-     * @return The BlockFace clicked to damage the block
-     */
+    /// Gets the BlockFace the player is interacting with.
+    ///
+    /// @return The BlockFace clicked to damage the block
     @NotNull
     public org.bukkit.block.BlockFace getBlockFace() {
         Preconditions.checkState(this.blockFace != null, "BlockFace is not available for this event, most likely due to a bad constructor call by a plugin");

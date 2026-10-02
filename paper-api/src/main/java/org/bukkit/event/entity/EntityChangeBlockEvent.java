@@ -9,9 +9,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when any Entity changes a block and a more specific event is not available.
- */
+/// Called when any Entity changes a block and a more specific event is not available.
 public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -28,31 +26,25 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
         this.to = to;
     }
 
-    /**
-     * Gets the block the entity is changing
-     *
-     * @return the block that is changing
-     */
+    /// Gets the block the entity is changing
+    ///
+    /// @return the block that is changing
     @NotNull
     public Block getBlock() {
         return this.block;
     }
 
-    /**
-     * Gets the Material that the block is changing into
-     *
-     * @return the material that the block is changing into
-     */
+    /// Gets the Material that the block is changing into
+    ///
+    /// @return the material that the block is changing into
     @NotNull
     public Material getTo() {
         return this.to.getMaterial();
     }
 
-    /**
-     * Gets the data for the block that would be changed into
-     *
-     * @return the data for the block that would be changed into
-     */
+    /// Gets the data for the block that would be changed into
+    ///
+    /// @return the data for the block that would be changed into
     @NotNull
     public BlockData getBlockData() {
         return this.to.clone();

@@ -4,9 +4,7 @@ import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 
-/**
- * Thrown when the internal server throws a recoverable exception.
- */
+/// Thrown when the internal server throws a recoverable exception.
 public class ServerInternalException extends ServerException {
 
     public ServerInternalException(String message) {

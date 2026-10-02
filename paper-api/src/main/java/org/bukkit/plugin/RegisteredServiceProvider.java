@@ -2,11 +2,9 @@ package org.bukkit.plugin;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A registered service provider.
- *
- * @param <T> Service
- */
+/// A registered service provider.
+///
+/// @param <T> Service
 public class RegisteredServiceProvider<T> implements Comparable<RegisteredServiceProvider<?>> {
 
     private Class<T> service;

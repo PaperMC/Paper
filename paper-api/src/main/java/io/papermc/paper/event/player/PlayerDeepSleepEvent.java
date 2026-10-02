@@ -7,13 +7,11 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player has slept long enough
- * to count as passing the night/storm.
- * <p>
- * Cancelling this event will prevent the player from being counted as deeply sleeping
- * unless they exit and re-enter the bed.
- */
+/// Called when a player has slept long enough
+/// to count as passing the night/storm.
+///
+/// Cancelling this event will prevent the player from being counted as deeply sleeping
+/// unless they exit and re-enter the bed.
 @NullMarked
 public class PlayerDeepSleepEvent extends PlayerEvent implements Cancellable {
 

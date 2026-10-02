@@ -7,9 +7,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Is called when an entity sits down or stands up.
- */
+/// Is called when an entity sits down or stands up.
 @NullMarked
 public class EntityToggleSitEvent extends EntityEvent implements Cancellable {
 
@@ -24,11 +22,9 @@ public class EntityToggleSitEvent extends EntityEvent implements Cancellable {
         this.isSitting = isSitting;
     }
 
-    /**
-     * Gets the new sitting state that the entity will change to.
-     *
-     * @return If it's going to sit or not.
-     */
+    /// Gets the new sitting state that the entity will change to.
+    ///
+    /// @return If it's going to sit or not.
     public boolean getSittingState() {
         return this.isSitting;
     }

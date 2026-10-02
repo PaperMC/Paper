@@ -46,18 +46,16 @@ import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
 
-/**
- * Identifier for a specific registry. For use with
- * {@link TypedKey} and the registry modification API.
- * <p>
- * There are 2 types of registries, identified as "built-in"
- * or "data-driven". The former are not changeable by datapacks (which
- * doesn't necessarily mean they aren't changeable in the API) and
- * are loaded first. "Data-driven" registries are all created by
- * reading in data from the vanilla and other datapacks.
- *
- * @param <T> the value type
- */
+/// Identifier for a specific registry. For use with
+/// [TypedKey] and the registry modification API.
+///
+/// There are 2 types of registries, identified as "built-in"
+/// or "data-driven". The former are not changeable by datapacks (which
+/// doesn't necessarily mean they aren't changeable in the API) and
+/// are loaded first. "Data-driven" registries are all created by
+/// reading in data from the vanilla and other datapacks.
+///
+/// @param <T> the value type
 @SuppressWarnings("unused")
 @NullMarked
 public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
@@ -65,209 +63,129 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     /* ******************* *
      * Built-in Registries *
      * ******************* */
-    /**
-     * Built-in registry for game events
-     * @see io.papermc.paper.registry.keys.GameEventKeys
-     */
+    /// Built-in registry for game events
+    /// @see io.papermc.paper.registry.keys.GameEventKeys
     RegistryKey<GameEvent> GAME_EVENT = create("game_event");
-    /**
-     * Built-in registry for structure types.
-     * @see io.papermc.paper.registry.keys.StructureTypeKeys
-     */
+    /// Built-in registry for structure types.
+    /// @see io.papermc.paper.registry.keys.StructureTypeKeys
     RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
-    /**
-     * Built-in registry for potion effect types (mob effects).
-     * @see io.papermc.paper.registry.keys.MobEffectKeys
-     */
+    /// Built-in registry for potion effect types (mob effects).
+    /// @see io.papermc.paper.registry.keys.MobEffectKeys
     RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
-    /**
-     * Built-in registry for block types.
-     * @see io.papermc.paper.registry.keys.BlockTypeKeys
-     */
+    /// Built-in registry for block types.
+    /// @see io.papermc.paper.registry.keys.BlockTypeKeys
     RegistryKey<BlockType> BLOCK = create("block");
-    /**
-     * Built-in registry for item types.
-     * @see io.papermc.paper.registry.keys.ItemTypeKeys
-     */
+    /// Built-in registry for item types.
+    /// @see io.papermc.paper.registry.keys.ItemTypeKeys
     RegistryKey<ItemType> ITEM = create("item");
-    /**
-     * Built-in registry for villager professions.
-     * @see io.papermc.paper.registry.keys.VillagerProfessionKeys
-     */
+    /// Built-in registry for villager professions.
+    /// @see io.papermc.paper.registry.keys.VillagerProfessionKeys
     RegistryKey<Villager.Profession> VILLAGER_PROFESSION = create("villager_profession");
-    /**
-     * Built-in registry for poi types.
-     * @see io.papermc.paper.registry.keys.PoiTypeKeys
-     */
+    /// Built-in registry for poi types.
+    /// @see io.papermc.paper.registry.keys.PoiTypeKeys
     RegistryKey<PoiType> POINT_OF_INTEREST_TYPE = create("point_of_interest_type");
-    /**
-     * Built-in registry for villager types.
-     * @see io.papermc.paper.registry.keys.VillagerTypeKeys
-     */
+    /// Built-in registry for villager types.
+    /// @see io.papermc.paper.registry.keys.VillagerTypeKeys
     RegistryKey<Villager.Type> VILLAGER_TYPE = create("villager_type");
-    /**
-     * Built-in registry for map decoration types.
-     * @see io.papermc.paper.registry.keys.MapDecorationTypeKeys
-     */
+    /// Built-in registry for map decoration types.
+    /// @see io.papermc.paper.registry.keys.MapDecorationTypeKeys
     RegistryKey<MapCursor.Type> MAP_DECORATION_TYPE = create("map_decoration_type");
-    /**
-     * Built-in registry for menu types.
-     * @see io.papermc.paper.registry.keys.MenuTypeKeys
-     */
+    /// Built-in registry for menu types.
+    /// @see io.papermc.paper.registry.keys.MenuTypeKeys
     RegistryKey<MenuType> MENU = create("menu");
-    /**
-     * Built-in registry for attributes.
-     * @see io.papermc.paper.registry.keys.AttributeKeys
-     */
+    /// Built-in registry for attributes.
+    /// @see io.papermc.paper.registry.keys.AttributeKeys
     RegistryKey<Attribute> ATTRIBUTE = create("attribute");
-    /**
-     * Built-in registry for fluids.
-     * @see io.papermc.paper.registry.keys.FluidKeys
-     */
+    /// Built-in registry for fluids.
+    /// @see io.papermc.paper.registry.keys.FluidKeys
     RegistryKey<Fluid> FLUID = create("fluid");
-    /**
-     * Built-in registry for sound events.
-     * @see io.papermc.paper.registry.keys.SoundEventKeys
-     */
+    /// Built-in registry for sound events.
+    /// @see io.papermc.paper.registry.keys.SoundEventKeys
     RegistryKey<Sound> SOUND_EVENT = create("sound_event");
-    /**
-     * Built-in registry for data component types.
-     * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
-     */
+    /// Built-in registry for data component types.
+    /// @see io.papermc.paper.registry.keys.DataComponentTypeKeys
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-    /**
-     * Built-in registry for game rules.
-     * @see io.papermc.paper.registry.keys.GameRuleKeys
-     */
+    /// Built-in registry for game rules.
+    /// @see io.papermc.paper.registry.keys.GameRuleKeys
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
     /* ********************** *
      * Data-driven Registries *
      * ********************** */
-    /**
-     * Data-driven registry for biomes.
-     * @see io.papermc.paper.registry.keys.BiomeKeys
-     */
+    /// Data-driven registry for biomes.
+    /// @see io.papermc.paper.registry.keys.BiomeKeys
     RegistryKey<Biome> BIOME = create("worldgen/biome");
-    /**
-     * Data-driven registry for structures.
-     * @see io.papermc.paper.registry.keys.StructureKeys
-     */
+    /// Data-driven registry for structures.
+    /// @see io.papermc.paper.registry.keys.StructureKeys
     RegistryKey<Structure> STRUCTURE = create("worldgen/structure");
-    /**
-     * Data-driven registry for trim materials.
-     * @see io.papermc.paper.registry.keys.TrimMaterialKeys
-     */
+    /// Data-driven registry for trim materials.
+    /// @see io.papermc.paper.registry.keys.TrimMaterialKeys
     RegistryKey<TrimMaterial> TRIM_MATERIAL = create("trim_material");
-    /**
-     * Data-driven registry for trim patterns.
-     * @see io.papermc.paper.registry.keys.TrimPatternKeys
-     */
+    /// Data-driven registry for trim patterns.
+    /// @see io.papermc.paper.registry.keys.TrimPatternKeys
     RegistryKey<TrimPattern> TRIM_PATTERN = create("trim_pattern");
-    /**
-     * Data-driven registry for damage types.
-     * @see io.papermc.paper.registry.keys.DamageTypeKeys
-     */
+    /// Data-driven registry for damage types.
+    /// @see io.papermc.paper.registry.keys.DamageTypeKeys
     RegistryKey<DamageType> DAMAGE_TYPE = create("damage_type");
-    /**
-     * Data-driven registry for wolf variants.
-     * @see io.papermc.paper.registry.keys.WolfVariantKeys
-     */
+    /// Data-driven registry for wolf variants.
+    /// @see io.papermc.paper.registry.keys.WolfVariantKeys
     RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
-    /**
-     * Data-driven registry for wolf sound variants.
-     * @see io.papermc.paper.registry.keys.WolfSoundVariantKeys
-     */
+    /// Data-driven registry for wolf sound variants.
+    /// @see io.papermc.paper.registry.keys.WolfSoundVariantKeys
     RegistryKey<Wolf.SoundVariant> WOLF_SOUND_VARIANT = create("wolf_sound_variant");
-    /**
-     * Data-driven registry for enchantments.
-     * @see io.papermc.paper.registry.keys.EnchantmentKeys
-     */
+    /// Data-driven registry for enchantments.
+    /// @see io.papermc.paper.registry.keys.EnchantmentKeys
     RegistryKey<Enchantment> ENCHANTMENT = create("enchantment");
-    /**
-     * Data-driven registry for jukebox songs.
-     * @see io.papermc.paper.registry.keys.JukeboxSongKeys
-     */
+    /// Data-driven registry for jukebox songs.
+    /// @see io.papermc.paper.registry.keys.JukeboxSongKeys
     RegistryKey<JukeboxSong> JUKEBOX_SONG = create("jukebox_song");
-    /**
-     * Data-driven registry for banner patterns.
-     * @see io.papermc.paper.registry.keys.BannerPatternKeys
-     */
+    /// Data-driven registry for banner patterns.
+    /// @see io.papermc.paper.registry.keys.BannerPatternKeys
     RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
-    /**
-     * Data-driven registry for decorated pot patterns.
-     * @see io.papermc.paper.registry.keys.DecoratedPotPatternKeys
-     */
+    /// Data-driven registry for decorated pot patterns.
+    /// @see io.papermc.paper.registry.keys.DecoratedPotPatternKeys
     RegistryKey<PotPatternType> DECORATED_POT_PATTERN = create("decorated_pot_pattern");
-    /**
-     * Data-driven registry for painting variants.
-     * @see io.papermc.paper.registry.keys.PaintingVariantKeys
-     */
+    /// Data-driven registry for painting variants.
+    /// @see io.papermc.paper.registry.keys.PaintingVariantKeys
     RegistryKey<Art> PAINTING_VARIANT = create("painting_variant");
-    /**
-     * Data-driven registry for instruments.
-     * @see io.papermc.paper.registry.keys.InstrumentKeys
-     */
+    /// Data-driven registry for instruments.
+    /// @see io.papermc.paper.registry.keys.InstrumentKeys
     RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
-    /**
-     * Data-driven registry for cat variants.
-     * @see io.papermc.paper.registry.keys.CatVariantKeys
-     */
+    /// Data-driven registry for cat variants.
+    /// @see io.papermc.paper.registry.keys.CatVariantKeys
     RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
-    /**
-     * Data-driven registry for cat sound variants.
-     * @see io.papermc.paper.registry.keys.CatSoundVariantKeys
-     */
+    /// Data-driven registry for cat sound variants.
+    /// @see io.papermc.paper.registry.keys.CatSoundVariantKeys
     RegistryKey<Cat.SoundVariant> CAT_SOUND_VARIANT = create("cat_sound_variant");
-    /**
-     * Data-driven registry for frog variants.
-     * @see io.papermc.paper.registry.keys.FrogVariantKeys
-     */
+    /// Data-driven registry for frog variants.
+    /// @see io.papermc.paper.registry.keys.FrogVariantKeys
     RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
-    /**
-     * Data-driven registry for chicken variants.
-     * @see io.papermc.paper.registry.keys.ChickenVariantKeys
-     */
+    /// Data-driven registry for chicken variants.
+    /// @see io.papermc.paper.registry.keys.ChickenVariantKeys
     RegistryKey<Chicken.Variant> CHICKEN_VARIANT = create("chicken_variant");
-    /**
-     * Data-driven registry for chicken sound variants.
-     * @see io.papermc.paper.registry.keys.ChickenSoundVariantKeys
-     */
+    /// Data-driven registry for chicken sound variants.
+    /// @see io.papermc.paper.registry.keys.ChickenSoundVariantKeys
     RegistryKey<Chicken.SoundVariant> CHICKEN_SOUND_VARIANT = create("chicken_sound_variant");
-    /**
-     * Data-driven registry for cow variants.
-     * @see io.papermc.paper.registry.keys.CowVariantKeys
-     */
+    /// Data-driven registry for cow variants.
+    /// @see io.papermc.paper.registry.keys.CowVariantKeys
     RegistryKey<Cow.Variant> COW_VARIANT = create("cow_variant");
-    /**
-     * Data-driven registry for cow sound variants.
-     * @see io.papermc.paper.registry.keys.CowSoundVariantKeys
-     */
+    /// Data-driven registry for cow sound variants.
+    /// @see io.papermc.paper.registry.keys.CowSoundVariantKeys
     RegistryKey<Cow.SoundVariant> COW_SOUND_VARIANT = create("cow_sound_variant");
-    /**
-     * Data-driven registry for pig variants.
-     * @see io.papermc.paper.registry.keys.PigVariantKeys
-     */
+    /// Data-driven registry for pig variants.
+    /// @see io.papermc.paper.registry.keys.PigVariantKeys
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
-    /**
-     * Data-driven registry for pig sound variants.
-     * @see io.papermc.paper.registry.keys.PigSoundVariantKeys
-     */
+    /// Data-driven registry for pig sound variants.
+    /// @see io.papermc.paper.registry.keys.PigSoundVariantKeys
     RegistryKey<Pig.SoundVariant> PIG_SOUND_VARIANT = create("pig_sound_variant");
-    /**
-     * Data-driven registry for zombie nautilus variants.
-     * @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
-     */
+    /// Data-driven registry for zombie nautilus variants.
+    /// @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
     RegistryKey<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = create("zombie_nautilus_variant");
-    /**
-     * Data-driven registry for sulfur cube archetypes.
-     * @see io.papermc.paper.registry.keys.SulfurCubeArchetypeKeys
-     */
+    /// Data-driven registry for sulfur cube archetypes.
+    /// @see io.papermc.paper.registry.keys.SulfurCubeArchetypeKeys
     RegistryKey<SulfurCube.Archetype> SULFUR_CUBE_ARCHETYPE = create("sulfur_cube_archetype");
-    /**
-     * Data-driven registry for dialogs.
-     * @see io.papermc.paper.registry.keys.DialogKeys
-     */
+    /// Data-driven registry for dialogs.
+    /// @see io.papermc.paper.registry.keys.DialogKeys
     RegistryKey<Dialog> DIALOG = create("dialog");
 
 
@@ -279,42 +197,34 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<PotionType> POTION = create("potion");
     RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
 
-    /**
-     * Constructs a new {@link TypedKey} for this registry given the typed key's key.
-     *
-     * @param key the key of the typed key.
-     * @return the constructed typed key.
-     */
+    /// Constructs a new [TypedKey] for this registry given the typed key's key.
+    ///
+    /// @param key the key of the typed key.
+    /// @return the constructed typed key.
     default TypedKey<T> typedKey(final Key key) {
         return TypedKey.create(this, key);
     }
 
-    /**
-     * Constructs a new {@link TypedKey} for this registry given the typed key's key.
-     *
-     * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
-     * @return the constructed typed key.
-     */
+    /// Constructs a new [TypedKey] for this registry given the typed key's key.
+    ///
+    /// @param key the string representation of the key that will be passed to [Key#key(String)].
+    /// @return the constructed typed key.
     default TypedKey<T> typedKey(@KeyPattern final String key) {
         return TypedKey.create(this, key);
     }
 
-    /**
-     * Constructs a new {@link TagKey} for this registry given the tag key's key.
-     *
-     * @param key the key of the typed key.
-     * @return the constructed tag key.
-     */
+    /// Constructs a new [TagKey] for this registry given the tag key's key.
+    ///
+    /// @param key the key of the typed key.
+    /// @return the constructed tag key.
     default TagKey<T> tagKey(final Key key) {
         return TagKey.create(this, key);
     }
 
-    /**
-     * Constructs a new {@link TagKey} for this registry given the tag key's key.
-     *
-     * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
-     * @return the constructed tag key.
-     */
+    /// Constructs a new [TagKey] for this registry given the tag key's key.
+    ///
+    /// @param key the string representation of the key that will be passed to [Key#key(String)].
+    /// @return the constructed tag key.
     default TagKey<T> tagKey(@KeyPattern final String key) {
         return TagKey.create(this, key);
     }

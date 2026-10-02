@@ -9,12 +9,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a block is ignited. If you want to catch when a Player places
- * fire, you need to use {@link BlockPlaceEvent}.
- * <p>
- * If this event is cancelled, the block will not be ignited.
- */
+/// Called when a block is ignited. If you want to catch when a Player places
+/// fire, you need to use [BlockPlaceEvent].
+///
+/// If this event is cancelled, the block will not be ignited.
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -43,21 +41,17 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
         this.ignitingBlock = ignitingBlock;
     }
 
-    /**
-     * Gets the cause of block ignite.
-     *
-     * @return An IgniteCause value detailing the cause of block ignition
-     */
+    /// Gets the cause of block ignite.
+    ///
+    /// @return An IgniteCause value detailing the cause of block ignition
     @NotNull
     public IgniteCause getCause() {
         return this.cause;
     }
 
-    /**
-     * Gets the player who ignited this block
-     *
-     * @return The Player that placed/ignited the fire block, or {@code null} if not ignited by a Player.
-     */
+    /// Gets the player who ignited this block
+    ///
+    /// @return The Player that placed/ignited the fire block, or `null` if not ignited by a Player.
     @Nullable
     public Player getPlayer() {
         if (this.ignitingEntity instanceof Player) {
@@ -67,62 +61,40 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
         return null;
     }
 
-    /**
-     * Gets the entity who ignited this block
-     *
-     * @return The Entity that placed/ignited the fire block, or {@code null} if not ignited by an Entity.
-     */
+    /// Gets the entity who ignited this block
+    ///
+    /// @return The Entity that placed/ignited the fire block, or `null` if not ignited by an Entity.
     @Nullable
     public Entity getIgnitingEntity() {
         return this.ignitingEntity;
     }
 
-    /**
-     * Gets the block which ignited this block
-     *
-     * @return The Block that placed/ignited the fire block, or {@code null} if not ignited by a Block.
-     */
+    /// Gets the block which ignited this block
+    ///
+    /// @return The Block that placed/ignited the fire block, or `null` if not ignited by a Block.
     @Nullable
     public Block getIgnitingBlock() {
         return this.ignitingBlock;
     }
 
-    /**
-     * An enum to specify the cause of the ignite
-     */
+    /// An enum to specify the cause of the ignite
     public enum IgniteCause {
 
-        /**
-         * Block ignition caused by lava.
-         */
+        /// Block ignition caused by lava.
         LAVA,
-        /**
-         * Block ignition caused by a player or dispenser using flint-and-steel.
-         */
+        /// Block ignition caused by a player or dispenser using flint-and-steel.
         FLINT_AND_STEEL,
-        /**
-         * Block ignition caused by dynamic spreading of fire.
-         */
+        /// Block ignition caused by dynamic spreading of fire.
         SPREAD,
-        /**
-         * Block ignition caused by lightning.
-         */
+        /// Block ignition caused by lightning.
         LIGHTNING,
-        /**
-         * Block ignition caused by an entity using a fireball.
-         */
+        /// Block ignition caused by an entity using a fireball.
         FIREBALL,
-        /**
-         * Block ignition caused by an Ender Crystal.
-         */
+        /// Block ignition caused by an Ender Crystal.
         ENDER_CRYSTAL,
-        /**
-         * Block ignition caused by explosion.
-         */
+        /// Block ignition caused by explosion.
         EXPLOSION,
-        /**
-         * Block ignition caused by a flaming arrow.
-         */
+        /// Block ignition caused by a flaming arrow.
         ARROW
     }
 

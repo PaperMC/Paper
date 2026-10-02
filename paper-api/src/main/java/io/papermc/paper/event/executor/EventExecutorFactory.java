@@ -33,12 +33,10 @@ public final class EventExecutorFactory {
 
     }
 
-    /**
-     * {@return an {@link EventExecutor} implemented by a hidden class calling a method handle}
-     *
-     * @param method     the method to be invoked by the created event executor
-     * @param eventClass the class of the event to handle
-     */
+    /// {@return an {@link EventExecutor} implemented by a hidden class calling a method handle}
+    ///
+    /// @param method     the method to be invoked by the created event executor
+    /// @param eventClass the class of the event to handle
     public static EventExecutor create(final Method method, final Class<? extends Event> eventClass) {
         final List<?> classData = List.of(method, eventClass);
         try {
@@ -53,10 +51,8 @@ public final class EventExecutorFactory {
 
     }
 
-    /**
-     * Extracts the class data and creates an adjusted MethodHandle directly usable by the lookup class.
-     * The logic is kept here to minimize memory usage per created class.
-     */
+    /// Extracts the class data and creates an adjusted MethodHandle directly usable by the lookup class.
+    /// The logic is kept here to minimize memory usage per created class.
     static ClassData classData(final MethodHandles.Lookup lookup) {
         try {
             final Method method = MethodHandles.classDataAt(lookup, ConstantDescs.DEFAULT_NAME, Method.class, 0);

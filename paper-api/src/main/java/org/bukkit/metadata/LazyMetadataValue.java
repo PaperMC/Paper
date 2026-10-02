@@ -7,22 +7,20 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * The LazyMetadataValue class implements a type of metadata that is not
- * computed until another plugin asks for it.
- * <p>
- * By making metadata values lazy, no computation is done by the providing
- * plugin until absolutely necessary (if ever). Additionally,
- * LazyMetadataValue objects cache their values internally unless overridden
- * by a {@link CacheStrategy} or invalidated at the individual or plugin
- * level. Once invalidated, the LazyMetadataValue will recompute its value
- * when asked.
- *
- * @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
- * removed. It is recommended that when wanting persistent metadata, you use {@link org.bukkit.persistence.PersistentDataContainer}.
- * <p>
- * If you want temporary values on an entity, use the entity lifecycle events and a {@link java.util.Map} of your own. (See {@link com.destroystokyo.paper.event.entity.EntityAddToWorldEvent} and {@link com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent})
- */
+/// The LazyMetadataValue class implements a type of metadata that is not
+/// computed until another plugin asks for it.
+///
+/// By making metadata values lazy, no computation is done by the providing
+/// plugin until absolutely necessary (if ever). Additionally,
+/// LazyMetadataValue objects cache their values internally unless overridden
+/// by a [CacheStrategy] or invalidated at the individual or plugin
+/// level. Once invalidated, the LazyMetadataValue will recompute its value
+/// when asked.
+///
+/// @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
+/// removed. It is recommended that when wanting persistent metadata, you use [org.bukkit.persistence.PersistentDataContainer].
+///
+/// If you want temporary values on an entity, use the entity lifecycle events and a [java.util.Map] of your own. (See [com.destroystokyo.paper.event.entity.EntityAddToWorldEvent] and [com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent])
 @Deprecated
 public class LazyMetadataValue extends MetadataValueAdapter {
     private Callable<Object> lazyValue;
@@ -30,27 +28,23 @@ public class LazyMetadataValue extends MetadataValueAdapter {
     private SoftReference<Object> internalValue;
     private static final Object ACTUALLY_NULL = new Object();
 
-    /**
-     * Initialized a LazyMetadataValue object with the default
-     * CACHE_AFTER_FIRST_EVAL cache strategy.
-     *
-     * @param owningPlugin the {@link Plugin} that created this metadata
-     *     value.
-     * @param lazyValue the lazy value assigned to this metadata value.
-     */
+    /// Initialized a LazyMetadataValue object with the default
+    /// CACHE\_AFTER\_FIRST\_EVAL cache strategy.
+    ///
+    /// @param owningPlugin the [Plugin] that created this metadata
+    ///     value.
+    /// @param lazyValue the lazy value assigned to this metadata value.
     public LazyMetadataValue(@NotNull Plugin owningPlugin, @NotNull Callable<Object> lazyValue) {
         this(owningPlugin, CacheStrategy.CACHE_AFTER_FIRST_EVAL, lazyValue);
     }
 
-    /**
-     * Initializes a LazyMetadataValue object with a specific cache strategy.
-     *
-     * @param owningPlugin the {@link Plugin} that created this metadata
-     *     value.
-     * @param cacheStrategy determines the rules for caching this metadata
-     *     value.
-     * @param lazyValue the lazy value assigned to this metadata value.
-     */
+    /// Initializes a LazyMetadataValue object with a specific cache strategy.
+    ///
+    /// @param owningPlugin the [Plugin] that created this metadata
+    ///     value.
+    /// @param cacheStrategy determines the rules for caching this metadata
+    ///     value.
+    /// @param lazyValue the lazy value assigned to this metadata value.
     public LazyMetadataValue(@NotNull Plugin owningPlugin, @NotNull CacheStrategy cacheStrategy, @NotNull Callable<Object> lazyValue) {
         super(owningPlugin);
         Preconditions.checkArgument(cacheStrategy != null, "cacheStrategy cannot be null");
@@ -60,12 +54,10 @@ public class LazyMetadataValue extends MetadataValueAdapter {
         this.cacheStrategy = cacheStrategy;
     }
 
-    /**
-     * Protected special constructor used by FixedMetadataValue to bypass
-     * standard setup.
-     *
-     * @param owningPlugin the owning plugin
-     */
+    /// Protected special constructor used by FixedMetadataValue to bypass
+    /// standard setup.
+    ///
+    /// @param owningPlugin the owning plugin
     protected LazyMetadataValue(@NotNull Plugin owningPlugin) {
         super(owningPlugin);
     }
@@ -81,12 +73,10 @@ public class LazyMetadataValue extends MetadataValueAdapter {
         return value;
     }
 
-    /**
-     * Lazily evaluates the value of this metadata item.
-     *
-     * @throws MetadataEvaluationException if computing the metadata value
-     *     fails.
-     */
+    /// Lazily evaluates the value of this metadata item.
+    ///
+    /// @throws MetadataEvaluationException if computing the metadata value
+    ///     fails.
     private synchronized void eval() throws MetadataEvaluationException {
         if (cacheStrategy == CacheStrategy.NEVER_CACHE || internalValue.get() == null) {
             try {
@@ -108,25 +98,17 @@ public class LazyMetadataValue extends MetadataValueAdapter {
         }
     }
 
-    /**
-     * Describes possible caching strategies for metadata.
-     */
+    /// Describes possible caching strategies for metadata.
     public enum CacheStrategy {
-        /**
-         * Once the metadata value has been evaluated, do not re-evaluate the
-         * value until it is manually invalidated.
-         */
+        /// Once the metadata value has been evaluated, do not re-evaluate the
+        /// value until it is manually invalidated.
         CACHE_AFTER_FIRST_EVAL,
 
-        /**
-         * Re-evaluate the metadata item every time it is requested
-         */
+        /// Re-evaluate the metadata item every time it is requested
         NEVER_CACHE,
 
-        /**
-         * Once the metadata value has been evaluated, do not re-evaluate the
-         * value in spite of manual invalidation.
-         */
+        /// Once the metadata value has been evaluated, do not re-evaluate the
+        /// value in spite of manual invalidation.
         CACHE_ETERNALLY
     }
 }

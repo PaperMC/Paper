@@ -11,99 +11,63 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A container for a color palette. This class is immutable; the set methods
- * return a new color. The color names listed as fields are HTML4 standards,
- * but subject to change.
- */
+/// A container for a color palette. This class is immutable; the set methods
+/// return a new color. The color names listed as fields are HTML4 standards,
+/// but subject to change.
 @SerializableAs("Color")
 public final class Color implements ConfigurationSerializable {
     private static final int BIT_MASK = 0xff;
     private static final int DEFAULT_ALPHA = 255;
 
-    /**
-     * White, or (0xFF,0xFF,0xFF) in (R,G,B)
-     */
+    /// White, or (0xFF,0xFF,0xFF) in (R,G,B)
     public static final Color WHITE = fromRGB(0xFFFFFF);
 
-    /**
-     * Silver, or (0xC0,0xC0,0xC0) in (R,G,B)
-     */
+    /// Silver, or (0xC0,0xC0,0xC0) in (R,G,B)
     public static final Color SILVER = fromRGB(0xC0C0C0);
 
-    /**
-     * Gray, or (0x80,0x80,0x80) in (R,G,B)
-     */
+    /// Gray, or (0x80,0x80,0x80) in (R,G,B)
     public static final Color GRAY = fromRGB(0x808080);
 
-    /**
-     * Black, or (0x00,0x00,0x00) in (R,G,B)
-     */
+    /// Black, or (0x00,0x00,0x00) in (R,G,B)
     public static final Color BLACK = fromRGB(0x000000);
 
-    /**
-     * Red, or (0xFF,0x00,0x00) in (R,G,B)
-     */
+    /// Red, or (0xFF,0x00,0x00) in (R,G,B)
     public static final Color RED = fromRGB(0xFF0000);
 
-    /**
-     * Maroon, or (0x80,0x00,0x00) in (R,G,B)
-     */
+    /// Maroon, or (0x80,0x00,0x00) in (R,G,B)
     public static final Color MAROON = fromRGB(0x800000);
 
-    /**
-     * Yellow, or (0xFF,0xFF,0x00) in (R,G,B)
-     */
+    /// Yellow, or (0xFF,0xFF,0x00) in (R,G,B)
     public static final Color YELLOW = fromRGB(0xFFFF00);
 
-    /**
-     * Olive, or (0x80,0x80,0x00) in (R,G,B)
-     */
+    /// Olive, or (0x80,0x80,0x00) in (R,G,B)
     public static final Color OLIVE = fromRGB(0x808000);
 
-    /**
-     * Lime, or (0x00,0xFF,0x00) in (R,G,B)
-     */
+    /// Lime, or (0x00,0xFF,0x00) in (R,G,B)
     public static final Color LIME = fromRGB(0x00FF00);
 
-    /**
-     * Green, or (0x00,0x80,0x00) in (R,G,B)
-     */
+    /// Green, or (0x00,0x80,0x00) in (R,G,B)
     public static final Color GREEN = fromRGB(0x008000);
 
-    /**
-     * Aqua, or (0x00,0xFF,0xFF) in (R,G,B)
-     */
+    /// Aqua, or (0x00,0xFF,0xFF) in (R,G,B)
     public static final Color AQUA = fromRGB(0x00FFFF);
 
-    /**
-     * Teal, or (0x00,0x80,0x80) in (R,G,B)
-     */
+    /// Teal, or (0x00,0x80,0x80) in (R,G,B)
     public static final Color TEAL = fromRGB(0x008080);
 
-    /**
-     * Blue, or (0x00,0x00,0xFF) in (R,G,B)
-     */
+    /// Blue, or (0x00,0x00,0xFF) in (R,G,B)
     public static final Color BLUE = fromRGB(0x0000FF);
 
-    /**
-     * Navy, or (0x00,0x00,0x80) in (R,G,B)
-     */
+    /// Navy, or (0x00,0x00,0x80) in (R,G,B)
     public static final Color NAVY = fromRGB(0x000080);
 
-    /**
-     * Fuchsia, or (0xFF,0x00,0xFF) in (R,G,B)
-     */
+    /// Fuchsia, or (0xFF,0x00,0xFF) in (R,G,B)
     public static final Color FUCHSIA = fromRGB(0xFF00FF);
 
-    /**
-     * Purple, or (0x80,0x00,0x80) in (R,G,B)
-     */
+    /// Purple, or (0x80,0x00,0x80) in (R,G,B)
     public static final Color PURPLE = fromRGB(0x800080);
 
-    /**
-     * Orange, or (0xFF,0xA5,0x00) in (R,G,B)
-     */
+    /// Orange, or (0xFF,0xA5,0x00) in (R,G,B)
     public static final Color ORANGE = fromRGB(0xFFA500);
 
     private final byte alpha;
@@ -111,85 +75,73 @@ public final class Color implements ConfigurationSerializable {
     private final byte green;
     private final byte blue;
 
-    /**
-     * Creates a new Color object from an alpha, red, green, and blue
-     *
-     * @param alpha integer from 0-255
-     * @param red integer from 0-255
-     * @param green integer from 0-255
-     * @param blue integer from 0-255
-     * @return a new Color object for the alpha, red, green, blue
-     * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
-     */
+    /// Creates a new Color object from an alpha, red, green, and blue
+    ///
+    /// @param alpha integer from 0-255
+    /// @param red integer from 0-255
+    /// @param green integer from 0-255
+    /// @param blue integer from 0-255
+    /// @return a new Color object for the alpha, red, green, blue
+    /// @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
     @NotNull
     public static Color fromARGB(int alpha, int red, int green, int blue) throws IllegalArgumentException {
         return new Color(alpha, red, green, blue);
     }
 
-    /**
-     * Creates a new Color object from a red, green, and blue
-     *
-     * @param red integer from 0-255
-     * @param green integer from 0-255
-     * @param blue integer from 0-255
-     * @return a new Color object for the red, green, blue
-     * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
-     */
+    /// Creates a new Color object from a red, green, and blue
+    ///
+    /// @param red integer from 0-255
+    /// @param green integer from 0-255
+    /// @param blue integer from 0-255
+    /// @return a new Color object for the red, green, blue
+    /// @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
     @NotNull
     public static Color fromRGB(int red, int green, int blue) throws IllegalArgumentException {
         return new Color(DEFAULT_ALPHA, red, green, blue);
     }
 
-    /**
-     * Creates a new Color object from a blue, green, and red
-     *
-     * @param blue integer from 0-255
-     * @param green integer from 0-255
-     * @param red integer from 0-255
-     * @return a new Color object for the blue, green, red
-     * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
-     */
+    /// Creates a new Color object from a blue, green, and red
+    ///
+    /// @param blue integer from 0-255
+    /// @param green integer from 0-255
+    /// @param red integer from 0-255
+    /// @return a new Color object for the blue, green, red
+    /// @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
     @NotNull
     public static Color fromBGR(int blue, int green, int red) throws IllegalArgumentException {
         return new Color(DEFAULT_ALPHA, red, green, blue);
     }
 
-    /**
-     * Creates a new color object from an integer that contains the red,
-     * green, and blue bytes in the lowest order 24 bits.
-     *
-     * @param rgb the integer storing the red, green, and blue values
-     * @return a new color object for specified values
-     * @throws IllegalArgumentException if any data is in the highest order 8
-     *     bits
-     */
+    /// Creates a new color object from an integer that contains the red,
+    /// green, and blue bytes in the lowest order 24 bits.
+    ///
+    /// @param rgb the integer storing the red, green, and blue values
+    /// @return a new color object for specified values
+    /// @throws IllegalArgumentException if any data is in the highest order 8
+    ///     bits
     @NotNull
     public static Color fromRGB(int rgb) throws IllegalArgumentException {
         Preconditions.checkArgument((rgb >> 24) == 0, "Extraneous data in: %s", rgb);
         return fromRGB(rgb >> 16 & BIT_MASK, rgb >> 8 & BIT_MASK, rgb & BIT_MASK);
     }
 
-    /**
-     * Creates a new color object from an integer that contains the alpha, red,
-     * green, and blue bytes.
-     *
-     * @param argb the integer storing the alpha, red, green, and blue values
-     * @return a new color object for specified values
-     */
+    /// Creates a new color object from an integer that contains the alpha, red,
+    /// green, and blue bytes.
+    ///
+    /// @param argb the integer storing the alpha, red, green, and blue values
+    /// @return a new color object for specified values
     @NotNull
     public static Color fromARGB(int argb) {
         return fromARGB(argb >> 24 & BIT_MASK, argb >> 16 & BIT_MASK, argb >> 8 & BIT_MASK, argb & BIT_MASK);
     }
 
-    /**
-     * Creates a new color object from an integer that contains the blue,
-     * green, and red bytes in the lowest order 24 bits.
-     *
-     * @param bgr the integer storing the blue, green, and red values
-     * @return a new color object for specified values
-     * @throws IllegalArgumentException if any data is in the highest order 8
-     *     bits
-     */
+    /// Creates a new color object from an integer that contains the blue,
+    /// green, and red bytes in the lowest order 24 bits.
+    ///
+    /// @param bgr the integer storing the blue, green, and red values
+    /// @return a new color object for specified values
+    /// @throws IllegalArgumentException if any data is in the highest order 8
+    ///     bits
     @NotNull
     public static Color fromBGR(int bgr) throws IllegalArgumentException {
         Preconditions.checkArgument((bgr >> 24) == 0, "Extrenuous data in: %s", bgr);
@@ -212,120 +164,96 @@ public final class Color implements ConfigurationSerializable {
         this.blue = (byte) blue;
     }
 
-    /**
-     * Gets the alpha component
-     *
-     * @return alpha component, from 0 to 255
-     */
+    /// Gets the alpha component
+    ///
+    /// @return alpha component, from 0 to 255
     public int getAlpha() {
         return BIT_MASK & alpha;
     }
 
-    /**
-     * Creates a new Color object with specified component
-     *
-     * @param alpha the alpha component, from 0 to 255
-     * @return a new color object with the alpha component
-     */
+    /// Creates a new Color object with specified component
+    ///
+    /// @param alpha the alpha component, from 0 to 255
+    /// @return a new color object with the alpha component
     @NotNull
     public Color setAlpha(int alpha) {
         return fromARGB(alpha, getRed(), getGreen(), getBlue());
     }
 
-    /**
-     * Gets the red component
-     *
-     * @return red component, from 0 to 255
-     */
+    /// Gets the red component
+    ///
+    /// @return red component, from 0 to 255
     public int getRed() {
         return BIT_MASK & red;
     }
 
-    /**
-     * Creates a new Color object with specified component
-     *
-     * @param red the red component, from 0 to 255
-     * @return a new color object with the red component
-     */
+    /// Creates a new Color object with specified component
+    ///
+    /// @param red the red component, from 0 to 255
+    /// @return a new color object with the red component
     @NotNull
     public Color setRed(int red) {
         return fromARGB(getAlpha(), red, getGreen(), getBlue());
     }
 
-    /**
-     * Gets the green component
-     *
-     * @return green component, from 0 to 255
-     */
+    /// Gets the green component
+    ///
+    /// @return green component, from 0 to 255
     public int getGreen() {
         return BIT_MASK & green;
     }
 
-    /**
-     * Creates a new Color object with specified component
-     *
-     * @param green the green component, from 0 to 255
-     * @return a new color object with the green component
-     */
+    /// Creates a new Color object with specified component
+    ///
+    /// @param green the green component, from 0 to 255
+    /// @return a new color object with the green component
     @NotNull
     public Color setGreen(int green) {
         return fromARGB(getAlpha(), getRed(), green, getBlue());
     }
 
-    /**
-     * Gets the blue component
-     *
-     * @return blue component, from 0 to 255
-     */
+    /// Gets the blue component
+    ///
+    /// @return blue component, from 0 to 255
     public int getBlue() {
         return BIT_MASK & blue;
     }
 
-    /**
-     * Creates a new Color object with specified component
-     *
-     * @param blue the blue component, from 0 to 255
-     * @return a new color object with the blue component
-     */
+    /// Creates a new Color object with specified component
+    ///
+    /// @param blue the blue component, from 0 to 255
+    /// @return a new color object with the blue component
     @NotNull
     public Color setBlue(int blue) {
         return fromARGB(getAlpha(), getRed(), getGreen(), blue);
     }
 
-    /**
-     * Gets the color as an RGB integer.
-     *
-     * @return An integer representation of this color, as 0xRRGGBB
-     */
+    /// Gets the color as an RGB integer.
+    ///
+    /// @return An integer representation of this color, as 0xRRGGBB
     public int asRGB() {
         return getRed() << 16 | getGreen() << 8 | getBlue();
     }
 
-    /**
-     * Gets the color as an ARGB integer.
-     *
-     * @return An integer representation of this color, as 0xAARRGGBB
-     */
+    /// Gets the color as an ARGB integer.
+    ///
+    /// @return An integer representation of this color, as 0xAARRGGBB
     public int asARGB() {
         return getAlpha() << 24 | getRed() << 16 | getGreen() << 8 | getBlue();
     }
 
-    /**
-     * Gets the color as an BGR integer.
-     *
-     * @return An integer representation of this color, as 0xBBGGRR
-     */
+    /// Gets the color as an BGR integer.
+    ///
+    /// @return An integer representation of this color, as 0xBBGGRR
     public int asBGR() {
         return getBlue() << 16 | getGreen() << 8 | getRed();
     }
 
-    /**
-     * Creates a new color with its RGB components changed as if it was dyed
-     * with the colors passed in, replicating vanilla workbench dyeing
-     *
-     * @param colors The DyeColors to dye with
-     * @return A new color with the changed rgb components
-     */
+    /// Creates a new color with its RGB components changed as if it was dyed
+    /// with the colors passed in, replicating vanilla workbench dyeing
+    ///
+    /// @param colors The DyeColors to dye with
+    /// @return A new color with the changed rgb components
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
     @NotNull
     public Color mixDyes(@NotNull DyeColor... colors) {
@@ -339,16 +267,13 @@ public final class Color implements ConfigurationSerializable {
         return mixColors(toPass);
     }
 
-    /**
-     * Creates a new color with its RGB components changed as if it was dyed
-     * with the colors passed in, replicating vanilla workbench dyeing.
-     *
-     * <b>Note that this method does not currently take into account alpha
-     * components.</b>
-     *
-     * @param colors The colors to dye with
-     * @return A new color with the changed rgb components
-     */
+    /// Creates a new color with its RGB components changed as if it was dyed
+    /// with the colors passed in, replicating vanilla workbench dyeing.
+    /// **Note that this method does not currently take into account alpha
+    /// components.**
+    ///
+    /// @param colors The colors to dye with
+    /// @return A new color with the changed rgb components
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
     @NotNull
     public Color mixColors(@NotNull Color... colors) {

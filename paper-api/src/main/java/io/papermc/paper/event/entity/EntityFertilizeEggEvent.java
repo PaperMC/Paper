@@ -12,20 +12,17 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when two entities mate and the mating process results in a fertilization.
- * Fertilization differs from normal breeding, as represented by the {@link EntityBreedEvent}, as
- * it does not result in the immediate creation of the child entity in the world.
- * <p>
- * An example of this would be:
- * <ul>
- * <li>A frog being marked as "is_pregnant" and laying {@link Material#FROGSPAWN} later.</li>
- * <li>Sniffers producing the {@link Material#SNIFFER_EGG} item, which needs to be placed before it can begin to hatch.</li>
- * <li>A turtle being marked with "HasEgg" and laying a {@link Material#TURTLE_EGG} later.</li>
- * </ul>
- * <p>
- * The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
- */
+/// Called when two entities mate and the mating process results in a fertilization.
+/// Fertilization differs from normal breeding, as represented by the [EntityBreedEvent], as
+/// it does not result in the immediate creation of the child entity in the world.
+///
+/// An example of this would be:
+///
+///   - A frog being marked as "is\_pregnant" and laying [Material#FROGSPAWN] later.
+///   - Sniffers producing the [Material#SNIFFER_EGG] item, which needs to be placed before it can begin to hatch.
+///   - A turtle being marked with "HasEgg" and laying a [Material#TURTLE_EGG] later.
+///
+/// The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
 @NullMarked
 public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable {
 
@@ -52,60 +49,48 @@ public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable 
         return (LivingEntity) super.getEntity();
     }
 
-    /**
-     * Provides the entity in the fertilization process that will eventually be responsible for "creating" offspring,
-     * may that be by setting a block that later hatches or dropping an egg that has to be placed.
-     *
-     * @return The "mother" entity.
-     */
+    /// Provides the entity in the fertilization process that will eventually be responsible for "creating" offspring,
+    /// may that be by setting a block that later hatches or dropping an egg that has to be placed.
+    ///
+    /// @return The "mother" entity.
     public LivingEntity getMother() {
         return this.getEntity();
     }
 
-    /**
-     * Provides the "father" entity in the fertilization process that is not responsible for initiating the offspring
-     * creation.
-     *
-     * @return the other parent
-     */
+    /// Provides the "father" entity in the fertilization process that is not responsible for initiating the offspring
+    /// creation.
+    ///
+    /// @return the other parent
     public LivingEntity getFather() {
         return this.father;
     }
 
-    /**
-     * Gets the Entity responsible for fertilization. Breeder is {@code null} for spontaneous
-     * conception.
-     *
-     * @return The Entity who initiated fertilization.
-     */
+    /// Gets the Entity responsible for fertilization. Breeder is `null` for spontaneous
+    /// conception.
+    ///
+    /// @return The Entity who initiated fertilization.
     public @Nullable Player getBreeder() {
         return this.breeder;
     }
 
-    /**
-     * The ItemStack that was used to initiate fertilization, if present.
-     *
-     * @return ItemStack used to initiate fertilization.
-     */
+    /// The ItemStack that was used to initiate fertilization, if present.
+    ///
+    /// @return ItemStack used to initiate fertilization.
     public @Nullable ItemStack getBredWith() {
         return this.bredWith;
     }
 
-    /**
-     * Get the amount of experience granted by fertilization.
-     *
-     * @return experience amount
-     */
+    /// Get the amount of experience granted by fertilization.
+    ///
+    /// @return experience amount
     public int getExperience() {
         return this.experience;
     }
 
-    /**
-     * Set the amount of experience granted by fertilization.
-     * If the amount is negative or zero, no experience will be dropped.
-     *
-     * @param experience experience amount
-     */
+    /// Set the amount of experience granted by fertilization.
+    /// If the amount is negative or zero, no experience will be dropped.
+    ///
+    /// @param experience experience amount
     public void setExperience(final int experience) {
         this.experience = experience;
     }

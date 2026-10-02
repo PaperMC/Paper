@@ -6,11 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity combusts.
- * <p>
- * If this event is cancelled, the entity will not combust.
- */
+/// Called when an entity combusts.
+///
+/// If this event is cancelled, the entity will not combust.
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,36 +29,30 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
         this.duration = duration;
     }
 
-    /**
-     * @return the amount of time (in seconds) the combustee should be alight
-     *     for
-     */
+    /// @return the amount of time (in seconds) the combustee should be alight
+    ///     for
     public float getDuration() {
         return this.duration;
     }
 
-    /**
-     * The number of seconds the combustee should be alight for.
-     * <p>
-     * This value will only ever increase the combustion time, not decrease
-     * existing combustion times.
-     *
-     * @param duration the time in seconds to be alight for.
-     */
+    /// The number of seconds the combustee should be alight for.
+    ///
+    /// This value will only ever increase the combustion time, not decrease
+    /// existing combustion times.
+    ///
+    /// @param duration the time in seconds to be alight for.
     public void setDuration(float duration) {
         this.duration = duration;
     }
 
-    /**
-     * The number of seconds the combustee should be alight for.
-     * <p>
-     * This value will only ever increase the combustion time, not decrease
-     * existing combustion times.
-     *
-     * @param duration the time in seconds to be alight for.
-     * @see #setDuration(float)
-     * @deprecated duration is now a float
-     */
+    /// The number of seconds the combustee should be alight for.
+    ///
+    /// This value will only ever increase the combustion time, not decrease
+    /// existing combustion times.
+    ///
+    /// @param duration the time in seconds to be alight for.
+    /// @see #setDuration(float)
+    /// @deprecated duration is now a float
     @Deprecated(since = "1.21", forRemoval = true)
     public void setDuration(int duration) {
         this.duration = duration;

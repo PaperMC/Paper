@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Raised when a vehicle collides with an entity.
- */
+/// Raised when a vehicle collides with an entity.
 public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implements Cancellable {
 
     private final Entity entity;

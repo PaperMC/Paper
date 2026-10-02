@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Sent when an entity's swimming status is toggled.
- */
+/// Sent when an entity's swimming status is toggled.
 public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,12 +20,10 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
         this.isSwimming = isSwimming;
     }
 
-    /**
-     * Returns {@code true} if the entity is now swims or
-     * {@code false} if the entity stops swimming.
-     *
-     * @return new swimming state
-     */
+    /// Returns `true` if the entity is now swims or
+    /// `false` if the entity stops swimming.
+    ///
+    /// @return new swimming state
     public boolean isSwimming() {
         return this.isSwimming;
     }
@@ -37,13 +33,11 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
         return this.cancelled;
     }
 
-    /**
-     * @deprecated This does nothing, the server and the client doesn't work
-     * correctly when the server try to bypass this. A current workaround
-     * exists. If you want to cancel the switch from the ground state to the
-     * swimming state you need to disable the sprinting flag for the player after
-     * the cancel action.
-     */
+    /// @deprecated This does nothing, the server and the client doesn't work
+    /// correctly when the server try to bypass this. A current workaround
+    /// exists. If you want to cancel the switch from the ground state to the
+    /// swimming state you need to disable the sprinting flag for the player after
+    /// the cancel action.
     @Deprecated
     @Override
     public void setCancelled(boolean cancel) {

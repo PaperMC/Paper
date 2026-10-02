@@ -3,12 +3,10 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
-/**
- * Represents a pumpkin.
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents a pumpkin.
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Pumpkin extends MaterialData implements Directional {
 
@@ -16,11 +14,9 @@ public class Pumpkin extends MaterialData implements Directional {
         super(Material.LEGACY_PUMPKIN);
     }
 
-    /**
-     * Instantiate a pumpkin facing in a particular direction.
-     *
-     * @param direction the direction the pumpkin's face is facing
-     */
+    /// Instantiate a pumpkin facing in a particular direction.
+    ///
+    /// @param direction the direction the pumpkin's face is facing
     public Pumpkin(BlockFace direction) {
         this();
         setFacingDirection(direction);
@@ -30,11 +26,9 @@ public class Pumpkin extends MaterialData implements Directional {
         super(type);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Pumpkin(final Material type, final byte data) {
         super(type, data);

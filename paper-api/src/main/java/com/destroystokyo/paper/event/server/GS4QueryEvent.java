@@ -14,13 +14,11 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * This event is fired if server is getting queried over GS4 Query protocol.
- * <br>
- * Adapted from Velocity's ProxyQueryEvent
- *
- * @author Mark Vainomaa
- */
+/// This event is fired if server is getting queried over GS4 Query protocol.
+///
+/// Adapted from Velocity's ProxyQueryEvent
+///
+/// @author Mark Vainomaa
 @NullMarked
 public final class GS4QueryEvent extends Event {
 
@@ -38,38 +36,30 @@ public final class GS4QueryEvent extends Event {
         this.response = response;
     }
 
-    /**
-     * Get query type
-     *
-     * @return query type
-     */
+    /// Get query type
+    ///
+    /// @return query type
     public QueryType getQueryType() {
         return this.queryType;
     }
 
-    /**
-     * Get querier address
-     *
-     * @return querier address
-     */
+    /// Get querier address
+    ///
+    /// @return querier address
     public InetAddress getQuerierAddress() {
         return this.querierAddress;
     }
 
-    /**
-     * Get query response
-     *
-     * @return query response
-     */
+    /// Get query response
+    ///
+    /// @return query response
     public QueryResponse getResponse() {
         return this.response;
     }
 
-    /**
-     * Set query response
-     *
-     * @param response query response
-     */
+    /// Set query response
+    ///
+    /// @param response query response
     public void setResponse(final QueryResponse response) {
         this.response = Preconditions.checkNotNull(response, "response");
     }
@@ -83,19 +73,17 @@ public final class GS4QueryEvent extends Event {
         return HANDLER_LIST;
     }
 
-    /**
-     * The type of query
-     */
+    /// The type of query
     public enum QueryType {
-        /**
-         * Basic query asks only a subset of information, such as motd, game type (hardcoded to <pre>MINECRAFT</pre>), map,
-         * current players, max players, server port and server motd
-         */
+        /// Basic query asks only a subset of information, such as motd, game type (hardcoded to
+        /// <pre>
+        /// MINECRAFT
+        /// </pre>
+        /// ), map,
+        /// current players, max players, server port and server motd
         BASIC,
 
-        /**
-         * Full query asks pretty much everything present on this event (only hardcoded values cannot be modified here).
-         */
+        /// Full query asks pretty much everything present on this event (only hardcoded values cannot be modified here).
         FULL
     }
 
@@ -125,101 +113,79 @@ public final class GS4QueryEvent extends Event {
             this.plugins = plugins;
         }
 
-        /**
-         * Get motd which will be used to reply to the query. By default, it is {@link Server#getMotd()}.
-         *
-         * @return motd
-         */
+        /// Get motd which will be used to reply to the query. By default, it is [Server#getMotd()].
+        ///
+        /// @return motd
         public String getMotd() {
             return this.motd;
         }
 
-        /**
-         * Get game version which will be used to reply to the query. By default, supported Minecraft versions range is sent.
-         *
-         * @return game version
-         */
+        /// Get game version which will be used to reply to the query. By default, supported Minecraft versions range is sent.
+        ///
+        /// @return game version
         public String getGameVersion() {
             return this.gameVersion;
         }
 
-        /**
-         * Get map name which will be used to reply to the query. By default {@code world} is sent.
-         *
-         * @return map name
-         */
+        /// Get map name which will be used to reply to the query. By default `world` is sent.
+        ///
+        /// @return map name
         public String getMap() {
             return this.map;
         }
 
-        /**
-         * Get current online player count which will be used to reply to the query.
-         *
-         * @return online player count
-         */
+        /// Get current online player count which will be used to reply to the query.
+        ///
+        /// @return online player count
         public int getCurrentPlayers() {
             return this.currentPlayers;
         }
 
-        /**
-         * Get max player count which will be used to reply to the query.
-         *
-         * @return max player count
-         */
+        /// Get max player count which will be used to reply to the query.
+        ///
+        /// @return max player count
         public int getMaxPlayers() {
             return this.maxPlayers;
         }
 
-        /**
-         * Get server (public facing) hostname.
-         *
-         * @return server hostname
-         */
+        /// Get server (public facing) hostname.
+        ///
+        /// @return server hostname
         public String getHostname() {
             return this.hostname;
         }
 
-        /**
-         * Get server (public facing) port.
-         *
-         * @return server port
-         */
+        /// Get server (public facing) port.
+        ///
+        /// @return server port
         public int getPort() {
             return this.port;
         }
 
-        /**
-         * Get collection of players which will be used to reply to the query.
-         *
-         * @return collection of players
-         */
+        /// Get collection of players which will be used to reply to the query.
+        ///
+        /// @return collection of players
         public Collection<String> getPlayers() {
             return this.players;
         }
 
-        /**
-         * Get server software (name and version) which will be used to reply to the query.
-         *
-         * @return server software
-         */
+        /// Get server software (name and version) which will be used to reply to the query.
+        ///
+        /// @return server software
         public String getServerVersion() {
             return this.serverVersion;
         }
 
-        /**
-         * Get list of plugins which will be used to reply to the query.
-         *
-         * @return collection of plugins
-         */
+        /// Get list of plugins which will be used to reply to the query.
+        ///
+        /// @return collection of plugins
         public Collection<PluginInformation> getPlugins() {
             return this.plugins;
         }
 
-        /**
-         * Creates a new {@link Builder} instance from data represented by this response.
-         *
-         * @return {@link QueryResponse} builder
-         */
+        /// Creates a new [Builder] instance from data represented by this response.
+        ///
+        /// @return [QueryResponse] builder
         public Builder toBuilder() {
             return QueryResponse.builder()
                 .motd(this.getMotd())
@@ -234,18 +200,14 @@ public final class GS4QueryEvent extends Event {
                 .plugins(this.getPlugins());
         }
 
-        /**
-         * Creates a new {@link Builder} instance.
-         *
-         * @return {@link QueryResponse} builder
-         */
+        /// Creates a new [Builder] instance.
+        ///
+        /// @return [QueryResponse] builder
         public static Builder builder() {
             return new Builder();
         }
 
-        /**
-         * A builder for {@link QueryResponse} objects.
-         */
+        /// A builder for [QueryResponse] objects.
         public static final class Builder {
 
             private @MonotonicNonNull String motd;
@@ -337,11 +299,9 @@ public final class GS4QueryEvent extends Event {
                 return this;
             }
 
-            /**
-             * Builds new {@link QueryResponse} with supplied data.
-             *
-             * @return response
-             */
+            /// Builds new [QueryResponse] with supplied data.
+            ///
+            /// @return response
             public QueryResponse build() {
                 return new QueryResponse(
                     Preconditions.checkNotNull(this.motd, "motd"),
@@ -358,9 +318,7 @@ public final class GS4QueryEvent extends Event {
             }
         }
 
-        /**
-         * Plugin information
-         */
+        /// Plugin information
         public static class PluginInformation {
 
             private String name;

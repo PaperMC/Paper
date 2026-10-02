@@ -168,15 +168,13 @@ public class HelpCommand extends BukkitCommand {
         }
     }
 
-    /**
-     * Computes the Dameraur-Levenshtein Distance between two strings. Adapted
-     * from the algorithm at <a href="http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance">Wikipedia: Damerau–Levenshtein distance</a>
-     *
-     * @param s1 The first string being compared.
-     * @param s2 The second string being compared.
-     * @return The number of substitutions, deletions, insertions, and
-     * transpositions required to get from s1 to s2.
-     */
+    /// Computes the Dameraur-Levenshtein Distance between two strings. Adapted
+    /// from the algorithm at [Wikipedia: Damerau–Levenshtein distance](http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance)
+    ///
+    /// @param s1 The first string being compared.
+    /// @param s2 The second string being compared.
+    /// @return The number of substitutions, deletions, insertions, and
+    /// transpositions required to get from s1 to s2.
     protected static int damerauLevenshteinDistance(@Nullable String s1, @Nullable String s2) {
         if (s1 == null && s2 == null) {
             return 0;

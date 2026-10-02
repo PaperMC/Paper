@@ -7,43 +7,31 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a Cow.
- */
+/// Represents a Cow.
 @NullMarked
 public interface Cow extends AbstractCow {
 
-    /**
-     * Gets the variant of this cow.
-     *
-     * @return the cow variant
-     */
+    /// Gets the variant of this cow.
+    ///
+    /// @return the cow variant
     Variant getVariant();
 
-    /**
-     * Sets the variant of this cow.
-     *
-     * @param variant the cow variant
-     */
+    /// Sets the variant of this cow.
+    ///
+    /// @param variant the cow variant
     void setVariant(Variant variant);
 
-    /**
-     * Get the sound variant of this cow.
-     *
-     * @return cow sound variant
-     */
+    /// Get the sound variant of this cow.
+    ///
+    /// @return cow sound variant
     SoundVariant getSoundVariant();
 
-    /**
-     * Set the sound variant of this cow.
-     *
-     * @param variant cow sound variant
-     */
+    /// Set the sound variant of this cow.
+    ///
+    /// @param variant cow sound variant
     void setSoundVariant(SoundVariant variant);
 
-    /**
-     * Represents the variant of a cow.
-     */
+    /// Represents the variant of a cow.
     interface Variant extends Keyed {
 
         // Start generate - CowVariant
@@ -59,9 +47,7 @@ public interface Cow extends AbstractCow {
         }
     }
 
-    /**
-     * Represents the sound variant of a cow.
-     */
+    /// Represents the sound variant of a cow.
     interface SoundVariant extends Keyed {
 
         // Start generate - CowSoundVariant

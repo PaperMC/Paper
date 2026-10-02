@@ -8,10 +8,8 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a lingering potion applies its effects. Happens
- * once every 5 ticks
- */
+/// Called when a lingering potion applies its effects. Happens
+/// once every 5 ticks
 public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,16 +30,14 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
         return (AreaEffectCloud) this.entity;
     }
 
-    /**
-     * Retrieves a mutable list of the affected entities
-     * <p>
-     * It is important to note that not every entity in this list
-     * is guaranteed to be affected. The cloud may die during the
-     * application of its effects due to the depletion of {@link AreaEffectCloud#getDurationOnUse()}
-     * or {@link AreaEffectCloud#getRadiusOnUse()}
-     *
-     * @return the affected entity list
-     */
+    /// Retrieves a mutable list of the affected entities
+    ///
+    /// It is important to note that not every entity in this list
+    /// is guaranteed to be affected. The cloud may die during the
+    /// application of its effects due to the depletion of [AreaEffectCloud#getDurationOnUse()]
+    /// or [AreaEffectCloud#getRadiusOnUse()]
+    ///
+    /// @return the affected entity list
     @NotNull
     public List<LivingEntity> getAffectedEntities() {
         return this.affectedEntities;

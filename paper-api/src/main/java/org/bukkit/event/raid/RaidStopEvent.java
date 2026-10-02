@@ -6,9 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a {@link Raid} is stopped.
- */
+/// Called when a [Raid] is stopped.
 public class RaidStopEvent extends RaidEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -21,11 +19,9 @@ public class RaidStopEvent extends RaidEvent {
         this.reason = reason;
     }
 
-    /**
-     * Returns the stop reason.
-     *
-     * @return Reason
-     */
+    /// Returns the stop reason.
+    ///
+    /// @return Reason
     @NotNull
     public Reason getReason() {
         return this.reason;
@@ -44,25 +40,15 @@ public class RaidStopEvent extends RaidEvent {
 
     public enum Reason {
 
-        /**
-         * Because the difficulty has been changed to peaceful.
-         */
+        /// Because the difficulty has been changed to peaceful.
         PEACE,
-        /**
-         * The raid took a long time without a final result.
-         */
+        /// The raid took a long time without a final result.
         TIMEOUT,
-        /**
-         * Finished the raid.
-         */
+        /// Finished the raid.
         FINISHED,
-        /**
-         * Couldn't find a suitable place to spawn raiders.
-         */
+        /// Couldn't find a suitable place to spawn raiders.
         UNSPAWNABLE,
-        /**
-         * The place where the raid occurs no longer be a village.
-         */
+        /// The place where the raid occurs no longer be a village.
         NOT_IN_VILLAGE
     }
 }

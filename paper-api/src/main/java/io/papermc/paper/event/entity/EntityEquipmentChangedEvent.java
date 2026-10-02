@@ -12,21 +12,18 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called whenever a change to an entity's equipment has been detected. This event is called after effects from
- * attribute modifiers and enchantments have been updated.
- * <p>
- * Examples of actions that can trigger this event:
- * <ul>
- *     <li>An entity being added to a world.</li>
- *     <li>A player logging in.</li>
- *     <li>The durability of an equipment item changing.</li>
- *     <li>A dispenser equipping an item onto an entity.</li>
- *     <li>An entity picking up an armor or weapon item from the ground.</li>
- *     <li>A player changing their equipped armor.</li>
- *     <li>A player changes their currently held item.</li>
- * </ul>
- */
+/// Called whenever a change to an entity's equipment has been detected. This event is called after effects from
+/// attribute modifiers and enchantments have been updated.
+///
+/// Examples of actions that can trigger this event:
+///
+///   - An entity being added to a world.
+///   - A player logging in.
+///   - The durability of an equipment item changing.
+///   - A dispenser equipping an item onto an entity.
+///   - An entity picking up an armor or weapon item from the ground.
+///   - A player changing their equipped armor.
+///   - A player changes their currently held item.
 @NullMarked
 public class EntityEquipmentChangedEvent extends EntityEvent {
 
@@ -46,11 +43,9 @@ public class EntityEquipmentChangedEvent extends EntityEvent {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets a map of changed slots to their respective equipment changes.
-     *
-     * @return the equipment changes map
-     */
+    /// Gets a map of changed slots to their respective equipment changes.
+    ///
+    /// @return the equipment changes map
     public @Unmodifiable Map<EquipmentSlot, EquipmentChange> getEquipmentChanges() {
         return Collections.unmodifiableMap(this.equipmentChanges);
     }
@@ -64,25 +59,19 @@ public class EntityEquipmentChangedEvent extends EntityEvent {
         return HANDLER_LIST;
     }
 
-    /**
-     * Represents a change in equipment for a single equipment slot.
-     */
+    /// Represents a change in equipment for a single equipment slot.
     @ApiStatus.NonExtendable
     public interface EquipmentChange {
 
-        /**
-         * Gets the existing item that is being replaced.
-         *
-         * @return the existing item
-         */
+        /// Gets the existing item that is being replaced.
+        ///
+        /// @return the existing item
         @Contract(pure = true, value = "-> new")
         ItemStack oldItem();
 
-        /**
-         * Gets the new item that is replacing the existing item.
-         *
-         * @return the new item
-         */
+        /// Gets the new item that is replacing the existing item.
+        ///
+        /// @return the new item
         @Contract(pure = true, value = "-> new")
         ItemStack newItem();
     }

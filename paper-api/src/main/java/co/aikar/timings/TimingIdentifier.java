@@ -35,15 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * <p>Used as a basis for fast HashMap key comparisons for the Timing Map.</p>
- *
- * This class uses interned strings giving us the ability to do an identity check instead of equals() on the strings
- */
+/// Used as a basis for fast HashMap key comparisons for the Timing Map.
+///
+/// This class uses interned strings giving us the ability to do an identity check instead of equals() on the strings
 final class TimingIdentifier {
-    /**
-     * Holds all groups. Autoloads on request for a group by name.
-     */
+    /// Holds all groups. Autoloads on request for a group by name.
     static final Map<String, TimingGroup> GROUP_MAP = LoadingMap.of(new ConcurrentHashMap<>(64, .5F), TimingGroup::new);
     private static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
     final String group;

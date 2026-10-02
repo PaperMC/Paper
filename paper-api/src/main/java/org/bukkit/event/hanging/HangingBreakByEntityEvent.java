@@ -6,9 +6,7 @@ import org.bukkit.entity.Hanging;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Triggered when a hanging entity is removed by an entity
- */
+/// Triggered when a hanging entity is removed by an entity
 @NullMarked
 public class HangingBreakByEntityEvent extends HangingBreakEvent {
 
@@ -27,20 +25,16 @@ public class HangingBreakByEntityEvent extends HangingBreakEvent {
         this.damageSource = damageSource;
     }
 
-    /**
-     * Gets the entity that removed the hanging entity.
-     *
-     * @return the entity that removed the hanging entity
-     */
+    /// Gets the entity that removed the hanging entity.
+    ///
+    /// @return the entity that removed the hanging entity
     public Entity getRemover() {
         return this.remover;
     }
 
-    /**
-     * Gets the {@link DamageSource} that caused the hanging entity to be removed.
-     *
-     * @return the damage source
-     */
+    /// Gets the [DamageSource] that caused the hanging entity to be removed.
+    ///
+    /// @return the damage source
     public DamageSource getDamageSource() {
         return this.damageSource;
     }

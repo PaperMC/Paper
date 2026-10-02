@@ -4,10 +4,8 @@ import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Holds the ominous bottle amplifier.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#OMINOUS_BOTTLE_AMPLIFIER
- */
+/// Holds the ominous bottle amplifier.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#OMINOUS_BOTTLE_AMPLIFIER
 @ApiStatus.NonExtendable
 public interface OminousBottleAmplifier {
 
@@ -16,11 +14,9 @@ public interface OminousBottleAmplifier {
         return ItemComponentTypesBridge.bridge().ominousBottleAmplifier(amplifier);
     }
 
-    /**
-     * Gets the bottle amplifier.
-     *
-     * @return the amplifier
-     */
+    /// Gets the bottle amplifier.
+    ///
+    /// @return the amplifier
     @Contract(pure = true)
     @IntRange(from = 0, to = 4) int amplifier();
 }

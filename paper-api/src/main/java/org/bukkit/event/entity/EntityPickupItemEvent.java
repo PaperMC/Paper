@@ -7,9 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when an entity picks an item up from the ground
- */
+/// Thrown when an entity picks an item up from the ground
 public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,21 +30,17 @@ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
         return (LivingEntity) this.entity;
     }
 
-    /**
-     * Gets the Item picked up by the entity.
-     *
-     * @return Item
-     */
+    /// Gets the Item picked up by the entity.
+    ///
+    /// @return Item
     @NotNull
     public Item getItem() {
         return this.item;
     }
 
-    /**
-     * Gets the amount remaining on the ground, if any
-     *
-     * @return amount remaining on the ground
-     */
+    /// Gets the amount remaining on the ground, if any
+    ///
+    /// @return amount remaining on the ground
     public int getRemaining() {
         return this.remaining;
     }

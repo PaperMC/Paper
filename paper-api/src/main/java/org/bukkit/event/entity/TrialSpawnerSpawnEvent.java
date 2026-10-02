@@ -5,11 +5,9 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when an entity is spawned into a world by a trial spawner.
- * <p>
- * If this event is cancelled, the entity will not spawn.
- */
+/// Called when an entity is spawned into a world by a trial spawner.
+///
+/// If this event is cancelled, the entity will not spawn.
 public class TrialSpawnerSpawnEvent extends EntitySpawnEvent {
 
     private final TrialSpawner spawner;

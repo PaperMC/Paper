@@ -5,10 +5,8 @@ import org.bukkit.Color;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
-/**
- * Represents a color applied to a dyeable item.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#DYED_COLOR
- */
+/// Represents a color applied to a dyeable item.
+/// @see io.papermc.paper.datacomponent.DataComponentTypes#DYED_COLOR
 @ApiStatus.NonExtendable
 public interface DyedItemColor {
 
@@ -22,27 +20,21 @@ public interface DyedItemColor {
         return ItemComponentTypesBridge.bridge().dyedItemColor();
     }
 
-    /**
-     * Color of the item.
-     *
-     * @return color
-     */
+    /// Color of the item.
+    ///
+    /// @return color
     @Contract(value = "-> new", pure = true)
     Color color();
 
-    /**
-     * Builder for {@link DyedItemColor}.
-     */
+    /// Builder for [DyedItemColor].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DyedItemColor> {
 
-        /**
-         * Sets the color of this builder.
-         *
-         * @param color color
-         * @return the builder for chaining
-         * @see #color()
-         */
+        /// Sets the color of this builder.
+        ///
+        /// @param color color
+        /// @return the builder for chaining
+        /// @see #color()
         @Contract(value = "_ -> this", mutates = "this")
         Builder color(Color color);
     }

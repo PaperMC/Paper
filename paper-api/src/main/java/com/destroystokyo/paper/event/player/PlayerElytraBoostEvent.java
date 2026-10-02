@@ -10,9 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when a player boosts elytra flight with a firework
- */
+/// Fired when a player boosts elytra flight with a firework
 @NullMarked
 public class PlayerElytraBoostEvent extends PlayerEvent implements Cancellable {
 
@@ -33,47 +31,37 @@ public class PlayerElytraBoostEvent extends PlayerEvent implements Cancellable {
         this.hand = hand;
     }
 
-    /**
-     * Get the firework itemstack used
-     *
-     * @return ItemStack of firework
-     */
+    /// Get the firework itemstack used
+    ///
+    /// @return ItemStack of firework
     public ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    /**
-     * Get the firework entity that was spawned
-     *
-     * @return Firework entity
-     */
+    /// Get the firework entity that was spawned
+    ///
+    /// @return Firework entity
     public Firework getFirework() {
         return this.firework;
     }
 
-    /**
-     * Get whether to consume the firework or not
-     *
-     * @return {@code true} to consume
-     */
+    /// Get whether to consume the firework or not
+    ///
+    /// @return `true` to consume
     public boolean shouldConsume() {
         return this.consume;
     }
 
-    /**
-     * Set whether to consume the firework or not
-     *
-     * @param consume {@code true} to consume
-     */
+    /// Set whether to consume the firework or not
+    ///
+    /// @param consume`true` to consume
     public void setShouldConsume(final boolean consume) {
         this.consume = consume;
     }
 
-    /**
-     * Gets the hand holding the firework used for boosting this player.
-     *
-     * @return interaction hand
-     */
+    /// Gets the hand holding the firework used for boosting this player.
+    ///
+    /// @return interaction hand
     public EquipmentSlot getHand() {
         return this.hand;
     }

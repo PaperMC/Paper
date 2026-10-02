@@ -10,9 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called whenever a player captures an entity in a bucket.
- */
+/// This event is called whenever a player captures an entity in a bucket.
 public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -33,46 +31,38 @@ public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable 
         this.hand = hand;
     }
 
-    /**
-     * Gets the {@link Entity} being put into the bucket.
-     *
-     * @return The {@link Entity} being put into the bucket
-     */
+    /// Gets the [Entity] being put into the bucket.
+    ///
+    /// @return The [Entity] being put into the bucket
     @NotNull
     public Entity getEntity() {
         return this.entity;
     }
 
-    /**
-     * Gets the bucket used to capture the {@link Entity}.
-     * <br>
-     * This refers to the bucket clicked with, eg {@link Material#WATER_BUCKET}.
-     *
-     * @return The used bucket
-     */
+    /// Gets the bucket used to capture the [Entity].
+    ///
+    /// This refers to the bucket clicked with, eg [Material#WATER_BUCKET].
+    ///
+    /// @return The used bucket
     @NotNull
     public ItemStack getOriginalBucket() {
         return this.originalBucket;
     }
 
-    /**
-     * Gets the bucket that the {@link Entity} will be put into.
-     * <br>
-     * This refers to the bucket with the entity, eg
-     * {@link Material#PUFFERFISH_BUCKET}.
-     *
-     * @return The bucket that the {@link Entity} will be put into
-     */
+    /// Gets the bucket that the [Entity] will be put into.
+    ///
+    /// This refers to the bucket with the entity, eg
+    /// [Material#PUFFERFISH_BUCKET].
+    ///
+    /// @return The bucket that the [Entity] will be put into
     @NotNull
     public ItemStack getEntityBucket() {
         return this.entityBucket;
     }
 
-    /**
-     * Get the hand that was used to bucket the entity.
-     *
-     * @return the hand
-     */
+    /// Get the hand that was used to bucket the entity.
+    ///
+    /// @return the hand
     @NotNull
     public EquipmentSlot getHand() {
         return this.hand;

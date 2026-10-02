@@ -10,9 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a player sets the effect for a beacon
- */
+/// Called when a player sets the effect for a beacon
 @NullMarked
 public class PlayerChangeBeaconEffectEvent extends PlayerEvent implements Cancellable {
 
@@ -33,93 +31,75 @@ public class PlayerChangeBeaconEffectEvent extends PlayerEvent implements Cancel
         this.beacon = beacon;
     }
 
-    /**
-     * @return the primary effect
-     */
+    /// @return the primary effect
     public @Nullable PotionEffectType getPrimary() {
         return this.primary;
     }
 
-    /**
-     * Sets the primary effect
-     * <p>
-     * NOTE: The primary effect still has to be one of the valid effects for a beacon.
-     *
-     * @param primary the primary effect
-     */
+    /// Sets the primary effect
+    ///
+    /// NOTE: The primary effect still has to be one of the valid effects for a beacon.
+    ///
+    /// @param primary the primary effect
     public void setPrimary(final @Nullable PotionEffectType primary) {
         this.primary = primary;
     }
 
-    /**
-     * @return the secondary effect
-     */
+    /// @return the secondary effect
     public @Nullable PotionEffectType getSecondary() {
         return this.secondary;
     }
 
-    /**
-     * Sets the secondary effect
-     * <p>
-     * This only has an effect when the beacon is able to accept a secondary effect.
-     * NOTE: The secondary effect still has to be a valid effect for a beacon.
-     *
-     * @param secondary the secondary effect
-     */
+    /// Sets the secondary effect
+    ///
+    /// This only has an effect when the beacon is able to accept a secondary effect.
+    /// NOTE: The secondary effect still has to be a valid effect for a beacon.
+    ///
+    /// @param secondary the secondary effect
     public void setSecondary(final @Nullable PotionEffectType secondary) {
         this.secondary = secondary;
     }
 
-    /**
-     * @return the beacon block associated with this event
-     */
+    /// @return the beacon block associated with this event
     public Block getBeacon() {
         return this.beacon;
     }
 
-    /**
-     * Gets if the item used to change the beacon will be consumed.
-     * <p>
-     * Independent of {@link #isCancelled()}. If the event is cancelled
-     * the item will <b>NOT</b> be consumed.
-     *
-     * @return {@code true} if item will be consumed
-     */
+    /// Gets if the item used to change the beacon will be consumed.
+    ///
+    /// Independent of [#isCancelled()]. If the event is cancelled
+    /// the item will **NOT** be consumed.
+    ///
+    /// @return `true` if item will be consumed
     public boolean willConsumeItem() {
         return this.consumeItem;
     }
 
-    /**
-     * Sets if the item used to change the beacon should be consumed.
-     * <p>
-     * Independent of {@link #isCancelled()}. If the event is cancelled
-     * the item will <b>NOT</b> be consumed.
-     *
-     * @param consumeItem {@code true} if item should be consumed
-     */
+    /// Sets if the item used to change the beacon should be consumed.
+    ///
+    /// Independent of [#isCancelled()]. If the event is cancelled
+    /// the item will **NOT** be consumed.
+    ///
+    /// @param consumeItem`true` if item should be consumed
     public void setConsumeItem(final boolean consumeItem) {
         this.consumeItem = consumeItem;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If a {@link PlayerChangeBeaconEffectEvent} is cancelled, the changes will
-     * not take effect
-     */
+    /// {@inheritDoc}
+    ///
+    /// If a [PlayerChangeBeaconEffectEvent] is cancelled, the changes will
+    /// not take effect
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If cancelled, the item will <b>NOT</b> be consumed regardless of what {@link #willConsumeItem()} says
-     * <p>
-     * If a {@link PlayerChangeBeaconEffectEvent} is cancelled, the changes will not be applied
-     * or saved.
-     */
+    /// {@inheritDoc}
+    ///
+    /// If cancelled, the item will **NOT** be consumed regardless of what [#willConsumeItem()] says
+    ///
+    /// If a [PlayerChangeBeaconEffectEvent] is cancelled, the changes will not be applied
+    /// or saved.
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;

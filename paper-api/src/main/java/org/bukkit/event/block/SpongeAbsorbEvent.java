@@ -9,15 +9,13 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a sponge absorbs water from the world.
- * <br>
- * The world will be in its previous state, and {@link #getBlocks()} will
- * represent the changes to be made to the world, if the event is not cancelled.
- * <br>
- * As this is a physics based event it may be called multiple times for "the
- * same" changes.
- */
+/// Called when a sponge absorbs water from the world.
+///
+/// The world will be in its previous state, and [#getBlocks()] will
+/// represent the changes to be made to the world, if the event is not cancelled.
+///
+/// As this is a physics based event it may be called multiple times for "the
+/// same" changes.
 public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -31,14 +29,12 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
         this.blocks = waterblocks;
     }
 
-    /**
-     * Get a list of all blocks to be cleared by the sponge.
-     * <br>
-     * This list is mutable and contains the blocks in their removed state, i.e.
-     * having a type of {@link Material#AIR} or not waterlogged.
-     *
-     * @return list of the cleared blocks.
-     */
+    /// Get a list of all blocks to be cleared by the sponge.
+    ///
+    /// This list is mutable and contains the blocks in their removed state, i.e.
+    /// having a type of [Material#AIR] or not waterlogged.
+    ///
+    /// @return list of the cleared blocks.
     @NotNull
     public List<BlockState> getBlocks() {
         return this.blocks;

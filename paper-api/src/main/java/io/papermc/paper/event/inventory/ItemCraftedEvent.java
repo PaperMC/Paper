@@ -7,9 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a player picks up a crafted item from the result slot of a crafting grid.
- */
+/// Called when a player picks up a crafted item from the result slot of a crafting grid.
 @NullMarked
 public class ItemCraftedEvent extends Event {
 
@@ -24,20 +22,16 @@ public class ItemCraftedEvent extends Event {
         this.craftedItem = craftedItem;
     }
 
-    /**
-     * Gets the player who triggered the event by picking up the crafted item.
-     *
-     * @return the player
-     */
+    /// Gets the player who triggered the event by picking up the crafted item.
+    ///
+    /// @return the player
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets the item that was crafted and picked up by the player.
-     *
-     * @return the crafted item
-     */
+    /// Gets the item that was crafted and picked up by the player.
+    ///
+    /// @return the crafted item
     public ItemStack getCraftedItem() {
         return this.craftedItem.clone();
     }

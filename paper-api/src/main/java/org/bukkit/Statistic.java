@@ -3,9 +3,7 @@ package org.bukkit;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a countable statistic, which is tracked by the server.
- */
+/// Represents a countable statistic, which is tracked by the server.
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
     ANIMALS_BRED,
@@ -110,39 +108,33 @@ public enum Statistic implements Keyed {
         this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
     }
 
-    /**
-     * Gets the type of this statistic.
-     *
-     * @return the type of this statistic
-     */
+    /// Gets the type of this statistic.
+    ///
+    /// @return the type of this statistic
     @NotNull
     public Type getType() {
         return type;
     }
 
-    /**
-     * Checks if this is a substatistic.
-     * <p>
-     * A substatistic exists en masse for each block, item, or entitytype, depending on
-     * {@link #getType()}.
-     * <p>
-     * This is a redundant method and equivalent to checking
-     * <code>getType() != Type.UNTYPED</code>
-     *
-     * @return true if this is a substatistic
-     */
+    /// Checks if this is a substatistic.
+    ///
+    /// A substatistic exists en masse for each block, item, or entitytype, depending on
+    /// [#getType()].
+    ///
+    /// This is a redundant method and equivalent to checking
+    /// `getType() != Type.UNTYPED`
+    ///
+    /// @return true if this is a substatistic
     public boolean isSubstatistic() {
         return type != Type.UNTYPED;
     }
 
-    /**
-     * Checks if this is a substatistic dealing with blocks.
-     * <p>
-     * This is a redundant method and equivalent to checking
-     * <code>getType() == Type.BLOCK</code>
-     *
-     * @return true if this deals with blocks
-     */
+    /// Checks if this is a substatistic dealing with blocks.
+    ///
+    /// This is a redundant method and equivalent to checking
+    /// `getType() == Type.BLOCK`
+    ///
+    /// @return true if this deals with blocks
     public boolean isBlock() {
         return type == Type.BLOCK;
     }
@@ -153,29 +145,18 @@ public enum Statistic implements Keyed {
         return key;
     }
 
-    /**
-     * The type of statistic.
-     *
-     */
+    /// The type of statistic.
     public enum Type {
-        /**
-         * Statistics of this type do not require a qualifier.
-         */
+        /// Statistics of this type do not require a qualifier.
         UNTYPED,
 
-        /**
-         * Statistics of this type require an Item Material qualifier.
-         */
+        /// Statistics of this type require an Item Material qualifier.
         ITEM,
 
-        /**
-         * Statistics of this type require a Block Material qualifier.
-         */
+        /// Statistics of this type require a Block Material qualifier.
         BLOCK,
 
-        /**
-         * Statistics of this type require an EntityType qualifier.
-         */
+        /// Statistics of this type require an EntityType qualifier.
         ENTITY;
     }
 }

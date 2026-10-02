@@ -1,6 +1,4 @@
-/**
- * Configuration connection events.
- */
+/// Configuration connection events.
 @NullMarked
 package io.papermc.paper.event.connection.configuration;
 

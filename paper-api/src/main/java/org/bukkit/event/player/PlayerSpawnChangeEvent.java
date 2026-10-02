@@ -10,11 +10,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This event is fired when the spawn point of the player is changed.
- *
- * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}
- */
+/// This event is fired when the spawn point of the player is changed.
+///
+/// @deprecated use [com.destroystokyo.paper.event.player.PlayerSetSpawnEvent]
 @Deprecated(forRemoval = true)
 @Warning(propagate = false)
 public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
@@ -35,21 +33,17 @@ public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
         this.forced = forced;
     }
 
-    /**
-     * Gets the new spawn to be set.
-     *
-     * @return new spawn location
-     */
+    /// Gets the new spawn to be set.
+    ///
+    /// @return new spawn location
     @Nullable
     public Location getNewSpawn() {
         return this.newSpawn;
     }
 
-    /**
-     * Sets the new spawn location.
-     *
-     * @param newSpawn new spawn location, with non-null world
-     */
+    /// Sets the new spawn location.
+    ///
+    /// @param newSpawn new spawn location, with non-null world
     public void setNewSpawn(@Nullable Location newSpawn) {
         if (newSpawn != null) {
             Preconditions.checkArgument(newSpawn.getWorld() != null, "Spawn location must have a world set");
@@ -59,32 +53,26 @@ public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
         }
     }
 
-    /**
-     * Gets the cause of spawn change.
-     *
-     * @return change cause
-     */
+    /// Gets the cause of spawn change.
+    ///
+    /// @return change cause
     @NotNull
     public Cause getCause() {
         return this.cause;
     }
 
-    /**
-     * Gets if the spawn position will be used regardless of bed obstruction
-     * rules.
-     *
-     * @return {@code true} if is forced
-     */
+    /// Gets if the spawn position will be used regardless of bed obstruction
+    /// rules.
+    ///
+    /// @return `true` if is forced
     public boolean isForced() {
         return this.forced;
     }
 
-    /**
-     * Sets if the spawn position will be used regardless of bed obstruction
-     * rules.
-     *
-     * @param forced {@code true} if forced
-     */
+    /// Sets if the spawn position will be used regardless of bed obstruction
+    /// rules.
+    ///
+    /// @param forced`true` if forced
     public void setForced(boolean forced) {
         this.forced = forced;
     }
@@ -112,31 +100,19 @@ public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
 
     public enum Cause {
 
-        /**
-         * Indicate the spawn was set by a command.
-         */
+        /// Indicate the spawn was set by a command.
         COMMAND,
-        /**
-         * Indicate the spawn was set by the player interacting with a bed.
-         */
+        /// Indicate the spawn was set by the player interacting with a bed.
         BED,
-        /**
-         * Indicate the spawn was set by the player interacting with a respawn
-         * anchor.
-         */
+        /// Indicate the spawn was set by the player interacting with a respawn
+        /// anchor.
         RESPAWN_ANCHOR,
-        /**
-         * Indicate the spawn was set by the use of plugins.
-         */
+        /// Indicate the spawn was set by the use of plugins.
         PLUGIN,
-        /**
-         * Indicate the spawn was reset by an invalid bed position or empty
-         * respawn anchor.
-         */
+        /// Indicate the spawn was reset by an invalid bed position or empty
+        /// respawn anchor.
         RESET,
-        /**
-         * Indicate the spawn was caused by an unknown reason.
-         */
+        /// Indicate the spawn was caused by an unknown reason.
         UNKNOWN
     }
 }

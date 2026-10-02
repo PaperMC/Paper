@@ -9,9 +9,7 @@ import org.bukkit.event.entity.EntityTransformEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Fired when lightning strikes an entity
- */
+/// Fired when lightning strikes an entity
 @NullMarked
 public class EntityZapEvent extends EntityTransformEvent implements Cancellable {
 
@@ -26,20 +24,16 @@ public class EntityZapEvent extends EntityTransformEvent implements Cancellable 
         this.bolt = bolt;
     }
 
-    /**
-     * Gets the lightning bolt that is striking the entity.
-     *
-     * @return The lightning bolt responsible for this event
-     */
+    /// Gets the lightning bolt that is striking the entity.
+    ///
+    /// @return The lightning bolt responsible for this event
     public LightningStrike getBolt() {
         return this.bolt;
     }
 
-    /**
-     * Gets the entity that will replace the struck entity.
-     *
-     * @return The entity that will replace the struck entity
-     */
+    /// Gets the entity that will replace the struck entity.
+    ///
+    /// @return The entity that will replace the struck entity
     public Entity getReplacementEntity() {
         return super.getTransformedEntity();
     }

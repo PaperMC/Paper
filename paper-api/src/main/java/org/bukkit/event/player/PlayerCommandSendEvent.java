@@ -6,15 +6,13 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when the list of available server commands is sent to
- * the player.
- * <br>
- * Commands may be removed from display using this event, but implementations
- * are not required to securely remove all traces of the command. If secure
- * removal of commands is required, then the command should be assigned a
- * permission which is not granted to the player.
- */
+/// This event is called when the list of available server commands is sent to
+/// the player.
+///
+/// Commands may be removed from display using this event, but implementations
+/// are not required to securely remove all traces of the command. If secure
+/// removal of commands is required, then the command should be assigned a
+/// permission which is not granted to the player.
 public class PlayerCommandSendEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -27,14 +25,12 @@ public class PlayerCommandSendEvent extends PlayerEvent {
         this.commands = commands;
     }
 
-    /**
-     * Returns a mutable collection of all top level commands to be sent.
-     * <br>
-     * It is not legal to add entries to this collection, only remove them.
-     * Behaviour of adding entries is undefined.
-     *
-     * @return collection of all commands
-     */
+    /// Returns a mutable collection of all top level commands to be sent.
+    ///
+    /// It is not legal to add entries to this collection, only remove them.
+    /// Behaviour of adding entries is undefined.
+    ///
+    /// @return collection of all commands
     @NotNull
     public Collection<String> getCommands() {
         return this.commands;

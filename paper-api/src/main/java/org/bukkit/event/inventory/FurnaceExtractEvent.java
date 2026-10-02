@@ -8,11 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * This event is called when a player takes items out of a furnace-like block such as a
- * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
- * {@link org.bukkit.block.BlastFurnace}.
- */
+/// This event is called when a player takes items out of a furnace-like block such as a
+/// [org.bukkit.block.Furnace], [org.bukkit.block.Smoker], or
+/// [org.bukkit.block.BlastFurnace].
 public class FurnaceExtractEvent extends BlockExpEvent {
 
     private final Player player;
@@ -27,41 +25,33 @@ public class FurnaceExtractEvent extends BlockExpEvent {
         this.itemAmount = itemAmount;
     }
 
-    /**
-     * Get the player that triggered the event
-     *
-     * @return the relevant player
-     */
+    /// Get the player that triggered the event
+    ///
+    /// @return the relevant player
     @NotNull
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Get the Material of the item being retrieved
-     *
-     * @return the material of the item
-     */
+    /// Get the Material of the item being retrieved
+    ///
+    /// @return the material of the item
     @NotNull
     public Material getItemType() {
         return this.itemStack.getType();
     }
 
-    /**
-     * Get the ItemStack of the item triggering the event
-     *
-     * @return the item stack
-     */
+    /// Get the ItemStack of the item triggering the event
+    ///
+    /// @return the item stack
     @NotNull
     public ItemStack getItemStack() {
         return this.itemStack.clone();
     }
 
-    /**
-     * Get the item count being retrieved
-     *
-     * @return the amount of the item
-     */
+    /// Get the item count being retrieved
+    ///
+    /// @return the amount of the item
     public int getItemAmount() {
         return this.itemAmount;
     }

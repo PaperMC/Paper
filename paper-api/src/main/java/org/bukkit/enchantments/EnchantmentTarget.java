@@ -5,18 +5,14 @@ import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents the applicable target for a {@link Enchantment}
- *
- * @deprecated enchantment groupings are now managed by tags, not categories
- */
+/// Represents the applicable target for a [Enchantment]
+///
+/// @deprecated enchantment groupings are now managed by tags, not categories
 @Deprecated(since = "1.20.5", forRemoval = true)
 public enum EnchantmentTarget {
-    /**
-     * Allows the Enchantment to be placed on all items
-     *
-     * @deprecated this target no longer exists in Vanilla
-     */
+    /// Allows the Enchantment to be placed on all items
+    ///
+    /// @deprecated this target no longer exists in Vanilla
     @Deprecated(since = "1.16.1", forRemoval = true)
     ALL {
         @Override
@@ -31,9 +27,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on armor
-     */
+    /// Allows the Enchantment to be placed on armor
     ARMOR {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -41,9 +35,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on feet slot armor
-     */
+    /// Allows the Enchantment to be placed on feet slot armor
     ARMOR_FEET {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -51,9 +43,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on leg slot armor
-     */
+    /// Allows the Enchantment to be placed on leg slot armor
     ARMOR_LEGS {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -61,9 +51,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on torso slot armor
-     */
+    /// Allows the Enchantment to be placed on torso slot armor
     ARMOR_TORSO {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -71,9 +59,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on head slot armor
-     */
+    /// Allows the Enchantment to be placed on head slot armor
     ARMOR_HEAD {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -81,9 +67,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on weapons (swords, spears)
-     */
+    /// Allows the Enchantment to be placed on weapons (swords, spears)
     WEAPON {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -91,9 +75,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on tools (spades, pickaxe, axes)
-     */
+    /// Allows the Enchantment to be placed on tools (spades, pickaxe, axes)
     TOOL {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -101,9 +83,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on bows.
-     */
+    /// Allows the Enchantment to be placed on bows.
     BOW {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -111,9 +91,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the Enchantment to be placed on fishing rods.
-     */
+    /// Allows the Enchantment to be placed on fishing rods.
     FISHING_ROD {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -121,9 +99,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the enchantment to be placed on items with durability.
-     */
+    /// Allows the enchantment to be placed on items with durability.
     BREAKABLE {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -131,9 +107,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allows the enchantment to be placed on wearable items.
-     */
+    /// Allows the enchantment to be placed on wearable items.
     WEARABLE {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -141,9 +115,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allow the Enchantment to be placed on tridents.
-     */
+    /// Allow the Enchantment to be placed on tridents.
     TRIDENT {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -151,9 +123,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allow the Enchantment to be placed on crossbows.
-     */
+    /// Allow the Enchantment to be placed on crossbows.
     CROSSBOW {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -161,9 +131,7 @@ public enum EnchantmentTarget {
         }
     },
 
-    /**
-     * Allow the Enchantment to be placed on vanishing items.
-     */
+    /// Allow the Enchantment to be placed on vanishing items.
     VANISHABLE {
         @Override
         public boolean includes(@NotNull Material item) {
@@ -171,20 +139,16 @@ public enum EnchantmentTarget {
         }
     };
 
-    /**
-     * Check whether this target includes the specified item.
-     *
-     * @param item The item to check
-     * @return True if the target includes the item
-     */
+    /// Check whether this target includes the specified item.
+    ///
+    /// @param item The item to check
+    /// @return True if the target includes the item
     public abstract boolean includes(@NotNull Material item);
 
-    /**
-     * Check whether this target includes the specified item.
-     *
-     * @param item The item to check
-     * @return True if the target includes the item
-     */
+    /// Check whether this target includes the specified item.
+    ///
+    /// @param item The item to check
+    /// @return True if the target includes the item
     public boolean includes(@NotNull ItemStack item) {
         return includes(item.getType());
     }

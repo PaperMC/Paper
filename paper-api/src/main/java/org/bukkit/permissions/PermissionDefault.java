@@ -6,9 +6,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents the possible default values for permissions
- */
+/// Represents the possible default values for permissions
 public enum PermissionDefault {
     TRUE("true"),
     FALSE("false"),
@@ -22,13 +20,11 @@ public enum PermissionDefault {
         this.names = names;
     }
 
-    /**
-     * Calculates the value of this PermissionDefault for the given operator
-     * value
-     *
-     * @param op If the target is op
-     * @return True if the default should be true, or false
-     */
+    /// Calculates the value of this PermissionDefault for the given operator
+    /// value
+    ///
+    /// @param op If the target is op
+    /// @return True if the default should be true, or false
     public boolean getValue(boolean op) {
         switch (this) {
         case TRUE:
@@ -44,12 +40,10 @@ public enum PermissionDefault {
         }
     }
 
-    /**
-     * Looks up a PermissionDefault by name
-     *
-     * @param name Name of the default
-     * @return Specified value, or null if not found
-     */
+    /// Looks up a PermissionDefault by name
+    ///
+    /// @param name Name of the default
+    /// @return Specified value, or null if not found
     @Nullable
     public static PermissionDefault getByName(@NotNull String name) {
         return lookup.get(name.toLowerCase(Locale.ROOT).replaceAll("[^a-z!]", ""));

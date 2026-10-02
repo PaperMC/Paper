@@ -10,33 +10,23 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This designates the warning state for a specific item.
- * <p>
- * When the server settings dictate 'default' warnings, warnings are printed
- * if the {@link #value()} is true.
- */
+/// This designates the warning state for a specific item.
+///
+/// When the server settings dictate 'default' warnings, warnings are printed
+/// if the [#value()] is true.
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Warning {
 
-    /**
-     * This represents the states that server verbose for warnings may be.
-     */
+    /// This represents the states that server verbose for warnings may be.
     enum WarningState {
 
-        /**
-         * Indicates all warnings should be printed for deprecated items.
-         */
+        /// Indicates all warnings should be printed for deprecated items.
         ON,
-        /**
-         * Indicates no warnings should be printed for deprecated items.
-         */
+        /// Indicates no warnings should be printed for deprecated items.
         OFF,
-        /**
-         * Indicates each warning would default to the configured {@link
-         * Warning} annotation, or always if annotation not found.
-         */
+        /// Indicates each warning would default to the configured
+        /// [Warning] annotation, or always if annotation not found.
         DEFAULT;
 
         private static final Map<String, WarningState> values = ImmutableMap.<String, WarningState>builder()
@@ -55,18 +45,17 @@ public @interface Warning {
                 .put("default", DEFAULT)
                 .build();
 
-        /**
-         * This method checks the provided warning should be printed for this
-         * state
-         *
-         * @param warning The warning annotation added to a deprecated item
-         * @return <ul>
-         *     <li>ON is always True
-         *     <li>OFF is always false
-         *     <li>DEFAULT is false if and only if annotation is not null and
-         *     specifies false for {@link Warning#value()}, true otherwise.
-         *     </ul>
-         */
+        /// This method checks the provided warning should be printed for this
+        /// state
+        ///
+        /// @param warning The warning annotation added to a deprecated item
+        /// @return
+        ///
+        ///   - ON is always True
+        ///   - OFF is always false
+        ///   - DEFAULT is false if and only if annotation is not null and
+        ///     specifies false for [Warning#value()], true otherwise.
+        ///
         public boolean printFor(@Nullable Warning warning) {
             if (Boolean.getBoolean("paper.alwaysPrintWarningState")) return true; // Paper
             if (this == DEFAULT) {
@@ -75,14 +64,12 @@ public @interface Warning {
             return this == ON;
         }
 
-        /**
-         * This method returns the corresponding warning state for the given
-         * string value.
-         *
-         * @param value The string value to check
-         * @return {@link #DEFAULT} if not found, or the respective
-         *     WarningState
-         */
+        /// This method returns the corresponding warning state for the given
+        /// string value.
+        ///
+        /// @param value The string value to check
+        /// @return [#DEFAULT] if not found, or the respective
+        ///     WarningState
         @NotNull
         public static WarningState value(@Nullable final String value) {
             if (value == null) {
@@ -96,27 +83,21 @@ public @interface Warning {
         }
     }
 
-    /**
-     * This sets if the deprecation warnings when registering events gets
-     * printed when the setting is in the default state.
-     *
-     * @return {@code false} normally, or {@code true} to encourage warning printout
-     */
+    /// This sets if the deprecation warnings when registering events gets
+    /// printed when the setting is in the default state.
+    ///
+    /// @return `false` normally, or `true` to encourage warning printout
     boolean value() default false;
 
-    /**
-     * This can provide detailed information on why the event is deprecated.
-     *
-     * @return the reason an event is deprecated
-     */
+    /// This can provide detailed information on why the event is deprecated.
+    ///
+    /// @return the reason an event is deprecated
     String reason() default "";
 
-    /**
-     * This indicate if the deprecation warnings should propagate to sub events or not.
-     * The default is {@code true} only to maintains compatibility but it's recommended
-     * to use {@code false} for more explicit behavior.
-     *
-     * @return whether to propagate the deprecation warnings
-     */
+    /// This indicate if the deprecation warnings should propagate to sub events or not.
+    /// The default is `true` only to maintains compatibility but it's recommended
+    /// to use `false` for more explicit behavior.
+    ///
+    /// @return whether to propagate the deprecation warnings
     boolean propagate() default true;
 }

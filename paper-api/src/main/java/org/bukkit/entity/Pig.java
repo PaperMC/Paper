@@ -7,43 +7,31 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a Pig.
- */
+/// Represents a Pig.
 @NullMarked
 public interface Pig extends Steerable, Vehicle {
 
-    /**
-     * Gets the variant of this pig.
-     *
-     * @return the pig variant
-     */
+    /// Gets the variant of this pig.
+    ///
+    /// @return the pig variant
     Variant getVariant();
 
-    /**
-     * Sets the variant of this pig.
-     *
-     * @param variant the pig variant
-     */
+    /// Sets the variant of this pig.
+    ///
+    /// @param variant the pig variant
     void setVariant(Variant variant);
 
-    /**
-     * Get the sound variant of this pig.
-     *
-     * @return pig sound variant
-     */
+    /// Get the sound variant of this pig.
+    ///
+    /// @return pig sound variant
     SoundVariant getSoundVariant();
 
-    /**
-     * Set the sound variant of this pig.
-     *
-     * @param variant pig sound variant
-     */
+    /// Set the sound variant of this pig.
+    ///
+    /// @param variant pig sound variant
     void setSoundVariant(SoundVariant variant);
 
-    /**
-     * Represents the variant of a pig.
-     */
+    /// Represents the variant of a pig.
     interface Variant extends Keyed {
 
         // Start generate - PigVariant
@@ -59,9 +47,7 @@ public interface Pig extends Steerable, Vehicle {
         }
     }
 
-    /**
-     * Represents the sound variant of a pig.
-     */
+    /// Represents the sound variant of a pig.
     interface SoundVariant extends Keyed {
 
         // Start generate - PigSoundVariant

@@ -8,11 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an item is put in a slot for grinding in a Grindstone
- *
- * @deprecated use {@link org.bukkit.event.inventory.PrepareGrindstoneEvent}
- */
+/// Called when an item is put in a slot for grinding in a Grindstone
+///
+/// @deprecated use [org.bukkit.event.inventory.PrepareGrindstoneEvent]
 @Deprecated(since = "1.16.1")
 @Warning(propagate = false)
 public class PrepareGrindstoneEvent extends PrepareResultEvent {

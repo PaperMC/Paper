@@ -13,12 +13,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * This event is fired for any custom click events.
- *
- * @see net.kyori.adventure.text.event.ClickEvent#custom(Key, BinaryTagHolder)
- * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
- */
+/// This event is fired for any custom click events.
+///
+/// @see net.kyori.adventure.text.event.ClickEvent#custom(Key, BinaryTagHolder)
+/// @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
 @ApiStatus.NonExtendable
 @NullMarked
 public abstract class PlayerCustomClickEvent extends Event {
@@ -32,34 +30,26 @@ public abstract class PlayerCustomClickEvent extends Event {
         this.commonConnection = commonConnection;
     }
 
-    /**
-     * The identifier of the custom click event.
-     *
-     * @return the identifier
-     */
+    /// The identifier of the custom click event.
+    ///
+    /// @return the identifier
     public final Key getIdentifier() {
         return this.identifier;
     }
 
-    /**
-     * The tag payload of the custom click event.
-     *
-     * @return the tag (if any)
-     */
+    /// The tag payload of the custom click event.
+    ///
+    /// @return the tag (if any)
     public abstract @Nullable BinaryTagHolder getTag();
 
-    /**
-     * The dialog response view of the custom click event.
-     *
-     * @return the dialog response view
-     */
+    /// The dialog response view of the custom click event.
+    ///
+    /// @return the dialog response view
     public abstract @Nullable DialogResponseView getDialogResponseView();
 
-    /**
-     * The common connection of the player.
-     *
-     * @return the common connection
-     */
+    /// The common connection of the player.
+    ///
+    /// @return the common connection
     public final PlayerCommonConnection getCommonConnection() {
         return this.commonConnection;
     }

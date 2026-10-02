@@ -28,10 +28,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Extended version of {@link ServerListPingEvent} that allows full control
- * of the response sent to the client.
- */
+/// Extended version of [ServerListPingEvent] that allows full control
+/// of the response sent to the client.
 public class PaperServerListPingEvent extends ServerListPingEvent implements Cancellable {
 
     @NotNull private final StatusClient client;
@@ -66,22 +64,18 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         setServerIcon(favicon);
     }
 
-    /**
-     * Returns the {@link StatusClient} pinging the server.
-     *
-     * @return The client
-     */
+    /// Returns the [StatusClient] pinging the server.
+    ///
+    /// @return The client
     @NotNull
     public StatusClient getClient() {
         return this.client;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Returns {@code -1} if players are hidden using
-     * {@link #shouldHidePlayers()}.</p>
-     */
+    /// {@inheritDoc}
+    ///
+    /// Returns `-1` if players are hidden using
+    /// [#shouldHidePlayers()].
     @Override
     public int getNumPlayers() {
         if (this.hidePlayers) {
@@ -91,14 +85,12 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         return this.numPlayers;
     }
 
-    /**
-     * Sets the number of players displayed in the server list.
-     * <p>
-     * Note that this won't have any effect if {@link #shouldHidePlayers()}
-     * is enabled.
-     *
-     * @param numPlayers The number of online players
-     */
+    /// Sets the number of players displayed in the server list.
+    ///
+    /// Note that this won't have any effect if [#shouldHidePlayers()]
+    /// is enabled.
+    ///
+    /// @param numPlayers The number of online players
     public void setNumPlayers(int numPlayers) {
         if (this.numPlayers != numPlayers) {
             this.numPlayers = numPlayers;
@@ -106,12 +98,10 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns {@code -1} if players are hidden using
-     * {@link #shouldHidePlayers()}.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Returns `-1` if players are hidden using
+    /// [#shouldHidePlayers()].
     @Override
     public int getMaxPlayers() {
         if (this.hidePlayers) {
@@ -121,119 +111,99 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         return super.getMaxPlayers();
     }
 
-    /**
-     * Returns whether all player related information is hidden in the server
-     * list. This will cause {@link #getNumPlayers()}, {@link #getMaxPlayers()}
-     * and {@link #getPlayerSample()} to be skipped in the response.
-     * <p>
-     * The Vanilla Minecraft client will display the player count as {@code ???}
-     * when this option is enabled.
-     *
-     * @return {@code true} if the player count is hidden
-     */
+    /// Returns whether all player related information is hidden in the server
+    /// list. This will cause [#getNumPlayers()], [#getMaxPlayers()]
+    /// and [#getPlayerSample()] to be skipped in the response.
+    ///
+    /// The Vanilla Minecraft client will display the player count as `???`
+    /// when this option is enabled.
+    ///
+    /// @return `true` if the player count is hidden
     public boolean shouldHidePlayers() {
         return this.hidePlayers;
     }
 
-    /**
-     * Sets whether all player related information is hidden in the server
-     * list. This will cause {@link #getNumPlayers()}, {@link #getMaxPlayers()}
-     * and {@link #getPlayerSample()} to be skipped in the response.
-     * <p>
-     * The Vanilla Minecraft client will display the player count as {@code ???}
-     * when this option is enabled.
-     *
-     * @param hidePlayers {@code true} if the player count should be hidden
-     */
+    /// Sets whether all player related information is hidden in the server
+    /// list. This will cause [#getNumPlayers()], [#getMaxPlayers()]
+    /// and [#getPlayerSample()] to be skipped in the response.
+    ///
+    /// The Vanilla Minecraft client will display the player count as `???`
+    /// when this option is enabled.
+    ///
+    /// @param hidePlayers`true` if the player count should be hidden
     public void setHidePlayers(boolean hidePlayers) {
         this.hidePlayers = hidePlayers;
     }
 
-    /**
-     * Returns a mutable list of {@link ListedPlayerInfo} that will be displayed
-     * as online players on the client.
-     * <p>
-     * The Vanilla Minecraft client will display them when hovering the
-     * player count with the mouse.
-     *
-     * @return The mutable player sample list
-     */
+    /// Returns a mutable list of [ListedPlayerInfo] that will be displayed
+    /// as online players on the client.
+    ///
+    /// The Vanilla Minecraft client will display them when hovering the
+    /// player count with the mouse.
+    ///
+    /// @return The mutable player sample list
     @NotNull
     public List<ListedPlayerInfo> getListedPlayers() {
         return this.listedPlayers;
     }
 
-    /**
-     * Returns a mutable list of {@link PlayerProfile} that will be displayed
-     * as online players on the client.
-     * <p>
-     * The Vanilla Minecraft client will display them when hovering the
-     * player count with the mouse.
-     *
-     * @return The mutable player sample list
-     * @deprecated Use {@link #getListedPlayers()}, as this does not contain real player profiles
-     */
+    /// Returns a mutable list of [PlayerProfile] that will be displayed
+    /// as online players on the client.
+    ///
+    /// The Vanilla Minecraft client will display them when hovering the
+    /// player count with the mouse.
+    ///
+    /// @return The mutable player sample list
+    /// @deprecated Use [#getListedPlayers()], as this does not contain real player profiles
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.6")
     public List<PlayerProfile> getPlayerSample() {
         return this.playerSample;
     }
 
-    /**
-     * Returns the version that will be sent as server version on the client.
-     *
-     * @return The server version
-     */
+    /// Returns the version that will be sent as server version on the client.
+    ///
+    /// @return The server version
     @NotNull
     public String getVersion() {
         return this.version;
     }
 
-    /**
-     * Sets the version that will be sent as server version to the client.
-     *
-     * @param version The server version
-     */
+    /// Sets the version that will be sent as server version to the client.
+    ///
+    /// @param version The server version
     public void setVersion(@NotNull String version) {
         this.version = requireNonNull(version, "version");
     }
 
-    /**
-     * Returns the protocol version that will be sent as the protocol version
-     * of the server to the client.
-     *
-     * @return The protocol version of the server, or {@code -1} if the server
-     * has not finished initialization yet
-     */
+    /// Returns the protocol version that will be sent as the protocol version
+    /// of the server to the client.
+    ///
+    /// @return The protocol version of the server, or `-1` if the server
+    /// has not finished initialization yet
     public int getProtocolVersion() {
         return this.protocolVersion;
     }
 
-    /**
-     * Sets the protocol version that will be sent as the protocol version
-     * of the server to the client.
-     *
-     * @param protocolVersion The protocol version of the server
-     */
+    /// Sets the protocol version that will be sent as the protocol version
+    /// of the server to the client.
+    ///
+    /// @param protocolVersion The protocol version of the server
     public void setProtocolVersion(int protocolVersion) {
         this.protocolVersion = protocolVersion;
     }
 
-    /**
-     * Gets the server icon sent to the client.
-     *
-     * @return The icon to send to the client, or {@code null} for none
-     */
+    /// Gets the server icon sent to the client.
+    ///
+    /// @return The icon to send to the client, or `null` for none
     @Nullable
     public CachedServerIcon getServerIcon() {
         return this.favicon;
     }
 
-    /**
-     * Sets the server icon sent to the client.
-     *
-     * @param icon The icon to send to the client, or {@code null} for none
-     */
+    /// Sets the server icon sent to the client.
+    ///
+    /// @param icon The icon to send to the client, or `null` for none
     @Override
     public void setServerIcon(@Nullable CachedServerIcon icon) {
         if (icon != null && icon.isEmpty()) {
@@ -244,43 +214,36 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         this.favicon = icon;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Cancelling this event will cause the connection to be closed immediately,
-     * without sending a response to the client.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Cancelling this event will cause the connection to be closed immediately,
+    /// without sending a response to the client.
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Cancelling this event will cause the connection to be closed immediately,
-     * without sending a response to the client.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Cancelling this event will cause the connection to be closed immediately,
+    /// without sending a response to the client.
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * <b>Note:</b> For compatibility reasons, this method will return all
-     * online players, not just the ones referenced in {@link #getPlayerSample()}.
-     * Removing a player will:
-     *
-     * <ul>
-     *     <li>Decrement the online player count (if and only if) the player
-     *     count wasn't changed by another plugin before.</li>
-     *     <li>Remove all entries from {@link #getPlayerSample()} that refer to
-     *     the removed player (based on their {@link UUID}).</li>
-     * </ul>
-     * @deprecated the Iterable interface will be removed at some point
-     */
+    /// {@inheritDoc}
+    ///
+    /// **Note:** For compatibility reasons, this method will return all
+    /// online players, not just the ones referenced in [#getPlayerSample()].
+    /// Removing a player will:
+    ///
+    ///   - Decrement the online player count (if and only if) the player
+    ///     count wasn't changed by another plugin before.
+    ///   - Remove all entries from [#getPlayerSample()] that refer to
+    ///     the removed player (based on their [UUID]).
+    ///
+    /// @deprecated the Iterable interface will be removed at some point
     @NotNull
     @Override
     @Deprecated(forRemoval = true, since = "1.20.6")
@@ -353,12 +316,10 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         }
     }
 
-    /**
-     * Represents a player that will be displayed in the player sample of the server list.
-     *
-     * @param name name of the listed player
-     * @param id   UUID of the listed player
-     */
+    /// Represents a player that will be displayed in the player sample of the server list.
+    ///
+    /// @param name name of the listed player
+    /// @param id   UUID of the listed player
     public record ListedPlayerInfo(@NotNull String name, @NotNull UUID id) {
     }
 

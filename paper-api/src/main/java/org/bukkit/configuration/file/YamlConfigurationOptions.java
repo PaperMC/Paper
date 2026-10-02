@@ -5,10 +5,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Various settings for controlling the input and output of a {@link
- * YamlConfiguration}
- */
+/// Various settings for controlling the input and output of a
+/// [YamlConfiguration]
 public class YamlConfigurationOptions extends FileConfigurationOptions {
     private int indent = 2;
     private int width = 80;
@@ -75,25 +73,21 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         return this;
     }
 
-    /**
-     * Gets how much spaces should be used to indent each line.
-     * <p>
-     * The minimum value this may be is 2, and the maximum is 9.
-     *
-     * @return How much to indent by
-     */
+    /// Gets how much spaces should be used to indent each line.
+    ///
+    /// The minimum value this may be is 2, and the maximum is 9.
+    ///
+    /// @return How much to indent by
     public int indent() {
         return indent;
     }
 
-    /**
-     * Sets how much spaces should be used to indent each line.
-     * <p>
-     * The minimum value this may be is 2, and the maximum is 9.
-     *
-     * @param value New indent
-     * @return This object, for chaining
-     */
+    /// Sets how much spaces should be used to indent each line.
+    ///
+    /// The minimum value this may be is 2, and the maximum is 9.
+    ///
+    /// @param value New indent
+    /// @return This object, for chaining
     @NotNull
     public YamlConfigurationOptions indent(int value) {
         Preconditions.checkArgument(value >= 2, "Indent must be at least 2 characters");
@@ -103,21 +97,17 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         return this;
     }
 
-    /**
-     * Gets how long a line can be, before it gets split.
-     *
-     * @return How the max line width
-     */
+    /// Gets how long a line can be, before it gets split.
+    ///
+    /// @return How the max line width
     public int width() {
         return width;
     }
 
-    /**
-     * Sets how long a line can be, before it gets split.
-     *
-     * @param value New width
-     * @return This object, for chaining
-     */
+    /// Sets how long a line can be, before it gets split.
+    ///
+    /// @param value New width
+    /// @return This object, for chaining
     @NotNull
     public YamlConfigurationOptions width(int value) {
         this.width = value;
@@ -125,23 +115,19 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
     }
 
     // Paper start
-    /**
-     * Gets the maximum code point limit, that being, the maximum length of the document
-     * in which the loader will read
-     *
-     * @return The current value
-     */
+    /// Gets the maximum code point limit, that being, the maximum length of the document
+    /// in which the loader will read
+    ///
+    /// @return The current value
     public int codePointLimit() {
         return codePointLimit;
     }
 
-    /**
-     * Sets the maximum code point limit, that being, the maximum length of the document
-     * in which the loader will read
-     *
-     * @param codePointLimit new codepoint limit
-     * @return This object, for chaining
-     */
+    /// Sets the maximum code point limit, that being, the maximum length of the document
+    /// in which the loader will read
+    ///
+    /// @param codePointLimit new codepoint limit
+    /// @return This object, for chaining
     @NotNull
     public YamlConfigurationOptions codePointLimit(int codePointLimit) {
         this.codePointLimit = codePointLimit;

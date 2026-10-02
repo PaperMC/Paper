@@ -9,10 +9,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * This event is called when a player clicks the button to take a book of a
- * Lectern. If this event is cancelled the book remains on the lectern.
- */
+/// This event is called when a player clicks the button to take a book of a
+/// Lectern. If this event is cancelled the book remains on the lectern.
 public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -26,21 +24,17 @@ public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellab
         this.lectern = lectern;
     }
 
-    /**
-     * Gets the lectern involved.
-     *
-     * @return the Lectern
-     */
+    /// Gets the lectern involved.
+    ///
+    /// @return the Lectern
     @NotNull
     public Lectern getLectern() {
         return this.lectern;
     }
 
-    /**
-     * Gets the current ItemStack on the lectern.
-     *
-     * @return the ItemStack on the Lectern
-     */
+    /// Gets the current ItemStack on the lectern.
+    ///
+    /// @return the ItemStack on the Lectern
     @Nullable
     public ItemStack getBook() {
         return this.lectern.getInventory().getItem(0);

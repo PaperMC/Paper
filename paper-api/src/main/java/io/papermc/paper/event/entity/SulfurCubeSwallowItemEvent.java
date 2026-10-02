@@ -9,15 +9,13 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Called when a SulfurCube swallows an item.
- * <p>
- * If the ItemStack is modified, the SulfurCube will swallow the new item
- * and not remove the original one from the player's inventory.
- * <p>
- * If the event is cancelled, the SulfurCube will not swallow the item, and
- * it will not be removed from the player's inventory.
- */
+/// Called when a SulfurCube swallows an item.
+///
+/// If the ItemStack is modified, the SulfurCube will swallow the new item
+/// and not remove the original one from the player's inventory.
+///
+/// If the event is cancelled, the SulfurCube will not swallow the item, and
+/// it will not be removed from the player's inventory.
 @NullMarked
 public class SulfurCubeSwallowItemEvent extends EntityEvent implements Cancellable {
 
@@ -37,40 +35,32 @@ public class SulfurCubeSwallowItemEvent extends EntityEvent implements Cancellab
         this.newItem = newItem;
     }
 
-    /**
-     * Gets the player interacting with the SulfurCube.
-     *
-     * @return the player that interacted with the SulfurCube
-     */
+    /// Gets the player interacting with the SulfurCube.
+    ///
+    /// @return the player that interacted with the SulfurCube
     public Player getPlayer() {
         return this.player;
     }
 
-    /**
-     * Gets the item that is currently swallowed by the SulfurCube.
-     *
-     * @return an ItemStack for the item currently swallowed
-     */
+    /// Gets the item that is currently swallowed by the SulfurCube.
+    ///
+    /// @return an ItemStack for the item currently swallowed
     public ItemStack getOldItem() {
         return this.oldItem.clone();
     }
 
-    /**
-     * Gets the item that is being swallowed. Modifying the returned item will
-     * have no effect, you must use {@link
-     * #setNewItem(org.bukkit.inventory.ItemStack)} instead.
-     *
-     * @return an ItemStack for the item being swallowed
-     */
+    /// Gets the item that is being swallowed. Modifying the returned item will
+    /// have no effect, you must use
+    /// [#setNewItem(org.bukkit.inventory.ItemStack)] instead.
+    ///
+    /// @return an ItemStack for the item being swallowed
     public ItemStack getNewItem() {
         return this.newItem.clone();
     }
 
-    /**
-     * Set the item being swallowed.
-     *
-     * @param newItem the item being swallowed
-     */
+    /// Set the item being swallowed.
+    ///
+    /// @param newItem the item being swallowed
     public void setNewItem(ItemStack newItem) {
         this.newItem = newItem;
     }

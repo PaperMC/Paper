@@ -10,12 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 import java.util.Set;
 
-/**
- * Called when a player respawns.
- * <p>
- * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
- * because the player is "reset" between this event and that event and some changes won't persist.
- */
+/// Called when a player respawns.
+///
+/// If changing player state, see [com.destroystokyo.paper.event.player.PlayerPostRespawnEvent]
+/// because the player is "reset" between this event and that event and some changes won't persist.
 public class PlayerRespawnEvent extends AbstractRespawnEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -37,11 +35,9 @@ public class PlayerRespawnEvent extends AbstractRespawnEvent {
         super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
     }
 
-    /**
-     * Sets the new respawn location.
-     *
-     * @param respawnLocation new location for the respawn
-     */
+    /// Sets the new respawn location.
+    ///
+    /// @param respawnLocation new location for the respawn
     public void setRespawnLocation(@NotNull Location respawnLocation) {
         Preconditions.checkArgument(respawnLocation != null, "Respawn location can not be null");
         Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
@@ -60,37 +56,23 @@ public class PlayerRespawnEvent extends AbstractRespawnEvent {
         return HANDLER_LIST;
     }
 
-    /**
-     * An enum to specify the reason a respawn event was called.
-     */
+    /// An enum to specify the reason a respawn event was called.
     public enum RespawnReason {
 
-        /**
-         * When the player dies and presses the respawn button.
-         */
+        /// When the player dies and presses the respawn button.
         DEATH,
-        /**
-         * When the player exits the end through the end portal.
-         */
+        /// When the player exits the end through the end portal.
         END_PORTAL,
-        /**
-         * When a plugin respawns the player.
-         */
+        /// When a plugin respawns the player.
         PLUGIN
     }
 
     public enum RespawnFlag {
-        /**
-         * Will use the bed spawn location
-         */
+        /// Will use the bed spawn location
         BED_SPAWN,
-        /**
-         * Will use the respawn anchor location
-         */
+        /// Will use the respawn anchor location
         ANCHOR_SPAWN,
-        /**
-         * Is caused by going to the end portal in the end.
-         */
+        /// Is caused by going to the end portal in the end.
         END_PORTAL
     }
 }

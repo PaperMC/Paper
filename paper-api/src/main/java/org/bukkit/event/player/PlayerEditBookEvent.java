@@ -9,10 +9,8 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player edits or signs a book and quill item. If the event is
- * cancelled, no changes are made to the BookMeta
- */
+/// Called when a player edits or signs a book and quill item. If the event is
+/// cancelled, no changes are made to the BookMeta
 public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -34,76 +32,64 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
         this.isSigning = isSigning;
     }
 
-    /**
-     * Gets the book meta currently on the book.
-     * <p>
-     * Note: this is a copy of the book meta. You cannot use this object to
-     * change the existing book meta.
-     *
-     * @return the book meta currently on the book
-     */
+    /// Gets the book meta currently on the book.
+    ///
+    /// Note: this is a copy of the book meta. You cannot use this object to
+    /// change the existing book meta.
+    ///
+    /// @return the book meta currently on the book
     @NotNull
     public BookMeta getPreviousBookMeta() {
         return this.previousBookMeta.clone();
     }
 
-    /**
-     * Gets the book meta that the player is attempting to add to the book.
-     * <p>
-     * Note: this is a copy of the proposed new book meta. Use {@link
-     * #setNewBookMeta(BookMeta)} to change what will actually be added to the
-     * book.
-     *
-     * @return the book meta that the player is attempting to add
-     */
+    /// Gets the book meta that the player is attempting to add to the book.
+    ///
+    /// Note: this is a copy of the proposed new book meta. Use
+    /// [#setNewBookMeta(BookMeta)] to change what will actually be added to the
+    /// book.
+    ///
+    /// @return the book meta that the player is attempting to add
     @NotNull
     public BookMeta getNewBookMeta() {
         return this.newBookMeta.clone();
     }
 
-    /**
-     * Gets the inventory slot number for the book item that triggered this
-     * event.
-     * <p>
-     * This is a slot number on the player's hotbar in the range 0-8, or -1 for
-     * off hand.
-     *
-     * @return the inventory slot number that the book item occupies
-     * @deprecated books may be signed from off hand
-     */
+    /// Gets the inventory slot number for the book item that triggered this
+    /// event.
+    ///
+    /// This is a slot number on the player's hotbar in the range 0-8, or -1 for
+    /// off hand.
+    ///
+    /// @return the inventory slot number that the book item occupies
+    /// @deprecated books may be signed from off hand
     @Deprecated(since = "1.13.1", forRemoval = true)
     public int getSlot() {
         return this.slot;
     }
 
-    /**
-     * Sets the book meta that will actually be added to the book.
-     *
-     * @param newBookMeta new book meta
-     * @throws IllegalArgumentException if the new book meta is null
-     */
+    /// Sets the book meta that will actually be added to the book.
+    ///
+    /// @param newBookMeta new book meta
+    /// @throws IllegalArgumentException if the new book meta is null
     public void setNewBookMeta(@NotNull BookMeta newBookMeta) throws IllegalArgumentException {
         Preconditions.checkArgument(newBookMeta != null, "New book meta must not be null");
         Bukkit.getItemFactory().equals(newBookMeta, null);
         this.newBookMeta = newBookMeta.clone();
     }
 
-    /**
-     * Gets whether the book is being signed. If a book is signed the
-     * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
-     *
-     * @return {@code true} if the book is being signed
-     */
+    /// Gets whether the book is being signed. If a book is signed the
+    /// Material changes from BOOK\_AND\_QUILL to WRITTEN\_BOOK.
+    ///
+    /// @return `true` if the book is being signed
     public boolean isSigning() {
         return this.isSigning;
     }
 
-    /**
-     * Sets whether the book is being signed. If a book is signed the
-     * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
-     *
-     * @param signing whether the book is being signed.
-     */
+    /// Sets whether the book is being signed. If a book is signed the
+    /// Material changes from BOOK\_AND\_QUILL to WRITTEN\_BOOK.
+    ///
+    /// @param signing whether the book is being signed.
     public void setSigning(boolean signing) {
         this.isSigning = signing;
     }

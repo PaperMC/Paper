@@ -3,78 +3,63 @@ package org.bukkit.material;
 import org.bukkit.CropState;
 import org.bukkit.Material;
 
-/**
- * Represents the different types of crops in different states of growth.
- *
- * @see Material#LEGACY_CROPS
- * @see Material#LEGACY_CARROT
- * @see Material#LEGACY_POTATO
- * @see Material#LEGACY_BEETROOT_BLOCK
- * @see Material#LEGACY_NETHER_WARTS
- *
- * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link org.bukkit.block.data.BlockData}.
- */
+/// Represents the different types of crops in different states of growth.
+///
+/// @see Material#LEGACY_CROPS
+/// @see Material#LEGACY_CARROT
+/// @see Material#LEGACY_POTATO
+/// @see Material#LEGACY_BEETROOT_BLOCK
+/// @see Material#LEGACY_NETHER_WARTS
+///
+/// @deprecated all usage of MaterialData is deprecated and subject to removal.
+/// Use [org.bukkit.block.data.BlockData].
 @Deprecated(since = "1.13", forRemoval = true)
 public class Crops extends MaterialData {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_CROPS;
     protected static final CropState DEFAULT_STATE = CropState.SEEDED;
 
-    /**
-     * Constructs a wheat crop block in the seeded state.
-     */
+    /// Constructs a wheat crop block in the seeded state.
     public Crops() {
         this(DEFAULT_TYPE, DEFAULT_STATE);
     }
 
-    /**
-     * Constructs a wheat crop block in the given growth state
-     *
-     * @param state The growth state of the crops
-     */
+    /// Constructs a wheat crop block in the given growth state
+    ///
+    /// @param state The growth state of the crops
     public Crops(CropState state) {
         this(DEFAULT_TYPE, state);
         setState(state);
     }
 
-    /**
-     * Constructs a crop block of the given type and in the given growth state
-     *
-     * @param type The type of crops
-     * @param state The growth state of the crops
-     */
+    /// Constructs a crop block of the given type and in the given growth state
+    ///
+    /// @param type The type of crops
+    /// @param state The growth state of the crops
     public Crops(final Material type, final CropState state) {
         super(type);
         setState(state);
     }
 
-    /**
-     * Constructs a crop block of the given type and in the seeded state
-     *
-     * @param type The type of crops
-     */
+    /// Constructs a crop block of the given type and in the seeded state
+    ///
+    /// @param type The type of crops
     public Crops(final Material type) {
         this(type, DEFAULT_STATE);
     }
 
-    /**
-     * @param type the type
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
+    /// @param type the type
+    /// @param data the raw data value
+    /// @deprecated Magic value
     @Deprecated(since = "1.6.2")
     public Crops(final Material type, final byte data) {
         super(type, data);
     }
 
-    /**
-     * Gets the current growth state of this crop
-     *
-     * For crops with only four growth states such as beetroot, only the values SEEDED, SMALL, TALL and RIPE will be
-     * returned.
-     *
-     * @return CropState of this crop
-     */
+    /// Gets the current growth state of this crop
+    /// For crops with only four growth states such as beetroot, only the values SEEDED, SMALL, TALL and RIPE will be
+    /// returned.
+    ///
+    /// @return CropState of this crop
     public CropState getState() {
         switch (getItemType()) {
             case LEGACY_CROPS:
@@ -92,20 +77,15 @@ public class Crops extends MaterialData {
         }
     }
 
-    /**
-     * Sets the growth state of this crop
-     *
-     * For crops with only four growth states such as beetroot, the 8 CropStates are mapped into four states:
-     *
-     * SEEDED, SMALL, TALL and RIPE
-     *
-     * GERMINATED will change to SEEDED
-     * VERY_SMALL will change to SMALL
-     * MEDIUM will change to TALL
-     * VERY_TALL will change to RIPE
-     *
-     * @param state New growth state of this crop
-     */
+    /// Sets the growth state of this crop
+    /// For crops with only four growth states such as beetroot, the 8 CropStates are mapped into four states:
+    /// SEEDED, SMALL, TALL and RIPE
+    /// GERMINATED will change to SEEDED
+    /// VERY\_SMALL will change to SMALL
+    /// MEDIUM will change to TALL
+    /// VERY\_TALL will change to RIPE
+    ///
+    /// @param state New growth state of this crop
     public void setState(CropState state) {
         switch (getItemType()) {
             case LEGACY_CROPS:

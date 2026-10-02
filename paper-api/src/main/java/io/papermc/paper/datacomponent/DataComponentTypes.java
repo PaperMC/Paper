@@ -86,134 +86,93 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * All the different types of data that {@link org.bukkit.inventory.ItemStack ItemStacks}
- * and {@link org.bukkit.inventory.ItemType ItemTypes} can have.
- */
+/// All the different types of data that [`ItemStacks`][org.bukkit.inventory.ItemStack]
+/// and [`ItemTypes`][org.bukkit.inventory.ItemType] can have.
 @NullMarked
 @MinecraftVersionDependent
 public final class DataComponentTypes {
 
-    /**
-     * Controls the maximum stacking size of this item.
-     * <br>
-     * Values greater than 1 are mutually exclusive with the {@link #MAX_DAMAGE} component.
-     */
+    /// Controls the maximum stacking size of this item.
+    ///
+    /// Values greater than 1 are mutually exclusive with the [#MAX_DAMAGE] component.
     public static final DataComponentType.Valued<@IntRange(from = 1, to = 99) Integer> MAX_STACK_SIZE = valued("max_stack_size");
-    /**
-     * Controls the maximum amount of damage than an item can take,
-     * if not present, the item cannot be damaged.
-     * <br>
-     * Mutually exclusive with the {@link #MAX_STACK_SIZE} component greater than 1.
-     *
-     * @see #DAMAGE
-     */
+    /// Controls the maximum amount of damage than an item can take,
+    /// if not present, the item cannot be damaged.
+    ///
+    /// Mutually exclusive with the [#MAX_STACK_SIZE] component greater than 1.
+    ///
+    /// @see #DAMAGE
     public static final DataComponentType.Valued<@Positive Integer> MAX_DAMAGE = valued("max_damage");
-    /**
-     * The amount of durability removed from an item,
-     * for damageable items (with the {@link #MAX_DAMAGE} component), has an implicit default value of: {@code 0}.
-     *
-     * @see #MAX_DAMAGE
-     */
+    /// The amount of durability removed from an item,
+    /// for damageable items (with the [#MAX_DAMAGE] component), has an implicit default value of: `0`.
+    ///
+    /// @see #MAX_DAMAGE
     public static final DataComponentType.Valued<@NonNegative Integer> DAMAGE = valued("damage");
-    /**
-     * If set, the item will not lose any durability when used.
-     */
+    /// If set, the item will not lose any durability when used.
     public static final DataComponentType.NonValued UNBREAKABLE = unvalued("unbreakable");
 
     public static final DataComponentType.Valued<UseEffects> USE_EFFECTS = valued("use_effects");
-    /**
-     * Custom name override for an item (as set by renaming with an Anvil).
-     *
-     * @see #ITEM_NAME
-     */
+    /// Custom name override for an item (as set by renaming with an Anvil).
+    ///
+    /// @see #ITEM_NAME
     public static final DataComponentType.Valued<Component> CUSTOM_NAME = valued("custom_name");
     public static final DataComponentType.Valued<Float> MINIMUM_ATTACK_CHARGE = valued("minimum_attack_charge");
     public static final DataComponentType.Valued<DamageType> DAMAGE_TYPE = valued("damage_type");
-    /**
-     * When present, replaces default item name with contained chat component.
-     * <p>
-     * Differences from {@link #CUSTOM_NAME}:
-     * <ul>
-     * <li>can't be changed or removed in Anvil</li>
-     * <li>is not styled with italics when displayed to player</li>
-     * <li>does not show labels where applicable
-     *      (for example: banner markers, names in item frames)</li>
-     * </ul>
-     *
-     * @see #CUSTOM_NAME
-     */
+    /// When present, replaces default item name with contained chat component.
+    ///
+    /// Differences from [#CUSTOM_NAME]:
+    ///
+    ///   - can't be changed or removed in Anvil
+    ///   - is not styled with italics when displayed to player
+    ///   - does not show labels where applicable
+    ///     (for example: banner markers, names in item frames)
+    ///
+    /// @see #CUSTOM_NAME
     public static final DataComponentType.Valued<Component> ITEM_NAME = valued("item_name");
     public static final DataComponentType.Valued<Key> ITEM_MODEL = valued("item_model");
-    /**
-     * Additional lines to include in an item's tooltip.
-     */
+    /// Additional lines to include in an item's tooltip.
     public static final DataComponentType.Valued<ItemLore> LORE = valued("lore");
-    /**
-     * Controls the color of the item name.
-     */
+    /// Controls the color of the item name.
     public static final DataComponentType.Valued<ItemRarity> RARITY = valued("rarity");
-    /**
-     * Controls the enchantments on an item.
-     * <br>
-     * If not present on a non-enchantment book, this item will not work in an anvil.
-     *
-     * @see #STORED_ENCHANTMENTS
-     */
+    /// Controls the enchantments on an item.
+    ///
+    /// If not present on a non-enchantment book, this item will not work in an anvil.
+    ///
+    /// @see #STORED_ENCHANTMENTS
     public static final DataComponentType.Valued<ItemEnchantments> ENCHANTMENTS = valued("enchantments");
-    /**
-     * Controls which blocks a player in Adventure mode can place on with this item.
-     */
+    /// Controls which blocks a player in Adventure mode can place on with this item.
     public static final DataComponentType.Valued<ItemAdventurePredicate> CAN_PLACE_ON = valued("can_place_on");
-    /**
-     * Controls which blocks a player in Adventure mode can break with this item.
-     */
+    /// Controls which blocks a player in Adventure mode can break with this item.
     public static final DataComponentType.Valued<ItemAdventurePredicate> CAN_BREAK = valued("can_break");
-    /**
-     * Holds attribute modifiers applied to any item,
-     * if not set, has an implicit default value based on the item type's
-     * default attributes (e.g. attack damage for weapons).
-     */
+    /// Holds attribute modifiers applied to any item,
+    /// if not set, has an implicit default value based on the item type's
+    /// default attributes (e.g. attack damage for weapons).
     public static final DataComponentType.Valued<ItemAttributeModifiers> ATTRIBUTE_MODIFIERS = valued("attribute_modifiers");
-    /**
-     * Controls the minecraft:custom_model_data property in the item model.
-     */
+    /// Controls the minecraft:custom\_model\_data property in the item model.
     public static final DataComponentType.Valued<CustomModelData> CUSTOM_MODEL_DATA = valued("custom_model_data");
     public static final DataComponentType.Valued<TooltipDisplay> TOOLTIP_DISPLAY = valued("tooltip_display");
-    /**
-     * The additional experience cost required to modify an item in an Anvil.
-     * If not present, has an implicit default value of: {@code 0}.
-     */
+    /// The additional experience cost required to modify an item in an Anvil.
+    /// If not present, has an implicit default value of: `0`.
     public static final DataComponentType.Valued<@NonNegative Integer> REPAIR_COST = valued("repair_cost");
     // /**
     //  * Causes an item to not be pickable in the creative menu, currently not very useful.
     //  */
     // public static final DataComponentType.NonValued CREATIVE_SLOT_LOCK = unvalued("creative_slot_lock");
-    /**
-     * Overrides the enchantment glint effect on an item.
-     * If not present, default behaviour is used.
-     */
+    /// Overrides the enchantment glint effect on an item.
+    /// If not present, default behaviour is used.
     public static final DataComponentType.Valued<Boolean> ENCHANTMENT_GLINT_OVERRIDE = valued("enchantment_glint_override");
-    /**
-     * Marks that a projectile item would be intangible when fired
-     * (i.e. can only be picked up by a creative mode player).
-     */
+    /// Marks that a projectile item would be intangible when fired
+    /// (i.e. can only be picked up by a creative mode player).
     public static final DataComponentType.NonValued INTANGIBLE_PROJECTILE = unvalued("intangible_projectile");
-    /**
-     * Controls potential food benefits gained when consuming the item the component is applied on.
-     * Requires the {@link #CONSUMABLE} component to allow consumption in the first place.
-     */
+    /// Controls potential food benefits gained when consuming the item the component is applied on.
+    /// Requires the [#CONSUMABLE] component to allow consumption in the first place.
     public static final DataComponentType.Valued<FoodProperties> FOOD = valued("food");
     public static final DataComponentType.Valued<Consumable> CONSUMABLE = valued("consumable");
     public static final DataComponentType.Valued<UseRemainder> USE_REMAINDER = valued("use_remainder");
     public static final DataComponentType.Valued<UseCooldown> USE_COOLDOWN = valued("use_cooldown");
-    /**
-     * If present, this item will not take damage from the specified damage types.
-     */
+    /// If present, this item will not take damage from the specified damage types.
     public static final DataComponentType.Valued<DamageResistant> DAMAGE_RESISTANT = valued("damage_resistant");
-    /**
-     * Controls the behavior of the item as a tool.
-     */
+    /// Controls the behavior of the item as a tool.
     public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
     public static final DataComponentType.Valued<Weapon> WEAPON = valued("weapon");
     public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
@@ -229,127 +188,77 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<SwingAnimation> ATTACK_ANIMATION = valued("attack_animation");
     public static final DataComponentType.Valued<SwingAnimation> INTERACT_ANIMATION = valued("interact_animation");
     public static final DataComponentType.Valued<VillagerFood> VILLAGER_FOOD = valued("villager_food");
-    /**
-     * Stores list of enchantments and their levels for an Enchanted Book.
-     * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments
-     * do not apply from this component.
-     * <br>
-     * If not present on an Enchanted Book, it will not work in an anvil.
-     * <p>
-     * Has an undefined behaviour if present on an item that is not an Enchanted Book
-     * (currently the presence of this component allows enchantments from {@link #ENCHANTMENTS}
-     * to be applied as if this item was an Enchanted Book).
-     *
-     * @see #ENCHANTMENTS
-     */
+    /// Stores list of enchantments and their levels for an Enchanted Book.
+    /// Unlike [#ENCHANTMENTS], the effects provided by enchantments
+    /// do not apply from this component.
+    ///
+    /// If not present on an Enchanted Book, it will not work in an anvil.
+    ///
+    /// Has an undefined behaviour if present on an item that is not an Enchanted Book
+    /// (currently the presence of this component allows enchantments from [#ENCHANTMENTS]
+    /// to be applied as if this item was an Enchanted Book).
+    ///
+    /// @see #ENCHANTMENTS
     public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
     public static final DataComponentType.Valued<DyeColor> DYE = valued("dye");
-    /**
-     * Represents a color applied to a dyeable item.
-     */
+    /// Represents a color applied to a dyeable item.
     public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
-    /**
-     * References the shared map state holding map contents and markers for a {@link org.bukkit.inventory.ItemType#FILLED_MAP}.
-     */
+    /// References the shared map state holding map contents and markers for a [org.bukkit.inventory.ItemType#FILLED_MAP].
     public static final DataComponentType.Valued<MapId> MAP_ID = valued("map_id");
-    /**
-     * Holds a list of markers to be placed on a {@link org.bukkit.inventory.ItemType#FILLED_MAP} (used for Explorer Maps).
-     */
+    /// Holds a list of markers to be placed on a [org.bukkit.inventory.ItemType#FILLED_MAP] (used for Explorer Maps).
     public static final DataComponentType.Valued<MapDecorations> MAP_DECORATIONS = valued("map_decorations");
-    /**
-     * Internal map item state used in the map crafting recipe.
-     */
+    /// Internal map item state used in the map crafting recipe.
     public static final DataComponentType.Valued<MapPostProcessing> MAP_POST_PROCESSING = valued("map_post_processing");
-    /**
-     * Holds all projectiles that have been loaded into a Crossbow.
-     * If not present, the Crossbow is not charged.
-     */
+    /// Holds all projectiles that have been loaded into a Crossbow.
+    /// If not present, the Crossbow is not charged.
     public static final DataComponentType.Valued<ChargedProjectiles> CHARGED_PROJECTILES = valued("charged_projectiles");
-    /**
-     * Holds all items stored inside a Bundle.
-     * If removed, items cannot be added to the Bundle.
-     */
+    /// Holds all items stored inside a Bundle.
+    /// If removed, items cannot be added to the Bundle.
     public static final DataComponentType.Valued<BundleContents> BUNDLE_CONTENTS = valued("bundle_contents");
-    /**
-     * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion),
-     * or potion applied to a Tipped Arrow.
-     */
+    /// Holds the contents of a potion (Potion, Splash Potion, Lingering Potion),
+    /// or potion applied to a Tipped Arrow.
     public static final DataComponentType.Valued<PotionContents> POTION_CONTENTS = valued("potion_contents");
     public static final DataComponentType.Valued<Float> POTION_DURATION_SCALE = valued("potion_duration_scale");
-    /**
-     * Holds the effects that will be applied when consuming Suspicious Stew.
-     */
+    /// Holds the effects that will be applied when consuming Suspicious Stew.
     public static final DataComponentType.Valued<SuspiciousStewEffects> SUSPICIOUS_STEW_EFFECTS = valued("suspicious_stew_effects");
-    /**
-     * Holds the contents in a Book and Quill.
-     */
+    /// Holds the contents in a Book and Quill.
     public static final DataComponentType.Valued<WritableBookContent> WRITABLE_BOOK_CONTENT = valued("writable_book_content");
-    /**
-     * Holds the contents and metadata of a Written Book.
-     */
+    /// Holds the contents and metadata of a Written Book.
     public static final DataComponentType.Valued<WrittenBookContent> WRITTEN_BOOK_CONTENT = valued("written_book_content");
-    /**
-     * Holds the trims applied to an item in recipes
-     */
+    /// Holds the trims applied to an item in recipes
     public static final DataComponentType.Valued<ItemArmorTrim> TRIM = valued("trim");
     // debug_stick_state - Block Property API
     // entity_data
     // bucket_entity_data
     // block_entity_data
-    /**
-     * Holds the instrument type used by a Goat Horn.
-     */
+    /// Holds the instrument type used by a Goat Horn.
     public static final DataComponentType.Valued<MusicInstrument> INSTRUMENT = valued("instrument");
     public static final DataComponentType.Valued<TrimMaterial> PROVIDES_TRIM_MATERIAL = valued("provides_trim_material");
-    /**
-     * Controls the amplifier amount for an Ominous Bottle's Bad Omen effect.
-     */
+    /// Controls the amplifier amount for an Ominous Bottle's Bad Omen effect.
     public static final DataComponentType.Valued<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
     public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
     public static final DataComponentType.Valued<RegistryKeySet<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
-    /**
-     * List of recipes that should be unlocked when using the Knowledge Book item.
-     */
+    /// List of recipes that should be unlocked when using the Knowledge Book item.
     public static final DataComponentType.Valued<List<Key>> RECIPES = valued("recipes");
-    /**
-     * If present, specifies that the Compass is a Lodestone Compass.
-     */
+    /// If present, specifies that the Compass is a Lodestone Compass.
     public static final DataComponentType.Valued<LodestoneTracker> LODESTONE_TRACKER = valued("lodestone_tracker");
-    /**
-     * Stores the explosion crafted in a Firework Star.
-     */
+    /// Stores the explosion crafted in a Firework Star.
     public static final DataComponentType.Valued<FireworkEffect> FIREWORK_EXPLOSION = valued("firework_explosion");
-    /**
-     * Stores all explosions crafted into a Firework Rocket, as well as flight duration.
-     */
+    /// Stores all explosions crafted into a Firework Rocket, as well as flight duration.
     public static final DataComponentType.Valued<Fireworks> FIREWORKS = valued("fireworks");
-    /**
-     * Controls the skin displayed on a Player Head.
-     */
+    /// Controls the skin displayed on a Player Head.
     public static final DataComponentType.Valued<ResolvableProfile> PROFILE = valued("profile");
-    /**
-     * Controls the sound played by a Player Head when placed on a Note Block.
-     */
+    /// Controls the sound played by a Player Head when placed on a Note Block.
     public static final DataComponentType.Valued<Key> NOTE_BLOCK_SOUND = valued("note_block_sound");
-    /**
-     * Stores the additional patterns applied to a Banner or Shield.
-     */
+    /// Stores the additional patterns applied to a Banner or Shield.
     public static final DataComponentType.Valued<BannerPatternLayers> BANNER_PATTERNS = valued("banner_patterns");
-    /**
-     * Stores the base color for a Shield.
-     */
+    /// Stores the base color for a Shield.
     public static final DataComponentType.Valued<DyeColor> BASE_COLOR = valued("base_color");
-    /**
-     * Stores the Sherds applied to each side of a Decorated Pot.
-     */
+    /// Stores the Sherds applied to each side of a Decorated Pot.
     public static final DataComponentType.Valued<PotDecorations> POT_DECORATIONS = valued("pot_decorations");
-    /**
-     * Holds the contents of container blocks (Chests, Shulker Boxes) in item form.
-     */
+    /// Holds the contents of container blocks (Chests, Shulker Boxes) in item form.
     public static final DataComponentType.Valued<ItemContainerContents> CONTAINER = valued("container");
-    /**
-     * Holds block state properties to apply when placing a block.
-     */
+    /// Holds block state properties to apply when placing a block.
     public static final DataComponentType.Valued<BlockItemDataProperties> BLOCK_DATA = valued("block_state");
     // bees
     public static final DataComponentType.Valued<SulfurCubeContent> SULFUR_CUBE_CONTENT = valued("sulfur_cube_content");
@@ -361,9 +270,7 @@ public final class DataComponentTypes {
     //  * to open this container.
     //  */
     // public static final DataComponentType.Valued<LockCode> LOCK = valued("lock");
-    /**
-     * Holds the unresolved loot table and seed of a container-like block.
-     */
+    /// Holds the unresolved loot table and seed of a container-like block.
     public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
     public static final DataComponentType.Valued<Key> BREAK_SOUND = valued("break_sound");
     public static final DataComponentType.Valued<MobVisibility> MOB_VISIBILITY = valued("mob_visibility");

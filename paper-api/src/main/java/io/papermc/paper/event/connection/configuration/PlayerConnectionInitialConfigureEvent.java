@@ -6,9 +6,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Indicates that this player is being configured for the first time, meaning that the connection will start being configured automatically
- */
+/// Indicates that this player is being configured for the first time, meaning that the connection will start being configured automatically
 public class PlayerConnectionInitialConfigureEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

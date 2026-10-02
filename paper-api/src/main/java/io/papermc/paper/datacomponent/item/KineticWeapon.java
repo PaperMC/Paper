@@ -10,19 +10,15 @@ import org.jspecify.annotations.Nullable;
 @ApiStatus.NonExtendable
 public interface KineticWeapon {
 
-    /**
-     * Returns a new builder for creating a Kinetic Weapon.
-     *
-     * @return a builder instance
-     */
+    /// Returns a new builder for creating a Kinetic Weapon.
+    ///
+    /// @return a builder instance
     @Contract(value = "-> new", pure = true)
     static Builder kineticWeapon() {
         return ItemComponentTypesBridge.bridge().kineticWeapon();
     }
 
-    /**
-     * Creates a {@link Condition} object.
-     */
+    /// Creates a [Condition] object.
     @Contract(value = "_, _, _ -> new", pure = true)
     static Condition condition(final @NonNegative int maxDurationTicks, final float minSpeed, final float minRelativeSpeed) {
         return ItemComponentTypesBridge.bridge().kineticWeaponCondition(maxDurationTicks, minSpeed, minRelativeSpeed);
@@ -65,9 +61,7 @@ public interface KineticWeapon {
         float minRelativeSpeed();
     }
 
-    /**
-     * Builder for {@link KineticWeapon}.
-     */
+    /// Builder for [KineticWeapon].
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<KineticWeapon> {
 

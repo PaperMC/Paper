@@ -1,5 +1,3 @@
-/**
- * Interfaces used to manage the client side score display system.
- */
+/// Interfaces used to manage the client side score display system.
 package org.bukkit.scoreboard;
 

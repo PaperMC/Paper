@@ -30,12 +30,10 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Implements a Most Recently Used cache in front of a backing map, to quickly access the last accessed result.
- *
- * @param <K> Key Type of the Map
- * @param <V> Value Type of the Map
- */
+/// Implements a Most Recently Used cache in front of a backing map, to quickly access the last accessed result.
+///
+/// @param <K> Key Type of the Map
+/// @param <V> Value Type of the Map
 @Deprecated(forRemoval = true)
 public class MRUMapCache<K, V> extends AbstractMap<K, V> {
     final Map<K, V> backingMap;
@@ -97,14 +95,12 @@ public class MRUMapCache<K, V> extends AbstractMap<K, V> {
     @NotNull
     public Set<Map.Entry<K, V>> entrySet() {return backingMap.entrySet();}
 
-    /**
-     * Wraps the specified map with a most recently used cache
-     *
-     * @param map Map to be wrapped
-     * @param <K> Key Type of the Map
-     * @param <V> Value Type of the Map
-     * @return Map
-     */
+    /// Wraps the specified map with a most recently used cache
+    ///
+    /// @param map Map to be wrapped
+    /// @param <K> Key Type of the Map
+    /// @param <V> Value Type of the Map
+    /// @return Map
     @NotNull
     public static <K, V> Map<K, V> of(@NotNull Map<K, V> map) {
         return new MRUMapCache<K, V>(map);

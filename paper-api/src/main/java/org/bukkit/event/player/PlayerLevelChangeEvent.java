@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a players level changes
- */
+/// Called when a players level changes
 public class PlayerLevelChangeEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,20 +20,16 @@ public class PlayerLevelChangeEvent extends PlayerEvent {
         this.newLevel = newLevel;
     }
 
-    /**
-     * Gets the old level of the player
-     *
-     * @return The old level of the player
-     */
+    /// Gets the old level of the player
+    ///
+    /// @return The old level of the player
     public int getOldLevel() {
         return this.oldLevel;
     }
 
-    /**
-     * Gets the new level of the player
-     *
-     * @return The new (current) level of the player
-     */
+    /// Gets the new level of the player
+    ///
+    /// @return The new (current) level of the player
     public int getNewLevel() {
         return this.newLevel;
     }

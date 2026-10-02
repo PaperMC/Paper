@@ -1,6 +1,4 @@
 package org.bukkit.entity;
 
-/**
- * Represents a Donkey - variant of {@link ChestedHorse}.
- */
+/// Represents a Donkey - variant of [ChestedHorse].
 public interface Donkey extends ChestedHorse { }

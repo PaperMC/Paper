@@ -34,20 +34,16 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         this.message = message;
     }
 
-    /**
-     * @apiNote This enum has been replaced with a system that better
-     * represents how beds work. See {@link #enterAction}
-     */
+    /// @apiNote This enum has been replaced with a system that better
+    /// represents how beds work. See [#enterAction]
     @ApiStatus.Obsolete(since = "1.21.11")
     public FailReason getFailReason() {
         return this.failReason;
     }
 
-    /**
-     * This describes the default outcome of this event.
-     *
-     * @return the action representing the default outcome of this event
-     */
+    /// This describes the default outcome of this event.
+    ///
+    /// @return the action representing the default outcome of this event
     public BedEnterAction enterAction() {
         return this.enterAction;
     }
@@ -77,12 +73,10 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         return this.cancelled;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * <b>NOTE</b>: This does not cancel the player getting in the bed, but any messages/explosions
-     * that may occur because of the interaction.
-     */
+    /// {@inheritDoc}
+    ///
+    /// **NOTE**: This does not cancel the player getting in the bed, but any messages/explosions
+    /// that may occur because of the interaction.
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
@@ -97,46 +91,30 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         return HANDLER_LIST;
     }
 
-    /**
-     * @apiNote Enums no longer represents reliably how beds work and fail. This has been
-     * replaced with {@link BedEnterAction} that better fits the new beds
-     */
+    /// @apiNote Enums no longer represents reliably how beds work and fail. This has been
+    /// replaced with [BedEnterAction] that better fits the new beds
     @ApiStatus.Obsolete(since = "1.21.11")
     public enum FailReason {
-        /**
-         * The world doesn't allow sleeping (ex. Nether or The End). Entering
-         * the bed is prevented but the bed doesn't explode. When the bed
-         * explodes, {@link #EXPLOSION} is used instead.
-         */
+        /// The world doesn't allow sleeping (ex. Nether or The End). Entering
+        /// the bed is prevented but the bed doesn't explode. When the bed
+        /// explodes, [#EXPLOSION] is used instead.
         NOT_POSSIBLE_HERE,
-        /**
-         * Entering the bed is prevented due to it not being night nor
-         * thundering currently.
-         * <p>
-         * If the event is forcefully allowed during daytime, the player will
-         * enter the bed (and set its bed location), but might get immediately
-         * thrown out again.
-         */
+        /// Entering the bed is prevented due to it not being night nor
+        /// thundering currently.
+        ///
+        /// If the event is forcefully allowed during daytime, the player will
+        /// enter the bed (and set its bed location), but might get immediately
+        /// thrown out again.
         NOT_POSSIBLE_NOW,
-        /**
-         * Entering the bed is prevented due to the player being too far away.
-         */
+        /// Entering the bed is prevented due to the player being too far away.
         TOO_FAR_AWAY,
-        /**
-         * Bed is obstructed.
-         */
+        /// Bed is obstructed.
         OBSTRUCTED,
-        /**
-         * Entering the bed is prevented due to there being some other problem.
-         */
+        /// Entering the bed is prevented due to there being some other problem.
         OTHER_PROBLEM,
-        /**
-         * Entering the bed is prevented due to there being monsters nearby.
-         */
+        /// Entering the bed is prevented due to there being monsters nearby.
         NOT_SAFE,
-        /**
-         * Entering the bed is prevented and the bed explodes.
-         */
+        /// Entering the bed is prevented and the bed explodes.
         EXPLOSION
     }
 }

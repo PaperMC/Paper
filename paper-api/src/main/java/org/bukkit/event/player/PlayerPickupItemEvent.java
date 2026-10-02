@@ -9,11 +9,9 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Thrown when a player picks an item up from the ground
- *
- * @deprecated use {@link EntityPickupItemEvent}
- */
+/// Thrown when a player picks an item up from the ground
+///
+/// @deprecated use [EntityPickupItemEvent]
 @Deprecated(since = "1.12")
 @Warning(propagate = false)
 public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
@@ -33,41 +31,33 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
         this.remaining = remaining;
     }
 
-    /**
-     * Gets the Item picked up by the player.
-     *
-     * @return Item
-     */
+    /// Gets the Item picked up by the player.
+    ///
+    /// @return Item
     @NotNull
     public Item getItem() {
         return this.item;
     }
 
-    /**
-     * Gets the amount remaining on the ground, if any
-     *
-     * @return amount remaining on the ground
-     */
+    /// Gets the amount remaining on the ground, if any
+    ///
+    /// @return amount remaining on the ground
     public int getRemaining() {
         return this.remaining;
     }
 
-    /**
-     * Set if the item will fly at the player
-     * <p>
-     * Cancelling the event will set this value to {@code false}.
-     *
-     * @param flyAtPlayer {@code true} for item to fly at player
-     */
+    /// Set if the item will fly at the player
+    ///
+    /// Cancelling the event will set this value to `false`.
+    ///
+    /// @param flyAtPlayer`true` for item to fly at player
     public void setFlyAtPlayer(boolean flyAtPlayer) {
         this.flyAtPlayer = flyAtPlayer;
     }
 
-    /**
-     * Gets if the item will fly at the player
-     *
-     * @return {@code true} if the item will fly at the player
-     */
+    /// Gets if the item will fly at the player
+    ///
+    /// @return `true` if the item will fly at the player
     public boolean getFlyAtPlayer() {
         return this.flyAtPlayer;
     }

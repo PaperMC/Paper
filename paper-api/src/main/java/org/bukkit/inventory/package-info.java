@@ -1,5 +1,3 @@
-/**
- * Classes involved in manipulating player inventories and item interactions.
- */
+/// Classes involved in manipulating player inventories and item interactions.
 package org.bukkit.inventory;
 

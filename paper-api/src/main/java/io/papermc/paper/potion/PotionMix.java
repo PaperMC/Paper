@@ -10,11 +10,9 @@ import org.bukkit.inventory.RecipeChoice;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * Represents a potion mix made in a Brewing Stand.
- *
- * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
- */
+/// Represents a potion mix made in a Brewing Stand.
+///
+/// @deprecated fully replaced by [org.bukkit.inventory.BrewingRecipe]
 @NullMarked
 @Deprecated(since = "26.3", forRemoval = true)
 public final class PotionMix implements Keyed {
@@ -24,14 +22,12 @@ public final class PotionMix implements Keyed {
     private final RecipeChoice input;
     private final RecipeChoice ingredient;
 
-    /**
-     * Creates a new potion mix. Add it to the server with {@link org.bukkit.potion.PotionBrewer#addPotionMix(PotionMix)}.
-     *
-     * @param key a unique key for the mix
-     * @param result the resulting itemstack that will appear in the 3 bottom slots
-     * @param input the input placed into the bottom 3 slots
-     * @param ingredient the ingredient placed into the top slot
-     */
+    /// Creates a new potion mix. Add it to the server with [org.bukkit.potion.PotionBrewer#addPotionMix(PotionMix)].
+    ///
+    /// @param key a unique key for the mix
+    /// @param result the resulting itemstack that will appear in the 3 bottom slots
+    /// @param input the input placed into the bottom 3 slots
+    /// @param ingredient the ingredient placed into the top slot
     public PotionMix(final NamespacedKey key, final ItemStack result, final RecipeChoice input, final RecipeChoice ingredient) {
         this.key = key;
         this.result = result.clone();
@@ -39,14 +35,12 @@ public final class PotionMix implements Keyed {
         this.ingredient = ingredient.clone();
     }
 
-    /**
-     * Create a {@link RecipeChoice} based on a Predicate. These RecipeChoices are only
-     * valid for {@link PotionMix}, not anywhere else RecipeChoices may be used.
-     *
-     * @param stackPredicate a predicate for an itemstack.
-     * @return a new RecipeChoice
-     * @deprecated use {@link RecipeChoice#predicateChoice(Predicate, ItemStack)}
-     */
+    /// Create a [RecipeChoice] based on a Predicate. These RecipeChoices are only
+    /// valid for [PotionMix], not anywhere else RecipeChoices may be used.
+    ///
+    /// @param stackPredicate a predicate for an itemstack.
+    /// @return a new RecipeChoice
+    /// @deprecated use [RecipeChoice#predicateChoice(Predicate, ItemStack)]
     @Contract(value = "_ -> new", pure = true)
     @Deprecated(since = "26.2")
     public static RecipeChoice createPredicateChoice(final Predicate<? super ItemStack> stackPredicate) {
@@ -58,29 +52,23 @@ public final class PotionMix implements Keyed {
         return this.key;
     }
 
-    /**
-     * Gets the resulting itemstack after the brew has finished.
-     *
-     * @return the result itemstack
-     */
+    /// Gets the resulting itemstack after the brew has finished.
+    ///
+    /// @return the result itemstack
     public ItemStack getResult() {
         return this.result.clone();
     }
 
-    /**
-     * Gets the input for the bottom 3 slots in the brewing stand.
-     *
-     * @return the bottom 3 slot ingredients
-     */
+    /// Gets the input for the bottom 3 slots in the brewing stand.
+    ///
+    /// @return the bottom 3 slot ingredients
     public RecipeChoice getInput() {
         return this.input.clone();
     }
 
-    /**
-     * Gets the ingredient in the top slot of the brewing stand.
-     *
-     * @return the top slot input
-     */
+    /// Gets the ingredient in the top slot of the brewing stand.
+    ///
+    /// @return the top slot input
     public RecipeChoice getIngredient() {
         return this.ingredient.clone();
     }

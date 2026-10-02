@@ -8,9 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Event called when a Crafter is about to craft an item.
- */
+/// Event called when a Crafter is about to craft an item.
 public class CrafterCraftEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -27,30 +25,24 @@ public class CrafterCraftEvent extends BlockEvent implements Cancellable {
         this.recipe = recipe;
     }
 
-    /**
-     * Gets the result for the craft.
-     *
-     * @return the result for the craft
-     */
+    /// Gets the result for the craft.
+    ///
+    /// @return the result for the craft
     @NotNull
     public ItemStack getResult() {
         return this.result.clone();
     }
 
-    /**
-     * Sets the result of the craft.
-     *
-     * @param result the result of the craft
-     */
+    /// Sets the result of the craft.
+    ///
+    /// @param result the result of the craft
     public void setResult(@NotNull ItemStack result) {
         this.result = result.clone();
     }
 
-    /**
-     * Gets the recipe that was used to craft this item.
-     *
-     * @return the recipe that was used to craft this item
-     */
+    /// Gets the recipe that was used to craft this item.
+    ///
+    /// @return the recipe that was used to craft this item
     @NotNull
     public CraftingRecipe getRecipe() {
         return this.recipe;

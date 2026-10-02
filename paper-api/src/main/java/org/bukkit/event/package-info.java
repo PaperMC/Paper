@@ -1,5 +1,3 @@
-/**
- * Classes dedicated to handling triggered code executions.
- */
+/// Classes dedicated to handling triggered code executions.
 package org.bukkit.event;
 

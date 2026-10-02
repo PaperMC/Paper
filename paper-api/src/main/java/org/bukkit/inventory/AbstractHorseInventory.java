@@ -3,9 +3,7 @@ package org.bukkit.inventory;
 import org.bukkit.entity.AbstractHorse;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * An interface to the inventory of an {@link AbstractHorse}.
- */
+/// An interface to the inventory of an [AbstractHorse].
 public interface AbstractHorseInventory extends SaddledMountInventory {
 
     @Override

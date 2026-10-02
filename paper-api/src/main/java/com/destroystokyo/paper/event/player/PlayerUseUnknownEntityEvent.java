@@ -10,13 +10,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Represents an event that is called when a player clicks an unknown entity.
- * Useful for plugins dealing with virtual entities (entities that aren't actually spawned on the server).
- * <br>
- * This event may be called multiple times per interaction with different interaction hands
- * and with or without the clicked position.
- */
+/// Represents an event that is called when a player clicks an unknown entity.
+/// Useful for plugins dealing with virtual entities (entities that aren't actually spawned on the server).
+///
+/// This event may be called multiple times per interaction with different interaction hands
+/// and with or without the clicked position.
 @NullMarked
 public class PlayerUseUnknownEntityEvent extends PlayerEvent {
 
@@ -36,40 +34,32 @@ public class PlayerUseUnknownEntityEvent extends PlayerEvent {
         this.clickedPosition = clickedPosition;
     }
 
-    /**
-     * Returns the entity id of the unknown entity that was interacted with.
-     *
-     * @return the entity id of the entity that was interacted with
-     */
+    /// Returns the entity id of the unknown entity that was interacted with.
+    ///
+    /// @return the entity id of the entity that was interacted with
     public int getEntityId() {
         return this.entityId;
     }
 
-    /**
-     * Returns whether the interaction was an attack.
-     *
-     * @return {@code true} if the player is attacking the entity, {@code false} if the player is interacting with the entity
-     */
+    /// Returns whether the interaction was an attack.
+    ///
+    /// @return `true` if the player is attacking the entity, `false` if the player is interacting with the entity
     public boolean isAttack() {
         return this.attack;
     }
 
-    /**
-     * Returns the hand used to perform this interaction.
-     *
-     * @return the hand used to interact
-     */
+    /// Returns the hand used to perform this interaction.
+    ///
+    /// @return the hand used to interact
     public EquipmentSlot getHand() {
         return this.hand;
     }
 
-    /**
-     * Returns the position relative to the entity that was clicked, or {@code null} if not available.
-     * See {@link PlayerInteractAtEntityEvent} for more details.
-     *
-     * @return the position relative to the entity that was clicked, or {@code null} if not available
-     * @see PlayerInteractAtEntityEvent
-     */
+    /// Returns the position relative to the entity that was clicked, or `null` if not available.
+    /// See [PlayerInteractAtEntityEvent] for more details.
+    ///
+    /// @return the position relative to the entity that was clicked, or `null` if not available
+    /// @see PlayerInteractAtEntityEvent
     public @Nullable Vector getClickedRelativePosition() {
         return this.clickedPosition != null ? this.clickedPosition.clone() : null;
     }

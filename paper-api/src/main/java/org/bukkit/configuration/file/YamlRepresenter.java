@@ -12,9 +12,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 public class YamlRepresenter extends Representer {
 
-    /**
-     * @deprecated options required
-     */
+    /// @deprecated options required
     @Deprecated(since = "1.19.4")
     public YamlRepresenter() {
         this(new DumperOptions());

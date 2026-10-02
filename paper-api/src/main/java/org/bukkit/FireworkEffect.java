@@ -9,41 +9,25 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a single firework effect.
- */
+/// Represents a single firework effect.
 @SerializableAs("Firework")
 public final class FireworkEffect implements ConfigurationSerializable {
 
-    /**
-     * The type or shape of the effect.
-     */
+    /// The type or shape of the effect.
     public enum Type implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
-        /**
-         * A small ball effect.
-         */
+        /// A small ball effect.
         BALL("small_ball"), // Paper - add name
-        /**
-         * A large ball effect.
-         */
+        /// A large ball effect.
         BALL_LARGE("large_ball"), // Paper - add name
-        /**
-         * A star-shaped effect.
-         */
+        /// A star-shaped effect.
         STAR("star"), // Paper - add name
-        /**
-         * A burst effect.
-         */
+        /// A burst effect.
         BURST("burst"), // Paper - add name
-        /**
-         * A creeper-face effect.
-         */
+        /// A creeper-face effect.
         CREEPER("creeper"), // Paper - add name
         ;
         // Paper start
-        /**
-         * The name map.
-         */
+        /// The name map.
         public static final net.kyori.adventure.util.Index<String, org.bukkit.FireworkEffect.Type> NAMES = net.kyori.adventure.util.Index.create(Type.class, type -> type.name);
         private final String name;
 
@@ -58,21 +42,17 @@ public final class FireworkEffect implements ConfigurationSerializable {
         // Paper end
     }
 
-    /**
-     * Construct a firework effect.
-     *
-     * @return A utility object for building a firework effect
-     */
+    /// Construct a firework effect.
+    ///
+    /// @return A utility object for building a firework effect
     @NotNull
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * This is a builder for FireworkEffects.
-     *
-     * @see FireworkEffect#builder()
-     */
+    /// This is a builder for FireworkEffects.
+    ///
+    /// @see FireworkEffect#builder()
     public static final class Builder {
         boolean flicker = false;
         boolean trail = false;
@@ -82,13 +62,11 @@ public final class FireworkEffect implements ConfigurationSerializable {
 
         Builder() {}
 
-        /**
-         * Specify the type of the firework effect.
-         *
-         * @param type The effect type
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If type is null
-         */
+        /// Specify the type of the firework effect.
+        ///
+        /// @param type The effect type
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If type is null
         @NotNull
         public Builder with(@NotNull Type type) throws IllegalArgumentException {
             Preconditions.checkArgument(type != null, "Cannot have null type");
@@ -96,59 +74,49 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add a flicker to the firework effect.
-         *
-         * @return This object, for chaining
-         */
+        /// Add a flicker to the firework effect.
+        ///
+        /// @return This object, for chaining
         @NotNull
         public Builder withFlicker() {
             flicker = true;
             return this;
         }
 
-        /**
-         * Set whether the firework effect should flicker.
-         *
-         * @param flicker true if it should flicker, false if not
-         * @return This object, for chaining
-         */
+        /// Set whether the firework effect should flicker.
+        ///
+        /// @param flicker true if it should flicker, false if not
+        /// @return This object, for chaining
         @NotNull
         public Builder flicker(boolean flicker) {
             this.flicker = flicker;
             return this;
         }
 
-        /**
-         * Add a trail to the firework effect.
-         *
-         * @return This object, for chaining
-         */
+        /// Add a trail to the firework effect.
+        ///
+        /// @return This object, for chaining
         @NotNull
         public Builder withTrail() {
             trail = true;
             return this;
         }
 
-        /**
-         * Set whether the firework effect should have a trail.
-         *
-         * @param trail true if it should have a trail, false for no trail
-         * @return This object, for chaining
-         */
+        /// Set whether the firework effect should have a trail.
+        ///
+        /// @param trail true if it should have a trail, false for no trail
+        /// @return This object, for chaining
         @NotNull
         public Builder trail(boolean trail) {
             this.trail = trail;
             return this;
         }
 
-        /**
-         * Add a primary color to the firework effect.
-         *
-         * @param color The color to add
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If color is null
-         */
+        /// Add a primary color to the firework effect.
+        ///
+        /// @param color The color to add
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If color is null
         @NotNull
         public Builder withColor(@NotNull Color color) throws IllegalArgumentException {
             Preconditions.checkArgument(color != null, "Cannot have null color");
@@ -158,15 +126,13 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add several primary colors to the firework effect.
-         *
-         * @param colors The colors to add
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If colors is null
-         * @throws IllegalArgumentException If any color is null (may be
-         *     thrown after changes have occurred)
-         */
+        /// Add several primary colors to the firework effect.
+        ///
+        /// @param colors The colors to add
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If colors is null
+        /// @throws IllegalArgumentException If any color is null (may be
+        ///     thrown after changes have occurred)
         @NotNull
         public Builder withColor(@NotNull Color... colors) throws IllegalArgumentException {
             Preconditions.checkArgument(colors != null, "Cannot have null colors");
@@ -183,16 +149,14 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add several primary colors to the firework effect.
-         *
-         * @param colors An iterable object whose iterator yields the desired
-         *     colors
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If colors is null
-         * @throws IllegalArgumentException If any color is null (may be
-         *     thrown after changes have occurred)
-         */
+        /// Add several primary colors to the firework effect.
+        ///
+        /// @param colors An iterable object whose iterator yields the desired
+        ///     colors
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If colors is null
+        /// @throws IllegalArgumentException If any color is null (may be
+        ///     thrown after changes have occurred)
         @NotNull
         public Builder withColor(@NotNull Iterable<?> colors) throws IllegalArgumentException {
             Preconditions.checkArgument(colors != null, "Cannot have null colors");
@@ -208,15 +172,13 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add a fade color to the firework effect.
-         *
-         * @param color The color to add
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If colors is null
-         * @throws IllegalArgumentException If any color is null (may be
-         *     thrown after changes have occurred)
-         */
+        /// Add a fade color to the firework effect.
+        ///
+        /// @param color The color to add
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If colors is null
+        /// @throws IllegalArgumentException If any color is null (may be
+        ///     thrown after changes have occurred)
         @NotNull
         public Builder withFade(@NotNull Color color) throws IllegalArgumentException {
             Preconditions.checkArgument(color != null, "Cannot have null color");
@@ -230,15 +192,13 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add several fade colors to the firework effect.
-         *
-         * @param colors The colors to add
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If colors is null
-         * @throws IllegalArgumentException If any color is null (may be
-         *     thrown after changes have occurred)
-         */
+        /// Add several fade colors to the firework effect.
+        ///
+        /// @param colors The colors to add
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If colors is null
+        /// @throws IllegalArgumentException If any color is null (may be
+        ///     thrown after changes have occurred)
         @NotNull
         public Builder withFade(@NotNull Color... colors) throws IllegalArgumentException {
             Preconditions.checkArgument(colors != null, "Cannot have null colors");
@@ -259,16 +219,14 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Add several fade colors to the firework effect.
-         *
-         * @param colors An iterable object whose iterator yields the desired
-         *     colors
-         * @return This object, for chaining
-         * @throws IllegalArgumentException If colors is null
-         * @throws IllegalArgumentException If any color is null (may be
-         *     thrown after changes have occurred)
-         */
+        /// Add several fade colors to the firework effect.
+        ///
+        /// @param colors An iterable object whose iterator yields the desired
+        ///     colors
+        /// @return This object, for chaining
+        /// @throws IllegalArgumentException If colors is null
+        /// @throws IllegalArgumentException If any color is null (may be
+        ///     thrown after changes have occurred)
         @NotNull
         public Builder withFade(@NotNull Iterable<?> colors) throws IllegalArgumentException {
             Preconditions.checkArgument(colors != null, "Cannot have null colors");
@@ -288,14 +246,12 @@ public final class FireworkEffect implements ConfigurationSerializable {
             return this;
         }
 
-        /**
-         * Create a {@link FireworkEffect} from the current contents of this
-         * builder.
-         * <p>
-         * To successfully build, you must have specified at least one color.
-         *
-         * @return The representative firework effect
-         */
+        /// Create a [FireworkEffect] from the current contents of this
+        /// builder.
+        ///
+        /// To successfully build, you must have specified at least one color.
+        ///
+        /// @return The representative firework effect
         @NotNull
         public FireworkEffect build() {
             return new FireworkEffect(
@@ -330,59 +286,47 @@ public final class FireworkEffect implements ConfigurationSerializable {
         this.type = type;
     }
 
-    /**
-     * Get whether the firework effect flickers.
-     *
-     * @return true if it flickers, false if not
-     */
+    /// Get whether the firework effect flickers.
+    ///
+    /// @return true if it flickers, false if not
     public boolean hasFlicker() {
         return flicker;
     }
 
-    /**
-     * Get whether the firework effect has a trail.
-     *
-     * @return true if it has a trail, false if not
-     */
+    /// Get whether the firework effect has a trail.
+    ///
+    /// @return true if it has a trail, false if not
     public boolean hasTrail() {
         return trail;
     }
 
-    /**
-     * Get the primary colors of the firework effect.
-     *
-     * @return An immutable list of the primary colors
-     */
+    /// Get the primary colors of the firework effect.
+    ///
+    /// @return An immutable list of the primary colors
     @NotNull
     public List<Color> getColors() {
         return colors;
     }
 
-    /**
-     * Get the fade colors of the firework effect.
-     *
-     * @return An immutable list of the fade colors
-     */
+    /// Get the fade colors of the firework effect.
+    ///
+    /// @return An immutable list of the fade colors
     @NotNull
     public List<Color> getFadeColors() {
         return fadeColors;
     }
 
-    /**
-     * Get the type of the firework effect.
-     *
-     * @return The effect type
-     */
+    /// Get the type of the firework effect.
+    ///
+    /// @return The effect type
     @NotNull
     public Type getType() {
         return type;
     }
 
-    /**
-     * @param map the map to deserialize
-     * @return the resulting serializable
-     * @see ConfigurationSerializable
-     */
+    /// @param map the map to deserialize
+    /// @return the resulting serializable
+    /// @see ConfigurationSerializable
     @NotNull
     public static ConfigurationSerializable deserialize(@NotNull Map<String, Object> map) {
         Type type = Type.valueOf((String) map.get(TYPE));

@@ -7,9 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when an item is put in a slot for repair by an anvil.
- */
+/// Called when an item is put in a slot for repair by an anvil.
 public class PrepareAnvilEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
 
     @ApiStatus.Internal
@@ -23,13 +21,11 @@ public class PrepareAnvilEvent extends com.destroystokyo.paper.event.inventory.P
         return (AnvilInventory) super.getInventory();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Note: by default custom recipes in anvil are disabled
-     * you should define a repair cost on the anvil inventory
-     * greater or equals to zero in order to allow that.
-     */
+    /// {@inheritDoc}
+    ///
+    /// Note: by default custom recipes in anvil are disabled
+    /// you should define a repair cost on the anvil inventory
+    /// greater or equals to zero in order to allow that.
     public void setResult(@Nullable ItemStack result) {
         super.setResult(result);
     }
