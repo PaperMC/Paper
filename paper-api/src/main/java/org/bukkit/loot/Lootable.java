@@ -61,6 +61,15 @@ public interface Lootable {
     default void clearLootTable() {
         this.setLootTable(null);
     }
+
+    /**
+     * Empties the Loot Table of this object, making it not generate any Loot
+     * This uses the PLAYER Loot Table since it is, by default, empty and there is no EMPTY Table
+     * Possible edges cases may appear if the PLAYER Table is changed.
+     */
+    default void emptyLootTable() {
+        this.setLootTable(Bukkit.getLootTable(LootTables.PLAYER.getKey()));
+    }
     // Paper end
 
     /**
