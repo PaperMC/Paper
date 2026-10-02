@@ -5,6 +5,8 @@ import com.destroystokyo.paper.util.VersionFetcher;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.persistence.PersistentDataKey;
+import io.papermc.paper.persistence.SimplePersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
@@ -13,6 +15,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.util.Services;
@@ -31,6 +34,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
@@ -121,4 +125,8 @@ public interface InternalAPIBridge {
     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
 
     ComponentFlattener componentFlattener();
+
+    <P, C> PersistentDataKey<P, C> createPersistentDataKey(Key key, PersistentDataType<P, C> type);
+
+    <P> SimplePersistentDataKey<P> createSimplePersistentDataKey(Key key, PersistentDataType<P, P> type);
 }
