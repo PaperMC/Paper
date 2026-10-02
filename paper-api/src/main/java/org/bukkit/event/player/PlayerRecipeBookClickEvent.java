@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
  */
 @Deprecated(forRemoval = true)
-@Warning
+@Warning(propagate = false)
 public class PlayerRecipeBookClickEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
