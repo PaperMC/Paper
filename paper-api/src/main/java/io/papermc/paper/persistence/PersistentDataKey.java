@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
  * <h2>Example usage</h2>
  * <pre>{@code
  * public class CustomLogic {
- *   public static final PersistentDataKey<Integer> TRACKED_VALUE = PersistentDataKey.ofSimple(
+ *   public static final PersistentDataKey<Integer> TRACKED_VALUE = PersistentDataKey.of(
  *     Key.key("custom:tracked_value"),
  *     PersistentDataType.INTEGER
  *   );
