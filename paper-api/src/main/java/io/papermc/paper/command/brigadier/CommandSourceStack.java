@@ -4,7 +4,6 @@ import com.mojang.brigadier.RedirectModifier;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import net.kyori.adventure.text.ComponentLike;
-import org.bukkit.GameRule;
 import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -98,7 +97,7 @@ public interface CommandSourceStack {
      * according to vanilla semantics.
      *
      * <p>This currently includes checking for environments with suppressed output,
-     * {@link GameRule#SEND_COMMAND_FEEDBACK}, and {@link GameRule#LOG_ADMIN_COMMANDS}.</p>
+     * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
      *
      * @param message the message to send
      * @param allowInformingAdmins whether admins and console may be informed of this success
@@ -110,7 +109,7 @@ public interface CommandSourceStack {
      * according to vanilla semantics. This method informs admins and the console of this success.
      *
      * <p>This currently includes checking for environments with suppressed output,
-     * {@link GameRule#SEND_COMMAND_FEEDBACK}, and {@link GameRule#LOG_ADMIN_COMMANDS}.</p>
+     * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
      *
      * @param message the message to send
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
