@@ -90,7 +90,7 @@ public interface CommandSourceStack {
      *
      * @param message the message to send
      */
-    void sendToTarget(ComponentLike message);
+    void sendReply(ComponentLike message);
 
     /**
      * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution

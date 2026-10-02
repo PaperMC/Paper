@@ -52,7 +52,7 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    default void sendToTarget(final ComponentLike message) {
+    default void sendReply(final ComponentLike message) {
         Preconditions.checkNotNull(message, "message cannot be null.");
         this.getHandle().sendSystemMessage(PaperAdventure.asVanilla(message.asComponent()));
     }
