@@ -5,7 +5,6 @@ import org.bukkit.World;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Common interface for {@link FinePosition} and {@link BlockPosition}.
@@ -13,63 +12,68 @@ import org.jspecify.annotations.NullMarked;
  * <b>May see breaking changes until Experimental annotation is removed.</b>
  */
 @ApiStatus.Experimental
-@NullMarked
 public interface Position {
 
+    /**
+     * A fine position at the origin (0, 0, 0).
+     */
     FinePosition FINE_ZERO = new FinePositionImpl(0, 0, 0);
+    /**
+     * A block position at the origin (0, 0, 0).
+     */
     BlockPosition BLOCK_ZERO = new BlockPositionImpl(0, 0, 0);
 
     /**
-     * Gets the block x value for this position
+     * Gets the block x value for this position.
      *
      * @return the block x value
      */
     int blockX();
 
     /**
-     * Gets the block y value for this position
+     * Gets the block y value for this position.
      *
      * @return the block y value
      */
     int blockY();
 
     /**
-     * Gets the block z value for this position
+     * Gets the block z value for this position.
      *
      * @return the block z value
      */
     int blockZ();
 
     /**
-     * Gets the x value for this position
+     * Gets the x value for this position.
      *
      * @return the x value
      */
     double x();
 
     /**
-     * Gets the y value for this position
+     * Gets the y value for this position.
      *
      * @return the y value
      */
     double y();
 
     /**
-     * Gets the z value for this position
+     * Gets the z value for this position.
      *
      * @return the z value
      */
     double z();
 
     /**
-     * Checks of this position represents a {@link BlockPosition}
+     * Checks of this position represents a {@link BlockPosition}.
      *
      * @return true if block
      */
     boolean isBlock();
 
     /**
-     * Checks if this position represents a {@link FinePosition}
+     * Checks if this position represents a {@link FinePosition}.
      *
      * @return true if fine
      */
@@ -77,6 +81,8 @@ public interface Position {
 
     /**
      * Checks if each component of this position is finite.
+     *
+     * @return true if each component of this position is finite
      */
     default boolean isFinite() {
         return Double.isFinite(this.x()) && Double.isFinite(this.y()) && Double.isFinite(this.z());
@@ -103,7 +109,7 @@ public interface Position {
     FinePosition offset(double x, double y, double z);
 
     /**
-     * Returns a new position at the center of the block position this represents
+     * Returns a new position at the center of the block position this represents.
      *
      * @return a new center position
      */
@@ -114,7 +120,7 @@ public interface Position {
 
     /**
      * Returns the block position of this position
-     * or itself if it already is a block position
+     * or itself if it already is a block position.
      *
      * @return the block position
      */
@@ -122,7 +128,7 @@ public interface Position {
     BlockPosition toBlock();
 
     /**
-     * Converts this position to a vector
+     * Converts this position to a vector.
      *
      * @return a new vector
      */
@@ -132,7 +138,7 @@ public interface Position {
     }
 
     /**
-     * Creates a new location object at this position with the specified world
+     * Creates a new location object at this position with the specified world.
      *
      * @param world the world for the location object
      * @return a new location
@@ -143,7 +149,7 @@ public interface Position {
     }
 
     /**
-     * Creates a position at the coordinates
+     * Creates a position at the coordinates.
      *
      * @param x x coord
      * @param y y coord
@@ -167,7 +173,7 @@ public interface Position {
     }
 
     /**
-     * Creates a position at the coordinates
+     * Creates a position at the coordinates.
      *
      * @param x x coord
      * @param y y coord

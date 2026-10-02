@@ -7,9 +7,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.properties.Property;
-import com.mojang.authlib.yggdrasil.ServicesKeySet;
-import com.mojang.authlib.yggdrasil.ServicesKeyType;
-import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+import com.mojang.authlib.services.MinecraftServicesDiscoveryService;
+import com.mojang.authlib.services.ServicesKeySet;
+import com.mojang.authlib.services.ServicesKeyType;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -48,7 +48,7 @@ public final class CraftProfileProperty {
 
     static {
         try {
-            PUBLIC_KEYS = new YggdrasilAuthenticationService(Proxy.NO_PROXY).getServicesKeySet();
+            PUBLIC_KEYS = MinecraftServicesDiscoveryService.create(Proxy.NO_PROXY).getServicesKeySet();
         } catch (Exception e) {
             throw new Error("Could not load yggdrasil_session_pubkey.der! This indicates a bug.");
         }
@@ -81,19 +81,6 @@ public final class CraftProfileProperty {
     public static String encodePropertyValue(JsonObject propertyValue, JsonFormatter formatter) {
         String json = formatter.format(propertyValue);
         return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public static String toString(Property property) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("{");
-        builder.append("name=");
-        builder.append(property.name());
-        builder.append(", value=");
-        builder.append(property.value());
-        builder.append(", signature=");
-        builder.append(property.signature());
-        builder.append("}");
-        return builder.toString();
     }
 
     public static int hashCode(Property property) {

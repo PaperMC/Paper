@@ -1,6 +1,5 @@
 package io.papermc.paper.connection;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import java.util.concurrent.ExecutorService;
@@ -15,8 +14,9 @@ import org.slf4j.Logger;
 public class PaperConfigurationTask implements ConfigurationTask {
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
-    public static final ExecutorService CONFIGURATION_POOL = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Configuration Thread #%d")
-        .setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build());
+    public static final ExecutorService CONFIGURATION_POOL = Executors.newThreadPerTaskExecutor(
+        Thread.ofVirtual().name("Configuration Thread #", 0).uncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).factory()
+    );
 
     public static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type("paper_event_handling");
 

@@ -12,16 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftTrimPattern extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimPattern> implements TrimPattern {
 
-    public static TrimPattern minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimPattern minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN);
-    }
-
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_PATTERN);
-    }
-
-    public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<net.minecraft.world.item.equipment.trim.TrimPattern> bukkitToMinecraftHolder(TrimPattern bukkit) {

@@ -5,13 +5,13 @@ import org.bukkit.entity.Vindicator;
 
 public class CraftVindicator extends CraftIllager implements Vindicator {
 
-    public CraftVindicator(CraftServer server, net.minecraft.world.entity.monster.Vindicator entity) {
+    public CraftVindicator(CraftServer server, net.minecraft.world.entity.monster.illager.Vindicator entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.monster.Vindicator getHandle() {
-        return (net.minecraft.world.entity.monster.Vindicator) this.entity;
+    public net.minecraft.world.entity.monster.illager.Vindicator getHandle() {
+        return (net.minecraft.world.entity.monster.illager.Vindicator) this.entity;
     }
 
     @Override

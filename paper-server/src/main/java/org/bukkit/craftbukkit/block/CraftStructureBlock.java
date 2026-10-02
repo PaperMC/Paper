@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.block.state.properties.StructureMode;
@@ -58,7 +59,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
 
     @Override
     public BlockVector getRelativePosition() {
-        return CraftBlockVector.toBukkit(this.getSnapshot().structurePos);
+        return CraftBlockVector.toBukkit(this.getSnapshot().getStructurePos());
     }
 
     @Override
@@ -66,12 +67,12 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockX(), -CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE), "Structure Size (X) must be between -%s and %s but got %s", CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE, vector.getBlockX());
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockY(), -CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE), "Structure Size (Y) must be between -%s and %s but got %s", CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE, vector.getBlockY());
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockZ(), -CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE), "Structure Size (Z) must be between -%s and %s but got %s", CraftStructureBlock.MAX_SIZE, CraftStructureBlock.MAX_SIZE, vector.getBlockZ());
-        this.getSnapshot().structurePos = CraftBlockVector.toBlockPosition(vector);
+        this.getSnapshot().setStructurePos(CraftBlockVector.toBlockPosition(vector));
     }
 
     @Override
     public BlockVector getStructureSize() {
-        return CraftBlockVector.toBukkit(this.getSnapshot().structureSize);
+        return CraftBlockVector.toBukkit(this.getSnapshot().getStructureSize());
     }
 
     @Override
@@ -79,29 +80,29 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockX(), 0, CraftStructureBlock.MAX_SIZE), "Structure Size (X) must be between %s and %s but got %s", 0, CraftStructureBlock.MAX_SIZE, vector.getBlockX());
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockY(), 0, CraftStructureBlock.MAX_SIZE), "Structure Size (Y) must be between %s and %s but got %s", 0, CraftStructureBlock.MAX_SIZE, vector.getBlockY());
         Preconditions.checkArgument(CraftStructureBlock.isBetween(vector.getBlockZ(), 0, CraftStructureBlock.MAX_SIZE), "Structure Size (Z) must be between %s and %s but got %s", 0, CraftStructureBlock.MAX_SIZE, vector.getBlockZ());
-        this.getSnapshot().structureSize = CraftBlockVector.toBlockPosition(vector);
+        this.getSnapshot().setStructureSize(CraftBlockVector.toBlockPosition(vector));
     }
 
     @Override
     public void setMirror(Mirror mirror) {
         Preconditions.checkArgument(mirror != null, "Mirror cannot be null");
-        this.getSnapshot().mirror = net.minecraft.world.level.block.Mirror.valueOf(mirror.name());
+        this.getSnapshot().setMirror(net.minecraft.world.level.block.Mirror.valueOf(mirror.name()));
     }
 
     @Override
     public Mirror getMirror() {
-        return Mirror.valueOf(this.getSnapshot().mirror.name());
+        return Mirror.valueOf(this.getSnapshot().getMirror().name());
     }
 
     @Override
     public void setRotation(StructureRotation rotation) {
         Preconditions.checkArgument(rotation != null, "StructureRotation cannot be null");
-        this.getSnapshot().rotation = Rotation.valueOf(rotation.name());
+        this.getSnapshot().setRotation(Rotation.valueOf(rotation.name()));
     }
 
     @Override
     public StructureRotation getRotation() {
-        return StructureRotation.valueOf(this.getSnapshot().rotation.name());
+        return StructureRotation.valueOf(this.getSnapshot().getRotation().name());
     }
 
     @Override
@@ -127,56 +128,56 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
 
     @Override
     public void setShowAir(boolean showAir) {
-        this.getSnapshot().showAir = showAir;
+        this.getSnapshot().setShowAir(showAir);
     }
 
     @Override
     public boolean isShowAir() {
-        return this.getSnapshot().showAir;
+        return this.getSnapshot().getShowAir();
     }
 
     @Override
     public void setBoundingBoxVisible(boolean showBoundingBox) {
-        this.getSnapshot().showBoundingBox = showBoundingBox;
+        this.getSnapshot().setShowBoundingBox(showBoundingBox);
     }
 
     @Override
     public boolean isBoundingBoxVisible() {
-        return this.getSnapshot().showBoundingBox;
+        return this.getSnapshot().getShowBoundingBox();
     }
 
     @Override
     public void setIntegrity(float integrity) {
         Preconditions.checkArgument(CraftStructureBlock.isBetween(integrity, 0.0f, 1.0f), "Integrity must be between 0.0f and 1.0f but got %s", integrity);
-        this.getSnapshot().integrity = integrity;
+        this.getSnapshot().setIntegrity(integrity);
     }
 
     @Override
     public float getIntegrity() {
-        return this.getSnapshot().integrity;
+        return this.getSnapshot().getIntegrity();
     }
 
     @Override
     public void setSeed(long seed) {
-        this.getSnapshot().seed = seed;
+        this.getSnapshot().setSeed(seed);
     }
 
     @Override
     public long getSeed() {
-        return this.getSnapshot().seed;
+        return this.getSnapshot().getSeed();
     }
 
     @Override
     public void setMetadata(String metadata) {
         Preconditions.checkArgument(metadata != null, "Structure metadata cannot be null");
         if (this.getUsageMode() == UsageMode.DATA) {
-            this.getSnapshot().metaData = metadata;
+            this.getSnapshot().setMetaData(metadata);
         }
     }
 
     @Override
     public String getMetadata() {
-        return this.getSnapshot().metaData;
+        return this.getSnapshot().getMetaData();
     }
 
     @Override
@@ -192,7 +193,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
             // From StructureBlockEntity#setMode(BlockPropertyStructureMode)
             net.minecraft.world.level.block.state.BlockState state = access.getBlockState(this.getPosition());
             if (state.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
-                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), 2);
+                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), Block.UPDATE_CLIENTS);
             }
         }
     }

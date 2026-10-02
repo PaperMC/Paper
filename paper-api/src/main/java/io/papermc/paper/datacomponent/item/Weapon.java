@@ -1,11 +1,9 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Weapon {
 
@@ -19,29 +17,33 @@ public interface Weapon {
     }
 
     /**
-     * The damage that the weapon deals per attack.
+     * Amount of durability to remove each time the weapon is used to attack.
+     *
+     * @return durability
      */
-    int itemDamagePerAttack();
+    @NonNegative int itemDamagePerAttack();
 
     /**
      * The number of seconds that blocking is disabled.
+     *
+     * @return seconds
      */
     float disableBlockingForSeconds();
 
     /**
      * Builder for {@link Weapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Weapon> {
 
         /**
-         * Sets the damage per attack.
+         * Controls the amount of durability to remove each time the weapon is used to attack.
          *
-         * @param damage the damage value.
-         * @return the builder for chaining.
+         * @param damage durability to remove
+         * @return the builder for chaining
+         * @see #itemDamagePerAttack()
          */
-        Builder itemDamagePerAttack(int damage);
+        Builder itemDamagePerAttack(@NonNegative int damage);
 
         /**
          * Sets the disable blocking duration (in seconds).

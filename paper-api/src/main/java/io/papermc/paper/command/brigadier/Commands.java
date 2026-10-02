@@ -119,7 +119,6 @@ public interface Commands extends Registrar {
      *
      * @return the dispatcher instance
      */
-    @ApiStatus.Experimental
     CommandDispatcher<CommandSourceStack> getDispatcher();
 
     /**

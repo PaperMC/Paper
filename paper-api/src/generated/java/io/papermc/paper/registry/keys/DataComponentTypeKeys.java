@@ -26,6 +26,27 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class DataComponentTypeKeys {
     /**
+     * {@code minecraft:additional_trade_cost}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ADDITIONAL_TRADE_COST = create(key("additional_trade_cost"));
+
+    /**
+     * {@code minecraft:attack_animation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ATTACK_ANIMATION = create(key("attack_animation"));
+
+    /**
+     * {@code minecraft:attack_range}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ATTACK_RANGE = create(key("attack_range"));
+
+    /**
      * {@code minecraft:attribute_modifiers}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -75,6 +96,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> BLOCK_STATE = create(key("block_state"));
 
     /**
+     * {@code minecraft:block_transformer}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> BLOCK_TRANSFORMER = create(key("block_transformer"));
+
+    /**
      * {@code minecraft:blocks_attacks}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -87,6 +115,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> BREAK_SOUND = create(key("break_sound"));
+
+    /**
+     * {@code minecraft:brewing_fuel}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> BREWING_FUEL = create(key("brewing_fuel"));
 
     /**
      * {@code minecraft:bucket_entity_data}
@@ -124,6 +159,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> CAT_COLLAR = create(key("cat/collar"));
 
     /**
+     * {@code minecraft:cat/sound_variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> CAT_SOUND_VARIANT = create(key("cat/sound_variant"));
+
+    /**
      * {@code minecraft:cat/variant}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -138,11 +180,25 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> CHARGED_PROJECTILES = create(key("charged_projectiles"));
 
     /**
+     * {@code minecraft:chicken/sound_variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> CHICKEN_SOUND_VARIANT = create(key("chicken/sound_variant"));
+
+    /**
      * {@code minecraft:chicken/variant}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> CHICKEN_VARIANT = create(key("chicken/variant"));
+
+    /**
+     * {@code minecraft:compostable}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> COMPOSTABLE = create(key("compostable"));
 
     /**
      * {@code minecraft:consumable}
@@ -166,6 +222,20 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> CONTAINER_LOOT = create(key("container_loot"));
 
     /**
+     * {@code minecraft:cooking_fuel}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> COOKING_FUEL = create(key("cooking_fuel"));
+
+    /**
+     * {@code minecraft:cow/sound_variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> COW_SOUND_VARIANT = create(key("cow/sound_variant"));
+
+    /**
      * {@code minecraft:cow/variant}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -178,6 +248,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> CREATIVE_SLOT_LOCK = create(key("creative_slot_lock"));
+
+    /**
+     * {@code minecraft:cushion/color}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> CUSHION_COLOR = create(key("cushion/color"));
 
     /**
      * {@code minecraft:custom_data}
@@ -215,6 +292,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> DAMAGE_RESISTANT = create(key("damage_resistant"));
 
     /**
+     * {@code minecraft:damage_type}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> DAMAGE_TYPE = create(key("damage_type"));
+
+    /**
      * {@code minecraft:death_protection}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -227,6 +311,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> DEBUG_STICK_STATE = create(key("debug_stick_state"));
+
+    /**
+     * {@code minecraft:dye}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> DYE = create(key("dye"));
 
     /**
      * {@code minecraft:dyed_color}
@@ -334,6 +425,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> INTANGIBLE_PROJECTILE = create(key("intangible_projectile"));
 
     /**
+     * {@code minecraft:interact_animation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> INTERACT_ANIMATION = create(key("interact_animation"));
+
+    /**
      * {@code minecraft:item_model}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -353,6 +451,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> JUKEBOX_PLAYABLE = create(key("jukebox_playable"));
+
+    /**
+     * {@code minecraft:kinetic_weapon}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> KINETIC_WEAPON = create(key("kinetic_weapon"));
 
     /**
      * {@code minecraft:llama/variant}
@@ -381,13 +486,6 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> LORE = create(key("lore"));
-
-    /**
-     * {@code minecraft:map_color}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<DataComponentType> MAP_COLOR = create(key("map_color"));
 
     /**
      * {@code minecraft:map_decorations}
@@ -425,6 +523,20 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> MAX_STACK_SIZE = create(key("max_stack_size"));
 
     /**
+     * {@code minecraft:minimum_attack_charge}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> MINIMUM_ATTACK_CHARGE = create(key("minimum_attack_charge"));
+
+    /**
+     * {@code minecraft:mob_visibility}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> MOB_VISIBILITY = create(key("mob_visibility"));
+
+    /**
      * {@code minecraft:mooshroom/variant}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -458,6 +570,20 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> PARROT_VARIANT = create(key("parrot/variant"));
+
+    /**
+     * {@code minecraft:piercing_weapon}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> PIERCING_WEAPON = create(key("piercing_weapon"));
+
+    /**
+     * {@code minecraft:pig/sound_variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> PIG_SOUND_VARIANT = create(key("pig/sound_variant"));
 
     /**
      * {@code minecraft:pig/variant}
@@ -500,6 +626,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> PROVIDES_BANNER_PATTERNS = create(key("provides_banner_patterns"));
+
+    /**
+     * {@code minecraft:provides_pottery_pattern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> PROVIDES_POTTERY_PATTERN = create(key("provides_pottery_pattern"));
 
     /**
      * {@code minecraft:provides_trim_material}
@@ -565,11 +698,32 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> SHULKER_COLOR = create(key("shulker/color"));
 
     /**
+     * {@code minecraft:sign_text_back}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> SIGN_TEXT_BACK = create(key("sign_text_back"));
+
+    /**
+     * {@code minecraft:sign_text_front}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> SIGN_TEXT_FRONT = create(key("sign_text_front"));
+
+    /**
      * {@code minecraft:stored_enchantments}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> STORED_ENCHANTMENTS = create(key("stored_enchantments"));
+
+    /**
+     * {@code minecraft:sulfur_cube_content}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> SULFUR_CUBE_CONTENT = create(key("sulfur_cube_content"));
 
     /**
      * {@code minecraft:suspicious_stew_effects}
@@ -642,6 +796,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> USE_COOLDOWN = create(key("use_cooldown"));
 
     /**
+     * {@code minecraft:use_effects}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> USE_EFFECTS = create(key("use_effects"));
+
+    /**
      * {@code minecraft:use_remainder}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -654,6 +815,20 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> VILLAGER_VARIANT = create(key("villager/variant"));
+
+    /**
+     * {@code minecraft:villager_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> VILLAGER_FOOD = create(key("villager_food"));
+
+    /**
+     * {@code minecraft:waxed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> WAXED = create(key("waxed"));
 
     /**
      * {@code minecraft:weapon}
@@ -696,6 +871,13 @@ public final class DataComponentTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DataComponentType> WRITTEN_BOOK_CONTENT = create(key("written_book_content"));
+
+    /**
+     * {@code minecraft:zombie_nautilus/variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ZOMBIE_NAUTILUS_VARIANT = create(key("zombie_nautilus/variant"));
 
     private DataComponentTypeKeys() {
     }

@@ -17,6 +17,11 @@ public interface PlayerConnection {
     void disconnect(Component component);
 
     /**
+     * {@return whether this connection is currently open and active}
+     */
+    boolean isConnected();
+
+    /**
      * Gets if this connection originated from a transferred connection.
      * <p>
      * Do note that this is sent and stored on the client.

@@ -21,6 +21,7 @@ public class CraftGuardian extends CraftMonster implements Guardian {
     @Override
     public void setTarget(LivingEntity target) {
         super.setTarget(target);
+        target = super.getTarget(); // target might fail so update the reference
 
         // clean up laser target, when target is removed
         if (target == null) {

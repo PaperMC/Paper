@@ -7,19 +7,16 @@ import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Stores a list of enchantments and their levels on an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTMENTS
  * @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemEnchantments {
 
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     static ItemEnchantments itemEnchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
         return itemEnchantments().addAll(enchantments).build();
     }
@@ -40,7 +37,6 @@ public interface ItemEnchantments {
     /**
      * Builder for {@link ItemEnchantments}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemEnchantments> {
 

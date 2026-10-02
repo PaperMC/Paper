@@ -9,14 +9,13 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Frog.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface FrogVariantRegistryEntry {
 
     /**
      * Provides the client texture asset of the frog variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
@@ -28,15 +27,14 @@ public interface FrogVariantRegistryEntry {
      *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends FrogVariantRegistryEntry, RegistryBuilder<Frog.Variant> {
 
         /**
          * Sets the client texture asset of the frog variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see FrogVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")

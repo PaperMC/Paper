@@ -1,14 +1,16 @@
 package org.bukkit.enchantments;
 
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -229,9 +231,14 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      */
     public static final Enchantment SWIFT_SNEAK = getEnchantment("swift_sneak");
 
+    /**
+     * Causes a jab attack from a spear to propel the user into the air
+     */
+    public static final Enchantment LUNGE = getEnchantment("lunge");
+
     @NotNull
-    private static Enchantment getEnchantment(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(NamespacedKey.minecraft(key));
+    private static Enchantment getEnchantment(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -480,7 +487,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      *
      * @return a registry set of enchantments exclusive to this one.
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
+    @ApiStatus.Experimental
     public abstract io.papermc.paper.registry.set.@NotNull RegistryKeySet<Enchantment> getExclusiveWith();
     // Paper end - even more Enchantment API
 
@@ -508,7 +515,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
         if (key == null) {
             return null;
         }
-        return Registry.ENCHANTMENT.get(key);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
     }
 
     /**
@@ -538,6 +545,6 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
     @NotNull
     @Deprecated(since = "1.20.3")
     public static Enchantment[] values() {
-        return Lists.newArrayList(Registry.ENCHANTMENT).toArray(new Enchantment[0]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().toArray(Enchantment[]::new);
     }
 }

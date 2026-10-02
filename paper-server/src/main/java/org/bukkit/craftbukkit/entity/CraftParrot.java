@@ -6,13 +6,13 @@ import org.bukkit.entity.Parrot;
 
 public class CraftParrot extends CraftTameableAnimal implements Parrot {
 
-    public CraftParrot(CraftServer server, net.minecraft.world.entity.animal.Parrot parrot) {
+    public CraftParrot(CraftServer server, net.minecraft.world.entity.animal.parrot.Parrot parrot) {
         super(server, parrot);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Parrot getHandle() {
-        return (net.minecraft.world.entity.animal.Parrot) this.entity;
+    public net.minecraft.world.entity.animal.parrot.Parrot getHandle() {
+        return (net.minecraft.world.entity.animal.parrot.Parrot) this.entity;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class CraftParrot extends CraftTameableAnimal implements Parrot {
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant cannot be null");
 
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.Parrot.Variant.byId(variant.ordinal()));
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.parrot.Parrot.Variant.byId(variant.ordinal()));
     }
 
     @Override

@@ -10,6 +10,8 @@ import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.OminousBottleMeta;
 
+import static io.papermc.paper.util.BoundChecker.requireRange;
+
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBottleMeta {
 
@@ -24,9 +26,9 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
         this.ominousBottleAmplifier = ominousBottleMeta.ominousBottleAmplifier;
     }
 
-    CraftMetaOminousBottle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
-        getOrEmpty(tag, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
+    CraftMetaOminousBottle(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
             this.ominousBottleAmplifier = amplifier.value();
         });
     }
@@ -76,8 +78,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     @Override
     public void setAmplifier(int amplifier) {
-        Preconditions.checkArgument(0 <= amplifier && amplifier <= 4, "Amplifier must be in range [0, 4]");
-        this.ominousBottleAmplifier = amplifier;
+        this.ominousBottleAmplifier = requireRange(amplifier, "amplifier", OminousBottleAmplifier.MIN_AMPLIFIER, OminousBottleAmplifier.MAX_AMPLIFIER);
     }
 
     @Override

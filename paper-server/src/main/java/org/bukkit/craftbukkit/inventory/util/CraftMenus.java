@@ -1,8 +1,9 @@
 package org.bukkit.craftbukkit.inventory.util;
 
+import java.util.function.Supplier;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -41,8 +42,6 @@ import org.bukkit.inventory.view.StonecutterView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.function.Supplier;
-
 @NullMarked
 public final class CraftMenus {
 
@@ -55,6 +54,7 @@ public final class CraftMenus {
         int level = 1;
         if (minecraftMerchant instanceof final Villager villager) {
             level = villager.getVillagerData().level();
+            villager.updateSpecialPrices(player); // update villager prices before opening menu to player
         }
 
         if (minecraftMerchant.getTradingPlayer() != null) { // merchant's can only have one trader

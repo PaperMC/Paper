@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.WaterAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.WaterMob;
 

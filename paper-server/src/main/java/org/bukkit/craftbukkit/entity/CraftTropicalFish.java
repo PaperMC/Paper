@@ -6,13 +6,13 @@ import org.bukkit.entity.TropicalFish;
 
 public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFish implements TropicalFish { // Paper - Schooling Fish API
 
-    public CraftTropicalFish(CraftServer server, net.minecraft.world.entity.animal.TropicalFish entity) {
+    public CraftTropicalFish(CraftServer server, net.minecraft.world.entity.animal.fish.TropicalFish entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.TropicalFish getHandle() {
-        return (net.minecraft.world.entity.animal.TropicalFish) this.entity;
+    public net.minecraft.world.entity.animal.fish.TropicalFish getHandle() {
+        return (net.minecraft.world.entity.animal.fish.TropicalFish) this.entity;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFi
     }
 
     public static int getData(DyeColor patternColor, DyeColor bodyColor, Pattern type) {
-        net.minecraft.world.entity.animal.TropicalFish.Pattern pattern = net.minecraft.world.entity.animal.TropicalFish.Pattern.valueOf(type.name());
+        net.minecraft.world.entity.animal.fish.TropicalFish.Pattern pattern = net.minecraft.world.entity.animal.fish.TropicalFish.Pattern.valueOf(type.name());
         return patternColor.getWoolData() << 24 | bodyColor.getWoolData() << 16 | pattern.getPackedId();
     }
 
@@ -59,6 +59,6 @@ public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFi
     }
 
     public static Pattern getPattern(int data) {
-        return Pattern.valueOf(net.minecraft.world.entity.animal.TropicalFish.getPattern(data).name());
+        return Pattern.valueOf(net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(data).name());
     }
 }

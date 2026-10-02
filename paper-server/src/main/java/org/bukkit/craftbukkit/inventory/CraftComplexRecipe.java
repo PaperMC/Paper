@@ -1,24 +1,25 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ComplexRecipe;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftComplexRecipe extends CraftingRecipe implements CraftRecipe, ComplexRecipe {
 
-    private final CustomRecipe recipe;
+    private final net.minecraft.world.item.crafting.CraftingRecipe recipe;
 
-    public CraftComplexRecipe(NamespacedKey key, ItemStack result, CustomRecipe recipe) {
+    public CraftComplexRecipe(NamespacedKey key, ItemStack result, net.minecraft.world.item.crafting.CraftingRecipe recipe) {
         super(key, result);
         this.recipe = recipe;
     }
 
     @Override
-    public void addToCraftingManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), this.recipe));
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), this.recipe));
     }
 }

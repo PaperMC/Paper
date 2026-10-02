@@ -294,9 +294,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #addEntry(String)
      */
-    // @Deprecated(since = "1.8.6") // Paper
     void addPlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -369,9 +369,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to remove
      * @return if the player was on this team
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #removeEntry(String)
      */
-    // @Deprecated(since = "1.8.6") // Paper
     boolean removePlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -446,9 +446,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to search for
      * @return true if the player is a member of this team
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #hasEntry(String)
      */
-    // @Deprecated(since = "1.8.6") // Paper
     boolean hasPlayer(@NotNull OfflinePlayer player);
     /**
      * Checks to see if the specified entry is a member of this team.

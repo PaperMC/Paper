@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.cookie.ClientboundCookieRequestPacket;
 import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jspecify.annotations.NullMarked;
@@ -16,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
 public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlayerCookieConnection {
 
     // Because we support async cookies, order is not promised.
-    private final Map<ResourceLocation, CookieFuture> requestedCookies = new ConcurrentHashMap<>();
+    private final Map<Identifier, CookieFuture> requestedCookies = new ConcurrentHashMap<>();
     private final Connection connection;
 
     public ReadablePlayerCookieConnectionImpl(final Connection connection) {
@@ -28,16 +28,12 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
         Preconditions.checkArgument(key != null, "Cookie key cannot be null");
 
         CompletableFuture<byte[]> future = new CompletableFuture<>();
-        ResourceLocation resourceLocation = CraftNamespacedKey.toMinecraft(key);
-        this.requestedCookies.put(resourceLocation, new CookieFuture(resourceLocation, future));
+        Identifier id = CraftNamespacedKey.toMinecraft(key);
+        this.requestedCookies.put(id, new CookieFuture(id, future));
 
-        this.connection.send(new ClientboundCookieRequestPacket(resourceLocation));
+        this.connection.send(new ClientboundCookieRequestPacket(id));
 
         return future;
-    }
-
-    public boolean canStoreCookie() {
-        return true;
     }
 
     public boolean handleCookieResponse(ServerboundCookieResponsePacket packet) {
@@ -55,6 +51,6 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
         return !this.requestedCookies.isEmpty();
     }
 
-    public record CookieFuture(ResourceLocation key, CompletableFuture<byte[]> future) {
+    public record CookieFuture(Identifier key, CompletableFuture<byte[]> future) {
     }
 }

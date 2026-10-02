@@ -5,14 +5,11 @@ import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the {@link BlockData} properties of a block item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCK_DATA
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlockItemDataProperties {
 
@@ -43,7 +40,6 @@ public interface BlockItemDataProperties {
     /**
      * Builder for {@link BlockItemDataProperties}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlockItemDataProperties> {
         // building this requires BlockProperty API, so an empty builder for now (essentially read-only)

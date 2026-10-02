@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
@@ -20,7 +20,7 @@ public record PaperCombatTrackerWrapper(
 
     @Override
     public LivingEntity getEntity() {
-        return this.handle.mob.getBukkitLivingEntity();
+        return this.handle.mob.getBukkitEntity();
     }
 
     @Override
@@ -77,6 +77,11 @@ public record PaperCombatTrackerWrapper(
     public FallLocationType calculateFallLocationType() {
         final FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.handle().mob);
         return Optionull.map(fallLocation, PaperCombatTrackerWrapper::minecraftToPaper);
+    }
+
+    @Override
+    public int getLastDamageTime() {
+        return this.handle.mob.tickCount - this.handle.lastDamageTime;
     }
 
     private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {

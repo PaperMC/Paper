@@ -26,9 +26,9 @@ public final class PaperScoreboardFormat {
 
     public static NumberFormat asPaper(final net.minecraft.network.chat.numbers.NumberFormat vanilla) {
         if (vanilla instanceof final net.minecraft.network.chat.numbers.StyledFormat styled) {
-            return NumberFormat.styled(PaperAdventure.asAdventure(styled.style));
+            return NumberFormat.styled(PaperAdventure.asAdventure(styled.style()));
         } else if (vanilla instanceof final net.minecraft.network.chat.numbers.FixedFormat fixed) {
-            return NumberFormat.fixed(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value));
+            return NumberFormat.fixed(io.papermc.paper.adventure.PaperAdventure.asAdventure(fixed.value()));
         } else if (vanilla instanceof net.minecraft.network.chat.numbers.BlankFormat) {
             return NumberFormat.blank();
         }

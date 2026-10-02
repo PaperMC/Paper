@@ -30,6 +30,7 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
     }
 
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public EntityDamageByBlockEvent(@Nullable final Block damager, @Nullable final BlockState damagerState, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         super(damagee, cause, damageSource, damage);
         this.damager = damager;

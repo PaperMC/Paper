@@ -9,6 +9,7 @@ record EmptyRecipeChoice() implements RecipeChoice {
 
     static final RecipeChoice INSTANCE = new EmptyRecipeChoice();
     @Override
+    @Deprecated(since = "1.13.1")
     public ItemStack getItemStack() {
         throw new UnsupportedOperationException("This is an empty RecipeChoice");
     }

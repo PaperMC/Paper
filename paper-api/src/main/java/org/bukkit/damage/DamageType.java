@@ -2,8 +2,9 @@ package org.bukkit.damage;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Translatable;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,6 +94,8 @@ public interface DamageType extends Keyed, Translatable {
 
     DamageType SONIC_BOOM = getDamageType("sonic_boom");
 
+    DamageType SPEAR = getDamageType("spear");
+
     DamageType SPIT = getDamageType("spit");
 
     DamageType STALAGMITE = getDamageType("stalagmite");
@@ -100,6 +103,8 @@ public interface DamageType extends Keyed, Translatable {
     DamageType STARVE = getDamageType("starve");
 
     DamageType STING = getDamageType("sting");
+
+    DamageType SULFUR_CUBE_HOT = getDamageType("sulfur_cube_hot");
 
     DamageType SWEET_BERRY_BUSH = getDamageType("sweet_berry_bush");
 
@@ -119,8 +124,8 @@ public interface DamageType extends Keyed, Translatable {
     // End generate - DamageType
 
     @NotNull
-    private static DamageType getDamageType(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(NamespacedKey.minecraft(key));
+    private static DamageType getDamageType(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**

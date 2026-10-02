@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -24,13 +24,13 @@ public final class ItemObfuscationBinding {
 
     public final ItemObfuscationSession.ObfuscationLevel level;
     private final BoundObfuscationConfiguration base;
-    private final Map<ResourceLocation, BoundObfuscationConfiguration> overrides;
+    private final Map<Identifier, BoundObfuscationConfiguration> overrides;
 
     public ItemObfuscationBinding(final GlobalConfiguration.Anticheat.Obfuscation.Items items) {
         this.level = items.enableItemObfuscation ? ItemObfuscationSession.ObfuscationLevel.ALL : ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
         this.base = bind(items.allModels);
-        final Map<ResourceLocation, BoundObfuscationConfiguration> overrides = new HashMap<>();
-        for (final Map.Entry<ResourceLocation, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
+        final Map<Identifier, BoundObfuscationConfiguration> overrides = new HashMap<>();
+        for (final Map.Entry<Identifier, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
             overrides.put(entry.getKey(), bind(entry.getValue()));
         }
         this.overrides = Collections.unmodifiableMap(overrides);

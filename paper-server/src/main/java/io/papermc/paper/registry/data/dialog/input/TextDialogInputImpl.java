@@ -5,7 +5,12 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.dialog.input.TextInput;
+import org.checkerframework.checker.index.qual.Positive;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record TextDialogInputImpl(
     String key,
@@ -19,8 +24,12 @@ public record TextDialogInputImpl(
 
     public record MultilineOptionsImpl(@Nullable Integer maxLines, @Nullable Integer height) implements MultilineOptions {
         public MultilineOptionsImpl {
-            Preconditions.checkArgument(maxLines == null || maxLines > 0, "maxLines must be null or greater than 0");
-            Preconditions.checkArgument(height == null || (height >= 1 && height <= TextInput.MultilineOptions.MAX_HEIGHT), "height must be null or between 1 and 512");
+            if (maxLines != null) {
+                requirePositive(maxLines, "maxLines");
+            }
+            if (height != null) {
+                requireRange(height, "height", 1, TextInput.MultilineOptions.MAX_HEIGHT);
+            }
         }
     }
 
@@ -41,9 +50,8 @@ public record TextDialogInputImpl(
         }
 
         @Override
-        public TextDialogInput.Builder width(final int width) {
-            Preconditions.checkArgument(width >= 1 && width <= 1024, "width must be between 1 and 1024");
-            this.width = width;
+        public TextDialogInput.Builder width(final @Range(from = 1, to = 1024) int width) {
+            this.width = requireRange(width, "width", 1, 1024);
             return this;
         }
 
@@ -60,9 +68,8 @@ public record TextDialogInputImpl(
         }
 
         @Override
-        public TextDialogInput.Builder maxLength(final int maxLength) {
-            Preconditions.checkArgument(maxLength > 0, "maxLength must be greater than 0");
-            this.maxLength = maxLength;
+        public TextDialogInput.Builder maxLength(final @Positive int maxLength) {
+            this.maxLength = requirePositive(maxLength, "maxLength");
             return this;
         }
 

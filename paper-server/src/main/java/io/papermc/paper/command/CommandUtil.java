@@ -8,7 +8,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -16,6 +18,18 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 @DefaultQualifier(NonNull.class)
 public final class CommandUtil {
     private CommandUtil() {
+    }
+
+    public static List<String> getWorldSuggestions(Server server, boolean withWildcard) {
+        List<World> worlds = server.getWorlds();
+        List<String> worldKeys = new ArrayList<>(worlds.size() + (withWildcard ? 1 : 0));
+        if (withWildcard) {
+            worldKeys.add("*");
+        }
+        for (World world : worlds) {
+            worldKeys.add(world.key().asString());
+        }
+        return worldKeys;
     }
 
     // Code from Mojang - copyright them
@@ -56,7 +70,7 @@ public final class CommandUtil {
                 while (iterator.hasNext()) {
                     Object object = iterator.next();
 
-                    if (object instanceof ResourceLocation && matches(last, ((ResourceLocation) object).getPath())) {
+                    if (object instanceof Identifier && matches(last, ((Identifier) object).getPath())) {
                         results.add(String.valueOf(object));
                     }
                 }

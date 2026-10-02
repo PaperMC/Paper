@@ -8,12 +8,12 @@ import org.bukkit.NamespacedKey;
 
 public class CraftGameEvent extends GameEvent implements Holderable<net.minecraft.world.level.gameevent.GameEvent> {
 
-    public static GameEvent minecraftToBukkit(net.minecraft.world.level.gameevent.GameEvent minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.GAME_EVENT);
+    public static GameEvent minecraftHolderToBukkit(Holder<net.minecraft.world.level.gameevent.GameEvent> minecraft) {
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.GAME_EVENT);
     }
 
-    public static net.minecraft.world.level.gameevent.GameEvent bukkitToMinecraft(GameEvent bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
+    public static Holder<net.minecraft.world.level.gameevent.GameEvent> bukkitToMinecraftHolder(GameEvent bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     private final Holder<net.minecraft.world.level.gameevent.GameEvent> holder;

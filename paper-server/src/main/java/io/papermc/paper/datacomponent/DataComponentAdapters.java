@@ -1,6 +1,8 @@
 package io.papermc.paper.datacomponent;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.pot.PaperPotPatternType;
+import io.papermc.paper.datacomponent.item.PaperAttackRange;
 import io.papermc.paper.datacomponent.item.PaperBannerPatternLayers;
 import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
 import io.papermc.paper.datacomponent.item.PaperBlocksAttacks;
@@ -23,24 +25,33 @@ import io.papermc.paper.datacomponent.item.PaperItemEnchantments;
 import io.papermc.paper.datacomponent.item.PaperItemLore;
 import io.papermc.paper.datacomponent.item.PaperItemTool;
 import io.papermc.paper.datacomponent.item.PaperJukeboxPlayable;
+import io.papermc.paper.datacomponent.item.PaperKineticWeapon;
 import io.papermc.paper.datacomponent.item.PaperLodestoneTracker;
 import io.papermc.paper.datacomponent.item.PaperMapDecorations;
 import io.papermc.paper.datacomponent.item.PaperMapId;
-import io.papermc.paper.datacomponent.item.PaperMapItemColor;
+import io.papermc.paper.datacomponent.item.PaperMobVisibility;
 import io.papermc.paper.datacomponent.item.PaperOminousBottleAmplifier;
+import io.papermc.paper.datacomponent.item.PaperPiercingWeapon;
 import io.papermc.paper.datacomponent.item.PaperPotDecorations;
 import io.papermc.paper.datacomponent.item.PaperPotionContents;
 import io.papermc.paper.datacomponent.item.PaperRepairable;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.PaperSeededContainerLoot;
+import io.papermc.paper.datacomponent.item.PaperSignText;
+import io.papermc.paper.datacomponent.item.PaperSulfurCubeContent;
 import io.papermc.paper.datacomponent.item.PaperSuspiciousStewEffects;
+import io.papermc.paper.datacomponent.item.PaperSwingAnimation;
 import io.papermc.paper.datacomponent.item.PaperTooltipDisplay;
 import io.papermc.paper.datacomponent.item.PaperUseCooldown;
+import io.papermc.paper.datacomponent.item.PaperUseEffects;
 import io.papermc.paper.datacomponent.item.PaperUseRemainder;
+import io.papermc.paper.datacomponent.item.PaperVillagerFood;
 import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
-import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.set.PaperRegistrySets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -50,15 +61,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Unit;
-import net.minecraft.world.item.EitherHolder;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.InstrumentComponent;
 import net.minecraft.world.item.component.MapPostProcessing;
-import net.minecraft.world.item.component.ProvidesTrimMaterial;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
-import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
 import org.bukkit.craftbukkit.entity.CraftCow;
@@ -66,6 +75,7 @@ import org.bukkit.craftbukkit.entity.CraftFrog;
 import org.bukkit.craftbukkit.entity.CraftPig;
 import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.craftbukkit.entity.CraftWolf;
+import org.bukkit.craftbukkit.entity.CraftZombieNautilus;
 import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -83,11 +93,11 @@ import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
 public final class DataComponentAdapters {
 
-    static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
+    static final Function<Unit, Void> UNIT_TO_API_CONVERTER = _ -> {
         throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
     };
 
-    static final Function UNIMPLEMENTED_TO_API_CONVERTER = $ -> {
+    static final Function UNIMPLEMENTED_TO_API_CONVERTER = _ -> {
         throw new UnsupportedOperationException("Cannot convert the an unimplemented type to an API value");
     };
 
@@ -98,8 +108,10 @@ public final class DataComponentAdapters {
         registerIdentity(DataComponents.MAX_DAMAGE);
         registerIdentity(DataComponents.DAMAGE);
         registerUntyped(DataComponents.UNBREAKABLE);
-        registerIdentity(DataComponents.POTION_DURATION_SCALE);
+        register(DataComponents.USE_EFFECTS, PaperUseEffects::new);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
+        registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE);
+        register(DataComponents.DAMAGE_TYPE, CraftDamageType::minecraftHolderToBukkit, CraftDamageType::bukkitToMinecraftHolder);
         register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_MODEL, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.LORE, PaperItemLore::new);
@@ -109,6 +121,7 @@ public final class DataComponentAdapters {
         register(DataComponents.CAN_BREAK, PaperItemAdventurePredicate::new);
         register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
         register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
+        register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         registerIdentity(DataComponents.REPAIR_COST);
         // registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
         registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
@@ -119,6 +132,8 @@ public final class DataComponentAdapters {
         register(DataComponents.USE_COOLDOWN, PaperUseCooldown::new);
         register(DataComponents.DAMAGE_RESISTANT, PaperDamageResistant::new);
         register(DataComponents.TOOL, PaperItemTool::new);
+        register(DataComponents.WEAPON, PaperWeapon::new);
+        register(DataComponents.ATTACK_RANGE, PaperAttackRange::new);
         register(DataComponents.ENCHANTABLE, PaperEnchantable::new);
         register(DataComponents.EQUIPPABLE, PaperEquippable::new);
         register(DataComponents.REPAIRABLE, PaperRepairable::new);
@@ -126,14 +141,15 @@ public final class DataComponentAdapters {
         register(DataComponents.TOOLTIP_STYLE, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.DEATH_PROTECTION, PaperDeathProtection::new);
         register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
+        register(DataComponents.DYE, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
-        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
         register(DataComponents.MAP_ID, PaperMapId::new);
         register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
         register(DataComponents.MAP_POST_PROCESSING, nms -> io.papermc.paper.item.MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
         register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
         register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
         register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
+        registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
         register(DataComponents.WRITTEN_BOOK_CONTENT, PaperWrittenBookContent::new);
         register(DataComponents.WRITABLE_BOOK_CONTENT, PaperWritableBookContent::new);
@@ -142,11 +158,11 @@ public final class DataComponentAdapters {
         // entity data
         // bucket entity data
         // block entity data
-        register(DataComponents.INSTRUMENT, nms -> CraftMusicInstrument.minecraftHolderToBukkit(nms.instrument().unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new InstrumentComponent(CraftMusicInstrument.bukkitToMinecraftHolder(api)));
-        register(DataComponents.PROVIDES_TRIM_MATERIAL, nms -> CraftTrimMaterial.minecraftHolderToBukkit(nms.material().unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new ProvidesTrimMaterial(CraftTrimMaterial.bukkitToMinecraftHolder(api)));
+        register(DataComponents.INSTRUMENT, nms -> CraftMusicInstrument.minecraftHolderToBukkit(nms.instrument()), api -> new InstrumentComponent(CraftMusicInstrument.bukkitToMinecraftHolder(api)));
+        register(DataComponents.PROVIDES_TRIM_MATERIAL, CraftTrimMaterial::minecraftHolderToBukkit, CraftTrimMaterial::bukkitToMinecraftHolder);
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
-        register(DataComponents.PROVIDES_BANNER_PATTERNS, PaperRegistries::fromNms, PaperRegistries::toNms);
+        register(DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.global().lookup(), set));
         register(
             DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
@@ -163,37 +179,53 @@ public final class DataComponentAdapters {
         register(DataComponents.CONTAINER, PaperItemContainerContents::new);
         register(DataComponents.BLOCK_STATE, PaperBlockItemDataProperties::new);
         // bees
+        register(DataComponents.SULFUR_CUBE_CONTENT, PaperSulfurCubeContent::new);
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
         register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
-        register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
-        register(DataComponents.WEAPON, PaperWeapon::new);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
-
+        register(DataComponents.PIERCING_WEAPON, PaperPiercingWeapon::new);
+        register(DataComponents.KINETIC_WEAPON, PaperKineticWeapon::new);
+        register(DataComponents.ATTACK_ANIMATION, PaperSwingAnimation::new);
+        register(DataComponents.INTERACT_ANIMATION, PaperSwingAnimation::new);
+        // registerIdentity(DataComponents.ADDITIONAL_TRADE_COST);
+        // block transformer
+        register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
+        register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant::minecraftHolderToBukkit, CraftWolf.CraftSoundVariant::bukkitToMinecraftHolder);
-        register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Fox.Variant.byId(api.ordinal()));
-        register(DataComponents.SALMON_SIZE, nms -> Salmon.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Salmon.Variant.values()[api.ordinal()]);
-        register(DataComponents.PARROT_VARIANT, nms -> Parrot.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Parrot.Variant.byId(api.ordinal()));
-        register(DataComponents.TROPICAL_FISH_PATTERN, nms -> TropicalFish.Pattern.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.TropicalFish.Pattern.values()[api.ordinal()]);
+        register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.fox.Fox.Variant.byId(api.ordinal()));
+        register(DataComponents.SALMON_SIZE, nms -> Salmon.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.fish.Salmon.Variant.values()[api.ordinal()]);
+        register(DataComponents.PARROT_VARIANT, nms -> Parrot.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.parrot.Parrot.Variant.byId(api.ordinal()));
+        register(DataComponents.TROPICAL_FISH_PATTERN, nms -> TropicalFish.Pattern.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.fish.TropicalFish.Pattern.values()[api.ordinal()]);
         register(DataComponents.TROPICAL_FISH_BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.TROPICAL_FISH_PATTERN_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        register(DataComponents.MOOSHROOM_VARIANT, nms -> MushroomCow.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.MushroomCow.Variant.values()[api.ordinal()]);
-        register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Rabbit.Variant.byId(api.ordinal()));
+        register(DataComponents.MOOSHROOM_VARIANT, nms -> MushroomCow.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.cow.MushroomCow.Variant.values()[api.ordinal()]);
+        register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.values()[api.ordinal()]);
         register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.PIG_SOUND_VARIANT, CraftPig.CraftSoundVariant::minecraftHolderToBukkit, CraftPig.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.CHICKEN_VARIANT, nms -> CraftChicken.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftChicken.CraftVariant.bukkitToMinecraftHolder(api)));
+        register(DataComponents.COW_SOUND_VARIANT, CraftCow.CraftSoundVariant::minecraftHolderToBukkit, CraftCow.CraftSoundVariant::bukkitToMinecraftHolder);
+        register(DataComponents.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.CHICKEN_SOUND_VARIANT, CraftChicken.CraftSoundVariant::minecraftHolderToBukkit, CraftChicken.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.HORSE_VARIANT, nms -> Horse.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.horse.Variant.byId(api.ordinal()));
+        register(DataComponents.ZOMBIE_NAUTILUS_VARIANT, CraftZombieNautilus.CraftVariant::minecraftHolderToBukkit, CraftZombieNautilus.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.HORSE_VARIANT, nms -> Horse.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Variant.byId(api.ordinal()));
         register(DataComponents.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
-        register(DataComponents.LLAMA_VARIANT, nms -> Llama.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.horse.Llama.Variant.byId(api.ordinal()));
+        register(DataComponents.LLAMA_VARIANT, nms -> Llama.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Llama.Variant.byId(api.ordinal()));
         register(DataComponents.AXOLOTL_VARIANT, nms -> Axolotl.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(api.ordinal()));
         register(DataComponents.CAT_VARIANT, CraftCat.CraftType::minecraftHolderToBukkit, CraftCat.CraftType::bukkitToMinecraftHolder);
+        register(DataComponents.CAT_SOUND_VARIANT, CraftCat.CraftSoundVariant::minecraftHolderToBukkit, CraftCat.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.CAT_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.PROVIDES_POTTERY_PATTERN, PaperPotPatternType::minecraftHolderToBukkit, PaperPotPatternType::bukkitToMinecraftHolder);
+        register(DataComponents.SIGN_TEXT_FRONT, PaperSignText::new);
+        register(DataComponents.SIGN_TEXT_BACK, PaperSignText::new);
+        registerUntyped(DataComponents.WAXED);
+        register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {

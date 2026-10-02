@@ -9,7 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.UUID;
 import com.mojang.authlib.properties.PropertyMap;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;

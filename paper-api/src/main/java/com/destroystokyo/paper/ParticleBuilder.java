@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Helps prepare a particle to be sent to players.
  * <p>
- * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
+ * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, List, Player, double, double, double, int, double, double, double, double, double, double, Object, boolean, Particle.RandomizationType)} API.
  */
 @NullMarked
 public class ParticleBuilder implements Cloneable {
@@ -28,9 +28,10 @@ public class ParticleBuilder implements Cloneable {
     private @Nullable Location location;
     private int count = 1;
     private double offsetX = 0, offsetY = 0, offsetZ = 0;
-    private double extra = 1;
+    private double speedX = 1, speedY = 1, speedZ = 1;
     private @Nullable Object data;
     private boolean force = true;
+    private Particle.RandomizationType randomizationType = Particle.RandomizationType.DEFAULT;
 
     public ParticleBuilder(final Particle particle) {
         this.particle = particle;
@@ -49,7 +50,8 @@ public class ParticleBuilder implements Cloneable {
         this.location.getWorld().spawnParticle(
             this.particle, this.receivers, this.source,
             this.location.getX(), this.location.getY(), this.location.getZ(),
-            this.count, this.offsetX, this.offsetY, this.offsetZ, this.extra, this.data, this.force
+            this.count, this.offsetX, this.offsetY, this.offsetZ, this.speedX, this.speedY, this.speedZ,
+            this.data, this.force, this.randomizationType
         );
         return this;
     }
@@ -131,7 +133,7 @@ public class ParticleBuilder implements Cloneable {
      *                  world
      * @return a reference to this object.
      */
-    public ParticleBuilder receivers(final Player @Nullable... receivers) {
+    public ParticleBuilder receivers(final Player @Nullable ... receivers) {
         this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
         return this;
     }
@@ -165,8 +167,7 @@ public class ParticleBuilder implements Cloneable {
                 throw new IllegalStateException("Please set location first");
             }
             this.receivers = Lists.newArrayList();
-            for (final Player nearbyPlayer : this.location.getWorld()
-                .getNearbyPlayers(this.location, radius, radius, radius)) {
+            for (final Player nearbyPlayer : this.location.getWorld().getNearbyPlayers(this.location, radius, radius, radius)) {
                 final Location loc = nearbyPlayer.getLocation();
                 final double x = NumberConversions.square(this.location.getX() - loc.getX());
                 final double y = NumberConversions.square(this.location.getY() - loc.getY());
@@ -358,12 +359,14 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Gets the Particle extra data. Varies by particle on how this is used
+     * Gets the Particle extra data (speedX). Varies by particle on how this is used
      *
      * @return the extra particle data
+     * @deprecated use one of the {@code speed} methods instead
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     public double extra() {
-        return this.extra;
+        return this.speedX;
     }
 
     /**
@@ -371,9 +374,62 @@ public class ParticleBuilder implements Cloneable {
      *
      * @param extra the extra particle data
      * @return a reference to this object.
+     * @deprecated use {@link #speed(double)} instead
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     public ParticleBuilder extra(final double extra) {
-        this.extra = extra;
+        return this.speed(extra);
+    }
+
+    /**
+     * Particle speed X. Varies by particle on how this is used
+     *
+     * @return the particle speed X
+     */
+    public double speedX() {
+        return this.speedX;
+    }
+
+    /**
+     * Particle speed Y. Varies by particle on how this is used
+     *
+     * @return the particle speed Y
+     */
+    public double speedY() {
+        return this.speedY;
+    }
+
+    /**
+     * Particle speed Z. Varies by particle on how this is used
+     *
+     * @return the particle speed Z
+     */
+    public double speedZ() {
+        return this.speedZ;
+    }
+
+    /**
+     * Sets the particle speed. Varies by particle on how this is used
+     *
+     * @param speed Particle speed
+     * @return a reference to this object.
+     */
+    public ParticleBuilder speed(final double speed) {
+        return this.speed(speed, speed, speed);
+    }
+
+    /**
+     * Sets the particle speed. Varies by particle on how this is used
+     *
+     * @param speedX Particle speed X
+     * @param speedY Particle speed Y
+     * @param speedZ Particle speed Z
+     * @return a reference to this object.
+     */
+    public ParticleBuilder speed(final double speedX, final double speedY, final double speedZ) {
+        this.speedX = speedX;
+        this.speedY = speedY;
+        this.speedZ = speedZ;
         return this;
     }
 
@@ -421,8 +477,28 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
+     * Gets the randomization type for the particle. This determines how the particle's position and velocity are randomized.
+     *
+     * @return the randomization type for the particle
+     */
+    public Particle.RandomizationType randomizationType() {
+        return this.randomizationType;
+    }
+
+    /**
+     * Sets the randomization type for the particle. This determines how the particle's position and velocity are randomized.
+     *
+     * @param randomizationType the new randomization type for the particle
+     * @return a reference to this object.
+     */
+    public ParticleBuilder randomizationType(final Particle.RandomizationType randomizationType) {
+        this.randomizationType = randomizationType;
+        return this;
+    }
+
+    /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param color the new particle color
      * @return a reference to this object.
@@ -435,33 +511,37 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Sets the particle Color and size.
-     * Only valid for particles with a data type of {@link Particle.DustOptions}.
+     * Sets the particle Color and size or power.
+     * Only valid for particles with a data type of {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param color the new particle color
-     * @param size  the size of the particle
+     * @param value the size or power of the particle
      * @return a reference to this object.
      */
-    public ParticleBuilder color(final @Nullable Color color, final float size) {
-        if (this.particle.getDataType() != Particle.DustOptions.class && color != null) {
-            throw new IllegalStateException("The combination of Color and size cannot be set on this particle type.");
+    public ParticleBuilder color(final @Nullable Color color, final float value) {
+        if (this.particle.getDataType() != Particle.DustOptions.class && this.particle.getDataType() != Particle.Spell.class && color != null) {
+            throw new IllegalStateException("The combination of Color and float value cannot be set on this particle type.");
         }
 
         // We don't officially support reusing these objects, but here we go
         if (color == null) {
-            if (this.data instanceof Particle.DustOptions) {
+            if (this.data instanceof Particle.DustOptions || this.data instanceof Particle.Spell) {
                 return this.data(null);
             } else {
                 return this;
             }
         }
 
-        return this.data(new Particle.DustOptions(color, size));
+        if (this.particle.getDataType() == Particle.DustOptions.class) {
+            return this.data(new Particle.DustOptions(color, value));
+        } else {
+            return this.data(new Particle.Spell(color, value));
+        }
     }
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param r red color component
      * @param g green color component
@@ -474,7 +554,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      * <p>
      * This method detects if the provided color integer is in RGB or ARGB format.
      * If the alpha channel is zero, it treats the color as RGB. Otherwise, it treats it as ARGB.
@@ -493,7 +573,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param a alpha color component
      * @param r red color component

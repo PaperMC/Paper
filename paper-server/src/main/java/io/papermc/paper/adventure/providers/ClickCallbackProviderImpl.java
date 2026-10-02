@@ -19,7 +19,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnstableApiUsage") // permitted provider
@@ -85,11 +85,11 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
 
     abstract static class CallbackManager<C, I> {
 
-        private final Predicate<ResourceLocation> locationPredicate;
+        private final Predicate<Identifier> locationPredicate;
         protected final Map<I, StoredCallback<C, I>> callbacks = new HashMap<>();
         private final Queue<StoredCallback<C, I>> queue = new ConcurrentLinkedQueue<>();
 
-        protected CallbackManager(final Predicate<ResourceLocation> locationPredicate) {
+        protected CallbackManager(final Predicate<Identifier> locationPredicate) {
             this.locationPredicate = locationPredicate;
         }
 
@@ -125,7 +125,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
 
         abstract void doRunCallback(final @NotNull Audience audience, final Key key, final Tag tag);
 
-        public final void tryRunCallback(final @NotNull Audience audience, final ResourceLocation key, final Optional<? extends Tag> tag) {
+        public final void tryRunCallback(final @NotNull Audience audience, final Identifier key, final Optional<? extends Tag> tag) {
             if (!this.locationPredicate.test(key) || tag.isEmpty()) return;
             this.doRunCallback(audience, PaperAdventure.asAdventure(key), tag.get());
         }

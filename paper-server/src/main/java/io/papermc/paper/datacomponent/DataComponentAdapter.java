@@ -12,9 +12,9 @@ public record DataComponentAdapter<NMS, API>(
     Function<NMS, API> vanillaToApi,
     boolean codecValidation
 ) {
-    static final Function<Void, Unit> API_TO_UNIT_CONVERTER = $ -> Unit.INSTANCE;
+    static final Function<Void, Unit> API_TO_UNIT_CONVERTER = _ -> Unit.INSTANCE;
 
-    static final Function API_TO_UNIMPLEMENTED_CONVERTER = $ -> {
+    static final Function API_TO_UNIMPLEMENTED_CONVERTER = _ -> {
         throw new UnsupportedOperationException("Cannot convert an API value to an unimplemented type");
     };
 

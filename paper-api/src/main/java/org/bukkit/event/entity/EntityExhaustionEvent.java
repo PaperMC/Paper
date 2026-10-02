@@ -76,7 +76,7 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * The reason for why a PlayerExhaustionEvent takes place
+     * The reason for why a EntityExhaustionEvent takes place
      */
     public enum ExhaustionReason {
 
@@ -134,6 +134,11 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
          * Player regenerated health
          */
         REGEN,
+        /**
+         * Player was affected by an enchantment
+         * @see <a href="https://minecraft.wiki/w/Enchantment_definition#apply_exhaustion">Minecraft Wiki: Enchantment Effects "apply_exhaustion"</a>
+         */
+        ENCHANTMENT_EFFECT,
         /**
          * Unknown exhaustion reason
          */

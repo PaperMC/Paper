@@ -2,13 +2,17 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -20,17 +24,15 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
-
-// Spigot start
-import java.util.AbstractList;
-import net.md_5.bungee.api.chat.BaseComponent;
-// Spigot end
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBookMeta {
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<WritableBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITABLE_BOOK_CONTENT);
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
+
     static final int MAX_PAGES = WritableBookContent.MAX_PAGES; // SPIGOT-6911: Use Minecraft limits // Paper
     static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
 
@@ -61,11 +63,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
     }
 
-    CraftMetaBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaBook(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBook.BOOK_CONTENT).ifPresent((writable) -> {
-            List<Filterable<String>> pages = writable.pages();
+        getOrEmpty(patch, CraftMetaBook.BOOK_CONTENT).ifPresent((bookContent) -> {
+            List<Filterable<String>> pages = bookContent.pages();
             this.pages = new ArrayList<>(pages.size());
 
             // Note: We explicitly check for and truncate oversized books and pages,
@@ -241,53 +243,6 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
     }
 
-    private CraftMetaBook(List<net.kyori.adventure.text.Component> pages) {
-        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(org.bukkit.Material.WRITABLE_BOOK));
-        this.pages = pages.subList(0, Math.min(MAX_PAGES, pages.size())).stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).collect(java.util.stream.Collectors.toList());
-    }
-
-    static class CraftMetaBookBuilder implements BookMetaBuilder {
-        protected final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
-
-        @Override
-        public BookMetaBuilder title(net.kyori.adventure.text.Component title) {
-            return this;
-        }
-
-        @Override
-        public BookMetaBuilder author(net.kyori.adventure.text.Component author) {
-            return this;
-        }
-
-        @Override
-        public BookMetaBuilder addPage(net.kyori.adventure.text.Component page) {
-            this.pages.add(page);
-            return this;
-        }
-
-        @Override
-        public BookMetaBuilder pages(net.kyori.adventure.text.Component... pages) {
-            java.util.Collections.addAll(this.pages, pages);
-            return this;
-        }
-
-        @Override
-        public BookMetaBuilder pages(java.util.Collection<net.kyori.adventure.text.Component> pages) {
-            this.pages.addAll(pages);
-            return this;
-        }
-
-        @Override
-        public BookMeta build() {
-            return new CraftMetaBook(this.pages);
-        }
-    }
-
-    @Override
-    public BookMetaBuilder toBuilder() {
-        return new CraftMetaBookBuilder();
-    }
-
     @Override
     public String getPage(final int page) {
         Preconditions.checkArgument(this.isValidPage(page), "Invalid page number (%s)", page);
@@ -411,6 +366,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
 
         return builder;
+    }
+
+    @Override
+    public @NotNull Book asBook() {
+        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
     }
 
     // Spigot start

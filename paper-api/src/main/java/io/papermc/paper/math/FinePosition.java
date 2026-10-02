@@ -2,7 +2,6 @@ package io.papermc.paper.math;
 
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A position represented with doubles.
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see BlockPosition
  */
 @ApiStatus.Experimental
-@NullMarked
 public interface FinePosition extends Position {
 
     @Override

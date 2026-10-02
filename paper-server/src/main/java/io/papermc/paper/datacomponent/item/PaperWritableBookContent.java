@@ -5,7 +5,11 @@ import io.papermc.paper.text.Filtered;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
+import net.kyori.adventure.text.Component;
 import net.minecraft.server.network.Filterable;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -24,6 +28,19 @@ public record PaperWritableBookContent(
         return MCUtil.transformUnmodifiable(this.impl.pages(), input -> Filtered.of(input.raw(), input.filtered().orElse(null)));
     }
 
+    @Override
+    public Book asBook() {
+        return Book.book(
+            Component.empty(),
+            Component.empty(),
+            this.pages()
+                .stream()
+                .map(filtered -> Objects.requireNonNullElseGet(filtered.filtered(), filtered::raw))
+                .map(Component::text)
+                .collect(Collectors.toList())
+        );
+    }
+
     static final class BuilderImpl implements WritableBookContent.Builder {
 
         private final List<Filterable<String>> pages = new ObjectArrayList<>();
@@ -37,8 +54,8 @@ public record PaperWritableBookContent(
             );
         }
 
-        private static void validatePageCount(final int current, final int add) {
-            final int newSize = current + add;
+        private static void validatePageCount(final int current, final int delta) {
+            final int newSize = current + delta;
             Preconditions.checkArgument(
                 newSize <= net.minecraft.world.item.component.WritableBookContent.MAX_PAGES,
                 "Cannot have more than %s pages, had %s",

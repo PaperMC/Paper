@@ -6,29 +6,31 @@
      private final MinecraftServer server;
 +    private boolean silent; // Paper - silence feedback when API requests sprint
  
-     public ServerTickRateManager(MinecraftServer server) {
+     public ServerTickRateManager(final MinecraftServer server) {
          this.server = server;
 @@ -68,6 +_,13 @@
      }
  
-     public boolean requestGameToSprint(int sprintTime) {
+     public boolean requestGameToSprint(final int time) {
 +        // Paper start - silence feedback when API requests sprint
-+        return requestGameToSprint(sprintTime, false);
++        return requestGameToSprint(time, false);
 +    }
 +
-+    public boolean requestGameToSprint(int sprintTime, boolean silent) {
++    public boolean requestGameToSprint(final int time, final boolean silent) {
 +        if (!isSprinting()) this.silent = silent;
 +        // Paper end - silence feedback when API requests sprint
-         boolean flag = this.remainingSprintTicks > 0L;
+         boolean interrupted = this.remainingSprintTicks > 0L;
          this.sprintTimeSpend = 0L;
-         this.scheduledCurrentSprintTicks = sprintTime;
-@@ -84,7 +_,10 @@
-         String string = String.format(Locale.ROOT, "%.2f", l == 0L ? this.millisecondsPerTick() : d / l);
+         this.scheduledCurrentSprintTicks = time;
+@@ -86,9 +_,12 @@
+         );
          this.scheduledCurrentSprintTicks = 0L;
          this.sprintTimeSpend = 0L;
--        this.server.createCommandSourceStack().sendSuccess(() -> Component.translatable("commands.tick.sprint.report", i, string), true);
+-        this.server
 +        // Paper start - silence feedback when API requests sprint
-+        if (!this.silent) this.server.createCommandSourceStack().sendSuccess(() -> Component.translatable("commands.tick.sprint.report", i, string), true);
++        if (!this.silent) this.server
+             .createCommandSourceStack()
+             .sendSuccess(() -> Component.translatable("commands.tick.sprint.report", ticksPerSecond, millisecondsPerTick), true);
 +        this.silent = false;
 +        // Paper end - silence feedback when API requests sprint
          this.remainingSprintTicks = 0L;

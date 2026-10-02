@@ -4,19 +4,11 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public interface ArmoredHorseInventory extends AbstractHorseInventory {
+public interface ArmoredHorseInventory extends AbstractHorseInventory, ArmoredSaddledMountInventory {
 
-    /**
-     * Gets the item in the horse's armor slot.
-     *
-     * @return the armor item
-     */
+    @Override
     @Nullable ItemStack getArmor();
 
-    /**
-     * Sets the item in the horse's armor slot.
-     *
-     * @param stack the new item
-     */
+    @Override
     void setArmor(@Nullable ItemStack stack);
 }

@@ -7,7 +7,7 @@ import org.bukkit.entity.EnderDragonPart;
 import org.bukkit.entity.Entity;
 
 public class CraftEnderDragonPart extends CraftComplexPart implements EnderDragonPart {
-    public CraftEnderDragonPart(CraftServer server, net.minecraft.world.entity.boss.EnderDragonPart entity) {
+    public CraftEnderDragonPart(CraftServer server, net.minecraft.world.entity.boss.enderdragon.EnderDragonPart entity) {
         super(server, entity);
     }
 
@@ -29,6 +29,11 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
     @Override
     public void damage(double amount, Entity source) {
         this.getParent().damage(amount, source);
+    }
+
+    @Override
+    public void kill(DamageSource damageSource) {
+        this.getParent().kill(damageSource);
     }
 
     @Override

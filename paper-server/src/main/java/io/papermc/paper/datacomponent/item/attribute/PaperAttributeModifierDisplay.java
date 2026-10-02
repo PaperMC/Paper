@@ -8,8 +8,8 @@ public sealed interface PaperAttributeModifierDisplay permits PaperAttributeModi
 
     static AttributeModifierDisplay fromVanilla(ItemAttributeModifiers.Display display) {
         return switch (display) {
-            case ItemAttributeModifiers.Display.Default $ -> Default.INSTANCE;
-            case ItemAttributeModifiers.Display.Hidden $ -> Hidden.INSTANCE;
+            case ItemAttributeModifiers.Display.Default _ -> Default.INSTANCE;
+            case ItemAttributeModifiers.Display.Hidden _ -> Hidden.INSTANCE;
             case ItemAttributeModifiers.Display.OverrideText override -> new OverrideText(override);
             default -> throw new UnsupportedOperationException("Don't know how to convert " + display.getClass());
         };

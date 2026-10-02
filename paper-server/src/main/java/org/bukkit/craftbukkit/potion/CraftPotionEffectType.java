@@ -26,7 +26,7 @@ import org.jspecify.annotations.NullMarked;
 public class CraftPotionEffectType extends PotionEffectType implements Holderable<MobEffect>, io.papermc.paper.world.flag.PaperFeatureDependent<MobEffect> {
 
     public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffect> minecraft) {
-        return CraftPotionEffectType.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.MOB_EFFECT);
     }
 
     public static PotionEffectType minecraftToBukkit(MobEffect minecraft) {
@@ -61,7 +61,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     @Override
     public double getDurationModifier() {
-        return 1.0D;
+        return 1.0;
     }
 
     @Override
@@ -116,7 +116,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     @Override
     public boolean isInstant() {
-        return this.getHandle().isInstantenous();
+        return this.getHandle().isInstantaneous();
     }
 
     @Override
@@ -158,7 +158,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     @Override
     public PotionEffectType.Category getEffectCategory() {
-        return fromNMS(this.getHandle().getCategory());
+        return fromVanilla(this.getHandle().getCategory());
     }
 
     @Override
@@ -166,8 +166,8 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
         return this.getHandle().getDescriptionId();
     }
 
-    public static PotionEffectType.Category fromNMS(MobEffectCategory mobEffectInfo) {
-        return switch (mobEffectInfo) {
+    public static PotionEffectType.Category fromVanilla(MobEffectCategory category) {
+        return switch (category) {
             case BENEFICIAL -> PotionEffectType.Category.BENEFICIAL;
             case HARMFUL -> PotionEffectType.Category.HARMFUL;
             case NEUTRAL -> PotionEffectType.Category.NEUTRAL;

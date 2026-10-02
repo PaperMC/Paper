@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -20,22 +22,22 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
     // Paper end - Option to prevent data components copy
 
     public static CraftSmithingTrimRecipe fromBukkitRecipe(SmithingTrimRecipe recipe) {
-        if (recipe instanceof CraftSmithingTrimRecipe) {
-            return (CraftSmithingTrimRecipe) recipe;
+        if (recipe instanceof CraftSmithingTrimRecipe smithingTrimRecipe) {
+            return smithingTrimRecipe;
         }
-        CraftSmithingTrimRecipe ret = new CraftSmithingTrimRecipe(recipe.getKey(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.getTrimPattern(), recipe.willCopyDataComponents()); // Paper - Option to prevent data components copy
-        return ret;
+        return new CraftSmithingTrimRecipe(recipe.getKey(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.getTrimPattern(), recipe.willCopyDataComponents());
     }
 
     @Override
-    public void addToCraftingManager() {
+    public void addToRecipeManager() {
         final net.minecraft.world.item.crafting.SmithingTrimRecipe recipe = new net.minecraft.world.item.crafting.SmithingTrimRecipe(
-            this.toNMS(this.getTemplate(), false),
-            this.toNMS(this.getBase(), false),
-            this.toNMS(this.getAddition(), false),
+            new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
+            CraftRecipe.toIngredient(this.getTemplate(), false),
+            CraftRecipe.toIngredient(this.getBase(), false),
+            CraftRecipe.toIngredient(this.getAddition(), false),
             CraftTrimPattern.bukkitToMinecraftHolder(this.getTrimPattern()),
             this.willCopyDataComponents()
         );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), recipe));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 }
