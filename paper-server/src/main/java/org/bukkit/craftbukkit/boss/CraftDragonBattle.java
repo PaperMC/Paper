@@ -95,7 +95,8 @@ public class CraftDragonBattle implements DragonBattle {
             });
 
             boolean started = this.handle.respawnDragon(
-                    Lists.transform(filteredCrystals, crystal -> ((CraftEnderCrystal) crystal).getHandle()));
+                Lists.transform(filteredCrystals, crystal -> ((CraftEnderCrystal) crystal).getHandle())
+            );
 
             if (started) {
                 this.handle.emptyCrystalRespawnAllowed = filteredCrystals.isEmpty();
