@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import net.kyori.adventure.text.ComponentLike;
 import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -103,6 +104,20 @@ public interface CommandSourceStack {
      * @param allowInformingAdmins whether admins and console may be informed of this success
      */
     void sendSuccess(ComponentLike message, boolean allowInformingAdmins);
+
+    /**
+     * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
+     * according to vanilla semantics. This method informs admins and the console of this success.
+     *
+     * <p>This currently includes checking for environments with suppressed output,
+     * {@link GameRule#SEND_COMMAND_FEEDBACK}, and {@link GameRule#LOG_ADMIN_COMMANDS}.</p>
+     *
+     * @param message the message to send
+     * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
+     */
+    default void sendSuccess(ComponentLike message) {
+        sendSuccess(message, true);
+    }
 
     /**
      * Sends a system message indicating a failed command execution to the {@link #getSender()}.
