@@ -9,6 +9,7 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -106,7 +107,9 @@ public interface InternalAPIBridge {
         return new VersionFetcher.DummyVersionFetcher();
     }
 
-    ItemStack deserializeItem(byte[] data);
+    ItemStack deserializeItem(byte[] data, boolean decompress);
+
+    ItemStack deserializeItem(InputStream input) throws IOException;
 
     boolean hasDefaultEntityAttributes(NamespacedKey entityKey);
 
