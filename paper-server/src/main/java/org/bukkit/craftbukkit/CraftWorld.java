@@ -954,6 +954,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public void lenientAddEntityWithPassengers(final net.minecraft.world.entity.Entity entity, final SpawnReason reason) {
+        entity.getSelfAndPassengers()
+            .filter(e -> !this.getHandle().moonrise$getEntityLookup().hasEntity(e.getUUID()))
+            .forEach(e -> this.getHandle().addFreshEntity(e, reason));
+    }
+
+    @Override
     public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z, Predicate<? super Entity> filter) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(this.equals(location.getWorld()), "Location cannot be in a different world");
