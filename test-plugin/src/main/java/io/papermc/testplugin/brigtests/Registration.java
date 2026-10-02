@@ -49,7 +49,7 @@ public final class Registration {
                 .then(
                     Commands.argument("name", ArgumentTypes.resource(RegistryKey.ENCHANTMENT))
                         .executes(ctx -> {
-                            ctx.getSource().sendSuccess(Component.text(ctx.getArgument("name", Enchantment.class).toString()), false);
+                            ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("name", Enchantment.class)), false);
                             return Command.SINGLE_SUCCESS;
                         })
                 ).build()
@@ -69,7 +69,7 @@ public final class Registration {
                       Commands.argument("pos", ArgumentTypes.finePosition(false))
                           .executes(ctx -> {
                               final FinePositionResolver position = ctx.getArgument("pos", FinePositionResolver.class);
-                              ctx.getSource().sendSuccess(Component.text("Position: " + position.resolve(ctx.getSource())), false);
+                              ctx.getSource().sendRichSuccess("Position: <red>" + position.resolve(ctx.getSource()), false);
                               return Command.SINGLE_SUCCESS;
                           })
                   ).build()
@@ -77,7 +77,7 @@ public final class Registration {
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
                     .executes(ctx -> {
-                        ctx.getSource().sendSuccess(Component.text("overriden command"), false);
+                        ctx.getSource().sendRichSuccess("overriden command", false);
                         return Command.SINGLE_SUCCESS;
                     })
                     .build(),
@@ -92,7 +92,7 @@ public final class Registration {
                     .then(Commands.literal("sub_command")
                         .requires(source -> source.getSender().hasPermission("testplugin.test"))
                         .executes(ctx -> {
-                            ctx.getSource().sendSuccess(Component.text("root_command sub_command"), false);
+                            ctx.getSource().sendRichSuccess("<red>root_command <gold>sub_command", false);
                             return Command.SINGLE_SUCCESS;
                         })).build(),
                 null,
@@ -130,7 +130,7 @@ public final class Registration {
                             return true;
                         })
                         .executes(ctx -> {
-                            ctx.getSource().getExecutor().sendMessage("You are in lava!");
+                            ctx.getSource().sendRichReply("You are in lava!");
                             return Command.SINGLE_SUCCESS;
                         })).build(),
                 null,
@@ -169,14 +169,14 @@ public final class Registration {
                     .then(Commands.literal("item")
                         .then(Commands.argument("mat", MaterialArgumentType.item())
                             .executes(ctx -> {
-                                ctx.getSource().sendSuccess(Component.text(ctx.getArgument("mat", Material.class).name()), false);
+                                ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("mat", Material.class)), false);
                                 return Command.SINGLE_SUCCESS;
                             })
                         )
                     ).then(Commands.literal("block")
                         .then(Commands.argument("mat", MaterialArgumentType.block())
                             .executes(ctx -> {
-                                ctx.getSource().sendSuccess(Component.text(ctx.getArgument("mat", Material.class).name()), false);
+                                ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("mat", Material.class)), false);
                                 return Command.SINGLE_SUCCESS;
                             })
                         )
@@ -190,8 +190,8 @@ public final class Registration {
                             .then(Commands.argument("allow_inform_admins", BoolArgumentType.bool())
                                 .then(Commands.argument("msg", StringArgumentType.greedyString())
                                         .executes(ctx -> {
-                                            ctx.getSource().sendSuccess(
-                                                MiniMessage.miniMessage().deserialize(StringArgumentType.getString(ctx, "msg")),
+                                            ctx.getSource().sendRichSuccess(
+                                                StringArgumentType.getString(ctx, "msg"),
                                                 BoolArgumentType.getBool(ctx, "allow_inform_admins")
                                             );
                                             return Command.SINGLE_SUCCESS;
