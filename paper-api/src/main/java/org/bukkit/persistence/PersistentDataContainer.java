@@ -44,7 +44,6 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      *
      * @param dataKey the data key this value will be stored under
      * @param value the value to store in the tag
-     * @param <P> the generic java type of the tag value
      * @param <C> the generic type of the object to store
      *
      * @throws IllegalArgumentException if the data key is null
@@ -53,7 +52,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <P, C> void set(@NotNull PersistentDataKey<P, C> dataKey, @NotNull C value) {
+    default <C> void set(@NotNull PersistentDataKey<C> dataKey, @NotNull C value) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
         this.set(dataKey.getNamespacedKey(), dataKey.getDataType(), value);
     }
@@ -74,7 +73,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @param dataKey the data key to remove
      * @throws IllegalArgumentException if the provided data key is null
      */
-    default void remove(@NotNull PersistentDataKey<?, ?> dataKey) {
+    default void remove(@NotNull PersistentDataKey<?> dataKey) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
         this.remove(dataKey.getNamespacedKey());
     }

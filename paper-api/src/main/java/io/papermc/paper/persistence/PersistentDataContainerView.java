@@ -88,9 +88,8 @@ public interface PersistentDataContainerView {
      * @return if a value with the provided key and type exists
      * @throws IllegalArgumentException if the key to look up is null
      * @throws IllegalArgumentException if the type to cast the found object to is null
-     * @param <P> the generic type of the stored primitive
      */
-    default <P> boolean has(PersistentDataKey<P, ?> dataKey) {
+    default boolean has(PersistentDataKey<?> dataKey) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
         return has(dataKey.getNamespacedKey(), dataKey.getDataType());
     }
@@ -144,7 +143,6 @@ public interface PersistentDataContainerView {
      * {@link PersistentDataHolder} instance.
      *
      * @param dataKey the data key to look up in the custom tag map
-     * @param <P> the generic type of the stored primitive
      * @param <C> the generic type of the eventually created complex object
      * @return the value or {@code null} if no value was mapped under the given
      * value
@@ -156,7 +154,7 @@ public interface PersistentDataContainerView {
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <P, C> @Nullable C get(PersistentDataKey<P, C> dataKey) {
+    default <C> @Nullable C get(PersistentDataKey<C> dataKey) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
         return get(dataKey.getNamespacedKey(), dataKey.getDataType());
     }
@@ -169,7 +167,6 @@ public interface PersistentDataContainerView {
      * @param dataKey the data key to look up in the custom tag map
      * @param defaultValue the default value to return if no value was found for
      * the provided key
-     * @param <P> the generic type of the stored primitive
      * @param <C> the generic type of the eventually created complex object
      * @return the value or the default value if no value was mapped under the given key
      * @throws IllegalArgumentException if the data key to look up is null
@@ -179,7 +176,7 @@ public interface PersistentDataContainerView {
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <P, C> C getOrDefault(PersistentDataKey<P, C> dataKey, C defaultValue) {
+    default <C> C getOrDefault(PersistentDataKey<C> dataKey, C defaultValue) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
         return getOrDefault(dataKey.getNamespacedKey(), dataKey.getDataType(), defaultValue);
     }

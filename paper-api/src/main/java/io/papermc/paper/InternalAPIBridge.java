@@ -6,7 +6,6 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.persistence.PersistentDataKey;
-import io.papermc.paper.persistence.SimplePersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
@@ -126,7 +125,5 @@ public interface InternalAPIBridge {
 
     ComponentFlattener componentFlattener();
 
-    <P, C> PersistentDataKey<P, C> createPersistentDataKey(Key key, PersistentDataType<P, C> type);
-
-    <P> SimplePersistentDataKey<P> createSimplePersistentDataKey(Key key, PersistentDataType<P, P> type);
+    <C> PersistentDataKey<C> createPersistentDataKey(Key key, PersistentDataType<?, C> type);
 }

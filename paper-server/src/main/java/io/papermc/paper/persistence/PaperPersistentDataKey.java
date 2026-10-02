@@ -8,11 +8,11 @@ import org.jspecify.annotations.NullMarked;
 import java.util.Objects;
 
 @NullMarked
-public class PaperPersistentDataKey<P, C> implements PersistentDataKey<P, C> {
+public class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
     private final NamespacedKey key;
-    private final PersistentDataType<P, C> type;
+    private final PersistentDataType<?, C> type;
 
-    public PaperPersistentDataKey(final NamespacedKey key, final PersistentDataType<P, C> type) {
+    public PaperPersistentDataKey(final NamespacedKey key, final PersistentDataType<?, C> type) {
         Preconditions.checkState(key != null, "The key cannot be null");
         Preconditions.checkState(type != null, "The type cannot be null");
         this.key = Objects.requireNonNull(key);
@@ -30,7 +30,7 @@ public class PaperPersistentDataKey<P, C> implements PersistentDataKey<P, C> {
     }
 
     @Override
-    public PersistentDataType<P, C> getDataType() {
+    public PersistentDataType<?, C> getDataType() {
         return this.type;
     }
 }

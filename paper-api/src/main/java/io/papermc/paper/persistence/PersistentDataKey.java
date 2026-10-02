@@ -18,13 +18,11 @@ import org.jspecify.annotations.NullMarked;
  * <h2>Example usage</h2>
  * <pre>{@code
  * public class CustomLogic {
- *   // A SimplePersistentDataKey's type parameter is both the stored type and the retrievable type.
- *   public static final SimplePersistentDataKey<Integer> TRACKED_VALUE = PersistentDataKey.ofSimple(
+ *   public static final PersistentDataKey<Integer> TRACKED_VALUE = PersistentDataKey.ofSimple(
  *     Key.key("custom:tracked_value"),
  *     PersistentDataType.INTEGER
  *   );
- *   // Regular PersistentDataKeys must hold both the stored type and the retrievable type.
- *   public static final PersistentDataKey<byte[], UUID> OWNING_PLAYER = PersistentDataKey.of(
+ *   public static final PersistentDataKey<UUID> OWNING_PLAYER = PersistentDataKey.of(
  *     Key.key("custom:owning_player"),
  *     new UUIDTagType()
  *   );
@@ -41,37 +39,21 @@ import org.jspecify.annotations.NullMarked;
  * }
  * }</pre>
  *
- * @param <P> the primary object type that is stored in the given tag
  * @param <C> the retrieved object type when applying this tag type
  */
 @NullMarked
-public interface PersistentDataKey<P, C> {
+public interface PersistentDataKey<C> {
 
     /**
      * Creates a new {@link PersistentDataKey} with the given {@link Key} and {@link PersistentDataType}.
      *
      * @param key  the access key to store
      * @param type the persistent data type to reference
-     * @param <P>  the primary object type that is stored in the given tag
      * @param <C>  the retrieved object type when applying this tag type
      * @return a new {@link PersistentDataKey} of the given key and type
-     * @see #ofSimple(Key, PersistentDataType) create a simple data key
      */
-    static <P, C> PersistentDataKey<P, C> of(Key key, PersistentDataType<P, C> type) {
+    static <C> PersistentDataKey<C> of(Key key, PersistentDataType<?, C> type) {
         return InternalAPIBridge.get().createPersistentDataKey(key, type);
-    }
-
-    /**
-     * Creates a new {@link SimplePersistentDataKey} with the given {@link Key} and {@link PersistentDataType}.
-     *
-     * @param key  the access key to store
-     * @param type the persistent data type to reference
-     * @param <P>  the object type both stored in the tag and retrieved when applying the key
-     * @return a new {@link SimplePersistentDataKey} of the given key and type
-     * @see #of(Key, PersistentDataType) create a complex data key
-     */
-    static <P> SimplePersistentDataKey<P> ofSimple(Key key, PersistentDataType<P, P> type) {
-        return InternalAPIBridge.get().createSimplePersistentDataKey(key, type);
     }
 
     /**
@@ -87,5 +69,5 @@ public interface PersistentDataKey<P, C> {
     /**
      * {@return the data type of this {@link PersistentDataKey}}
      */
-    PersistentDataType<P, C> getDataType();
+    PersistentDataType<?, C> getDataType();
 }

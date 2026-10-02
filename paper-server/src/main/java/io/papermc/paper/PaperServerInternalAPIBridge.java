@@ -14,9 +14,7 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.persistence.PaperPersistentDataKey;
-import io.papermc.paper.persistence.PaperSimplePersistentDataKey;
 import io.papermc.paper.persistence.PersistentDataKey;
-import io.papermc.paper.persistence.SimplePersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager;
 import io.papermc.paper.util.MCUtil;
@@ -265,12 +263,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public <P, C> PersistentDataKey<P, C> createPersistentDataKey(final Key key, final PersistentDataType<P, C> type) {
+    public <C> PersistentDataKey<C> createPersistentDataKey(final Key key, final PersistentDataType<?, C> type) {
         return new PaperPersistentDataKey<>(new NamespacedKey(key.namespace(), key.value()), type);
-    }
-
-    @Override
-    public <P> SimplePersistentDataKey<P> createSimplePersistentDataKey(final Key key, final PersistentDataType<P, P> type) {
-        return new PaperSimplePersistentDataKey<>(new NamespacedKey(key.namespace(), key.value()), type);
     }
 }
