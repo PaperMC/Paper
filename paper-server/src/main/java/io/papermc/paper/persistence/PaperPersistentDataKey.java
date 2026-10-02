@@ -5,7 +5,6 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
 import org.jspecify.annotations.NullMarked;
-import java.util.Objects;
 
 @NullMarked
 public class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
