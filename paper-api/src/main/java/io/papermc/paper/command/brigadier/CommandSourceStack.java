@@ -4,6 +4,8 @@ import com.mojang.brigadier.RedirectModifier;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import net.kyori.adventure.text.ComponentLike;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -93,6 +95,21 @@ public interface CommandSourceStack {
     void sendReply(ComponentLike message);
 
     /**
+     * Sends a system message with the MiniMessage format to the {@link #getExecutor()}
+     * if it is a {@link Player}, otherwise sends it to the {@link #getSender()}.
+     *
+     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.</p>
+     *
+     * @param message the MiniMessage message to send
+     * @param resolvers resolvers to use
+     */
+    default void sendRichReply(String message, TagResolver... resolvers) {
+        sendReply(MiniMessage.miniMessage().deserialize(message, resolvers));
+    }
+
+    /**
      * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
      * according to vanilla semantics.
      *
@@ -119,6 +136,45 @@ public interface CommandSourceStack {
     }
 
     /**
+     * Sends a system message with the MiniMessage format to the {@link #getSender()}, admins, and console indicating
+     * successful command execution according to vanilla semantics.
+     *
+     * <p>This currently includes checking for environments with suppressed output,
+     * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
+     *
+     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.</p>
+     *
+     * @param message the MiniMessage message to send
+     * @param allowInformingAdmins whether admins and console may be informed of this success
+     * @param resolvers resolvers to use
+     */
+    default void sendRichSuccess(String message, boolean allowInformingAdmins, TagResolver... resolvers) {
+        sendSuccess(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers), allowInformingAdmins);
+    }
+
+    /**
+     * Sends a system message with the MiniMessage format to the {@link #getSender()}, admins, and console indicating
+     * successful command execution according to vanilla semantics. This method informs admins and the console of
+     * this success.
+     *
+     * <p>This currently includes checking for environments with suppressed output,
+     * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
+     *
+     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.</p>
+     *
+     * @param message the MiniMessage message to send
+     * @param resolvers resolvers to use
+     * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
+     */
+    default void sendRichSuccess(String message, TagResolver... resolvers) {
+        sendRichSuccess(message, true, resolvers);
+    }
+
+    /**
      * Sends a system message indicating a failed command execution to the {@link #getSender()}.
      * Does not apply red styling to the message as vanilla does to allow for custom failure message styling.
      *
@@ -127,4 +183,21 @@ public interface CommandSourceStack {
      * @param message the message to send
      */
     void sendFailure(ComponentLike message);
+
+    /**
+     * Sends a system message with the MiniMessage format indicating a failed command execution to the{@link #getSender()}.
+     * Does not apply red styling to the message as vanilla does to allow for custom failure message styling.
+     *
+     * <p>Respects vanilla semantics for accepting failure output and suppressed output environments.</p>
+     *
+     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.</p>
+     *
+     * @param message the MiniMessage message to send
+     * @param resolvers resolvers to use
+     */
+    default void sendRichFailure(String message, TagResolver... resolvers) {
+        sendFailure(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers));
+    }
 }
