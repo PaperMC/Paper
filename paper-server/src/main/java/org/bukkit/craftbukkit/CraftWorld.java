@@ -953,7 +953,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // Be more lenient than ServerLevel#tryAddFreshEntityWithPassengers and ignore already added entities instead of failing completely.
         // This otherwise causes problems when an entity already added to the world is added as a passenger inside of the pre-spawn consumer.
         entity.getSelfAndPassengers()
-            .filter(e -> !this.getHandle().moonrise$getEntityLookup().hasEntity(e.getUUID()))
+            .filter(e -> !e.valid)
             .forEach(e -> this.getHandle().addFreshEntity(e, reason));
     }
 
