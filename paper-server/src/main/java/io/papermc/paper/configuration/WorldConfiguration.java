@@ -572,6 +572,7 @@ public class WorldConfiguration extends ConfigurationPart {
     public class CommandBlocks extends ConfigurationPart {
         public int permissionsLevel = 2;
         public boolean forceFollowPermLevel = true;
+        public String timeFormatPattern = "HH:mm:ss";
     }
 
     public Misc misc;
