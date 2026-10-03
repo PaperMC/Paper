@@ -1,8 +1,7 @@
 package org.bukkit.entity.minecart;
 
 import org.bukkit.entity.Minecart;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface CommandMinecart extends Minecart, io.papermc.paper.command.CommandBlockHolder { // Paper
 
@@ -13,7 +12,6 @@ public interface CommandMinecart extends Minecart, io.papermc.paper.command.Comm
      *
      * @return Command that this CommandMinecart will run when powered.
      */
-    @NotNull
     public String getCommand();
 
     /**
