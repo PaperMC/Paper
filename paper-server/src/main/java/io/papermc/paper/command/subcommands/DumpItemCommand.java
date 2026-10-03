@@ -53,18 +53,12 @@ public final class DumpItemCommand {
         return Commands.literal("dumpitem")
             .requires(PaperCommand.hasPermission("dumpitem"))
             .executes(context -> {
-                if (!(context.getSource().getExecutor() instanceof Player player)) {
-                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
-                }
-                doDumpItem(player, false, context.getSource().getSender());
+                doDumpItem(context.getSource().getPlayerOrThrow(), false, context.getSource().getSender());
                 return Command.SINGLE_SUCCESS;
             })
             .then(Commands.literal("all")
                 .executes(context -> {
-                    if (!(context.getSource().getExecutor() instanceof Player player)) {
-                        throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
-                    }
-                    doDumpItem(player, true, context.getSource().getSender());
+                    doDumpItem(context.getSource().getPlayerOrThrow(), true, context.getSource().getSender());
                     return Command.SINGLE_SUCCESS;
                 })
             );
