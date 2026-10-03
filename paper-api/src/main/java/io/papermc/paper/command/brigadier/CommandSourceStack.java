@@ -1,5 +1,6 @@
 package io.papermc.paper.command.brigadier;
 
+import com.google.common.base.Preconditions;
 import com.mojang.brigadier.RedirectModifier;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
@@ -91,6 +92,7 @@ public interface CommandSourceStack {
      * otherwise sends a system message to the {@link #getSender()}.
      *
      * @param message the message to send
+     * @throws IllegalArgumentException if the message is null
      */
     void sendReply(ComponentLike message);
 
@@ -104,8 +106,10 @@ public interface CommandSourceStack {
      *
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
+     * @throws IllegalArgumentException if the message is null
      */
     default void sendRichReply(String message, TagResolver... resolvers) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendReply(MiniMessage.miniMessage().deserialize(message, resolvers));
     }
 
@@ -118,6 +122,7 @@ public interface CommandSourceStack {
      *
      * @param message the message to send
      * @param allowInformingAdmins whether admins and console may be informed of this success
+     * @throws IllegalArgumentException if the message is null
      */
     void sendSuccess(ComponentLike message, boolean allowInformingAdmins);
 
@@ -130,6 +135,7 @@ public interface CommandSourceStack {
      *
      * @param message the message to send
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
+     * @throws IllegalArgumentException if the message is null
      */
     default void sendSuccess(ComponentLike message) {
         this.sendSuccess(message, true);
@@ -149,8 +155,10 @@ public interface CommandSourceStack {
      * @param message the MiniMessage message to send
      * @param allowInformingAdmins whether admins and console may be informed of this success
      * @param resolvers resolvers to use
+     * @throws IllegalArgumentException if the message is null
      */
     default void sendRichSuccess(String message, boolean allowInformingAdmins, TagResolver... resolvers) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendSuccess(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers), allowInformingAdmins);
     }
 
@@ -169,6 +177,7 @@ public interface CommandSourceStack {
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
+     * @throws IllegalArgumentException if the message is null
      */
     default void sendRichSuccess(String message, TagResolver... resolvers) {
         this.sendRichSuccess(message, true, resolvers);
@@ -181,6 +190,7 @@ public interface CommandSourceStack {
      * <p>Respects vanilla semantics for accepting failure output and suppressed output environments.</p>
      *
      * @param message the message to send
+     * @throws IllegalArgumentException if the message is null
      */
     void sendFailure(ComponentLike message);
 
@@ -196,8 +206,10 @@ public interface CommandSourceStack {
      *
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
+     * @throws IllegalArgumentException if the message is null
      */
     default void sendRichFailure(String message, TagResolver... resolvers) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendFailure(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers));
     }
 }
