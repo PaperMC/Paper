@@ -114,8 +114,7 @@ dependencies {
     implementation("ca.spottedleaf.leafpile:common")
     implementation("ca.spottedleaf.leafpile:concurrentutil")
     implementation("ca.spottedleaf.leafpile:converter")
-    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation("org.jline:jline-terminal-ffm:4.4.6")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
 
