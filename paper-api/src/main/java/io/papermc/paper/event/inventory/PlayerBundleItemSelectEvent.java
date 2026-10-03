@@ -178,7 +178,7 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
         /**
          * Returns the direction opposite to this direction.
          *
-         * @return the flipped direction
+         * @return the flipped direction or {@link #UNKNOWN} if the direction is unknown
          */
         public Direction flip() {
             return switch (this) {
