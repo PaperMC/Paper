@@ -47,8 +47,8 @@ public class CraftChunk implements Chunk {
     private final int x;
     private final int z;
     private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = FeatureHooks.emptyPalettedBlockContainer();
-    private static final byte[] FULL_LIGHT = new byte[2048];
-    private static final byte[] EMPTY_LIGHT = new byte[2048];
+    private static final DataLayer FULL_LIGHT = new DataLayer(15);
+    private static final DataLayer EMPTY_LIGHT = new DataLayer(0);
 
     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
         this.level = (ServerLevel) chunk.getLevel();
@@ -271,8 +271,9 @@ public class CraftChunk implements Chunk {
 
         LevelChunkSection[] cs = chunk.getSections();
         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
-        byte[][] sectionSkyLights = includeLightData ? new byte[cs.length][] : null;
-        byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
+        DataLayer[] sectionSkyLights = includeLightData ? new DataLayer[cs.length] : null;
+        DataLayer[] sectionEmitLights = includeLightData ? new DataLayer[cs.length] : null;
+        DataLayer defaultSky = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
 
@@ -288,22 +289,11 @@ public class CraftChunk implements Chunk {
             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
             if (includeLightData) {
-                LevelLightEngine lightEngine = this.level.getLightEngine();
-                DataLayer skyLightArray = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-                if (skyLightArray == null) {
-                    sectionSkyLights[i] = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
-                } else {
-                    sectionSkyLights[i] = new byte[2048];
-                    System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
-                }
+                DataLayer skyLightArray = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.SKY, i);
+                sectionSkyLights[i] = skyLightArray == null ? defaultSky : skyLightArray;
 
-                DataLayer emitLightArray = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-                if (emitLightArray == null) {
-                    sectionEmitLights[i] = CraftChunk.EMPTY_LIGHT;
-                } else {
-                    sectionEmitLights[i] = new byte[2048];
-                    System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
-                }
+                DataLayer emitLightArray = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.BLOCK, i);
+                sectionEmitLights[i] = emitLightArray == null ? CraftChunk.EMPTY_LIGHT : emitLightArray;
             }
 
             if (biome != null) {
@@ -377,8 +367,8 @@ public class CraftChunk implements Chunk {
         /* Fill with empty data */
         int hSection = actual.getSectionsCount();
         PalettedContainer[] blockIDs = new PalettedContainer[hSection];
-        byte[][] skyLight = new byte[hSection][];
-        byte[][] emitLight = new byte[hSection][];
+        DataLayer[] skyLight = new DataLayer[hSection];
+        DataLayer[] emitLight = new DataLayer[hSection];
         boolean[] empty = new boolean[hSection];
         PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[hSection] : null;
         Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = world.getHandle().palettedContainerFactory().biomeContainerCodec();
@@ -401,9 +391,5 @@ public class CraftChunk implements Chunk {
         Preconditions.checkArgument(0 <= x && x <= 15, "x out of range (expected 0-15, got %s)", x);
         Preconditions.checkArgument(minY <= y && y <= maxY, "y out of range (expected %s-%s, got %s)", minY, maxY, y);
         Preconditions.checkArgument(0 <= z && z <= 15, "z out of range (expected 0-15, got %s)", z);
-    }
-
-    static {
-        Arrays.fill(FULL_LIGHT, (byte) 0xFF);
     }
 }

@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..fff7a796a61542213bdaa417d44e25cd
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 4a62c50d0b4fe82c3aacaa56b303b9699120c778..92238518c25dd765b356ff628fd373997464ea82 100644
+index aa14dd369d5d2c5c843839f289afdc39c200f0c3..76f990f150f040b1ad6d7d5b91cfb34ebd6f436a 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -23676,7 +23676,7 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608206a685a 100644
+index dec75972dc30d954d9054f82940263506d1b82d6..df34894fbb1d0a74cbdbcc4d800cb1061344aff5 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -23908,6 +23908,26 @@ index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608
      }
  
      public static void flushAsyncAppenders() {
+@@ -263,8 +207,15 @@ public final class FeatureHooks {
+     }
+ 
+     public static net.minecraft.world.level.chunk.DataLayer copyLightDataLayer(Level level, net.minecraft.world.level.chunk.ChunkAccess chunk, net.minecraft.world.level.LightLayer layer, int sectionIndex) {
+-        net.minecraft.world.level.chunk.DataLayer view = level.getLightEngine().getLayerListener(layer).getDataLayerData(net.minecraft.core.SectionPos.of(chunk.getPos(), chunk.getSectionYFromSectionIndex(sectionIndex)));
+-        return view == null ? null : view.copy();
++        // Paper start - starlight
++        ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] nibbles;
++        if (layer == net.minecraft.world.level.LightLayer.BLOCK) {
++            nibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
++        } else {
++            nibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
++        }
++        return nibbles[sectionIndex + ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level) - ca.spottedleaf.moonrise.common.util.WorldUtil.getMinLightSection(level)].toVanillaNibble();
++        // Paper end - starlight
+     }
+ 
+-}
+\ No newline at end of file
++}
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..d86bd11e0155f767c3bf66ac05fa4acf6d2bfccb
