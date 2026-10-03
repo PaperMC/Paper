@@ -337,6 +337,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean preventNegativeVillagerDemand = false;
         @Comment("Whether the nether dimension is enabled and will be loaded.")
         public boolean enableNether = true;
+        @Comment("Runs garbage collection after chunks have been unloaded while the server is paused due to being empty.")
+        public boolean runGcOnEmptyServerPause = false;
         @Comment("Fix for MC-301114. This removes the oldest combat entry when it hits the cap, to fix a memory leak on constant entity damage.")
         public IntOr.Disabled maxTrackingCombatEntries = new IntOr.Disabled(OptionalInt.of(10240));
     }
