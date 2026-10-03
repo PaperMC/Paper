@@ -5,7 +5,9 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +38,8 @@ public class HandlerList {
     /**
      * Event types which have instantiated a {@link HandlerList}.
      */
-    private static final java.util.Set<String> EVENT_TYPES = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    private static final Map<String, HandlerList> EVENT_TYPES = new ConcurrentHashMap<>();
 
     /**
      * Bake all handler lists. Best used just after all normal event
@@ -102,7 +105,7 @@ public class HandlerList {
         java.lang.StackWalker.getInstance(java.util.EnumSet.of(java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE), 4)
             .walk(s -> s.filter(f -> Event.class.isAssignableFrom(f.getDeclaringClass())).findFirst())
             .map(f -> f.getDeclaringClass().getName())
-            .ifPresent(EVENT_TYPES::add);
+            .ifPresent(name -> EVENT_TYPES.put(name, this));
 
         handlerslots = new EnumMap<>(EventPriority.class);
         for (EventPriority o : EventPriority.values()) {
