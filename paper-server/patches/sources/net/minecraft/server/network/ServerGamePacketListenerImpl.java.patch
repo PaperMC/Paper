@@ -71,17 +71,38 @@
      private SignedMessageChain.Decoder signedMessageDecoder;
      private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
      private int nextChatIndex;
-@@ -283,6 +_,9 @@
+@@ -283,6 +_,30 @@
      private int lastSupportedBlocksSend;
      private final ServerCommandSuggestionsProvider commandSuggestionsProvider;
      private int vehiclePositionLastResetAt;
 +    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
 +    private final io.papermc.paper.event.packet.ClientTickEndEvent tickEndEvent; // Paper - add client tick end event
 +    public final io.papermc.paper.connection.PaperPlayerGameConnection playerGameConnection; // Paper
++    // Paper start - allow trusted players to bypass the packet limiter
++    private volatile boolean packetLimiterBypass;
++    private volatile boolean packetLimiterBypassDisabled;
++
++    public boolean shouldBypassPacketLimiter() {
++        return !this.packetLimiterBypassDisabled && this.packetLimiterBypass;
++    }
++
++    private void disablePacketLimiterBypass() {
++        this.packetLimiterBypassDisabled = true;
++        this.packetLimiterBypass = false;
++    }
++
++    private void updatePacketLimiterBypass() {
++        if (this.waitingForSwitchToConfig || !this.connection.isConnected() || this.packetLimiterBypassDisabled) {
++            this.packetLimiterBypass = false;
++            return;
++        }
++        this.packetLimiterBypass = this.player.getBukkitEntity().hasPermission(io.papermc.paper.permissions.PaperPermissions.PACKET_LIMITER_BYPASS);
++    }
++    // Paper end - allow trusted players to bypass the packet limiter
  
      public ServerGamePacketListenerImpl(final MinecraftServer server, final Connection connection, final ServerPlayer player, final CommonListenerCookie cookie) {
          super(server, connection, cookie);
-@@ -294,9 +_,23 @@
+@@ -294,12 +_,27 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
@@ -107,6 +128,10 @@
  
      @Override
      public void tick() {
++        this.updatePacketLimiterBypass(); // Paper - allow trusted players to bypass the packet limiter
+         if (this.ackBlockChangesUpTo > -1) {
+             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
+             this.ackBlockChangesUpTo = -1;
 @@ -311,11 +_,13 @@
              this.commandSpamThrottler.tick();
              this.dropSpamThrottler.tick();
@@ -1310,7 +1335,7 @@
                      return;
                  }
              }
-@@ -1531,23 +_,42 @@
+@@ -1531,23 +_,43 @@
      @Override
      public void onDisconnect(final DisconnectionDetails details) {
          LOGGER.info("{} lost connection: {}", this.player.getPlainTextName(), details.reason().getString());
@@ -1329,6 +1354,7 @@
 +
 +    private void removePlayerFromWorld(net.kyori.adventure.text.@Nullable Component quitMessage) {
 +        // Paper end - Fix kick event leave message not being sent
++        this.disablePacketLimiterBypass(); // Paper - do not retain packet limiter bypass after leaving PLAY
          this.chatMessageChain.close();
 +        // CraftBukkit start - Replace vanilla quit message handling with our own.
 +        /*
@@ -1735,7 +1761,7 @@
      }
  
      public void sendDisguisedChatMessage(final Component content, final ChatType.Bound chatType) {
-@@ -1868,6 +_,17 @@
+@@ -1868,7 +_,19 @@
          return this.connection.getRemoteAddress();
      }
  
@@ -1751,8 +1777,10 @@
 +    // Spigot end
 +
      public void switchToConfig() {
++        this.disablePacketLimiterBypass(); // Paper - stop bypassing before leaving PLAY
          this.waitingForSwitchToConfig = true;
          this.removePlayerFromWorld();
+         this.send(ClientboundStartConfigurationPacket.INSTANCE);
 @@ -1883,20 +_,27 @@
      @Override
      public void handleAttack(final ServerboundAttackPacket packet) {

@@ -12,7 +12,7 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -79,6 +_,44 @@
+@@ -79,6 +_,49 @@
      private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -41,6 +41,11 @@
 +    protected final java.util.Map<Class<? extends net.minecraft.network.protocol.Packet<?>>, io.papermc.paper.util.IntervalledCounter> packetSpecificLimits = new java.util.HashMap<>();
 +
 +    private boolean stopReadingPackets;
++    static boolean shouldBypassPacketLimiter(final @Nullable PacketListener packetListener) {
++        return packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl gamePacketListener
++            && gamePacketListener.shouldBypassPacketLimiter();
++    }
++
 +    private void killForPacketSpam() {
 +        this.sendPacket(new ClientboundDisconnectPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage)), PacketSendListener.thenRun(() -> {
 +            this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage));
@@ -90,7 +95,7 @@
 +            // Paper start - packet limiter
 +            if (cause instanceof SkipPacketDecoderException && !this.stopReadingPackets) {
 +                this.receivedPackets++;
-+                if (this.allPacketCounts != null) {
++                if (!shouldBypassPacketLimiter(this.packetListener) && this.allPacketCounts != null) {
 +                    synchronized (this.PACKET_LIMIT_LOCK) {
 +                        this.allPacketCounts.updateAndAdd(1, System.nanoTime());
 +                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
@@ -142,8 +147,8 @@
 +            if (this.stopReadingPackets) {
 +                return;
 +            }
-+            if (this.allPacketCounts != null ||
-+                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
++            if (!shouldBypassPacketLimiter(packetListener) && (this.allPacketCounts != null ||
++                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass()))) {
 +                long time = System.nanoTime();
 +                synchronized (PACKET_LIMIT_LOCK) {
 +                    if (this.allPacketCounts != null) {
