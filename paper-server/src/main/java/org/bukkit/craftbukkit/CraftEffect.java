@@ -26,12 +26,16 @@ public class CraftEffect {
             case SMASH_ATTACK:
             case TRIAL_SPAWNER_DETECT_PLAYER_OMINOUS:
             case BONE_MEAL_USE:
+            case ENDER_DRAGON_EGG_TELEPORT:
+            case SHULKER_TELEPORT:
+            case CONSUME_EFFECT_TELEPORT:
+            case ENDERMAN_TELEPORT:
                 dataValue = (Integer) data;
                 break;
             case POTION_BREAK:
             case INSTANT_POTION_BREAK:
                 final Color color = (Color) data;
-                Preconditions.checkArgument(color.getAlpha() == 0xFF, "Alpha channel is not supported");
+                Preconditions.checkArgument(color.getAlpha() == 255, "Alpha channel is not supported");
                 dataValue = color.asRGB();
                 break;
             case RECORD_PLAY:
@@ -46,6 +50,8 @@ public class CraftEffect {
                 dataValue = registryAccess.lookupOrThrow(Registries.JUKEBOX_SONG).getId(CraftJukeboxSong.bukkitToMinecraftHolder(song).value());
                 break;
             case WHITE_SMOKE_SHOOT:
+            case DESTROY_PROGRESS:
+            case DESTROY_PROGRESS_WITH_SOUND:
                 final BlockFace face = (BlockFace) data;
                 Preconditions.checkArgument(face.isCartesian(), face + " isn't cartesian");
                 dataValue = org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(face).get3DDataValue();
@@ -88,6 +94,7 @@ public class CraftEffect {
                 }
                 // use the blockdata otherwise
             case DESTROY_BLOCK:
+            case DESTROY_BLOCK_WITH_SOUND:
             case BRUSH_BLOCK_COMPLETE:
                 dataValue = Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
                 break;

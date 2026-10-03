@@ -164,6 +164,7 @@ import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
+import org.bukkit.craftbukkit.inventory.CraftBrewingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftItemCraftResult;
@@ -219,6 +220,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.BlastingRecipe;
+import org.bukkit.inventory.BrewingRecipe;
 import org.bukkit.inventory.CampfireRecipe;
 import org.bukkit.inventory.ComplexRecipe;
 import org.bukkit.inventory.FurnaceRecipe;
@@ -255,6 +257,7 @@ import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -401,7 +404,7 @@ public final class CraftServer implements Server {
         this.playerList = (DedicatedPlayerList) playerList;
         this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
-        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
 
@@ -1428,6 +1431,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public PluginCommand getPluginCommand(String name) {
         Command command = this.commandMap.getCommand(name);
 
@@ -1446,36 +1450,23 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
-        CraftRecipe toAdd;
-        if (recipe instanceof CraftRecipe) {
-            toAdd = (CraftRecipe) recipe;
-        } else {
-            if (recipe instanceof ShapedRecipe) {
-                toAdd = CraftShapedRecipe.fromBukkitRecipe((ShapedRecipe) recipe);
-            } else if (recipe instanceof ShapelessRecipe) {
-                toAdd = CraftShapelessRecipe.fromBukkitRecipe((ShapelessRecipe) recipe);
-            } else if (recipe instanceof FurnaceRecipe) {
-                toAdd = CraftFurnaceRecipe.fromBukkitRecipe((FurnaceRecipe) recipe);
-            } else if (recipe instanceof BlastingRecipe) {
-                toAdd = CraftBlastingRecipe.fromBukkitRecipe((BlastingRecipe) recipe);
-            } else if (recipe instanceof CampfireRecipe) {
-                toAdd = CraftCampfireRecipe.fromBukkitRecipe((CampfireRecipe) recipe);
-            } else if (recipe instanceof SmokingRecipe) {
-                toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
-            } else if (recipe instanceof StonecuttingRecipe) {
-                toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
-            } else if (recipe instanceof SmithingTransformRecipe) {
-                toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
-            } else if (recipe instanceof SmithingTrimRecipe) {
-                toAdd = CraftSmithingTrimRecipe.fromBukkitRecipe((SmithingTrimRecipe) recipe);
-            } else if (recipe instanceof TransmuteRecipe) {
-                toAdd = CraftTransmuteRecipe.fromBukkitRecipe((TransmuteRecipe) recipe);
-            } else if (recipe instanceof ComplexRecipe) {
-                throw new UnsupportedOperationException("Cannot add custom complex recipe");
-            } else {
-                return false;
-            }
-        }
+        CraftRecipe toAdd = switch (recipe) {
+            case final CraftRecipe r -> r;
+            case final ShapedRecipe r -> CraftShapedRecipe.fromBukkitRecipe(r);
+            case final ShapelessRecipe r -> CraftShapelessRecipe.fromBukkitRecipe(r);
+            case final FurnaceRecipe r -> CraftFurnaceRecipe.fromBukkitRecipe(r);
+            case final BlastingRecipe r -> CraftBlastingRecipe.fromBukkitRecipe(r);
+            case final CampfireRecipe r -> CraftCampfireRecipe.fromBukkitRecipe(r);
+            case final SmokingRecipe r -> CraftSmokingRecipe.fromBukkitRecipe(r);
+            case final StonecuttingRecipe r -> CraftStonecuttingRecipe.fromBukkitRecipe(r);
+            case final SmithingTransformRecipe r -> CraftSmithingTransformRecipe.fromBukkitRecipe(r);
+            case final SmithingTrimRecipe r -> CraftSmithingTrimRecipe.fromBukkitRecipe(r);
+            case final TransmuteRecipe r -> CraftTransmuteRecipe.fromBukkitRecipe(r);
+            case final BrewingRecipe r -> CraftBrewingRecipe.fromBukkitRecipe(r);
+            case final ComplexRecipe _ -> throw new UnsupportedOperationException("Cannot add custom complex recipe");
+            case null, default -> null;
+        };
+        if (toAdd == null) return false;
         toAdd.addToRecipeManager();
         // Paper start - API for updating recipes on clients
         if (true || resendRecipes) { // Always needs to be resent now... TODO
@@ -2294,6 +2285,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
     }

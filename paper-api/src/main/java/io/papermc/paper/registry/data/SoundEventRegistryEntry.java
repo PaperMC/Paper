@@ -10,7 +10,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * A data-centric version-specific registry entry for the {@link Sound} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SoundEventRegistryEntry {
 
@@ -38,7 +37,6 @@ public interface SoundEventRegistryEntry {
      *     <li>{@link #location(Key)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends SoundEventRegistryEntry, RegistryBuilder<Sound> {
 
