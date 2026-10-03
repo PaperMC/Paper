@@ -87,7 +87,6 @@ public interface PersistentDataContainerView {
      * @param dataKey the data key the value is stored under
      * @return if a value with the provided key and type exists
      * @throws IllegalArgumentException if the key to look up is null
-     * @throws IllegalArgumentException if the type to cast the found object to is null
      */
     default boolean has(PersistentDataKey<?> dataKey) {
         Preconditions.checkState(dataKey != null, "The data key cannot be null");
@@ -147,8 +146,6 @@ public interface PersistentDataContainerView {
      * @return the value or {@code null} if no value was mapped under the given
      * value
      * @throws IllegalArgumentException if the data key to look up is null
-     * @throws IllegalArgumentException if the type to cast the found object to is
-     * null
      * @throws IllegalArgumentException if a value exists under the given key,
      * but cannot be accessed using the given type
      * @throws IllegalArgumentException if no suitable adapter was found for
@@ -170,7 +167,6 @@ public interface PersistentDataContainerView {
      * @param <C> the generic type of the eventually created complex object
      * @return the value or the default value if no value was mapped under the given key
      * @throws IllegalArgumentException if the data key to look up is null
-     * @throws IllegalArgumentException if the type to cast the found object to is null
      * @throws IllegalArgumentException if a value exists under the given key,
      * but cannot be accessed using the given type
      * @throws IllegalArgumentException if no suitable adapter was found for
