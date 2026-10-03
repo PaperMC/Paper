@@ -2,7 +2,6 @@ package io.papermc.paper.command.brigadier.argument.operation;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a simple arithmetic operation between two integers.
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * of two given values.
  */
 @ApiStatus.Experimental
-@NullMarked
 public interface ScoreboardOperation {
 
     /**
@@ -32,6 +30,7 @@ public interface ScoreboardOperation {
      * @param left  left side of the expression
      * @param right right side of the expression
      * @return result of this operation
+     * @throws CommandSyntaxException on division by zero
      * @see Result
      */
     Result apply(int left, int right) throws CommandSyntaxException;

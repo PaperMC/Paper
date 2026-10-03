@@ -8,6 +8,11 @@ import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.io.IOException;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.util.Services;
@@ -32,11 +37,6 @@ import org.bukkit.scoreboard.ScoreHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
-import java.io.IOException;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -91,7 +91,7 @@ public interface InternalAPIBridge {
     Set<Pose> validMannequinPoses();
 
     /**
-     * Creates a wrapping score holder
+     * Creates a wrapping score holder.
      *
      * @param entry the entry to wrap
      * @return a wrapping ScoreHolder
