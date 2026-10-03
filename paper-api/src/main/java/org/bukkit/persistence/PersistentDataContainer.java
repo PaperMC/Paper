@@ -1,5 +1,7 @@
 package org.bukkit.persistence;
 
+import com.google.common.base.Preconditions;
+import io.papermc.paper.persistence.PersistentDataKey;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,11 +28,34 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @throws IllegalArgumentException if the key is null
      * @throws IllegalArgumentException if the type is null
      * @throws IllegalArgumentException if the value is null. Removing a tag should
-     * be done using {@link #remove(NamespacedKey)}
+     * be done using {@link #remove(NamespacedKey)} or {@link #remove(PersistentDataKey)}
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     <P, C> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type, @NotNull C value);
+
+    /**
+     * Stores a metadata value on the {@link PersistentDataHolder} instance.
+     * <p>
+     * This API cannot be used to manipulate minecraft data, as the values will
+     * be stored using your namespace. This method will override any existing
+     * value the {@link PersistentDataHolder} may have stored under the provided
+     * key.
+     *
+     * @param dataKey the data key this value will be stored under
+     * @param value the value to store in the tag
+     * @param <C> the generic type of the object to store
+     *
+     * @throws IllegalArgumentException if the data key is null
+     * @throws IllegalArgumentException if the value is null. Removing a tag should
+     * be done using {@link #remove(NamespacedKey)} or {@link #remove(PersistentDataKey)}
+     * @throws IllegalArgumentException if no suitable adapter was found for
+     * the {@link PersistentDataType#getPrimitiveType()}
+     */
+    default <C> void set(@NotNull PersistentDataKey<C> dataKey, @NotNull C value) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        this.set(dataKey.getKey(), dataKey.getDataType(), value);
+    }
     // Paper - move to PersistentDataContainerView
 
     /**
@@ -41,6 +66,17 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @throws IllegalArgumentException if the provided key is null
      */
     void remove(@NotNull NamespacedKey key);
+
+    /**
+     * Removes a custom key from the {@link PersistentDataHolder} instance.
+     *
+     * @param dataKey the data key to remove
+     * @throws IllegalArgumentException if the provided data key is null
+     */
+    default void remove(@NotNull PersistentDataKey<?> dataKey) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        this.remove(dataKey.getKey());
+    }
     // Paper - move to PersistentDataContainerView
 
     // Paper start - byte array serialization
