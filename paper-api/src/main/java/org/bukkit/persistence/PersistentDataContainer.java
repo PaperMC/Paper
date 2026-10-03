@@ -48,7 +48,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      *
      * @throws IllegalArgumentException if the data key is null
      * @throws IllegalArgumentException if the value is null. Removing a tag should
-     * be done using {@link #remove(NamespacedKey)} pr {@link #remove(PersistentDataKey)}
+     * be done using {@link #remove(NamespacedKey)} or {@link #remove(PersistentDataKey)}
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
