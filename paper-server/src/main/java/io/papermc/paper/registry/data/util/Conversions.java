@@ -57,7 +57,7 @@ public class Conversions {
     }
 
     public <M> Holder.Reference<M> getReferenceHolder(final ResourceKey<M> key) {
-        return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
+        return this.lookup.lookup(key.registryKey()).orElseThrow().getOrThrow(key);
     }
 
     @Contract("null -> null; !null -> !null")

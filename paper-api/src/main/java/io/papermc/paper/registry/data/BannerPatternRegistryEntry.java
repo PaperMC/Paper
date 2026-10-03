@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link PatternType} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BannerPatternRegistryEntry {
 
@@ -36,7 +35,6 @@ public interface BannerPatternRegistryEntry {
      *     <li>{@link #translationKey(String)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends BannerPatternRegistryEntry, RegistryBuilder<PatternType> {
 

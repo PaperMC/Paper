@@ -1,20 +1,86 @@
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 +++ b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
-@@ -265,7 +_,7 @@
-     @Override
-     public void buildSurface(final WorldGenRegion region, final StructureManager structureManager, final RandomState randomState, final ChunkAccess protoChunk) {
+@@ -220,9 +_,10 @@
+         final BiomeManager biomeManager,
+         final Set<Holder<Biome>> possibleBiomes,
+         final MaterialRule materialRule
++        , final net.minecraft.server.level.ServerLevel serverLevel // Paper - Flat bedrock generator settings
+     ) {
          if (!SharedConstants.debugVoidTerrain(protoChunk.getPos()) && !SharedConstants.DEBUG_DISABLE_SURFACE) {
--            WorldGenerationContext context = new WorldGenerationContext(this, region);
-+            WorldGenerationContext context = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper - Flat bedrock generator settings
-             Set<Holder<Biome>> possibleBiomes = collectPossibleBiomes(region, 1);
-             this.buildSurface(protoChunk, context, randomState, structureManager, region.getBiomeManager(), Blender.of(region), possibleBiomes);
+-            WorldGenerationContext context = new WorldGenerationContext(this, protoChunk.getHeightAccessorForGeneration());
++            WorldGenerationContext context = new WorldGenerationContext(this, protoChunk.getHeightAccessorForGeneration(), serverLevel); // Paper - Flat bedrock generator settings
+             randomState.surfaceSystem().buildSurface(randomState, biomeManager, context, protoChunk, noiseChunk, materialRule, possibleBiomes);
          }
-@@ -319,7 +_,7 @@
-             NoiseChunk noiseChunk = chunk.getOrCreateNoiseChunk(c -> this.createNoiseChunk(c, structureManager, Blender.of(region), randomState));
-             Aquifer aquifer = noiseChunk.aquifer();
-             CarvingContext context = new CarvingContext(
--                this, region.registryAccess(), chunk.getHeightAccessorForGeneration(), noiseChunk, randomState, this.settings.value().surfaceRule()
-+                this, region.registryAccess(), chunk.getHeightAccessorForGeneration(), noiseChunk, randomState, this.settings.value().surfaceRule(), region.getMinecraftWorld() // Paper - Flat bedrock generator settings
-             );
-             CarvingMask mask = ((ProtoChunk)chunk).getOrCreateCarvingMask();
+     }
+@@ -241,7 +_,7 @@
+             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
+             int range = 8;
+             ChunkPos pos = chunk.getPos();
+-            WorldGenerationContext context = new WorldGenerationContext(this, chunk.getHeightAccessorForGeneration());
++            WorldGenerationContext context = new WorldGenerationContext(this, chunk.getHeightAccessorForGeneration(), carverBiomeRegion.getMinecraftWorld());  // Paper - Flat bedrock generator settings
+             int protectedBlocksOnTop = chunk.isUpgrading() ? 0 : 7;
+             int maxY = context.getMinGenY() + context.getGenDepth() - 1 - protectedBlocksOnTop;
+             CarvingMask mask = new CarvingMask(context.getMinGenY() + 1, maxY);
+@@ -365,7 +_,32 @@
+         final @Nullable WorldGenRegion carverBiomeRegion,
+         final Set<Holder<Biome>> possibleBiomes
+     ) {
++        // Paper start - Bukkit chunk generator callbacks
++        return this.buildTerrain(chunk, blender, randomState, structureManager, biomeManager, carverBiomeRegion, possibleBiomes, null);
++    }
++
++    public CompletableFuture<ChunkAccess> buildTerrain(
++        final ChunkAccess chunk,
++        final Blender blender,
++        final RandomState randomState,
++        final StructureManager structureManager,
++        final BiomeManager biomeManager,
++        final @Nullable WorldGenRegion carverBiomeRegion,
++        final Set<Holder<Biome>> possibleBiomes,
++        final org.bukkit.craftbukkit.generator.@Nullable CustomChunkGenerator customGenerator
++    ) {
++        // Paper end - Bukkit chunk generator callbacks
+         NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(chunk.getHeightAccessorForGeneration());
++        // Paper start - Bukkit chunk generator callbacks
++        if (customGenerator != null && (noiseSettings.height() <= 0 || SharedConstants.debugVoidTerrain(chunk.getPos()))) {
++            return CompletableFuture.supplyAsync(() -> {
++                customGenerator.fillFromNoise(chunk);
++                customGenerator.buildSurface(chunk);
++                customGenerator.applyCarvers(chunk);
++                return chunk;
++            }, io.papermc.paper.FeatureHooks.getWorldgenExecutor());
++        }
++        // Paper end - Bukkit chunk generator callbacks
+         return noiseSettings.height() > 0 && !SharedConstants.debugVoidTerrain(chunk.getPos()) ? CompletableFuture.supplyAsync(() -> {
+             ProfilerFiller profiler = Profiler.get();
  
+@@ -382,22 +_,28 @@
+                 }
+ 
+                 try (Zone var39 = profiler.zone("doFill")) {
++                    if (customGenerator == null || customGenerator.shouldGenerateNoise(chunk)) // Paper - Bukkit chunk generator callbacks
+                     this.doFill(noiseChunk, chunk);
+                 } finally {
+                     for (LevelChunkSection section : sections) {
+                         section.release();
+                     }
+                 }
++                if (customGenerator != null) customGenerator.fillFromNoise(chunk); // Paper - Bukkit chunk generator callbacks
+ 
+                 MaterialRule materialRule = this.settings.value().materialRule().value();
+ 
+                 try (Zone var41 = profiler.zone("buildSurface")) {
+-                    this.buildSurface(chunk, noiseChunk, randomState, biomeManager, possibleBiomes, materialRule);
++                    if (customGenerator == null || customGenerator.shouldGenerateSurface(chunk)) // Paper - Bukkit chunk generator callbacks
++                    this.buildSurface(chunk, noiseChunk, randomState, biomeManager, possibleBiomes, materialRule, structureManager.level.getMinecraftWorld()); // Paper - Flat bedrock generator settings
+                 }
++                if (customGenerator != null) customGenerator.buildSurface(chunk); // Paper - Bukkit chunk generator callbacks
+ 
+                 try (Zone var42 = profiler.zone("generateCarvers")) {
++                    if (customGenerator == null || customGenerator.shouldGenerateCaves(chunk)) // Paper - Bukkit chunk generator callbacks
+                     this.generateCarvers(chunk, blender, noiseChunk, randomState, biomeManager, carverBiomeRegion, materialRule);
+                 }
++                if (customGenerator != null) customGenerator.applyCarvers(chunk); // Paper - Bukkit chunk generator callbacks
+ 
+                 return chunk;
+             }

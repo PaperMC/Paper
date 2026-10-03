@@ -1,9 +1,10 @@
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
-@@ -33,6 +_,23 @@
+@@ -33,6 +_,24 @@
      public static final Codec<HolderSet<Item>> NON_AIR_HOLDER_SET_CODEC = HolderSetCodec.create(Registries.ITEM, Item.CODEC, false);
      public static final Codec<Ingredient> CODEC = ExtraCodecs.nonEmptyHolderSet(NON_AIR_HOLDER_SET_CODEC).xmap(Ingredient::new, i -> i.values);
      public final HolderSet<Item> values;
++    public java.util.function.@org.jspecify.annotations.Nullable Predicate<ItemStack> stackPredicate; // Paper - add PredicateChoice
 +    // CraftBukkit start
 +    private java.util.@org.jspecify.annotations.Nullable List<ItemStack> itemStacks;
 +
@@ -24,10 +25,15 @@
  
      private Ingredient(final HolderSet<Item> values) {
          values.unwrap().ifRight(directValues -> {
-@@ -62,6 +_,17 @@
+@@ -62,6 +_,22 @@
  
      @Override
      public boolean test(final ItemStack input) {
++        // Paper start - add PredicateChoice
++        if (this.stackPredicate != null) {
++            return this.stackPredicate.test(input);
++        }
++        // Paper end - add PredicateChoice
 +        // CraftBukkit start
 +        if (this.isExact()) {
 +            for (ItemStack item : this.itemStacks()) {

@@ -31,7 +31,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.ScoreHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.util.Set;
@@ -46,7 +45,6 @@ import java.util.function.Predicate;
  * cause issues when called under unexpected circumstances.
  */
 @ApiStatus.Internal
-@NullMarked
 public interface InternalAPIBridge {
 
     /**
@@ -56,6 +54,7 @@ public interface InternalAPIBridge {
      */
     static InternalAPIBridge get() {
         class Holder {
+
             public static final InternalAPIBridge INSTANCE = Services.service(InternalAPIBridge.class).orElseThrow();
         }
 
