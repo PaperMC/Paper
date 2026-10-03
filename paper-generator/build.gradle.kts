@@ -9,9 +9,9 @@ paperweight {
     atFile = layout.projectDirectory.file("wideners.at")
 }
 
-val serverRuntimeClasspath by configurations.registering { // resolvable?
-    isCanBeConsumed = false
-    isCanBeResolved = true
+val serverRuntimeClasspath = configurations.dependencyScope("serverRuntimeClasspath")
+val serverRuntimeClasspathResolvable = configurations.resolvable("serverRuntimeClasspathResolvable") {
+    extendsFrom(serverRuntimeClasspath)
 }
 
 dependencies {
@@ -36,15 +36,15 @@ val gameVersion = providers.gradleProperty("mcVersion")
 
 val rewriteApi = tasks.registerGenerationTask("rewriteApi", true, "api", {
     bootstrapTags = true
-    sourceSet = rootProject.layout.projectDirectory.dir("paper-api")
+    sourceSet = isolated.rootProject.projectDirectory.dir("paper-api")
 }) {
     description = "Rewrite existing API classes"
     classpath(sourceSets.main.map { it.runtimeClasspath })
 }
 
 val rewriteImpl = tasks.registerGenerationTask("rewriteImpl", true, "impl", {
-    sourceSet = rootProject.layout.projectDirectory.dir("paper-server")
-    serverClassPath.from(serverRuntimeClasspath)
+    sourceSet = isolated.rootProject.projectDirectory.dir("paper-server")
+    serverClassPath.from(serverRuntimeClasspathResolvable)
 }) {
     description = "Rewrite existing implementation classes"
     classpath(sourceSets.main.map { it.runtimeClasspath })
@@ -59,14 +59,14 @@ tasks.register("rewrite") {
 
 val generateApi = tasks.registerGenerationTask("generateApi", false, "api", {
     bootstrapTags = true
-    sourceSet = rootProject.layout.projectDirectory.dir("paper-api")
+    sourceSet = isolated.rootProject.projectDirectory.dir("paper-api")
 }) {
     description = "Generate new API classes"
     classpath(sourceSets.main.map { it.runtimeClasspath })
 }
 
 val generateImpl = tasks.registerGenerationTask("generateImpl", false, "impl", {
-    sourceSet = rootProject.layout.projectDirectory.dir("paper-server")
+    sourceSet = isolated.rootProject.projectDirectory.dir("paper-server")
 }) {
     description = "Generate new implementation classes"
     classpath(sourceSets.main.map { it.runtimeClasspath })
