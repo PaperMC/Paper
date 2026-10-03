@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sam Russell <sam.h.russell@gmail.com>
+Date: Thu, 6 Aug 2026 09:20:08 +0200
+Subject: [PATCH] fixup! paper File Patches
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 14ae3ed13c8a028b715ba62653d49822a6ff7984..59598bfb95c2f8a38efd92685c46a954dc76739d 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -882,12 +882,6 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             }
+ 
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
+-            // Paper start - tick life after X seconds if too many arrows from player
+-            // reset numArrows, then each arrow increments this in the same order
+-            for (ServerPlayer player:this.players) {
+-                player.numArrows = 0;
+-            }
+-            // Paper end - tick life after X seconds if too many arrows from player
+             this.entityTickList
+                 .forEach(
+                     entity -> {
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index c0ed4bd56450e3b92ac1d801dd88246a467c11b0..04a75a40e514d5e9e94c37412e2cd626383d2c12 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -423,6 +423,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     // Paper end - Optional per player mob spawns
+     // Paper start - tick life after X seconds if too many arrows from player
+     public int numArrows = 0;
++    public long timeNumArrowsUpdated = 0;
+     // Paper end - tick life after X seconds if too many arrows from player
+     public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
+     // CraftBukkit start
+diff --git a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+index 0ae13b0cf4cce0a2154f171ad329cf4859bccf1b..c9154e5bfc9cc468f56fbff02a2ebb2f4cb21532 100644
+--- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
++++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+@@ -187,6 +187,12 @@ public abstract class AbstractArrow extends Projectile {
+             // this gets called in the tick phase
+             // because they get lerped out of order by the pistons and that breaks things
+             // so this way they are in a consistent order and it's always the same arrows that are within the quota
++            
++            // reset in new tick
++            if(serverPlayerOwner.timeNumArrowsUpdated != this.level().getGameTime()) {
++                serverPlayerOwner.timeNumArrowsUpdated = this.level().getGameTime();
++                serverPlayerOwner.numArrows = 0;
++            }
+             serverPlayerOwner.numArrows++;
+         }
+     }
