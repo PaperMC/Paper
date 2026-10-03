@@ -1,10 +1,13 @@
 --- a/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/net/minecraft/world/level/biome/MobSpawnSettings.java
-@@ -68,9 +_,33 @@
+@@ -85,7 +_,32 @@
      }
  
      public static class Builder {
+-        private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class);
 +        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        private final Map<MobCategory, MobListBuilder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class); // Paper - explict MobListBuilder
++
 +        public static class MobListBuilder<E> extends WeightedList.Builder<E> {
 +            @Override
 +            public WeightedList<E> build() {
@@ -27,11 +30,25 @@
 +                return this.spawnerDataSet.contains(element);
 +            }
 +        }
-         private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
--            MobCategory.class, c -> WeightedList.builder()
-+            MobCategory.class, c -> new MobListBuilder<>()
-         );
 +        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
-         private float creatureGenerationProbability = 0.1F;
+ 
+         public MobSpawnSettings.Builder addSpawn(final EntityType<?> type, final int weight, final int minCount, final int maxCount) {
+@@ -117,7 +_,7 @@
+         }
+ 
+         public MobSpawnSettings.Builder noSpawns(final MobCategory category) {
+-            this.spawnsByCategory.put(category, WeightedList.builder());
++            this.spawnsByCategory.put(category, new MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
+             return this;
+         }
+ 
+@@ -144,7 +_,7 @@
+         }
+ 
+         private WeightedList.Builder<MobSpawnSettings.SpawnerData> forCategory(final MobCategory category) {
+-            return this.spawnsByCategory.computeIfAbsent(category, var0 -> WeightedList.builder());
++            return this.spawnsByCategory.computeIfAbsent(category, var0 -> new MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
+         }
+     }
  

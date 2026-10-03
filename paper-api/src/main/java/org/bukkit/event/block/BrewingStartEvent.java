@@ -13,12 +13,13 @@ import org.jetbrains.annotations.Range;
 public class BrewingStartEvent extends InventoryBlockStartEvent {
 
     private int brewingTime;
-    private int recipeBrewTime = 400;
+    private int recipeBrewTime;
 
     @ApiStatus.Internal
     public BrewingStartEvent(@NotNull final Block brewingStand, @NotNull ItemStack source, int brewingTime) {
         super(brewingStand, source);
         this.brewingTime = brewingTime;
+        this.recipeBrewTime = brewingTime;
     }
 
     /**

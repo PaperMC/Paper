@@ -80,7 +80,7 @@ public final class CraftItemStack extends ItemStack {
         }
     }
 
-    private static CraftItemStack getCraftStack(final ItemStack bukkit) {
+    public static CraftItemStack getCraftStack(final ItemStack bukkit) {
         if (bukkit instanceof final CraftItemStack craftItemStack) {
             return craftItemStack;
         } else {
@@ -152,51 +152,16 @@ public final class CraftItemStack extends ItemStack {
         return ItemStackTemplate.fromNonEmptyStack(asNMSCopy(bukkit));
     }
 
-    public static net.minecraft.world.item.ItemStack copyNMSStack(net.minecraft.world.item.ItemStack original, int amount) {
-        net.minecraft.world.item.ItemStack stack = original.copy();
-        stack.setCount(amount);
-        return stack;
-    }
-
-    /**
-     * Copies the NMS stack to return as a strictly-Bukkit stack
-     */
-    public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
-        // no such thing as a "strictly-Bukkit stack" anymore
-        // we copy the stack since it should be a complete copy not a mirror
-        return asCraftMirror(original.copy());
-    }
-
-    public static ItemStack asBukkitCopy(ItemStackTemplate template) {
-        return asCraftMirror(template.create()); // No need to copy the result again
-    }
-
     public static ItemStack asBukkitCopy(ItemInstance original) {
         return switch (original) {
-            case ItemStackTemplate template -> asBukkitCopy(template);
-            case net.minecraft.world.item.ItemStack item -> asBukkitCopy(item);
+            case ItemStackTemplate template -> asBukkitMirror(template.create());
+            case net.minecraft.world.item.ItemStack item -> asBukkitMirror(item.copy());
             default -> throw new AssertionError();
         };
     }
 
-    public static CraftItemStack asCraftMirror(net.minecraft.world.item.ItemStack original) {
+    public static ItemStack asBukkitMirror(net.minecraft.world.item.ItemStack original) {
         return new CraftItemStack((original == null || original.isEmpty()) ? null : original);
-    }
-
-    public static CraftItemStack asCraftCopy(ItemStack original) {
-        if (original instanceof CraftItemStack) {
-            CraftItemStack stack = (CraftItemStack) original;
-            return new CraftItemStack(stack.handle == null ? null : stack.handle.copy());
-        }
-        return new CraftItemStack(original);
-    }
-
-    public static CraftItemStack asNewCraftStack(Item item) {
-        return CraftItemStack.asNewCraftStack(item, 1);
-    }
-
-    public static CraftItemStack asNewCraftStack(Item item, int amount) {
-        return new CraftItemStack(CraftItemType.minecraftToBukkit(item), amount, (short) 0, null);
     }
 
     public static ItemPredicate asCriterionConditionItem(ItemStack key) {
@@ -518,7 +483,6 @@ public final class CraftItemStack extends ItemStack {
             item.restorePatch(DataComponentPatch.EMPTY); // Paper - properly apply the new patch from itemmeta
             item.applyComponents(tag.build()); // Paper - properly apply the new patch from itemmeta
         }
-        // Paper - this is no longer needed
 
         return true;
     }
@@ -566,7 +530,7 @@ public final class CraftItemStack extends ItemStack {
     @Override
     public ItemStack withType(final Material type) {
         if (type == Material.AIR) {
-            return CraftItemStack.asCraftMirror(null);
+            return CraftItemStack.asBukkitMirror(null);
         }
 
         final net.minecraft.world.item.ItemStack copy = new net.minecraft.world.item.ItemStack(
@@ -577,7 +541,7 @@ public final class CraftItemStack extends ItemStack {
             copy.applyComponents(this.handle.getComponentsPatch());
         }
 
-        final CraftItemStack mirrored = CraftItemStack.asCraftMirror(copy);
+        final ItemStack mirrored = CraftItemStack.asBukkitMirror(copy);
         mirrored.setItemMeta(mirrored.getItemMeta());
         return mirrored;
     }
