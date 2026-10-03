@@ -90,7 +90,7 @@ public interface PersistentDataContainerView {
      */
     default boolean has(PersistentDataKey<?> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return has(dataKey.getNamespacedKey(), dataKey.getDataType());
+        return has(dataKey.getKey(), dataKey.getDataType());
     }
 
     /**
@@ -153,7 +153,7 @@ public interface PersistentDataContainerView {
      */
     default <C> @Nullable C get(PersistentDataKey<C> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return get(dataKey.getNamespacedKey(), dataKey.getDataType());
+        return get(dataKey.getKey(), dataKey.getDataType());
     }
 
     /**
@@ -174,7 +174,7 @@ public interface PersistentDataContainerView {
      */
     default <C> C getOrDefault(PersistentDataKey<C> dataKey, C defaultValue) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return getOrDefault(dataKey.getNamespacedKey(), dataKey.getDataType(), defaultValue);
+        return getOrDefault(dataKey.getKey(), dataKey.getDataType(), defaultValue);
     }
 
     /**

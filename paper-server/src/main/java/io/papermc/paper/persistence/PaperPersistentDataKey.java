@@ -19,12 +19,7 @@ public class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
     }
 
     @Override
-    public Key getKey() {
-        return this.key;
-    }
-
-    @Override
-    public NamespacedKey getNamespacedKey() {
+    public NamespacedKey getKey() {
         return this.key;
     }
 
