@@ -600,6 +600,7 @@ public final class CraftServer implements Server {
             // Spigot end
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
+            io.papermc.paper.permissions.PaperPermissions.registerPermissions();
             if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
             this.syncCommands();
         }
@@ -2847,6 +2848,7 @@ public final class CraftServer implements Server {
         if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
         DefaultPermissions.registerCorePermissions();
         CraftDefaultPermissions.registerCorePermissions();
+        io.papermc.paper.permissions.PaperPermissions.registerPermissions();
     }
 
     @Override
