@@ -33,6 +33,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
@@ -88,6 +89,14 @@ public interface InternalAPIBridge {
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
 
     Set<Pose> validMannequinPoses();
+
+    /**
+     * Creates a wrapping score holder.
+     *
+     * @param entry the entry to wrap
+     * @return a wrapping ScoreHolder
+     */
+    ScoreHolder scoreHolderOf(String entry);
 
     PoiType.Occupancy createOccupancy(String enumNameEntry);
 
