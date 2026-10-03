@@ -106,7 +106,7 @@ public interface CommandSourceStack {
      * @param resolvers resolvers to use
      */
     default void sendRichReply(String message, TagResolver... resolvers) {
-        sendReply(MiniMessage.miniMessage().deserialize(message, resolvers));
+        this.sendReply(MiniMessage.miniMessage().deserialize(message, resolvers));
     }
 
     /**
@@ -132,7 +132,7 @@ public interface CommandSourceStack {
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
      */
     default void sendSuccess(ComponentLike message) {
-        sendSuccess(message, true);
+        this.sendSuccess(message, true);
     }
 
     /**
@@ -151,7 +151,7 @@ public interface CommandSourceStack {
      * @param resolvers resolvers to use
      */
     default void sendRichSuccess(String message, boolean allowInformingAdmins, TagResolver... resolvers) {
-        sendSuccess(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers), allowInformingAdmins);
+        this.sendSuccess(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers), allowInformingAdmins);
     }
 
     /**
@@ -171,7 +171,7 @@ public interface CommandSourceStack {
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
      */
     default void sendRichSuccess(String message, TagResolver... resolvers) {
-        sendRichSuccess(message, true, resolvers);
+        this.sendRichSuccess(message, true, resolvers);
     }
 
     /**
@@ -198,6 +198,6 @@ public interface CommandSourceStack {
      * @param resolvers resolvers to use
      */
     default void sendRichFailure(String message, TagResolver... resolvers) {
-        sendFailure(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers));
+        this.sendFailure(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers));
     }
 }
