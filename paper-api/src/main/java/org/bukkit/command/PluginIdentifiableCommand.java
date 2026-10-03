@@ -1,7 +1,6 @@
 package org.bukkit.command;
 
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,11 +9,11 @@ import org.jetbrains.annotations.NotNull;
  * implementations will need to implement this interface to have a sub-index
  * automatically generated on the plugin's behalf.
  *
- * @apiNote plugin developers should prefer to use the
+ * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@ApiStatus.Obsolete(since = "26.3")
+@Deprecated(since = "26.4")
 public interface PluginIdentifiableCommand {
 
     /**
