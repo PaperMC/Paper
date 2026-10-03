@@ -8,8 +8,8 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftEnchantingTable extends CraftBlockEntityState<EnchantingTableBlockEntity> implements EnchantingTable {
 
-    public CraftEnchantingTable(World world, EnchantingTableBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftEnchantingTable(World world, EnchantingTableBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftEnchantingTable(CraftEnchantingTable state, Location location) {

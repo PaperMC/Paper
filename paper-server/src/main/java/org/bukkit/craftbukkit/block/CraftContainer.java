@@ -17,8 +17,8 @@ import org.bukkit.inventory.ItemStack;
 
 public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends CraftBlockEntityState<T> implements Container {
 
-    public CraftContainer(World world, T blockEntity) {
-        super(world, blockEntity);
+    public CraftContainer(World world, T blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftContainer(CraftContainer<T> state, Location location) {
