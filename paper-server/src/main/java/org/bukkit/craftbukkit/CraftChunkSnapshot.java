@@ -136,11 +136,11 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
             return current.get(x, relativeY, z);
         }
 
-        int highestNonEmpt = this.empty.length - 1;
-        while (highestNonEmpt >= 0 && this.empty[highestNonEmpt]) {
-            highestNonEmpt--;
+        int highestNonEmpty = this.empty.length - 1;
+        while (highestNonEmpty >= 0 && this.empty[highestNonEmpty]) {
+            highestNonEmpty--;
         }
-        if (sectionY > highestNonEmpt) {
+        if (sectionY > highestNonEmpty) {
             return 15;
         }
 
