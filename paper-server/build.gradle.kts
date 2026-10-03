@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.12"
+    id("io.papermc.fill.gradle") version "1.0.14"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
@@ -110,7 +110,10 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.2.2")
+    implementation(platform("ca.spottedleaf.leafpile:bom:1.2.4"))
+    implementation("ca.spottedleaf.leafpile:common")
+    implementation("ca.spottedleaf.leafpile:concurrentutil")
+    implementation("ca.spottedleaf.leafpile:converter")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
