@@ -9,6 +9,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
+import java.util.OptionalInt;
 
 /**
  * Called when a {@link Player} selects an item inside a bundle.
@@ -168,11 +169,18 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
 
         /**
          * Returns the delta integer of the direction.
+         * <p>
+         * Directions are mapped the following:
+         * <ul>
+         *     <li>{@link #FORWARD} to {@code +1}</li>
+         *     <li>{@link #BACKWARD} to {@code -1}</li>
+         *     <li>{@link #UNKNOWN} to {@link OptionalInt#empty()}</li>
+         * </ul>
          *
          * @return the delta
          */
-        public int getDelta() {
-            return this.delta;
+        public OptionalInt getDelta() {
+            return this == UNKNOWN ? OptionalInt.empty() : OptionalInt.of(this.delta);
         }
 
         /**
