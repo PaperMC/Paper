@@ -264,6 +264,9 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public <C> PersistentDataKey<C> createPersistentDataKey(final Key key, final PersistentDataType<?, C> type) {
-        return new PaperPersistentDataKey<>(new NamespacedKey(key.namespace(), key.value()), type);
+        final NamespacedKey namespacedKey = key instanceof NamespacedKey thisKey
+            ? thisKey
+            : new NamespacedKey(key.namespace(), key.value());
+        return new PaperPersistentDataKey<>(namespacedKey, type);
     }
 }
