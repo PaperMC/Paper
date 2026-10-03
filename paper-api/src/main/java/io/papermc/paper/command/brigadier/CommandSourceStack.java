@@ -98,8 +98,8 @@ public interface CommandSourceStack {
      * Sends a system message with the MiniMessage format to the {@link #getExecutor()}
      * if it is a {@link Player}, otherwise sends it to the {@link #getSender()}.
      *
-     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
-     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
      * @param message the MiniMessage message to send
@@ -142,8 +142,8 @@ public interface CommandSourceStack {
      * <p>This currently includes checking for environments with suppressed output,
      * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
      *
-     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
-     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
      * @param message the MiniMessage message to send
@@ -162,8 +162,8 @@ public interface CommandSourceStack {
      * <p>This currently includes checking for environments with suppressed output,
      * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
      *
-     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
-     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
      * @param message the MiniMessage message to send
@@ -190,8 +190,8 @@ public interface CommandSourceStack {
      *
      * <p>Respects vanilla semantics for accepting failure output and suppressed output environments.</p>
      *
-     * <p>See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and
-     * <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
+     * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
      * @param message the MiniMessage message to send
