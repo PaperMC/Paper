@@ -23676,7 +23676,7 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index dec75972dc30d954d9054f82940263506d1b82d6..df34894fbb1d0a74cbdbcc4d800cb1061344aff5 100644
+index dec75972dc30d954d9054f82940263506d1b82d6..0c8fb260ea4b4d2b5732480a1556cda1fa9f8576 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -23908,20 +23908,28 @@ index dec75972dc30d954d9054f82940263506d1b82d6..df34894fbb1d0a74cbdbcc4d800cb106
      }
  
      public static void flushAsyncAppenders() {
-@@ -263,8 +207,15 @@ public final class FeatureHooks {
+@@ -263,8 +207,23 @@ public final class FeatureHooks {
      }
  
      public static net.minecraft.world.level.chunk.DataLayer copyLightDataLayer(Level level, net.minecraft.world.level.chunk.ChunkAccess chunk, net.minecraft.world.level.LightLayer layer, int sectionIndex) {
 -        net.minecraft.world.level.chunk.DataLayer view = level.getLightEngine().getLayerListener(layer).getDataLayerData(net.minecraft.core.SectionPos.of(chunk.getPos(), chunk.getSectionYFromSectionIndex(sectionIndex)));
 -        return view == null ? null : view.copy();
 +        // Paper start - starlight
++        int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
++        int minLightSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinLightSection(level);
++        int maxLightSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxLightSection(level);
++        if (sectionY < minLightSection || sectionY > maxLightSection) return null;
++
 +        ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] nibbles;
 +        if (layer == net.minecraft.world.level.LightLayer.BLOCK) {
 +            nibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
 +        } else {
++            if (!chunk.isLightCorrect() || !chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) return null;
++            if (((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyEmptinessMap() == null) return null;
++
 +            nibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
 +        }
-+        return nibbles[sectionIndex + ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level) - ca.spottedleaf.moonrise.common.util.WorldUtil.getMinLightSection(level)].toVanillaNibble();
++        return nibbles[sectionY - minLightSection].toVanillaNibble();
 +        // Paper end - starlight
      }
  
