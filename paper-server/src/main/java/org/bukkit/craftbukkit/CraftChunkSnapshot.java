@@ -6,7 +6,9 @@ import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -28,14 +30,14 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final String worldName;
     private final Key worldKey;
     private final PalettedContainer<BlockState>[] blockIds;
-    private final byte[][] skylight;
-    private final byte[][] emitLight;
+    private final DataLayer[] skylight;
+    private final DataLayer[] emitLight;
     private final boolean[] empty;
     private final Heightmap heightmap; // Height map
     private final long captureFullTime;
     private final PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome;
 
-    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, int seaLevel, String worldName, Key worldKey, long fullTime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap heightmap, PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
+    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, int seaLevel, String worldName, Key worldKey, long fullTime, PalettedContainer<BlockState>[] sectionBlockIDs, DataLayer[] sectionSkyLights, DataLayer[] sectionEmitLights, boolean[] sectionEmpty, Heightmap heightmap, PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
         this.x = x;
         this.z = z;
         this.minHeight = minHeight;
@@ -126,8 +128,28 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(this.skylight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
         this.validateChunkCoordinates(x, y, z);
 
-        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
-        return (this.skylight[this.getSectionIndex(y)][off] >> ((x & 1) << 2)) & 0xF;
+        int sectionY = this.getSectionIndex(y);
+        int relativeY = SectionPos.sectionRelative(y);
+
+        DataLayer current = this.skylight[sectionY];
+        if (current != null) {
+            return current.get(x, relativeY, z);
+        }
+
+        int highestNonEmpty = this.empty.length - 1;
+        while (highestNonEmpty >= 0 && this.empty[highestNonEmpty]) {
+            highestNonEmpty--;
+        }
+        if (sectionY > highestNonEmpty) {
+            return 15;
+        }
+
+        for (int i = sectionY + 1; i < this.skylight.length; i++) {
+            DataLayer above = this.skylight[i];
+            if (above != null) return above.get(x, 0, z);
+        }
+
+        return 15;
     }
 
     @Override
@@ -135,8 +157,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(this.emitLight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
         this.validateChunkCoordinates(x, y, z);
 
-        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
-        return (this.emitLight[this.getSectionIndex(y)][off] >> ((x & 1) << 2)) & 0xF;
+        return this.emitLight[this.getSectionIndex(y)].get(x, SectionPos.sectionRelative(y), z);
     }
 
     @Override
