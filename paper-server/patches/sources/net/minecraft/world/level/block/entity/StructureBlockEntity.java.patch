@@ -1,0 +1,24 @@
+--- a/net/minecraft/world/level/block/entity/StructureBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/StructureBlockEntity.java
+@@ -355,6 +_,21 @@
+         }
+ 
+         structureTemplate.fillFromWorld(serverLevel, blockPos, vec3i, !flag, Stream.concat(list.stream(), Stream.of(Blocks.STRUCTURE_VOID)).toList());
++        // Paper start - MC-268618
++        for (StructureTemplate.Palette palette : structureTemplate.palettes) {
++            for (StructureTemplate.StructureBlockInfo blockInfo : palette.blocks()) {
++                if (!blockInfo.state().is(Blocks.VAULT) || blockInfo.nbt() == null) {
++                    continue;
++                }
++                blockInfo.nbt().getCompound("server_data").ifPresent(vaultData -> {
++                    long vaultTimeDiff = vaultData.getLong("state_updating_resumes_at").orElse(0L) - serverLevel.getGameTime();
++                    if (vaultTimeDiff > 0L && vaultTimeDiff <= 20L) {
++                        vaultData.putLong("state_updating_resumes_at", 0L);
++                    }
++                });
++            }
++        }
++        // Paper end
+         structureTemplate.setAuthor(string);
+         if (flag1) {
+             try {
