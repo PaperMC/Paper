@@ -1632,18 +1632,18 @@ public class CraftEventFactory {
             return;
         }
 
-        int delta = 0;
+        PlayerBundleItemSelectEvent.Direction direction = PlayerBundleItemSelectEvent.Direction.UNKNOWN;
         // Scroll direction can only be reliably determined if three or more item stacks are in the bundle,
         // because we only have access to the before and after selection index.
         if (contents.size() >= 3) {
             if (previousIndex == net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
-                delta = selectedIndex == 0 ? 1 : -1;
+                direction = selectedIndex == 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
             } else {
                 int diff = selectedIndex - previousIndex;
-                delta = diff > 0 ? 1 : -1;
+                direction = diff > 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
 
                 if (Math.abs(diff) == contents.size() - 1) {
-                    delta = -delta;
+                    direction = direction.flip();
                 }
             }
         }
@@ -1656,7 +1656,7 @@ public class CraftEventFactory {
             CraftItemStack.asBukkitMirror(contents.items().get(selectedIndex).create()),
             previousIndex,
             selectedIndex,
-            PlayerBundleItemSelectEvent.Direction.ofDelta(delta)
+            direction
         ).callEvent();
     }
 

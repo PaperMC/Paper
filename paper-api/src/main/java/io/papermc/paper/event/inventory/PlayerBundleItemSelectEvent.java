@@ -176,18 +176,15 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
         }
 
         /**
-         * Gets the Direction associated with the given delta.
+         * Returns the direction opposite to this direction.
          *
-         * @param delta the delta integer
-         * @return the direction
-         * @throws IllegalArgumentException if delta is none of {@code {0, -1, 1}}
+         * @return the flipped direction
          */
-        public static Direction ofDelta(final int delta) {
-            return switch (delta) {
-                case 1 -> FORWARD;
-                case -1 -> BACKWARD;
-                case 0 -> UNKNOWN;
-                default -> throw new IllegalArgumentException("Invalid delta: " + delta);
+        public Direction flip() {
+            return switch (this) {
+                case FORWARD -> BACKWARD;
+                case BACKWARD -> FORWARD;
+                case UNKNOWN -> UNKNOWN;
             };
         }
     }
