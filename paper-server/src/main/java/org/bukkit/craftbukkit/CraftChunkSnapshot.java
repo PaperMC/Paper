@@ -128,7 +128,28 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(this.skylight != null, "ChunkSnapshot created without light data. Please call getSnapshot with includeLightData=true"); // Paper - Add getChunkSnapshot includeLightData parameter
         this.validateChunkCoordinates(x, y, z);
 
-        return this.skylight[this.getSectionIndex(y)].get(x, SectionPos.sectionRelative(y), z);
+        int sectionY = this.getSectionIndex(y);
+        int relativeY = SectionPos.sectionRelative(y);
+
+        DataLayer current = this.skylight[sectionY];
+        if (current != null) {
+            return current.get(x, relativeY, z);
+        }
+
+        int highestNonEmpt = this.empty.length - 1;
+        while (highestNonEmpt >= 0 && this.empty[highestNonEmpt]) {
+            highestNonEmpt--;
+        }
+        if (sectionY > highestNonEmpt) {
+            return 15;
+        }
+
+        for (int i = sectionY + 1; i < this.skylight.length; i++) {
+            DataLayer above = this.skylight[i];
+            if (above != null) return above.get(x, 0, z);
+        }
+
+        return 15;
     }
 
     @Override

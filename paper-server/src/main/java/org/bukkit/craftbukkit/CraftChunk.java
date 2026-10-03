@@ -273,7 +273,6 @@ public class CraftChunk implements Chunk {
         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
         DataLayer[] sectionSkyLights = includeLightData ? new DataLayer[cs.length] : null;
         DataLayer[] sectionEmitLights = includeLightData ? new DataLayer[cs.length] : null;
-        DataLayer defaultSky = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
 
@@ -289,8 +288,11 @@ public class CraftChunk implements Chunk {
             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
             if (includeLightData) {
-                DataLayer skyLightArray = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.SKY, i);
-                sectionSkyLights[i] = skyLightArray == null ? defaultSky : skyLightArray;
+                if (this.level.dimensionType().hasSkyLight()) {
+                    sectionSkyLights[i] = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.SKY, i);
+                } else {
+                    sectionSkyLights[i] = CraftChunk.EMPTY_LIGHT;
+                }
 
                 DataLayer emitLightArray = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.BLOCK, i);
                 sectionEmitLights[i] = emitLightArray == null ? CraftChunk.EMPTY_LIGHT : emitLightArray;
