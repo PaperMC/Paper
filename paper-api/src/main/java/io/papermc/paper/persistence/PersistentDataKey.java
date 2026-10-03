@@ -51,6 +51,7 @@ public interface PersistentDataKey<C> {
      * @param type the persistent data type to reference
      * @param <C>  the retrieved object type when applying this tag type
      * @return a new {@link PersistentDataKey} of the given key and type
+     * @throws IllegalArgumentException if either key or type are null
      */
     static <C> PersistentDataKey<C> of(Key key, PersistentDataType<?, C> type) {
         return InternalAPIBridge.get().createPersistentDataKey(key, type);
