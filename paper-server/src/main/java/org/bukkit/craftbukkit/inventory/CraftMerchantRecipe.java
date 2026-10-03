@@ -135,9 +135,35 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     }
     // Paper end
 
-    public net.minecraft.world.item.trading.MerchantOffer toMinecraft() {
+    // Write ingredient changes straight through to the handle, matching the
+    // scalar setters above (they mutate this.handle directly) so ingredient
+    // updates take effect immediately instead of only on trade refresh.
+    @Override
+    public void addIngredient(ItemStack item) {
+        super.addIngredient(item);
+        this.syncIngredientsToHandle();
+    }
+
+    @Override
+    public void removeIngredient(int index) {
+        super.removeIngredient(index);
+        this.syncIngredientsToHandle();
+    }
+
+    @Override
+    public void setIngredients(List<ItemStack> ingredients) {
+        super.setIngredients(ingredients);
+        this.syncIngredientsToHandle();
+    }
+
+    private void syncIngredientsToHandle() {
         List<ItemStack> ingredients = this.getIngredients();
-        Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
+        if (ingredients.isEmpty()) {
+            // The base ingredient list can be transiently empty (e.g. after removeIngredient
+            // or setIngredients with an empty list); leave the handle's existing costs in
+            // place until a valid ingredient is supplied rather than build an invalid offer.
+            return;
+        }
         net.minecraft.world.item.ItemStack baseCostA = CraftItemStack.asNMSCopy(ingredients.get(0));
         DataComponentExactPredicate baseCostAPredicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, baseCostA.getComponentsPatch()));
         this.handle.baseCostA = new ItemCost(baseCostA.typeHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
@@ -148,6 +174,11 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         } else {
             this.handle.costB = Optional.empty();
         }
+    }
+
+    public net.minecraft.world.item.trading.MerchantOffer toMinecraft() {
+        Preconditions.checkState(!this.getIngredients().isEmpty(), "No offered ingredients");
+        this.syncIngredientsToHandle();
         return this.handle;
     }
 
