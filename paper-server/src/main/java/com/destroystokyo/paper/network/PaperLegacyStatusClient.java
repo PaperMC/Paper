@@ -7,6 +7,7 @@ import net.minecraft.server.MinecraftServer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetSocketAddress;
+import java.util.UUID;
 
 import javax.annotation.Nullable;
 
@@ -46,7 +47,7 @@ public final class PaperLegacyStatusClient implements StatusClient {
     public static PaperServerListPingEvent processRequest(MinecraftServer server,
             InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
 
-        PaperServerListPingEvent event = new PaperServerListPingEventImpl(server,
+        PaperServerListPingEvent event = new PaperServerListPingEventImpl(UUID.randomUUID(), server,
                 new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null);
         server.server.getPluginManager().callEvent(event);
 

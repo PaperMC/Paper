@@ -21,7 +21,7 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
     private List<NameAndId> originalSample;
 
     private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection connection, ServerStatus ping) {
-        super(server, new PaperStatusClient(connection), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
+        super(connection.getConnectionId(), server, new PaperStatusClient(connection), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
         this.originalSample = ping.players().map(ServerStatus.Players::sample).orElse(null); // GH-1473 - pre-tick race condition NPE
     }
 

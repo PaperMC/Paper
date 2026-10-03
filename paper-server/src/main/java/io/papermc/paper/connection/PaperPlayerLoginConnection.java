@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 import org.jspecify.annotations.NullMarked;
@@ -66,4 +67,10 @@ public class PaperPlayerLoginConnection extends ReadablePlayerCookieConnectionIm
     public boolean isConnected() {
         return this.packetListener.connection.isConnected();
     }
+
+    @Override
+    public UUID getConnectionId() {
+        return this.packetListener.connection.getConnectionId();
+    }
+
 }
