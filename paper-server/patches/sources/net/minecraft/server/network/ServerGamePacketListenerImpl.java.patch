@@ -1448,7 +1448,7 @@
          ParseResults<CommandSourceStack> parsed = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parsed)) {
              LOGGER.error(
-@@ -1617,26 +_,55 @@
+@@ -1617,26 +_,61 @@
          Optional<LastSeenMessages> unpackedLastSeen = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!unpackedLastSeen.isEmpty()) {
              this.tryHandleChat(packet.command(), true, () -> {
@@ -1477,11 +1477,18 @@
 +        commandString = event.getMessage().substring(1);
 +
          ParseResults<CommandSourceStack> command = this.parseCommand(packet.command());
++        // Paper start - Parse client-visible argument types when a custom parser rejects a signed command
++        ParseResults<CommandSourceStack> signingCommand = command;
++        if (!command.getExceptions().isEmpty() && !packet.argumentSignatures().entries().isEmpty()) {
++            signingCommand = io.papermc.paper.command.brigadier.argument.WrappedArgumentCommandNode.parseNativeArguments(() -> this.parseCommand(packet.command()));
++        }
++        // Paper end - Parse client-visible argument types when a custom parser rejects a signed command
  
          Map<String, PlayerChatMessage> signedArguments;
          try {
+-            signedArguments = this.collectSignedArguments(packet, SignableCommand.of(command), lastSeenMessages);
 +            // Paper - Always parse the original command to add to the chat chain
-             signedArguments = this.collectSignedArguments(packet, SignableCommand.of(command), lastSeenMessages);
++            signedArguments = this.collectSignedArguments(packet, SignableCommand.of(signingCommand), lastSeenMessages);
          } catch (SignedMessageChain.DecodeException e) {
              this.handleMessageDecodeFailure(e);
              return;

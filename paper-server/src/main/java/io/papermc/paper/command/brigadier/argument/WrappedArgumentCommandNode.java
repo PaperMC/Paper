@@ -14,13 +14,30 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /*
 Basically this converts the argument to a different type when parsing.
  */
 public class WrappedArgumentCommandNode<NMS, API> extends ArgumentCommandNode<CommandSourceStack, NMS> {
 
+    // Signature checks must parse the same argument types the client received.
+    private static final ThreadLocal<Boolean> PARSE_NATIVE_ARGUMENTS = ThreadLocal.withInitial(() -> false);
     private final ArgumentType<API> pureArgumentType;
+
+    public static <T> T parseNativeArguments(final Supplier<T> action) {
+        boolean previous = PARSE_NATIVE_ARGUMENTS.get();
+        PARSE_NATIVE_ARGUMENTS.set(true);
+        try {
+            return action.get();
+        } finally {
+            if (previous) {
+                PARSE_NATIVE_ARGUMENTS.set(true);
+            } else {
+                PARSE_NATIVE_ARGUMENTS.remove();
+            }
+        }
+    }
 
     public WrappedArgumentCommandNode(
         final String name,
@@ -45,6 +62,11 @@ public class WrappedArgumentCommandNode<NMS, API> extends ArgumentCommandNode<Co
     // See ArgumentCommandNode#parse
     @Override
     public void parse(final StringReader reader, final CommandContextBuilder<CommandSourceStack> contextBuilder) throws CommandSyntaxException {
+        if (PARSE_NATIVE_ARGUMENTS.get()) {
+            super.parse(reader, contextBuilder);
+            return;
+        }
+
         final int start = reader.getCursor();
         final API result = this.pureArgumentType.parse(reader, contextBuilder.getSource()); // Use the api argument parser
         final ParsedArgument<CommandSourceStack, API> parsed = new ParsedArgument<>(start, reader.getCursor(), result); // Return an API parsed argument instead.
