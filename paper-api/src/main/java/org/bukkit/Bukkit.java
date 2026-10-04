@@ -1134,6 +1134,7 @@ public final class Bukkit {
      * @return true if the recipe was added, false if it wasn't for some reason
      * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on recipe add
      */
+    @Deprecated
     @Contract("null, _ -> false")
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
         return server.addRecipe(recipe);
@@ -1366,6 +1367,7 @@ public final class Bukkit {
      * @return True if recipe was removed
      * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
+    @Deprecated
     public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
         return server.removeRecipe(key);
     }
