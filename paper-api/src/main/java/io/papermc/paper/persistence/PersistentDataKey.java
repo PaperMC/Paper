@@ -60,10 +60,10 @@ public interface PersistentDataKey<C> {
     /**
      * {@return the access key of this {@link PersistentDataKey}}
      */
-    NamespacedKey getKey();
+    NamespacedKey key();
 
     /**
      * {@return the data type of this {@link PersistentDataKey}}
      */
-    PersistentDataType<?, C> getDataType();
+    PersistentDataType<?, C> dataType();
 }

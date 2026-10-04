@@ -54,7 +54,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      */
     default <C> void set(@NotNull PersistentDataKey<C> dataKey, @NotNull C value) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        this.set(dataKey.getKey(), dataKey.getDataType(), value);
+        this.set(dataKey.key(), dataKey.dataType(), value);
     }
     // Paper - move to PersistentDataContainerView
 
@@ -75,7 +75,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      */
     default void remove(@NotNull PersistentDataKey<?> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        this.remove(dataKey.getKey());
+        this.remove(dataKey.key());
     }
     // Paper - move to PersistentDataContainerView
 
