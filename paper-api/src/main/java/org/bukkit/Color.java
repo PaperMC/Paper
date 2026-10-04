@@ -6,10 +6,12 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import net.kyori.adventure.util.ARGBLike;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * A container for a color palette. This class is immutable; the set methods
@@ -17,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * but subject to change.
  */
 @SerializableAs("Color")
-public final class Color implements ConfigurationSerializable {
+public final class Color implements ConfigurationSerializable, ARGBLike {
     private static final int BIT_MASK = 0xff;
     private static final int DEFAULT_ALPHA = 255;
 
@@ -222,6 +224,16 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
+     * Gets the alpha component
+     *
+     * @return alpha component, from 0 to 255
+     */
+    @Override
+    public int alpha() {
+        return getAlpha();
+    }
+
+    /**
      * Creates a new Color object with specified component
      *
      * @param alpha the alpha component, from 0 to 255
@@ -239,6 +251,16 @@ public final class Color implements ConfigurationSerializable {
      */
     public int getRed() {
         return BIT_MASK & red;
+    }
+
+    /**
+     * Gets the red component
+     *
+     * @return red component, from 0 to 255
+     */
+    @Override
+    public int red() {
+        return getRed();
     }
 
     /**
@@ -262,6 +284,16 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
+     * Gets the green component
+     *
+     * @return green component, from 0 to 255
+     */
+    @Override
+    public int green() {
+        return getGreen();
+    }
+
+    /**
      * Creates a new Color object with specified component
      *
      * @param green the green component, from 0 to 255
@@ -279,6 +311,16 @@ public final class Color implements ConfigurationSerializable {
      */
     public int getBlue() {
         return BIT_MASK & blue;
+    }
+
+    /**
+     * Gets the blue component
+     *
+     * @return blue component, from 0 to 255
+     */
+    @Override
+    public int blue() {
+        return getBlue();
     }
 
     /**
