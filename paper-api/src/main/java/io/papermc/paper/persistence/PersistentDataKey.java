@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
  *   );
  *   public static final PersistentDataKey<UUID> OWNING_PLAYER = PersistentDataKey.of(
  *     Key.key("custom:owning_player"),
- *     new UUIDTagType()
+ *     new UUIDTagType() // Custom type
  *   );
  *
  *   // Checks if the stored PDC value for OWNING_PLAYER matches the executor UUID and adds

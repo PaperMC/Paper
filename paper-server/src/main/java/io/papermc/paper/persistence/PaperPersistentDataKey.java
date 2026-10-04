@@ -7,7 +7,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
+public final class PaperPersistentDataKey<C> implements PersistentDataKey<C> {
     private final NamespacedKey key;
     private final PersistentDataType<?, C> type;
 
