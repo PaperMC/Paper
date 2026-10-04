@@ -149,21 +149,21 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
         /**
          * Represents forward direction.
          */
-        FORWARD(1),
+        FORWARD(OptionalInt.of(1)),
         /**
          * Represents backward direction.
          */
-        BACKWARD(-1),
+        BACKWARD(OptionalInt.of(-1)),
         /**
          * Represents indeterminable direction.
          * <p>
          * That is, for bundles with less than three item stacks inside.
          */
-        UNKNOWN(0);
+        UNKNOWN(OptionalInt.empty());
 
-        private final int delta;
+        private final OptionalInt delta;
 
-        Direction(final int delta) {
+        Direction(final OptionalInt delta) {
             this.delta = delta;
         }
 
@@ -180,7 +180,7 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
          * @return the delta
          */
         public OptionalInt getDelta() {
-            return this == UNKNOWN ? OptionalInt.empty() : OptionalInt.of(this.delta);
+            return this.delta;
         }
 
         /**
