@@ -1112,7 +1112,7 @@ public final class Bukkit {
 
     /**
      * Adds a recipe to the crafting manager.
-     * Recipes added with this method won't be sent to the client automatically.
+     * Recipes added with this method will be sent to the client automatically.
      * <p>
      * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
@@ -1129,14 +1129,14 @@ public final class Bukkit {
     /**
      * Adds a recipe to the crafting manager.
      *
-     * @apiNote resendRecipes is ignored at the moment for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
-     * @param resendRecipes true to update the client with the full set of recipes
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on recipe add
      */
     @Contract("null, _ -> false")
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
-        return server.addRecipe(recipe, resendRecipes);
+        return server.addRecipe(recipe);
     }
 
     /**
@@ -1362,12 +1362,12 @@ public final class Bukkit {
      * players).</b>
      *
      * @param key NamespacedKey of recipe to remove.
-     * @param resendRecipes true to update all clients on the new recipe list.
-     *                      Will only update if a recipe was actually removed
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return True if recipe was removed
+     * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
     public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
-        return server.removeRecipe(key, resendRecipes);
+        return server.removeRecipe(key);
     }
     // Paper end - method to resend recipes
 

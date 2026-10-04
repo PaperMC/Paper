@@ -1022,7 +1022,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     /**
      * Adds a recipe to the crafting manager.
-     * Recipes added with this method won't be sent to the client automatically.
+     * Recipes added with this method will be sent to the client automatically.
      * <p>
      * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
@@ -1032,21 +1032,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
-    default boolean addRecipe(@Nullable Recipe recipe) {
-        return this.addRecipe(recipe, false);
-    }
+    boolean addRecipe(@Nullable Recipe recipe);
 
     // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
-     * @apiNote resendRecipes is ignored for now for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
-     * @param resendRecipes true to update the client with the full set of recipes
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on recipe add
      */
+    @Deprecated
     @Contract("null, _ -> false")
-    boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
+    default boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
+        return this.addRecipe(recipe);
+    }
     // Paper end - method to send recipes immediately
 
     /**
@@ -1238,9 +1239,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
      */
-    default boolean removeRecipe(@NotNull NamespacedKey key) {
-        return this.removeRecipe(key, false);
-    }
+    boolean removeRecipe(@NotNull NamespacedKey key);
 
     // Paper start - method to resend recipes
     /**
@@ -1251,11 +1250,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * players).</b>
      *
      * @param key NamespacedKey of recipe to remove.
-     * @param resendRecipes true to update all clients on the new recipe list.
-     *                      Will only update if a recipe was actually removed
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return True if recipe was removed
+     * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
-    boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
+    @Deprecated
+    default boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
+        return this.removeRecipe(key);
+    }
     // Paper end - method to resend recipes
 
     /**

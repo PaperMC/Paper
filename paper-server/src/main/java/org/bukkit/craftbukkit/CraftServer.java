@@ -1423,7 +1423,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
+    public boolean addRecipe(Recipe recipe) {
         CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
         if (craftRecipe == null) {
             return false;
@@ -1628,7 +1628,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
+    public boolean removeRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         return this.getServer().getRecipeManager().removeRecipe(id);
