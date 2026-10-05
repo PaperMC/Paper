@@ -12,6 +12,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.profile.PlayerProfile;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -618,6 +619,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return the permission level, or 0 if the player is not an operator or entry is missing
      */
+    @Range(from = 0, to = 4)
     int getOpLevel();
 
     /**
@@ -630,5 +632,5 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param level the level to set (must be between 0 and 4)
      * @throws IllegalArgumentException if level is outside the 0–4 range
      */
-    void setOpLevel(int level);
+    void setOpLevel(@Range(from = 0, to = 4) int level);
 }
