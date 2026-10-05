@@ -7,11 +7,17 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.google.common.base.Preconditions;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.server.players.ServerOpList;
+import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -583,26 +589,22 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public boolean bypassesPlayerLimit() {
         ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
-        NameAndId nameAndId = new NameAndId(this.getUniqueId(), this.getName() != null ? this.getName() : "");
-        ServerOpListEntry entry = opList.get(nameAndId);
+        ServerOpListEntry entry = opList.get(this.nameAndId);
 
         return entry != null && entry.getBypassesPlayerLimit();
     }
 
     @Override
     public boolean setBypassesPlayerLimit(boolean bypass) {
-        MinecraftServer server = MinecraftServer.getServer();
-        ServerOpList opList = server.getPlayerList().getOps();
-
-        NameAndId nameAndId = new NameAndId(this.getUniqueId(), this.getName() != null ? this.getName() : "");
-        ServerOpListEntry existingEntry = opList.get(nameAndId);
+        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
+        ServerOpListEntry existingEntry = opList.get(this.nameAndId);
 
         if (existingEntry == null) {
             return false;
         }
 
         ServerOpListEntry newEntry = new ServerOpListEntry(
-            nameAndId,
+            this.nameAndId,
             existingEntry.permissions(),
             bypass
         );
@@ -614,8 +616,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public int getOpLevel() {
         ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
-        NameAndId nameAndId = new NameAndId(this.getUniqueId(), this.getName() != null ? this.getName() : "");
-        ServerOpListEntry entry = opList.get(nameAndId);
+        ServerOpListEntry entry = opList.get(this.nameAndId);
 
         if (entry == null) {
             return 0;
@@ -623,33 +624,24 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
         LevelBasedPermissionSet levelSet = entry.permissions();
         return levelSet.level().id();
-
     }
 
     @Override
     public void setOpLevel(int level) {
         Preconditions.checkArgument(level >= 0 && level <= 4, "Operator permission level must be between 0 and 4, got '%s'.", level);
 
-        MinecraftServer server = MinecraftServer.getServer();
-        ServerOpList opList = server.getPlayerList().getOps();
-
-        NameAndId nameAndId = new NameAndId(this.getUniqueId(), this.getName() != null ? this.getName() : "");
-        ServerOpListEntry existingEntry = opList.get(nameAndId);
+        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
+        ServerOpListEntry existingEntry = opList.get(this.nameAndId);
 
         boolean bypassesLimit = existingEntry != null && existingEntry.getBypassesPlayerLimit();
 
         PermissionLevel permLevel = PermissionLevel.byId(level);
-        ServerOpListEntry newEntry = new ServerOpListEntry(
-            nameAndId,
-            LevelBasedPermissionSet.forLevel(permLevel),
-            bypassesLimit
+        LevelBasedPermissionSet permSet = LevelBasedPermissionSet.forLevel(permLevel);
+
+        this.server.getHandle().op(
+            this.nameAndId,
+            java.util.Optional.of(permSet),
+            java.util.Optional.of(bypassesLimit)
         );
-
-        opList.add(newEntry);
-
-        ServerPlayer serverPlayer = server.getPlayerList().getPlayer(this.getUniqueId());
-        if (serverPlayer != null) {
-            server.getPlayerList().sendPlayerPermissionLevel(serverPlayer);
-        }
     }
 }
