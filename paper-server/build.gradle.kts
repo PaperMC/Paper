@@ -304,6 +304,7 @@ fun TaskContainer.registerRunTask(
     systemProperty("paper.alwaysPrintWarningState", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
+    systemProperty("joml.nounsafe", true)
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
