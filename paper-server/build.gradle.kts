@@ -246,13 +246,15 @@ tasks.test {
     val provider = objects.newInstance<MockitoAgentProvider>()
     provider.fileCollection.from(mockitoAgent)
     jvmArgumentProviders.add(provider)
-    jvmArgs(listOf("--enable-native-access=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"))
+
+    // Hides repeated jline/joml warnings due to forking
+    jvmArgs(listOf("--enable-native-access=ALL-UNNAMED"))
+    systemProperty("joml.nounsafe", true)
 }
 
 tasks.withType<io.papermc.paperweight.tasks.CreateBundlerJar>().configureEach {
     extraManifestMainAttributes = mapOf(
         "Enable-Native-Access" to "ALL-UNNAMED",
-        "Add-Exports" to "java.base/jdk.internal.misc",
     )
 }
 
@@ -285,7 +287,7 @@ fun TaskContainer.registerRunTask(
         // TODO - JB runtime 25 has issues with spark rn
         // vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED")
+    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
