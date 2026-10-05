@@ -110,7 +110,11 @@ public interface CommandSourceStack {
      */
     default void sendRichReply(String message, TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
-        this.sendReply(MiniMessage.miniMessage().deserialize(message, resolvers));
+        this.sendReply(MiniMessage.miniMessage().deserialize(
+            message,
+            getExecutor() instanceof Player player ? player : getSender(),
+            resolvers
+        ));
     }
 
     /**
