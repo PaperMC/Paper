@@ -116,7 +116,7 @@ public interface CommandSourceStack {
         Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendReply(MiniMessage.miniMessage().deserialize(
             message,
-            getExecutor() instanceof Player player ? player : getSender(),
+            this.getExecutor() instanceof Player player ? player : this.getSender(),
             resolvers
         ));
     }
