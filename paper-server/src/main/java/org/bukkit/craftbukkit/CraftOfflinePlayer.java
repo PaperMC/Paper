@@ -628,9 +628,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public void setOpLevel(int level) {
-        if (level < 0 || level > 4) {
-            throw new IllegalArgumentException("Operator permission level must be between 0 and 4.");
-        }
+        Preconditions.checkArgument(level >= 0 && level <= 4, "Operator permission level must be between 0 and 4, got '%s'.", level);
 
         MinecraftServer server = MinecraftServer.getServer();
         ServerOpList opList = server.getPlayerList().getOps();
