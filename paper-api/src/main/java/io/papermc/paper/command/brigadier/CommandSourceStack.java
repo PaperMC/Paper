@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.RedirectModifier;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
+import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -104,6 +105,9 @@ public interface CommandSourceStack {
      * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
+     * <p>This method provides the target of the system message as a {@link net.kyori.adventure.pointer.Pointered}
+     * to the MiniMessage {@link MiniMessage#deserialize(String, Pointered, TagResolver...)} method.</p>
+     *
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
      * @throws IllegalArgumentException if the message is null
@@ -156,6 +160,9 @@ public interface CommandSourceStack {
      * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
      *
+     * <p>This method provides the {@link CommandSender} of this command as a {@link net.kyori.adventure.pointer.Pointered}
+     * to the MiniMessage {@link MiniMessage#deserialize(String, Pointered, TagResolver...)} method.</p>
+     *
      * @param message the MiniMessage message to send
      * @param allowInformingAdmins whether admins and console may be informed of this success
      * @param resolvers resolvers to use
@@ -177,6 +184,9 @@ public interface CommandSourceStack {
      * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
      * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
+     *
+     * <p>This method provides the {@link CommandSender} of this command as a {@link net.kyori.adventure.pointer.Pointered}
+     * to the MiniMessage {@link MiniMessage#deserialize(String, Pointered, TagResolver...)} method.</p>
      *
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
@@ -207,6 +217,9 @@ public interface CommandSourceStack {
      * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
      * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
      * for more information on the format.</p>
+     *
+     * <p>This method provides the {@link CommandSender} of this command as a {@link net.kyori.adventure.pointer.Pointered}
+     * to the MiniMessage {@link MiniMessage#deserialize(String, Pointered, TagResolver...)} method.</p>
      *
      * @param message the MiniMessage message to send
      * @param resolvers resolvers to use
