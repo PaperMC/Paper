@@ -19,15 +19,17 @@ jobs:
     #env:
     #  BUILD_NUMBER: ${{ github.run_number }}
     steps:
-      - name: "environment"
-        run: |
-          echo "BUILD_NUMBER=$((129 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
-          echo "BUILD_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
       - name: "git / checkout"
         uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
         with:
           fetch-depth: 0
+
+      - name: "environment"
+        run: |
+          MC_VERSION=$(grep '^mcVersion=' gradle.properties | cut -d= -f2)
+          LATEST=$(curl -s https://fill.papermc.io/v3/projects/paper/versions/$MC_VERSION/builds/latest | jq -r '.id // 0')
+          echo "BUILD_NUMBER=$((LATEST + 1))" >> "$GITHUB_ENV"
+          echo "BUILD_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
       - uses: papermc/ci/setup-gradle@main
 
