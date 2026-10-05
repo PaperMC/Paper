@@ -19,8 +19,8 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
     private DyeColor base;
     private List<Pattern> patterns;
 
-    public CraftBanner(World world, BannerBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftBanner(World world, BannerBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftBanner(CraftBanner state, Location location) {
