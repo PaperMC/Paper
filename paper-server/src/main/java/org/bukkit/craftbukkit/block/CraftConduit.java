@@ -16,8 +16,8 @@ import org.bukkit.util.BoundingBox;
 
 public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> implements Conduit {
 
-    public CraftConduit(World world, ConduitBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftConduit(World world, ConduitBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftConduit(CraftConduit state, Location location) {

@@ -5,14 +5,17 @@
 # of the PR relating to this action.
 
 name: Build Paper
+
 on:
-  push:
   pull_request:
     types:
       - opened
       - reopened
       - synchronize
       - labeled
+  push:
+    branches-ignore:
+      - main
 
 jobs:
   build:
@@ -107,7 +110,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results
+          name: test-results
           path: |
             **/build/test-results/test/TEST-*.xml
 
@@ -137,12 +140,12 @@ jobs:
           publishing-task: ":paper-api:publishAllPublicationsTo_githubPackages_PRsRepository publishDevBundlePublicationTo_githubPackages_PRsRepository -PpublishDevBundle"
   event_file:
     name: "Event File"
-    # Only run on PRs if the source branch is on someone else's repo
-    if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
+    needs: build
+    if: ${{ !cancelled() && needs.build.result != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
-          name: Event File
+          name: event-data
           path: ${{ github.event_path }}
