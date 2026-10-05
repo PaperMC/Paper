@@ -37,8 +37,8 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     private static final int MAX_OWNER_LENGTH = 16;
     private ResolvableProfile profile;
 
-    public CraftSkull(World world, SkullBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftSkull(World world, SkullBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftSkull(CraftSkull state, Location location) {

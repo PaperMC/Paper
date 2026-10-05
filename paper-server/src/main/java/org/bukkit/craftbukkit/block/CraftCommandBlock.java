@@ -8,8 +8,8 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftCommandBlock extends CraftBlockEntityState<CommandBlockEntity> implements CommandBlock, io.papermc.paper.commands.PaperCommandBlockHolder {
 
-    public CraftCommandBlock(World world, CommandBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftCommandBlock(World world, CommandBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftCommandBlock(CraftCommandBlock state, Location location) {
