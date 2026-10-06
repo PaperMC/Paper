@@ -137,12 +137,12 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Checks if this explosion should spread fire
+     * Checks if this explosion can spread fire
      * on the ground.
      *
-     * @return if this explosion should spread fire
+     * @return if this explosion can spread fire
      */
-    public boolean shouldSpreadFire() {
+    public boolean canSpreadFire() {
         return this.spreadFire;
     }
 
