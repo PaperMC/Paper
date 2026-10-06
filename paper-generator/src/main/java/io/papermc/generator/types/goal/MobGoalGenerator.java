@@ -63,7 +63,7 @@ public class MobGoalGenerator extends SimpleGenerator {
             .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type));
 
         List<Class<Goal>> classes;
-        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {
+        try (ScanResult scanResult = new ClassGraph().enableAllInfo().acceptPackages("net.minecraft").scan()) {
             classes = scanResult.getSubclasses(Goal.class.getName()).loadClasses(Goal.class);
         }
 

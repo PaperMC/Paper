@@ -1,75 +1,110 @@
 package ca.spottedleaf.moonrise.common.misc;
 
-public final class AllocatingRateLimiter {
+final class AllocatingRateLimiter {
 
-    // max difference granularity in ns
-    private final long maxGranularity;
+    private double rate;
+    private long intervalNS;
+    private double maxAllocation;
 
+    // the allocation that has been taken
+    private double takeCarry = 0.0;
+    // the allocation that has yet to be taken
     private double allocation = 0.0;
     private long lastAllocationUpdate;
-    // the carry is used to store the remainder of the last take, so that the take amount remains the same (minus floating point error)
-    // over any time period using take regardless of the number of take calls or the intervals between the take calls
-    // i.e. take obtains 3.5 elements, stores 0.5 to this field for the next take() call to use and returns 3
-    private double takeCarry = 0.0;
-    private long lastTakeUpdate;
 
-    public AllocatingRateLimiter(final long maxGranularity) {
-        this.maxGranularity = maxGranularity;
+    // maxGranularity in nanoseconds, rate in units/second, maxAllocation in units, allocation in units, time in nanoseconds
+    public AllocatingRateLimiter(final double rate, final long intervalNS,
+                          final double allocation, final long time) {
+        this.reset(rate, intervalNS, allocation, time);
     }
 
-    public void reset(final long time) {
-        this.allocation = 0.0;
-        this.lastAllocationUpdate = time;
+    public double getRate() {
+        return this.rate;
+    }
+
+    public long getIntervalNS() {
+        return this.intervalNS;
+    }
+
+    public double getAllocation() {
+        return this.allocation;
+    }
+
+    public long getLastAllocationUpdate() {
+        return this.lastAllocationUpdate;
+    }
+
+    public static double getMaxAllocation(final double rate, final long intervalNS) {
+        return rate * ((double)intervalNS / 1.0E9);
+    }
+
+    // maxGranularity in nanoseconds, rate in units/second, maxAllocation in units, allocation in units, time in nanoseconds
+    public void reset(final double rate, final long intervalNS, final double allocation, final long time) {
+        this.rate = rate;
+        this.intervalNS = intervalNS;
+        this.maxAllocation = getMaxAllocation(rate, intervalNS);
+
         this.takeCarry = 0.0;
-        this.lastTakeUpdate = time;
+        this.allocation = Math.min(allocation, this.maxAllocation);
+        this.lastAllocationUpdate = time;
     }
 
-    // rate in units/s, and time in ns
-    public void tickAllocation(final long time, final double rate, final double maxAllocation) {
-        final long diff = Math.min(this.maxGranularity, time - this.lastAllocationUpdate);
+    // time in ns
+    public void tickAllocation(final long time) {
+        final long diff = Math.max(0L, time - this.lastAllocationUpdate);
         this.lastAllocationUpdate = time;
 
-        this.allocation = Math.min(maxAllocation - this.takeCarry, this.allocation + rate * (diff*1.0E-9D));
+        this.allocation = Math.min(this.maxAllocation, this.allocation + this.rate * ((double)diff / 1.0E9));
     }
 
-    public long previewAllocation(final long time, final double rate, final long maxTake) {
-        if (maxTake < 1L) {
+    public long previewAllocation(final long maxTake) {
+        if (maxTake < 0L) {
             return 0L;
         }
-
-        final long diff = Math.min(this.maxGranularity, time - this.lastTakeUpdate);
-
-        // note: abs(takeCarry) <= 1.0
-        final double take = Math.min(
-            Math.min((double)maxTake - this.takeCarry, this.allocation),
-            rate * (diff*1.0E-9)
+        return (long)Math.floor(
+                Math.min((double)maxTake, this.allocation + this.takeCarry)
         );
-
-        return (long)Math.floor(this.takeCarry + take);
     }
 
-    // rate in units/s, and time in ns
-    public long takeAllocation(final long time, final double rate, final long maxTake) {
-        if (maxTake < 1L) {
+    public long takeAllocation(final long maxTake) {
+        if (maxTake < 0L) {
             return 0L;
         }
 
+        // start with the amount we have already taken
         double ret = this.takeCarry;
-        final long diff = Math.min(this.maxGranularity, time - this.lastTakeUpdate);
-        this.lastTakeUpdate = time;
 
-        // note: abs(takeCarry) <= 1.0
-        final double take = Math.min(
-            Math.min((double)maxTake - this.takeCarry, this.allocation),
-            rate * (diff*1.0E-9)
-        );
+        // attempt to subtract the rest from the current allocation
+        final double takeFromAllocation  = Math.min((double)maxTake - ret, this.allocation);
+        this.allocation -= takeFromAllocation;
+        ret += takeFromAllocation;
 
-        ret += take;
-        this.allocation -= take;
-
+        // leave the fraction we could not take for next call
         final long retInteger = (long)Math.floor(ret);
         this.takeCarry = ret - (double)retInteger;
 
         return retInteger;
+    }
+
+    public void returnUnused(final long unused) {
+        if (unused <= 0L) {
+            return;
+        }
+        // note: expect allocation + take carry + value < maxAllocation + 1
+        final double newAllocation = Math.min(this.maxAllocation + 1.0, (this.allocation + this.takeCarry) + (double)unused);
+        this.allocation = Math.min(newAllocation - 1.0, this.maxAllocation); // allocation > 0.0 as unused >= 1
+        this.takeCarry = 0.9999999999999; // close enough really...
+    }
+
+    @Override
+    public String toString() {
+        return "AllocatingRateLimiter{" +
+            "rate=" + this.rate +
+            ", intervalNS=" + this.intervalNS +
+            ", maxAllocation=" + this.maxAllocation +
+            ", takeCarry=" + this.takeCarry +
+            ", allocation=" + this.allocation +
+            ", lastAllocationUpdate=" + this.lastAllocationUpdate +
+            '}';
     }
 }

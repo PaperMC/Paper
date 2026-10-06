@@ -8,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T> registry value type
  */
-@ApiStatus.Experimental
 @NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryBuilder<T> {

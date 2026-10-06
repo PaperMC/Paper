@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/animal/equine/SkeletonTrapGoal.java
 +++ b/net/minecraft/world/entity/animal/equine/SkeletonTrapGoal.java
-@@ -18,6 +_,7 @@
- 
+@@ -19,6 +_,7 @@
  public class SkeletonTrapGoal extends Goal {
+     private static final int LIGHTNING_INVULNERABLE_TICKS = 60;
      private final SkeletonHorse horse;
 +    private java.util.List<org.bukkit.entity.HumanEntity> eligiblePlayers; // Paper
  
-     public SkeletonTrapGoal(SkeletonHorse horse) {
+     public SkeletonTrapGoal(final SkeletonHorse horse) {
          this.horse = horse;
-@@ -25,12 +_,13 @@
+@@ -26,12 +_,13 @@
  
      @Override
      public boolean canUse() {
@@ -18,31 +18,31 @@
  
      @Override
      public void tick() {
-         ServerLevel serverLevel = (ServerLevel)this.horse.level();
+         ServerLevel level = (ServerLevel)this.horse.level();
 +        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), this.eligiblePlayers).callEvent()) return; // Paper
-         DifficultyInstance currentDifficultyAt = serverLevel.getCurrentDifficultyAt(this.horse.blockPosition());
+         DifficultyInstance difficulty = level.getCurrentDifficultyAt(this.horse.blockPosition());
          this.horse.setTrap(false);
          this.horse.setTamed(true);
-@@ -39,11 +_,11 @@
-         if (lightningBolt != null) {
-             lightningBolt.snapTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
-             lightningBolt.setVisualOnly(true);
--            serverLevel.addFreshEntity(lightningBolt);
-+            serverLevel.strikeLightning(lightningBolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRAP); // CraftBukkit
-             Skeleton skeleton = this.createSkeleton(currentDifficultyAt, this.horse);
+@@ -40,11 +_,11 @@
+         if (bolt != null) {
+             bolt.snapTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
+             bolt.setVisualOnly(true);
+-            level.addFreshEntity(bolt);
++            level.strikeLightning(bolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRAP); // CraftBukkit
+             Skeleton skeleton = this.createSkeleton(difficulty, this.horse);
              if (skeleton != null) {
                  skeleton.startRiding(this.horse);
--                serverLevel.addFreshEntityWithPassengers(skeleton);
-+                serverLevel.addFreshEntityWithPassengers(skeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRAP); // CraftBukkit
+-                level.addFreshEntityWithPassengers(skeleton);
++                level.addFreshEntityWithPassengers(skeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRAP); // CraftBukkit
  
                  for (int i = 0; i < 3; i++) {
-                     AbstractHorse abstractHorse = this.createHorse(currentDifficultyAt);
-@@ -52,7 +_,7 @@
-                         if (skeleton1 != null) {
-                             skeleton1.startRiding(abstractHorse);
-                             abstractHorse.push(this.horse.getRandom().triangle(0.0, 1.1485), 0.0, this.horse.getRandom().triangle(0.0, 1.1485));
--                            serverLevel.addFreshEntityWithPassengers(abstractHorse);
-+                            serverLevel.addFreshEntityWithPassengers(abstractHorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit
+                     AbstractHorse otherHorse = this.createHorse(difficulty);
+@@ -53,7 +_,7 @@
+                         if (otherSkeleton != null) {
+                             otherSkeleton.startRiding(otherHorse);
+                             otherHorse.push(this.horse.getRandom().triangle(0.0, 1.1485), 0.0, this.horse.getRandom().triangle(0.0, 1.1485));
+-                            level.addFreshEntityWithPassengers(otherHorse);
++                            level.addFreshEntityWithPassengers(otherHorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit
                          }
                      }
                  }

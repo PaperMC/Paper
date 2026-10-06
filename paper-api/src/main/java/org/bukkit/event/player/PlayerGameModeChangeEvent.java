@@ -44,7 +44,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
     /**
      * Gets the GameMode the player is switched to.
      *
-     * @return  player's new GameMode
+     * @return player's new GameMode
      */
     @NotNull
     public GameMode getNewGameMode() {

@@ -68,7 +68,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * @param newSize the new size
      */
     public void setNewSize(final double newSize) {
-        this.newSize = Math.clamp(newSize, 1.0D, this.worldBorder.getMaxSize());
+        this.newSize = Math.clamp(newSize, 1.0, this.worldBorder.getMaxSize());
     }
 
     /**

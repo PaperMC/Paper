@@ -5,69 +5,83 @@ package org.bukkit.entity;
  */
 public interface Ageable extends Creature {
     /**
-     * Gets the age of this mob.
+     * Gets the age of this creature.
      *
      * @return Age
      */
     public int getAge();
 
     /**
-     * Sets the age of this mob.
+     * Sets the age of this creature.
      *
      * @param age New age
      */
     public void setAge(int age);
 
     /**
-     * Lock the age of the animal, setting this will prevent the animal from
-     * maturing or getting ready for mating.
+     * Lock the age of the creature, setting this will prevent the creature from
+     * maturing or getting ready for mating. Plugins can still increase the age
+     * manually, however.
      *
-     * @param lock new lock
-     * @deprecated see {@link Breedable#setAgeLock(boolean)}
+     * @param lock new lock state
      */
-    @Deprecated(since = "1.16.2")
     public void setAgeLock(boolean lock);
 
     /**
-     * Gets the current agelock.
+     * Checks if the age of the creature is locked.
      *
-     * @return the current agelock
-     * @deprecated see {@link Breedable#getAgeLock()}
+     * @return the current lock state
+     * @see #setAgeLock(boolean)
      */
-    @Deprecated(since = "1.16.2")
     public boolean getAgeLock();
 
     /**
-     * Sets the age of the mob to a baby
+     * Transforms this creature to its baby counter-part.
+     * <p>
+     * This will not have any effect if the creature is already in
+     * this state.
+     *
+     * @apiNote some of them cannot be represented as such, so it's
+     * wise to check if {@link #isAdult()} returns {@code false} after this method
+     * for general purpose use.
+     * @see #setAdult()
+     * @see #setAge(int)
      */
     public void setBaby();
 
     /**
-     * Sets the age of the mob to an adult
+     * Transforms this creature to its adult counter-part.
+     * <p>
+     * This will not have any effect if the creature is already in
+     * this state.
+     *
+     * @see #setBaby()
+     * @see #setAge(int)
      */
     public void setAdult();
 
     /**
-     * Returns true if the mob is an adult.
+     * Returns true if the creature is an adult.
      *
-     * @return return true if the mob is an adult
+     * @return if the creature is an adult
+     * @see #getAge()
      */
     public boolean isAdult();
 
     /**
-     * Return the ability to breed of the animal.
+     * Return the ability to breed of the creature.
      *
-     * @return the ability to breed of the animal
+     * @return the ability to breed of the creature
      * @deprecated see {@link Breedable#canBreed()}
      */
     @Deprecated(since = "1.16.2")
     public boolean canBreed();
 
     /**
-     * Set breedability of the animal, if the animal is a baby and set to
+     * Set breedability of the creature, if the creature is a baby and set to
      * breed it will instantly grow up.
      *
-     * @param breed breedability of the animal
+     * @param breed breedability of the creature
      * @deprecated see {@link Breedable#setBreed(boolean)}
      */
     @Deprecated(since = "1.16.2")

@@ -43,6 +43,6 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     @Override
     public void setTreasureLocation(org.bukkit.Location location) {
-        this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPosition(location);
+        this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPos(location);
     }
 }

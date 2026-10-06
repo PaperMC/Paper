@@ -56,7 +56,7 @@ public class CraftBlockDataDestroySpeedTest {
         itemStack.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
 
         // Compute expected value by running the entire attribute instance chain
-        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, $ -> {
+        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, _ -> {
         });
         EnchantmentHelper.forEachModifier(itemStack, EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
             if (attributeHolder.is(Attributes.MINING_EFFICIENCY)) dummyInstance.addTransientModifier(attributeModifier);
@@ -66,9 +66,9 @@ public class CraftBlockDataDestroySpeedTest {
         final double expectedSpeed = toolSpeed <= 1.0F ? toolSpeed : toolSpeed + dummyInstance.getValue();
 
         // API stack + computation
-        final CraftItemStack craftMirror = CraftItemStack.asCraftMirror(itemStack);
+        final ItemStack mirror = CraftItemStack.asBukkitMirror(itemStack);
         final CraftBlockData data = CraftBlockData.createData(blockStateToMine);
-        final float actualSpeed = data.getDestroySpeed(craftMirror, true);
+        final float actualSpeed = data.getDestroySpeed(mirror, true);
 
         Assertions.assertEquals(expectedSpeed, actualSpeed, Vector.getEpsilon());
     }

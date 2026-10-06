@@ -6,8 +6,8 @@ import org.bukkit.World;
 
 public class CraftMovingPiston extends CraftBlockEntityState<PistonMovingBlockEntity> implements io.papermc.paper.block.MovingPiston { // Paper - Add Moving Piston API
 
-    public CraftMovingPiston(World world, PistonMovingBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftMovingPiston(World world, PistonMovingBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftMovingPiston(CraftMovingPiston state, Location location) {
@@ -27,7 +27,7 @@ public class CraftMovingPiston extends CraftBlockEntityState<PistonMovingBlockEn
     // Paper start - Add Moving Piston API
     @Override
     public org.bukkit.block.data.BlockData getMovingBlock() {
-        return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getBlockEntity().getMovedState());
+        return this.getBlockEntity().getMovedState().asBlockData();
     }
 
     @Override

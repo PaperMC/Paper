@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <B> The type of the registry builder
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface RegistryBuilderFactory<T, B extends RegistryBuilder<T>> {
 

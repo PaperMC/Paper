@@ -128,10 +128,10 @@ public class PersistentDataContainerTest {
     public void testNBTTagStoring() {
         CraftMetaItem itemMeta = this.createComplexItemMeta();
 
-        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator() {}; // Paper
-        itemMeta.applyToItem(compound);
+        CraftMetaItem.Applicator applicator = new CraftMetaItem.Applicator() {}; // Paper
+        itemMeta.applyToItem(applicator);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+        assertEquals(itemMeta, new CraftMetaItem(applicator.build(), null)); // Paper
     }
 
     @Test
@@ -463,7 +463,7 @@ public class PersistentDataContainerTest {
     }
 
     @Test
-    public void testEmptyListApplicationToAnyType() throws IOException {
+    public void testEmptyListApplicationToAnyType() {
         final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY, null); // Paper
         final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
@@ -519,7 +519,7 @@ public class PersistentDataContainerTest {
         assertNotNull(containerListList);
         assertEquals(1, containerListList.size());
 
-        final PersistentDataContainer[] arrayOfPDC = containerListList.get(0);
+        final PersistentDataContainer[] arrayOfPDC = containerListList.getFirst();
         assertEquals(2, arrayOfPDC.length);
 
         assertEquals("hi", arrayOfPDC[0].get(PersistentDataContainerTest.requestKey("a"), PersistentDataType.STRING));

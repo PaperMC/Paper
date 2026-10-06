@@ -19,7 +19,6 @@ import org.jspecify.annotations.Nullable;
  * @see net.kyori.adventure.text.event.ClickEvent#custom(Key, BinaryTagHolder)
  * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 @NullMarked
 public abstract class PlayerCustomClickEvent extends Event {

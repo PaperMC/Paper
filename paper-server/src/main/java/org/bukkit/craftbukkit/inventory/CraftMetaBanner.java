@@ -20,6 +20,9 @@ import org.bukkit.inventory.meta.BannerMeta;
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
+    @Deprecated
+    public static final int ARBITRARY_LIMIT = 20;
+
     static final ItemMetaKeyType<BannerPatternLayers> PATTERNS = new ItemMetaKeyType<>(DataComponents.BANNER_PATTERNS, "patterns");
 
     private List<Pattern> patterns = new ArrayList<>();
@@ -34,12 +37,12 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         this.patterns = new ArrayList<>(bannerMeta.patterns);
     }
 
-    CraftMetaBanner(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaBanner(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBanner.PATTERNS).ifPresent((entityTag) -> {
-            List<BannerPatternLayers.Layer> patterns = entityTag.layers();
-            for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+        getOrEmpty(patch, CraftMetaBanner.PATTERNS).ifPresent((bannerPattern) -> {
+            List<BannerPatternLayers.Layer> patterns = bannerPattern.layers();
+            for (int i = 0; i < Math.min(patterns.size(), ARBITRARY_LIMIT); i++) {
                 BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
                 PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern

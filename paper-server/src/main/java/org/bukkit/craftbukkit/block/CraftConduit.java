@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.level.block.entity.ConduitBlockEntity;
@@ -17,8 +16,8 @@ import org.bukkit.util.BoundingBox;
 
 public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> implements Conduit {
 
-    public CraftConduit(World world, ConduitBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftConduit(World world, ConduitBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftConduit(CraftConduit state, Location location) {
@@ -104,7 +103,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
         ConduitBlockEntity.updateAndAttackTarget(
             conduit.getLevel().getMinecraftWorld(),
             this.getPosition(),
-            this.data,
+            this.block,
             conduit,
             conduit.effectBlocks.size() >= ConduitBlockEntity.MIN_KILL_SIZE,
             false
@@ -120,7 +119,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
         }
 
         final net.minecraft.world.entity.LivingEntity nmsEntity = EntityReference.get(conduit.destroyTarget, this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class);
-        return nmsEntity == null ? null : nmsEntity.getBukkitLivingEntity();
+        return nmsEntity == null ? null : nmsEntity.getBukkitEntity();
     }
 
     @Override

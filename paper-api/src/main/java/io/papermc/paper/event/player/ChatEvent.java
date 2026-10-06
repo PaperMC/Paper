@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
  * It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
  */
 @Deprecated
-@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
+@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.", propagate = false)
 @NullMarked
 public final class ChatEvent extends AbstractChatEvent {
 

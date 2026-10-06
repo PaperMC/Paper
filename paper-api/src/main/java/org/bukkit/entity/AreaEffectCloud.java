@@ -20,14 +20,14 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Gets the duration which this cloud will exist for (in ticks).
      *
-     * @return cloud duration
+     * @return cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     int getDuration();
 
     /**
      * Sets the duration which this cloud will exist for (in ticks).
      *
-     * @param duration cloud duration
+     * @param duration cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     void setDuration(int duration);
 
@@ -115,7 +115,7 @@ public interface AreaEffectCloud extends Entity {
     float getRadiusPerTick();
 
     /**
-     * Gets the amount that the radius of this cloud will decrease by each tick.
+     * Sets the amount that the radius of this cloud will decrease by each tick.
      *
      * @param radius per tick delta
      */
@@ -139,7 +139,7 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Sets the particle which this cloud will be composed of
      *
-     * @param <T> type of particle data (see {@link Particle#getDataType()}
+     * @param <T> type of particle data (see {@link Particle#getDataType()})
      * @param particle the new particle type
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}

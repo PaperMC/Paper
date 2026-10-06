@@ -490,30 +490,30 @@ public class RegistryClassTest {
         List<Identifier> missingKeys = new ArrayList<>();
 
         for (Object nmsObject : registry) {
-            Identifier minecraftKey = registry.getKey(nmsObject);
+            Identifier key = registry.getKey(nmsObject);
 
             try {
-                Field field = type.getField(this.convertToFieldName(minecraftKey.getPath()));
+                Field field = type.getField(this.convertToFieldName(key.getPath()));
 
                 // Only fields which are not Deprecated
                 // and have the right registry item associated with the field count.
                 if (!RegistryClassTest.isValidField(type, field)) {
-                    missingKeys.add(minecraftKey);
+                    missingKeys.add(key);
                     continue;
                 }
 
                 T keyed = (T) field.get(null);
 
                 if (keyed == null) {
-                    missingKeys.add(minecraftKey);
+                    missingKeys.add(key);
                     continue;
                 }
 
-                if (!keyed.getKey().equals(CraftNamespacedKey.fromMinecraft(minecraftKey))) {
-                    missingKeys.add(minecraftKey);
+                if (!keyed.getKey().equals(CraftNamespacedKey.fromMinecraft(key))) {
+                    missingKeys.add(key);
                 }
             } catch (NoSuchFieldException e) {
-                missingKeys.add(minecraftKey);
+                missingKeys.add(key);
             }
         }
 

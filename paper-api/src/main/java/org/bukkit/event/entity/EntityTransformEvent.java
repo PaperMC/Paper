@@ -16,17 +16,17 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final List<Entity> convertedList;
+    private final List<Entity> transformedEntities;
     private final Entity converted;
     private final TransformReason transformReason;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityTransformEvent(Entity original, List<Entity> convertedList, TransformReason transformReason) {
+    public EntityTransformEvent(Entity original, List<Entity> transformedEntities, TransformReason transformReason) {
         super(original);
-        this.convertedList = Collections.unmodifiableList(convertedList);
-        this.converted = convertedList.getFirst();
+        this.transformedEntities = Collections.unmodifiableList(transformedEntities);
+        this.converted = transformedEntities.getFirst();
         this.transformReason = transformReason;
     }
 
@@ -36,7 +36,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      * @return The transformed entities.
      */
     public List<Entity> getTransformedEntities() {
-        return this.convertedList;
+        return this.transformedEntities;
     }
 
     /**

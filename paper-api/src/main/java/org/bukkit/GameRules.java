@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -132,8 +133,9 @@ public final class GameRules {
     public static final GameRule<Boolean> WATER_SOURCE_CONVERSION = getRule("water_source_conversion");
     // End generate - GameRules
 
+    @SuppressWarnings("unchecked")
     private static <T> GameRule<T> getRule(@KeyPattern.Value String key) {
-        return (GameRule<T>) Registry.GAME_RULE.getOrThrow(NamespacedKey.minecraft(key));
+        return (GameRule<T>) Registry.GAME_RULE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     private GameRules() {

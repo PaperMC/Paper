@@ -20,7 +20,7 @@ public final class NumberConversions {
     }
 
     public static int round(double num) {
-        return floor(num + 0.5d);
+        return floor(num + 0.5);
     }
 
     public static double square(double num) {

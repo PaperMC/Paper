@@ -2,9 +2,9 @@
 +++ b/net/minecraft/world/item/component/Consumable.java
 @@ -84,13 +_,35 @@
  
-         stack.getAllOfType(ConsumableListener.class).forEach(consumableListener -> consumableListener.onConsume(level, entity, stack, this));
+         stack.getAllOfType(ConsumableListener.class).forEach(component -> component.onConsume(level, user, stack, this));
          if (!level.isClientSide()) {
--            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, entity));
+-            this.onConsumeEffects.forEach(action -> action.apply(level, stack, user));
 +            // CraftBukkit start
 +            org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause;
 +            if (stack.is(net.minecraft.world.item.Items.MILK_BUCKET)) {
@@ -15,12 +15,12 @@
 +                cause = org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD;
 +            }
 +
-+            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, entity, cause));
++            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, user, cause));
 +            // CraftBukkit end
          }
  
-         entity.gameEvent(this.animation == ItemUseAnimation.DRINK ? GameEvent.DRINK : GameEvent.EAT);
-         stack.consume(1, entity);
+         user.gameEvent(this.animation == ItemUseAnimation.DRINK ? GameEvent.DRINK : GameEvent.EAT);
+         stack.consume(1, user);
          return stack;
      }
 +
@@ -35,5 +35,5 @@
 +    }
 +    // CraftBukkit end
  
-     public boolean canConsume(LivingEntity entity, ItemStack stack) {
+     public boolean canConsume(final LivingEntity user, final ItemStack stack) {
          FoodProperties foodProperties = stack.get(DataComponents.FOOD);

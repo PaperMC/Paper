@@ -272,10 +272,15 @@ public final class JavaPluginLoader implements PluginLoader {
                 // This loop checks for extending deprecated events
                 if (clazz.getAnnotation(Deprecated.class) != null) {
                     Warning warning = clazz.getAnnotation(Warning.class);
+                    if (warning != null && !warning.propagate() && !clazz.equals(eventClass)) {
+                        break;
+                    }
+
                     WarningState warningState = server.getWarningState();
                     if (!warningState.printFor(warning)) {
                         break;
                     }
+
                     plugin.getLogger().log(
                             Level.WARNING,
                             String.format(
@@ -283,14 +288,14 @@ public final class JavaPluginLoader implements PluginLoader {
                                     plugin.getDescription().getFullName(),
                                     clazz.getName(),
                                     method.toGenericString(),
-                                    (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
+                                    (warning != null && !warning.reason().isEmpty()) ? warning.reason() : "Please see the deprecation notice on the event for more info",
                                     Arrays.toString(plugin.getDescription().getAuthors().toArray())),
                             warningState == WarningState.ON ? new AuthorNagException(null) : null);
                     break;
                 }
             }
 
-            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
+            EventExecutor executor = new EventExecutor() {
                 @Override
                 public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                     try {
@@ -304,7 +309,7 @@ public final class JavaPluginLoader implements PluginLoader {
                         throw new EventException(t);
                     }
                 }
-            }, plugin, method, eventClass); // Paper
+            };
             eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
         }
         return ret;
