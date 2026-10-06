@@ -34,8 +34,8 @@ import org.bukkit.entity.EntityType;
 
 public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
 
-    public CraftCreatureSpawner(World world, SpawnerBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftCreatureSpawner(World world, SpawnerBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftCreatureSpawner(CraftCreatureSpawner state, Location location) {

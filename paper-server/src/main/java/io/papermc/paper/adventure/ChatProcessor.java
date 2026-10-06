@@ -170,7 +170,7 @@ public final class ChatProcessor {
 
     private void readModernModifications(final AbstractChatEvent chatEvent, final ChatRenderer originalRenderer) {
         this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.paper$originalMessage));
-        if (originalRenderer != chatEvent.renderer()) { // don't set to false if it hasn't changed
+        if (originalRenderer != chatEvent.renderer()) { // don't set to true if it hasn't changed
             this.flags.set(FORMAT_CHANGED, true);
         }
     }
