@@ -53,7 +53,7 @@ public interface PersistentDataKey<C> {
      * @return a new {@link PersistentDataKey} of the given key and type
      * @throws IllegalArgumentException if either key or type are null
      */
-    static <C> PersistentDataKey<C> of(Key key, PersistentDataType<?, C> type) {
+    static <C> PersistentDataKey<C> of(final Key key, final PersistentDataType<?, C> type) {
         return InternalAPIBridge.get().createPersistentDataKey(key, type);
     }
 
