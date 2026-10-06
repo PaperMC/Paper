@@ -125,15 +125,15 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate, final boolean restricted) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate, @Override boolean restricted) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
             @Override
             public boolean test(final CommandSourceStack commandSourceStack) {
                 return this.predicate.test(commandSourceStack);
             }
         }
 
-        return new RestrictedPredicate(predicate);
+        return new RestrictedPredicate(predicate, restricted);
     }
 
     @Override
