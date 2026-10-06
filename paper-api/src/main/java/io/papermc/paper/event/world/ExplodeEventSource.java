@@ -72,8 +72,7 @@ public sealed interface ExplodeEventSource permits ExplodeEventSource.BlockSourc
          *
          * @return the item owner.
          */
-        @Nullable
-        LivingEntity itemOwner();
+        @Nullable LivingEntity itemOwner();
 
         /**
          * The entity affected by this explosion.
