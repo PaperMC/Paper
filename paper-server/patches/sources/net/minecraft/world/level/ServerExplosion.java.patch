@@ -130,7 +130,7 @@
  
 +        // Paper start - call explode events
 +        // call the generic event (new event) after old events
-+            io.papermc.paper.event.world.ExplodeEvent explodeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callGenericExplodeEvent(this, org.bukkit.craftbukkit.event.CraftEventFactory.handleLegacyExplodeEvents(this, targetBlocks));
++        io.papermc.paper.event.world.ExplodeEvent explodeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callGenericExplodeEvent(this, org.bukkit.craftbukkit.event.CraftEventFactory.handleLegacyExplodeEvents(this, targetBlocks));
 +        if (this.wasCanceled) {
 +            return;
 +        }
@@ -169,24 +169,44 @@
              }
          }
      }
-@@ -242,8 +_,16 @@
+@@ -236,15 +_,35 @@
+         this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
+         List<BlockPos> toBlow = this.calculateExplodedPositions();
+         this.hurtEntities();
++        // Paper start - air positions are filtered out of the explode events but are still needed to spread fire
++        final List<BlockPos> airFirePositions = new ArrayList<>();
++        if (this.fire) {
++            for (final BlockPos pos : toBlow) {
++                if (this.level.isEmptyBlock(pos)) {
++                    airFirePositions.add(pos.immutable());
++                }
++            }
++        }
++        // Paper end
+         if (this.interactsWithBlocks()) {
+             ProfilerFiller profiler = Profiler.get();
+             profiler.push("explosion_blocks");
              this.interactWithBlocks(toBlow);
              profiler.pop();
          }
-+        // Paper start - call generic event for visual-only explosion
++        // Paper start - call explode events
 +        else {
 +            final io.papermc.paper.event.world.ExplodeEvent explodeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.handleGenericExplodeEvent(this, toBlow);
 +            if (!this.wasCanceled) {
 +                toBlow = io.papermc.paper.util.MCUtil.fromBlocks(explodeEvent.getAffectedBlocks());
 +            }
 +        }
-+        // Paper end - call generic event for visual-only explosion
  
 -        if (this.fire) {
-+        if (this.fire && !this.wasCanceled) { // Paper - skip fire spread if explosion was canceled
-             this.createFire(toBlow);
+-            this.createFire(toBlow);
++        if (this.fire && !this.wasCanceled) {
++            final List<BlockPos> firePositions = new ArrayList<>(airFirePositions);
++            firePositions.addAll(toBlow);
++            this.createFire(firePositions);
++            // Paper end - call explode events
          }
  
+         return toBlow.size();
 @@ -325,4 +_,85 @@
              }
          }
