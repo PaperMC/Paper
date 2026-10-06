@@ -52,7 +52,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <C> void set(@NotNull PersistentDataKey<C> dataKey, @NotNull C value) {
+    default <C> void set(final @NotNull PersistentDataKey<C> dataKey, final @NotNull C value) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
         this.set(dataKey.key(), dataKey.dataType(), value);
     }
@@ -73,7 +73,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @param dataKey the data key to remove
      * @throws IllegalArgumentException if the provided data key is null
      */
-    default void remove(@NotNull PersistentDataKey<?> dataKey) {
+    default void remove(final @NotNull PersistentDataKey<?> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
         this.remove(dataKey.key());
     }

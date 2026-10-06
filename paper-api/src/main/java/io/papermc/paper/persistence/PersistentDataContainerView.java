@@ -88,9 +88,9 @@ public interface PersistentDataContainerView {
      * @return if a value with the provided key and type exists
      * @throws IllegalArgumentException if the key to look up is null
      */
-    default boolean has(PersistentDataKey<?> dataKey) {
+    default boolean has(final PersistentDataKey<?> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return has(dataKey.key(), dataKey.dataType());
+        return this.has(dataKey.key(), dataKey.dataType());
     }
 
     /**
@@ -151,9 +151,9 @@ public interface PersistentDataContainerView {
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <C> @Nullable C get(PersistentDataKey<C> dataKey) {
+    default <C> @Nullable C get(final PersistentDataKey<C> dataKey) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return get(dataKey.key(), dataKey.dataType());
+        return this.get(dataKey.key(), dataKey.dataType());
     }
 
     /**
@@ -172,9 +172,9 @@ public interface PersistentDataContainerView {
      * @throws IllegalArgumentException if no suitable adapter was found for
      * the {@link PersistentDataType#getPrimitiveType()}
      */
-    default <C> C getOrDefault(PersistentDataKey<C> dataKey, C defaultValue) {
+    default <C> C getOrDefault(final PersistentDataKey<C> dataKey, final C defaultValue) {
         Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
-        return getOrDefault(dataKey.key(), dataKey.dataType(), defaultValue);
+        return this.getOrDefault(dataKey.key(), dataKey.dataType(), defaultValue);
     }
 
     /**
