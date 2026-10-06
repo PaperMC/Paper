@@ -52,4 +52,9 @@ public interface PlayerPostEffects {
      */
     boolean clear();
 
+    /**
+     * Forces an update of post-effects that are currently applied to the player.
+     */
+    void update();
+
 }
