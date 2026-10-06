@@ -248,7 +248,7 @@ tasks.test {
     jvmArgumentProviders.add(provider)
 
     // Hides repeated jline/joml warnings due to forking
-    jvmArgs(listOf("--enable-native-access=ALL-UNNAMED"))
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("joml.nounsafe", true)
 }
 
