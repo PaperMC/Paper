@@ -170,7 +170,7 @@ public interface CommandSourceStack {
      */
     default void sendRichSuccess(String message, boolean allowInformingAdmins, TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
-        this.sendSuccess(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers), allowInformingAdmins);
+        this.sendSuccess(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers), allowInformingAdmins);
     }
 
     /**
@@ -227,6 +227,6 @@ public interface CommandSourceStack {
      */
     default void sendRichFailure(String message, TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
-        this.sendFailure(MiniMessage.miniMessage().deserialize(message, getSender(), resolvers));
+        this.sendFailure(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers));
     }
 }
