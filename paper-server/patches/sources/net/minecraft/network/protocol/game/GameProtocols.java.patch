@@ -1,0 +1,49 @@
+--- a/net/minecraft/network/protocol/game/GameProtocols.java
++++ b/net/minecraft/network/protocol/game/GameProtocols.java
+@@ -37,8 +_,29 @@
+ import net.minecraft.network.protocol.ping.ServerboundPingRequestPacket;
+ 
+ public class GameProtocols {
++    // Paper start - check if game master
++    public static final CodecModifier<RegistryFriendlyByteBuf, ServerboundTestInstanceBlockActionPacket, GameProtocols.Context> IS_GAME_MASTER = (original, context) -> new StreamCodec<>(
++    ) {
++        @Override
++        public ServerboundTestInstanceBlockActionPacket decode(final RegistryFriendlyByteBuf input) {
++            if (!context.canUseCommandBlocks()) {
++                throw new SkipPacketDecoderException("Not a game master");
++            } else {
++                return original.decode(input);
++            }
++        }
++
++        @Override
++        public void encode(final RegistryFriendlyByteBuf output, final ServerboundTestInstanceBlockActionPacket value) {
++            if (!context.canUseCommandBlocks()) {
++                throw new SkipPacketEncoderException("Not a game master");
++            }
++            original.encode(output, value);
++        }
++    };
++    // Paper end - check if game master
+     public static final CodecModifier<RegistryFriendlyByteBuf, ServerboundSetCreativeModeSlotPacket, GameProtocols.Context> HAS_INFINITE_MATERIALS = (original, context) -> new StreamCodec<RegistryFriendlyByteBuf, ServerboundSetCreativeModeSlotPacket>(
+-        
++
+     ) {
+         @Override
+         public ServerboundSetCreativeModeSlotPacket decode(final RegistryFriendlyByteBuf input) {
+@@ -125,7 +_,7 @@
+             .addPacket(GamePacketTypes.SERVERBOUND_SPECTATOR_ACTION, ServerboundSpectatorActionPacket.STREAM_CODEC)
+             .addPacket(GamePacketTypes.SERVERBOUND_SWING, ServerboundSwingPacket.STREAM_CODEC)
+             .addPacket(GamePacketTypes.SERVERBOUND_TELEPORT_TO_ENTITY, ServerboundTeleportToEntityPacket.STREAM_CODEC)
+-            .addPacket(GamePacketTypes.SERVERBOUND_TEST_INSTANCE_BLOCK_ACTION, ServerboundTestInstanceBlockActionPacket.STREAM_CODEC)
++            .addPacket(GamePacketTypes.SERVERBOUND_TEST_INSTANCE_BLOCK_ACTION, ServerboundTestInstanceBlockActionPacket.STREAM_CODEC, IS_GAME_MASTER) // Paper - check if game master
+             .addPacket(GamePacketTypes.SERVERBOUND_USE_ITEM_ON, ServerboundUseItemOnPacket.STREAM_CODEC)
+             .addPacket(GamePacketTypes.SERVERBOUND_USE_ITEM, ServerboundUseItemPacket.STREAM_CODEC)
+             .addPacket(CommonPacketTypes.SERVERBOUND_CUSTOM_CLICK_ACTION, ServerboundCustomClickActionPacket.STREAM_CODEC)
+@@ -277,5 +_,6 @@
+ 
+     public interface Context {
+         boolean hasInfiniteMaterials();
++        boolean canUseCommandBlocks(); // Paper - check if game master
+     }
+ }
