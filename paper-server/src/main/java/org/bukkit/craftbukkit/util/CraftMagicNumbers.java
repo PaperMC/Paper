@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import net.kyori.adventure.key.Key;
@@ -43,6 +45,10 @@ import net.minecraft.advancements.AdvancementTree;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.data.PackOutput;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -55,6 +61,8 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.StrictJsonParser;
 import net.minecraft.util.datafix.DataFixers;
@@ -82,6 +90,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
 import org.bukkit.craftbukkit.legacy.FieldRename;
@@ -92,12 +101,14 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
 
+    private static final ScopedValue<ConcurrentHashMap<Connection, ConcurrentLinkedQueue<Packet<? super ClientGamePacketListener>>>> INTERCEPTED_PACKETS = ScopedValue.newInstance();
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
@@ -661,5 +672,67 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftItemStack.asBukkitCopy(net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.codec()
             .parse(ops, encoded).getOrThrow(IllegalStateException::new)
             .item());
+    }
+
+    @Override
+    public void interceptingPackets(final boolean send, final @NonNull Runnable task) {
+        Preconditions.checkArgument(task != null, "task cannot be null");
+        final ConcurrentHashMap<Connection, ConcurrentLinkedQueue<Packet<? super ClientGamePacketListener>>> intercepted = new ConcurrentHashMap<>();
+        try {
+            ScopedValue.where(INTERCEPTED_PACKETS, intercepted).run(task);
+        } finally {
+            if (send) {
+                intercepted.forEach(CraftMagicNumbers::sendInterceptedPackets);
+            }
+        }
+    }
+
+    @Override
+    public void sendInterceptedPackets() {
+        Preconditions.checkState(INTERCEPTED_PACKETS.isBound(), "Not intercepting packets");
+        INTERCEPTED_PACKETS.get().forEach(CraftMagicNumbers::sendInterceptedPackets);
+    }
+
+    @Override
+    public void sendInterceptedPackets(final org.bukkit.entity.@NonNull Player player) {
+        Preconditions.checkArgument(player != null, "player cannot be null");
+        Preconditions.checkState(INTERCEPTED_PACKETS.isBound(), "Not intercepting packets");
+        final Connection connection = ((CraftPlayer) player).getHandle().connection.connection;
+        final ConcurrentLinkedQueue<Packet<? super ClientGamePacketListener>> queue = INTERCEPTED_PACKETS.get().get(connection);
+        if (queue != null) {
+            sendInterceptedPackets(connection, queue);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static boolean interceptPacket(final ServerCommonPacketListenerImpl listener, final Packet<?> packet) {
+        // Bundles only exist in the game protocol and can't contain terminal packets
+        if (packet == null || !INTERCEPTED_PACKETS.isBound() || !(listener instanceof ServerGamePacketListenerImpl) || packet.isTerminal()) {
+            return false;
+        }
+
+        final ConcurrentLinkedQueue<Packet<? super ClientGamePacketListener>> queue = INTERCEPTED_PACKETS.get().computeIfAbsent(listener.connection, key -> new ConcurrentLinkedQueue<>());
+        if (packet instanceof final ClientboundBundlePacket bundle) {
+            for (final Packet<? super ClientGamePacketListener> subPacket : bundle.subPackets()) {
+                if (subPacket != null) {
+                    queue.add(subPacket);
+                }
+            }
+        } else {
+            queue.add((Packet<? super ClientGamePacketListener>) packet);
+        }
+        return true;
+    }
+
+    private static void sendInterceptedPackets(final Connection connection, final ConcurrentLinkedQueue<Packet<? super ClientGamePacketListener>> queue) {
+        final List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+        Packet<? super ClientGamePacketListener> packet;
+        while ((packet = queue.poll()) != null) {
+            packets.add(packet);
+        }
+
+        if (!packets.isEmpty()) {
+            connection.send(new ClientboundBundlePacket(packets));
+        }
     }
 }

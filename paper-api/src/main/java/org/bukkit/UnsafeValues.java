@@ -9,6 +9,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
@@ -276,5 +277,41 @@ public interface UnsafeValues {
      * @return the deserialized {@code ItemStack}
      */
     @NotNull ItemStack deserializeItemHover(HoverEvent.@NotNull ShowItem itemHover);
+
+    /**
+     * Runs the given task, intercepting the packets sent to players while it runs instead of sending them.
+     * <p>
+     * Intercepted packets are queued per player. They can be sent at any point during the task using
+     * {@link #sendInterceptedPackets()} or {@link #sendInterceptedPackets(Player)}, which send the queued
+     * packets of a player together as a single bundle, so that the client handles all of them at once.
+     * <p>
+     * Once the task completes, the packets still queued are either sent the same way, or discarded.
+     *
+     * @param send whether to send the packets still queued once the task completes, instead of discarding them
+     * @param task the task to run while intercepting packets
+     */
+    void interceptingPackets(boolean send, @NotNull Runnable task);
+
+    /**
+     * Sends the packets intercepted so far by the current {@link #interceptingPackets(boolean, Runnable)}.
+     * <p>
+     * The queued packets of each player are sent together as a single bundle, so that the client
+     * handles all of them at once. Packets sent afterward during the task keep being intercepted.
+     *
+     * @throws IllegalStateException if not called within {@link #interceptingPackets(boolean, Runnable)}
+     */
+    void sendInterceptedPackets();
+
+    /**
+     * Sends the packets intercepted so far for the given player by the current
+     * {@link #interceptingPackets(boolean, Runnable)}.
+     * <p>
+     * The queued packets of the player are sent together as a single bundle, so that the client
+     * handles all of them at once. Packets queued for other players stay intercepted.
+     *
+     * @param player the player whose intercepted packets to send
+     * @throws IllegalStateException if not called within {@link #interceptingPackets(boolean, Runnable)}
+     */
+    void sendInterceptedPackets(@NotNull Player player);
 
 }
