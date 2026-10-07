@@ -66,8 +66,25 @@
      }
  
      public static void serverTick(final ServerLevel level, final BlockPos pos, BlockState state, final AbstractFurnaceBlockEntity entity) {
-@@ -172,6 +_,15 @@
-                     if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
+@@ -169,9 +_,31 @@
+                 if (recipe != null) {
+                     int maxStackSize = entity.getMaxStackSize();
+                     ItemStack burnResult = recipe.value().assemble(input);
+-                    if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
++                    // Paper start - add FurnacePreSmeltEvent
++                    boolean canBurn = !burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult);
++                    io.papermc.paper.event.block.FurnacePreSmeltEvent preSmeltEvent = new io.papermc.paper.event.block.FurnacePreSmeltEvent(
++                        org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                        org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(ingredient),
++                        (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe(),
++                        canBurn,
++                        entity.cookingTotalTime
++                    );
++                    preSmeltEvent.callEvent();
++                    canBurn = preSmeltEvent.isAllowed();
++                    entity.cookingTotalTime = preSmeltEvent.getTotalCookTime();
++                    // Paper end - add FurnacePreSmeltEvent
++                    if (canBurn) {
                          if (!isLit) {
                              int newLitTime = entity.getBurnDuration(level, fuel);
 +                            // CraftBukkit start
@@ -103,7 +120,7 @@
 +                                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(ingredient),
 +                                    (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe(),
-+                                    getTotalCookTime(level, entity)
++                                    entity.cookingTotalTime // Paper - respect FurnacePreSmeltEvent cooking time
 +                                );
 +                                smeltEvent.callEvent();
 +
