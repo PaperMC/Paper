@@ -52,4 +52,13 @@ public interface PlayerPostEffects {
      */
     boolean clear();
 
+    /**
+     * Forces an immediate update of post-effects currently applied to the player.
+     * <p>
+     * Calling this method manually is usually unnecessary, as post-effects are automatically
+     * synchronized at the end of the player entity tick. It should only be called if changes
+     * need to be synchronized immediately.
+     */
+    void update();
+
 }
