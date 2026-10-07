@@ -981,7 +981,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getStarvationRate();
 
     /**
-     * Get the starvation rate (1 health per x ticks) of
+     * Set the starvation rate (1 health per x ticks) of
      * the HumanEntity. Default is 80.
      *
      * @param ticks the amount of ticks to lose 1 health
