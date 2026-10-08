@@ -69,14 +69,15 @@ public interface InternalAPIBridge {
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 
     /**
-     * Causes this predicate to be considered restricted.
-     * Applying this to a command node prevents this command from being executed from an
-     * unattended context, such as click events.
+     * Allows overriding default restricted check.
+     * Applying this to a command node forcefully prevents or permits this command to be
+     * executed from an unattended context, such as click events.
      *
-     * @param predicate wrapped predicate
+     * @param predicate  wrapped predicate
+     * @param restricted restricted status of the predicate
      * @return wrapped predicate
      */
-    Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
+    Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate, boolean restricted);
 
     ResolvableProfile defaultMannequinProfile();
 
