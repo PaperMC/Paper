@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
 import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
@@ -4076,4 +4077,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * clearing any fixed pose in the process.
      */
     void unsetFixedPose();
+
+    /**
+     * Gets the post-effects that can be applied to this player.
+     *
+     * @return the post-effects
+     */
+    PlayerPostEffects postEffects();
 }
