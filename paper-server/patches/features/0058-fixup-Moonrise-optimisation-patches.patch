@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 18:18:57 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/net/minecraft/world/level/levelgen/material/MaterialSystem.java b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+index 3d3b6e5e2aa516c1ed04be8b2c22d75c76192044..b339467cb268a023dd160d011bcc9ee94875fe01 100644
+--- a/net/minecraft/world/level/levelgen/material/MaterialSystem.java
++++ b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+@@ -250,7 +250,8 @@ public class MaterialSystem {
+         DensityVolume volume = new DensityVolume(1, 1, 1, pos.getX(), pos.getY(), pos.getZ());
+         MaterialRuleContext context = new MaterialRuleContext(this, randomState, volume, densitySamplers, biomeGetter, worldGenerationContext, null);
+         // Paper start - optimise chunk generation - provide a buffer allocator to significantly reduce memory allocations
+-        context.moonrise$setDensityBufferAllocator(BUFFERS_FOR_TOP_MATERIAL.get().acquire());
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache topMaterialAllocator = BUFFERS_FOR_TOP_MATERIAL.get();
++        context.moonrise$setDensityBufferAllocator(topMaterialAllocator == null ? null : topMaterialAllocator.acquire());
+         BUFFERS_FOR_TOP_MATERIAL.set(null);
+         // Paper end - optimise chunk generation
+         RuleEvaluator rule = ruleSource.compile(context);
