@@ -19,7 +19,7 @@ class ShearableDropsTest {
         try (ScanResult scanResult = new ClassGraph()
             .enableClassInfo()
             .enableMethodInfo()
-            .whitelistPackages("net.minecraft")
+            .acceptPackages("net.minecraft")
             .scan()
         ) {
             return new ArrayList<>(scanResult.getClassesImplementing(Shearable.class.getName()));

@@ -10,13 +10,11 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the properties for this item for when it is consumed.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Consumable extends BuildableDataComponent<Consumable, Consumable.Builder> {
 

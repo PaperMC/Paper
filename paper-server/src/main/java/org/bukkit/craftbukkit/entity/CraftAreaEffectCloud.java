@@ -219,7 +219,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public ProjectileSource getSource() {
         net.minecraft.world.entity.LivingEntity source = this.getHandle().getOwner();
-        return (source == null) ? null : (LivingEntity) source.getBukkitEntity();
+        return (source == null) ? null : source.getBukkitEntity();
     }
 
     @Override

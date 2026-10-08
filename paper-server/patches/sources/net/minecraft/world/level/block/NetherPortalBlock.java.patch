@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/NetherPortalBlock.java
 +++ b/net/minecraft/world/level/block/NetherPortalBlock.java
-@@ -67,7 +_,7 @@
+@@ -60,7 +_,7 @@
  
      @Override
      protected void randomTick(final BlockState state, final ServerLevel level, BlockPos pos, final RandomSource random) {
@@ -9,7 +9,7 @@
              && level.getLevelData().getDifficulty() != Difficulty.PEACEFUL
              && level.environmentAttributes().getValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS, pos)
              && random.nextInt(2000) < level.getDifficulty().getId()
-@@ -77,9 +_,13 @@
+@@ -70,9 +_,13 @@
              }
  
              if (level.getBlockState(pos).isValidSpawn(level, pos, EntityTypes.ZOMBIFIED_PIGLIN)) {
@@ -24,7 +24,7 @@
                      Entity vehicle = entity.getVehicle();
                      if (vehicle != null) {
                          vehicle.setPortalCooldown();
-@@ -117,7 +_,13 @@
+@@ -110,7 +_,13 @@
          final InsideBlockEffectApplier effectApplier,
          final boolean isPrecise
      ) {
@@ -38,7 +38,7 @@
              entity.setAsInsidePortal(this, pos);
          }
      }
-@@ -135,17 +_,40 @@
+@@ -128,17 +_,40 @@
  
      @Override
      public @Nullable TeleportTransition getPortalDestination(final ServerLevel currentLevel, final Entity entity, final BlockPos portalEntryPos) {
@@ -82,7 +82,7 @@
      }
  
      private @Nullable TeleportTransition getExitPortal(
-@@ -155,8 +_,9 @@
+@@ -148,8 +_,9 @@
          final BlockPos approximateExitPos,
          final boolean toNether,
          final WorldBorder worldBorder
@@ -93,12 +93,16 @@
          BlockUtil.FoundRectangle exitPortal;
          TeleportTransition.PostTeleportTransition post;
          if (exitPortalPos.isPresent()) {
-@@ -171,17 +_,22 @@
+@@ -164,21 +_,25 @@
                  blockPos -> newLevel.getBlockState(blockPos) == portalState
              );
              post = TeleportTransition.PLAY_PORTAL_SOUND.then(e -> e.placePortalTicket(pos));
 -        } else {
 +        } else if (result.canCreatePortal()) { // CraftBukkit
+             if (entity.isSpectator()) {
+                 return null;
+             }
+-
              Direction.Axis sourcePortalAxis = entity.level().getBlockState(portalEntryPos).getOptionalValue(AXIS).orElse(Direction.Axis.X);
 -            Optional<BlockUtil.FoundRectangle> createdExit = newLevel.getPortalForcer().createPortal(approximateExitPos, sourcePortalAxis);
 +            Optional<BlockUtil.FoundRectangle> createdExit = newLevel.getPortalForcer().createPortal(approximateExitPos, sourcePortalAxis, entity, result.createRadius()); // CraftBukkit
@@ -119,7 +123,7 @@
  
          return getDimensionTransitionFromExit(entity, portalEntryPos, exitPortal, newLevel, post);
      }
-@@ -237,7 +_,7 @@
+@@ -234,7 +_,7 @@
          Vec3 collisionFreePos = PortalShape.findCollisionFreePosition(targetPos, newLevel, entity, dimensions);
          return new TeleportTransition(
              newLevel, collisionFreePos, Vec3.ZERO, outputRotation, 0.0F, Relative.union(Relative.DELTA, Relative.ROTATION), postTeleportTransition
