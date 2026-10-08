@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 17:31:45 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/net/minecraft/world/level/levelgen/Beardifier.java b/net/minecraft/world/level/levelgen/Beardifier.java
+index 7041d673e6f6b7b629d325fee770e640f75725a1..7e2c64b1962fa36e006c0cd4a4f1df4616f419d8 100644
+--- a/net/minecraft/world/level/levelgen/Beardifier.java
++++ b/net/minecraft/world/level/levelgen/Beardifier.java
+@@ -42,6 +42,10 @@ public class Beardifier implements DensitySampler {
+     private final List<Beardifier.Rigid> pieces;
+     private final List<JigsawJunction> junctions;
+     private final @Nullable BoundingBox affectedBox;
++    // Paper start - optimise chunk generation
++    private final Beardifier.Rigid[] piecesArray;
++    private final JigsawJunction[] junctionsArray;
++    // Paper end - optimise chunk generation
+ 
+     public static Beardifier forStructuresInChunk(final StructureManager structureManager, final ChunkPos chunkPos) {
+         List<StructureStart> structureStarts = structureManager.startsForStructure(
+@@ -105,6 +109,10 @@ public class Beardifier implements DensitySampler {
+     public Beardifier(final List<Beardifier.Rigid> pieces, final List<JigsawJunction> junctions, final @Nullable BoundingBox affectedBox) {
+         this.pieces = pieces;
+         this.junctions = junctions;
++        // Paper start - optimise chunk generation
++        this.piecesArray = pieces.toArray(new Beardifier.Rigid[0]);
++        this.junctionsArray = junctions.toArray(new JigsawJunction[0]);
++        // Paper end - optimise chunk generation
+         this.affectedBox = affectedBox;
+     }
+ 
+@@ -140,41 +148,58 @@ public class Beardifier implements DensitySampler {
+         return this.affectedBox != null && this.affectedBox.isInside(blockX, blockY, blockZ) ? this.sampleValueUnchecked(blockX, blockY, blockZ) : 0.0F;
+     }
+ 
++    // Paper start - optimise chunk generation
++    // Avoid indirection through the list iterator and use arrays
+     private float sampleValueUnchecked(final int blockX, final int blockY, final int blockZ) {
+         float noiseValue = 0.0F;
+ 
+-        for (Beardifier.Rigid rigid : this.pieces) {
+-            BoundingBox box = rigid.box();
+-            int groundLevelDelta = rigid.groundLevelDelta();
+-            int dx = Math.max(0, Math.max(box.minX() - blockX, blockX - box.maxX()));
+-            int dz = Math.max(0, Math.max(box.minZ() - blockZ, blockZ - box.maxZ()));
+-            int groundY = box.minY() + groundLevelDelta;
+-            int dyToGround = blockY - groundY;
+-
+-            int dy = switch (rigid.terrainAdjustment()) {
+-                case NONE -> 0;
+-                case BURY, BEARD_THIN -> dyToGround;
+-                case BEARD_BOX -> Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
+-                case ENCAPSULATE -> Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
+-            };
+-
+-            noiseValue += switch (rigid.terrainAdjustment()) {
+-                case NONE -> 0.0F;
+-                case BURY -> getBuryContribution(dx, dy / 2.0F, dz);
+-                case BEARD_THIN, BEARD_BOX -> getBeardContribution(dx, dy, dz, dyToGround) * 0.8F;
+-                case ENCAPSULATE -> getBuryContribution(dx / 2.0F, dy / 2.0F, dz / 2.0F) * 0.8F;
+-            };
++        for (final Beardifier.Rigid rigid : this.piecesArray) {
++            final BoundingBox box = rigid.box();
++            final int groundLevelDelta = rigid.groundLevelDelta();
++            final int dx = Math.max(0, Math.max(box.minX() - blockX, blockX - box.maxX()));
++            final int dz = Math.max(0, Math.max(box.minZ() - blockZ, blockZ - box.maxZ()));
++            final int groundY = box.minY() + groundLevelDelta;
++            final int dyToGround = blockY - groundY;
++
++            switch (rigid.terrainAdjustment()) {
++                case NONE: {
++                    continue;
++                }
++                case BURY: {
++                    noiseValue += getBuryContribution((float)dx, (float)dyToGround / 2.0f, (float)dz);
++                    continue;
++                }
++                case BEARD_THIN: {
++                    noiseValue += getBeardContribution(dx, dyToGround, dz, dyToGround) * 0.8F;
++                    continue;
++                }
++                case BEARD_BOX: {
++                    final int dy = Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
++                    noiseValue += getBeardContribution(dx, dy, dz, dyToGround) * 0.8F;
++                    continue;
++                }
++                case ENCAPSULATE: {
++                    final int dy = Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
++                    noiseValue += getBuryContribution((float)dx / 2.0f, (float)dy / 2.0f, (float)dz / 2.0f) * 0.8F;
++                    continue;
++                }
++
++                default: {
++                    throw new IllegalStateException();
++                }
++            }
+         }
+ 
+-        for (JigsawJunction junction : this.junctions) {
+-            int dx = blockX - junction.getSourceX();
+-            int dy = blockY - junction.getSourceGroundY();
+-            int dz = blockZ - junction.getSourceZ();
++        for (final JigsawJunction junction : this.junctionsArray) {
++            final int dx = blockX - junction.getSourceX();
++            final int dy = blockY - junction.getSourceGroundY();
++            final int dz = blockZ - junction.getSourceZ();
+             noiseValue += getBeardContribution(dx, dy, dz, dy) * 0.4F;
+         }
+ 
+         return noiseValue;
+     }
++    // Paper end - optimise chunk generation
+ 
+     private static float getBuryContribution(final float dx, final float dy, final float dz) {
+         float distanceSq = Mth.lengthSquared(dx, dy, dz);
