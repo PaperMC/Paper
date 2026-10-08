@@ -1883,9 +1883,9 @@ public final class CraftServer implements Server {
         return this.createExplorerMap(level, structureSearchResult, mapIcon);
     }
 
-    private ItemStack createExplorerMap(final ServerLevel level, final StructureSearchResult structureSearchResult, MapCursor.Type mapIcon) {
+    private ItemStack createExplorerMap(final ServerLevel level, final StructureSearchResult structureSearchResult, final MapCursor.Type mapIcon) {
         final Location structureLocation = structureSearchResult.getLocation();
-        final BlockPos structurePos = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
+        final BlockPos structurePos = CraftLocation.toBlockPos(structureLocation);
 
         // Create map with trackingPosition = true, unlimitedTracking = true
         final net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);

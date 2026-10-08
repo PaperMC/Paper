@@ -961,8 +961,7 @@ public final class Bukkit {
      * Create a new explorer map targeting the closest nearby structure of a
      * given {@link StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -986,8 +985,7 @@ public final class Bukkit {
      * Create a new explorer map targeting the closest nearby structure of a
      * given {@link org.bukkit.generator.structure.StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -1026,8 +1024,7 @@ public final class Bukkit {
      * Create a new explorer map targeting the closest nearby specific
      * {@link org.bukkit.generator.structure.Structure}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
