@@ -10,9 +10,12 @@ Currently includes:
  - Random block ticking optimisations
  - Chunk tick iteration optimisations
  - Bitstorage optimisations
- - Block/Biome Palette read optimisations
+ - Block/Biome Palette optimisations
  - StateHolder (BlockState/FluidState) property access optimisations
+ - BlockState/FluidState TypedInstance (tag/holder) optimisations
  - Basic Fluid property read optimisations
+ - Heightmap access optimisations
+ - Chunk generation optimisations
  - Entity/Level random replacement
 
 See https://github.com/Tuinity/Moonrise
@@ -297,7 +300,7 @@ index 0000000000000000000000000000000000000000..fff7a796a61542213bdaa417d44e25cd
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 4a62c50d0b4fe82c3aacaa56b303b9699120c778..92238518c25dd765b356ff628fd373997464ea82 100644
+index aa14dd369d5d2c5c843839f289afdc39c200f0c3..76f990f150f040b1ad6d7d5b91cfb34ebd6f436a 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -816,18 +819,19 @@ index 0000000000000000000000000000000000000000..7d4a48a6a94f63ca793994eae162d7f3
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93bc56daec4526f373c84763b8c7ccb4a30e800b
+index 0000000000000000000000000000000000000000..4fbef0111dc47fd53d4dd12f3fc6b89385ade517
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,11 @@
 +package ca.spottedleaf.moonrise.patches.block_counting;
 +
-+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.Palette;
++import java.util.List;
 +
 +public interface BlockCountingBitStorage {
 +
-+    public Int2ObjectOpenHashMap<ShortArrayList> moonrise$countEntries();
++    public List<BlockCountingEntry> moonrise$countBlocks(final Palette<BlockState> palette);
 +
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingChunkSection.java b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingChunkSection.java
@@ -846,6 +850,29 @@ index 0000000000000000000000000000000000000000..0d1443a113c07d7655e7b927a899447f
 +
 +    public ShortList moonrise$getTickingBlockList();
 +
++}
+diff --git a/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingEntry.java b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5916388854ba79ea1261f071c0712e0a2b9ba2f7
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingEntry.java
+@@ -0,0 +1,17 @@
++package ca.spottedleaf.moonrise.patches.block_counting;
++
++import it.unimi.dsi.fastutil.shorts.ShortArrayList;
++import net.minecraft.world.level.block.state.BlockState;
++
++public final class BlockCountingEntry {
++
++    public int count;
++    public final BlockState state;
++    public final ShortArrayList coords;
++
++    public BlockCountingEntry(final int count, final BlockState state, final ShortArrayList coords) {
++        this.count = count;
++        this.state = state;
++        this.coords = coords;
++    }
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccess.java b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccess.java
 new file mode 100644
@@ -1053,6 +1080,485 @@ index 0000000000000000000000000000000000000000..6bb4008f2a09f0acd47dc7fd21c5a6d6
 +    private static final record Indexer(
 +        int totalValues, int multiple, long multipleDivMagic, long modMagic
 +    ) {}
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ChunkGenMaterialRuleContext.java b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ChunkGenMaterialRuleContext.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b48ab227cf2917041a8dc1729431d72c41d69a1d
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ChunkGenMaterialRuleContext.java
+@@ -0,0 +1,8 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc;
++
++public interface ChunkGenMaterialRuleContext {
++
++    public void moonrise$setDensityBufferAllocator(final ThreadLocalFixedDensityBufferCache allocator);
++
++    public ThreadLocalFixedDensityBufferCache moonrise$removeDensityBufferAllocator();
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalDensityBufferArena.java b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalDensityBufferArena.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f39092346e7efe36a0d086635217951abebc22a2
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalDensityBufferArena.java
+@@ -0,0 +1,196 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc;
++
++import ca.spottedleaf.common.time.Schedule;
++import ca.spottedleaf.concurrentutil.list.COWArrayList;
++import ca.spottedleaf.concurrentutil.map.concurrent.ints.ConcurrentChainedInt2ObjectHashTable;
++import ca.spottedleaf.moonrise.common.PlatformHooks;
++import com.mojang.logging.LogUtils;
++import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
++import net.minecraft.world.level.levelgen.densityfunction.DensityBufferPool;
++import net.minecraft.world.level.levelgen.densityfunction.ScopedDensityBuffer;
++import org.slf4j.Logger;
++import java.util.Iterator;
++import java.util.concurrent.ConcurrentLinkedDeque;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.locks.LockSupport;
++
++// extend DensityBufferPool so that we can be used in place of it
++
++/**
++ * The thread local allocator is used for a couple of reasons:
++ * <ol>
++ *     <li>
++ *         Vanilla limits the number of pools to 16. This means for a thread count > 16, the allocation rate will explode
++ *         due to each additional thread not being able to re-use buffers.
++ *     </li>
++ *     <li>
++ *         Vanilla does not properly return all buffers to the pool. This forces those buffers to be re-allocated.
++ *     </li>
++ * </ol>
++ */
++public final class ThreadLocalDensityBufferArena extends DensityBufferPool {
++
++    private static final ThreadLocal<ThreadLocalDensityBufferArena> INSTANCE = ThreadLocal.withInitial(() -> {
++        final ThreadLocalDensityBufferArena ret = new ThreadLocalDensityBufferArena();
++        GarbageCollector.INSTANCE.register(ret, Thread.currentThread());
++        return ret;
++    });
++
++    private static final int SMALL_THRESHOLD = 4;
++    private static final int ROUND_SHIFT = 4;
++    private static final int ROUND_THRESHOLD = 1 << ROUND_SHIFT;
++
++    private final ConcurrentChainedInt2ObjectHashTable<ConcurrentLinkedDeque<ScopedDensityBuffer>> buffersByBucketSize = new ConcurrentChainedInt2ObjectHashTable<>();
++    private final ReferenceLinkedOpenHashSet<ScopedDensityBuffer> notYetReturned = new ReferenceLinkedOpenHashSet<>();
++
++    public ThreadLocalDensityBufferArena() {
++        super(GarbageCollector.MAX_AGE_TICKS);
++    }
++
++    public static ThreadLocalDensityBufferArena acquire() {
++        final ThreadLocalDensityBufferArena ret = INSTANCE.get();
++        INSTANCE.set(null);
++        return ret;
++    }
++
++    public static void release(final ThreadLocalDensityBufferArena pool) {
++        if (pool == null) {
++            return;
++        }
++        INSTANCE.set(pool);
++        pool.releaseAllUnreturned();
++    }
++
++    private ScopedDensityBuffer acquireForBucket(final int bucket) {
++        final ConcurrentLinkedDeque<ScopedDensityBuffer> buffers = this.buffersByBucketSize.get(bucket);
++        return buffers == null ? null : buffers.pollFirst();
++    }
++
++    private void releaseIntoBucket(final ScopedDensityBuffer buffer, final int bucket) {
++        this.buffersByBucketSize.computeIfAbsent(bucket, (final int keyInMap) -> {
++            return new ConcurrentLinkedDeque<>();
++        }).addFirst(buffer);
++    }
++
++    @Override
++    public ScopedDensityBuffer acquire(final int size) {
++        if (size < 0) {
++            throw new IllegalArgumentException();
++        }
++
++        final int requestedCap;
++        if (size <= SMALL_THRESHOLD) {
++            final ScopedDensityBuffer ret = this.acquireForBucket(SMALL_THRESHOLD);
++            if (ret != null) {
++                this.notYetReturned.add(ret);
++                ret.restore(size);
++                return ret;
++            }
++            requestedCap = SMALL_THRESHOLD;
++        } else {
++            final int rounded = ((size + (ROUND_THRESHOLD - 1)) >> ROUND_SHIFT) << ROUND_SHIFT;
++            final ScopedDensityBuffer ret = this.acquireForBucket(rounded);
++            if (ret != null) {
++                this.notYetReturned.add(ret);
++                ret.restore(size);
++                return ret;
++            }
++            requestedCap = rounded;
++        }
++
++        final ScopedDensityBuffer ret = new ScopedDensityBuffer(this, requestedCap, size);
++        this.notYetReturned.add(ret);
++        return ret;
++    }
++
++    @Override
++    public void release(final ScopedDensityBuffer buffer) {
++        this.notYetReturned.remove(buffer);
++        this.releaseIntoBucket(buffer, buffer.capacity());
++    }
++
++    // Note: This is specifically to reclaim buffers not returned by SamplerContext CacheCells
++    public void releaseAllUnreturned() {
++        while (!this.notYetReturned.isEmpty()) {
++            this.notYetReturned.first().close();
++        }
++    }
++
++    @Override
++    public void garbageCollect() {
++        for (final ConcurrentChainedInt2ObjectHashTable.TableEntry<ConcurrentLinkedDeque<ScopedDensityBuffer>> entry : this.buffersByBucketSize) {
++            for (final Iterator<ScopedDensityBuffer> iterator = entry.getValue().iterator(); iterator.hasNext();) {
++                final ScopedDensityBuffer buffer = iterator.next();
++                // note: races on the age field are benign
++                if (buffer.incrementAge() > this.maxAge) {
++                    // note: race condition here where the value is polled does not matter
++                    iterator.remove();
++                }
++            }
++        }
++    }
++
++    @Override
++    public void clear() {
++        this.buffersByBucketSize.clear();
++        this.notYetReturned.clear();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.buffersByBucketSize.isEmpty();
++    }
++
++    private static final class GarbageCollector extends Thread {
++
++        private static final GarbageCollector INSTANCE = new GarbageCollector();
++        private static final Logger LOGGER = LogUtils.getLogger();
++        static {
++            INSTANCE.setName(PlatformHooks.get().getBrand() + " DensityBuffer garbage collector");
++            INSTANCE.setDaemon(true);
++            INSTANCE.setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
++                LOGGER.error("Uncaught exception in thread " + thread.getName() + ": ", throwable);
++            });
++            INSTANCE.start();
++        }
++
++        private static record RegisteredPool(ThreadLocalDensityBufferArena arena, Thread forThread) {}
++
++        private static final long TICK_INTERVAL = TimeUnit.MILLISECONDS.toNanos(500L);
++        private static final int MAX_AGE_TICKS = (int)((TimeUnit.SECONDS.toNanos(5L) + (TICK_INTERVAL - 1)) / TICK_INTERVAL);
++
++        private final COWArrayList<RegisteredPool> registered = new COWArrayList<>(RegisteredPool.class);
++        private final Schedule schedule = new Schedule(System.nanoTime());
++
++        public void register(final ThreadLocalDensityBufferArena arena, final Thread forThread) {
++            this.registered.add(new RegisteredPool(arena, forThread));
++        }
++
++        private void tick() {
++            for (final RegisteredPool pool : this.registered.getArray()) {
++                if (!pool.forThread.isAlive()) {
++                    this.registered.remove(pool);
++                    continue;
++                }
++                pool.arena.garbageCollect();
++            }
++        }
++
++        @Override
++        public void run() {
++            for (;;) {
++                final long deadline = this.schedule.getDeadline(TICK_INTERVAL);
++                long toWait;
++                while ((toWait = (deadline - System.nanoTime())) > 0L) {
++                    Thread.interrupted();
++                    LockSupport.parkNanos(toWait);
++                }
++                // use zero catchup
++                final long ticksAhead = Math.max(1L, this.schedule.getPeriodsAhead(TICK_INTERVAL, System.nanoTime()));
++                this.schedule.advanceBy(ticksAhead, TICK_INTERVAL);
++
++                this.tick();
++            }
++        }
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalFixedDensityBufferCache.java b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalFixedDensityBufferCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f7435fc2888551830918a70eb2d764179cb18419
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/buffer_alloc/ThreadLocalFixedDensityBufferCache.java
+@@ -0,0 +1,71 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc;
++
++import net.minecraft.world.level.levelgen.densityfunction.DensityBuffer;
++import java.util.ArrayDeque;
++
++public final class ThreadLocalFixedDensityBufferCache {
++
++    private final ArrayDeque<ThreadLocalDensityBuffer> buffersCached = new ArrayDeque<>();
++    private final ArrayDeque<ThreadLocalDensityBuffer> buffersInUse = new ArrayDeque<>();
++
++    private boolean inUse;
++
++    public ThreadLocalFixedDensityBufferCache acquire() {
++        if (this.inUse) {
++            throw new IllegalStateException();
++        }
++        this.inUse = true;
++        return this;
++    }
++
++    public void release() {
++        if (!this.inUse) {
++            throw new IllegalStateException();
++        }
++        this.inUse = false;
++        this.finished();
++    }
++
++    public DensityBuffer allocate(final int size) {
++        if (!this.inUse) {
++            throw new IllegalStateException();
++        }
++        // note: we expect size (and count) to be constant per run, so this terrible strategy actually works
++
++        if (size < 0) {
++            throw new IllegalArgumentException();
++        }
++
++        ThreadLocalDensityBuffer buffer = this.buffersCached.pollFirst();
++
++        if (buffer != null && buffer.capacity() >= size) {
++            buffer.adjustSize(size);
++            buffer.fill(0.0f);
++            this.buffersInUse.addLast(buffer);
++            return buffer;
++        }
++
++        buffer = new ThreadLocalDensityBuffer(size + Math.max(1, size >> 1));
++        buffer.adjustSize(size);
++        this.buffersInUse.addLast(buffer);
++        return buffer;
++    }
++
++    public void finished() {
++        ThreadLocalDensityBuffer buffer;
++        while ((buffer = this.buffersInUse.pollFirst()) != null) {
++            this.buffersCached.addFirst(buffer);
++        }
++    }
++
++    private static final class ThreadLocalDensityBuffer extends DensityBuffer {
++
++        ThreadLocalDensityBuffer(final int size) {
++            super(size);
++        }
++
++        void adjustSize(final int size) {
++            this.size = size;
++        }
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/ChunkGenRTree.java b/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/ChunkGenRTree.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f8053d12cde65db06df581c7c4425a2a40bfa935
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/ChunkGenRTree.java
+@@ -0,0 +1,9 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree;
++
++import net.minecraft.world.level.biome.Climate;
++
++public interface ChunkGenRTree<T> {
++
++    public T moonrise$findNearest(final Climate.TargetPoint target);
++
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/RTreeLeafDistance.java b/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/RTreeLeafDistance.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..92b1c5c15507d735da2589b5f192bfa7df9c1bee
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/climate_rtree/RTreeLeafDistance.java
+@@ -0,0 +1,15 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree;
++
++import net.minecraft.world.level.biome.Climate;
++
++public final class RTreeLeafDistance<T> {
++
++    public Climate.RTree.Leaf<T> leaf;
++    public long distance;
++    public final long[] parameterArray = new long[7];
++
++    public RTreeLeafDistance(final Climate.RTree.Leaf<T> leaf, final long distance) {
++        this.leaf = leaf;
++        this.distance = distance;
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/noise/ChunkGenPerlinNoise.java b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/ChunkGenPerlinNoise.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b9b8b4cef442b2788770957c7ecb169cd00ec761
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/ChunkGenPerlinNoise.java
+@@ -0,0 +1,7 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.noise;
++
++public interface ChunkGenPerlinNoise {
++
++    public char[] moonrise$getPAdj();
++
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f8470639ba02
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java
+@@ -0,0 +1,131 @@
++package ca.spottedleaf.moonrise.patches.chunk_gen.noise;
++
++import net.minecraft.world.level.levelgen.synth.GradientNoise;
++
++public final class NoiseGradients {
++
++    public static final boolean DEBUG_NOISE = false;
++
++    public static final int PERM_SHIFT = 8;
++    public static final int PERM_SIZE = 1 << PERM_SHIFT;
++    public static final int PERM_MASK = PERM_SIZE - 1;
++
++    public static class CoordCache {
++
++        public int floor;
++        public float alpha;
++        public float relative;
++
++        public CoordCache() {}
++    }
++
++    public static final ThreadLocal<CoordCache[]> COORD_CACHE_X = new ThreadLocal<>();
++    public static final ThreadLocal<CoordCache[]> COORD_CACHE_Y = new ThreadLocal<>();
++    public static final ThreadLocal<CoordCache[]> COORD_CACHE_Z = new ThreadLocal<>();
++
++    public static CoordCache[] getCoordCache(final ThreadLocal<CoordCache[]> cache, final int size) {
++        final CoordCache[] ret = cache.get();
++        if (ret != null && ret.length >= size) {
++            return ret;
++        }
++        final CoordCache[] allocated = new CoordCache[size];
++        for (int i = 0; i < size; ++i) {
++            allocated[i] = new CoordCache();
++        }
++        cache.set(allocated);
++        return allocated;
++    }
++
++    public static final GradientF[] GRADIENTF = new GradientF[GradientNoise.GRADIENT.length];
++    public static final float[] GRADIENTF_FLAT = new float[GRADIENTF.length * 4];
++    static {
++        for (int i = 0 ; i < GRADIENTF.length; ++i) {
++            GradientNoise.Gradient grad = GradientNoise.GRADIENT[i];
++            GRADIENTF[i] = new GradientF((float)grad.x(), (float)grad.y(), (float)grad.z());
++        }
++        for (int i = 0 ; i < GRADIENTF.length; ++i) {
++            final GradientF gradient = GRADIENTF[i];
++            GRADIENTF_FLAT[(i << 2) + 0] = gradient.x;
++            GRADIENTF_FLAT[(i << 2) + 1] = gradient.y;
++            GRADIENTF_FLAT[(i << 2) + 2] = gradient.z;
++        }
++    }
++
++    public static float dot(final int hash, final float x, final float y, final float z) {
++        final float gz = GRADIENTF_FLAT[(hash << 2) + 2];
++        final float gy = GRADIENTF_FLAT[(hash << 2) + 1];
++        final float gx = GRADIENTF_FLAT[(hash << 2) + 0];
++        if (false) {
++            return Math.fma(gz, z, Math.fma(gy, y, gx * x));
++        } else {
++            return gx * x + gy * y + gz * z;
++        }
++    }
++
++    public static float dotXz(final int hash, final float x, final float z) {
++        final float gz = GRADIENTF_FLAT[(hash << 2) + 2];
++        final float gx = GRADIENTF_FLAT[(hash << 2) + 0];
++        if (false) {
++            return Math.fma(gz, z, gx * x);
++        } else {
++            return gx * x + gz * z;
++        }
++    }
++
++    public static float gradY(final int hash) {
++        return GRADIENTF_FLAT[(hash << 2) + 1];
++    }
++
++    public record GradientF(float x, float y, float z) {
++        public float dot(final float x, final float y, final float z) {
++            if (false) {
++                return Math.fma(this.z, z, Math.fma(this.y, y, this.x * x));
++            } else {
++                return this.x * x + this.y * y + this.z * z;
++            }
++        }
++        public float dotXz(final float x, final float z) {
++            if (false) {
++                return Math.fma(this.z, z, this.x * x);
++            } else {
++                return this.x * x + this.z * z;
++            }
++        }
++    }
++
++    public static GradientF gradF(final int index) {
++        return GRADIENTF[index];
++    }
++
++    public static float gradDotf(final int index, final float x, final float y, final float z) {
++        return GRADIENTF[index].dot(x, y, z);
++    }
++
++    public static final GradientD[] GRADIENTD = new GradientD[GradientNoise.GRADIENT.length];
++    static {
++        for (int i = 0 ; i < GRADIENTF.length; ++i) {
++            GradientNoise.Gradient grad = GradientNoise.GRADIENT[i];
++            GRADIENTD[i] = new GradientD((double)grad.x(), (double)grad.y(), (double)grad.z());
++        }
++    }
++
++    public record GradientD(double x, double y, double z) {
++        public double dot(final double x, final double y, final double z) {
++            if (false) {
++                return Math.fma(this.z, z, Math.fma(this.y, y, this.x * x));
++            } else {
++                return this.x * x + this.y * y + this.z * z;
++            }
++        }
++    }
++
++    public static GradientD gradD(final int index) {
++        return GRADIENTD[index];
++    }
++
++    public static double gradDotD(final int index, final double x, final double y, final double z) {
++        return GRADIENTD[index].dot(x, y, z);
++    }
++
++    private NoiseGradients() {}
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java b/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
 new file mode 100644
@@ -6849,10 +7355,10 @@ index 0000000000000000000000000000000000000000..78659864651362de4fc104cbeb3e2e9a
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb7c5ba7168ba4903e93938dd8671227194bec99
+index 0000000000000000000000000000000000000000..ef990079fe5214a2817f55249163548f601523de
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1593 @@
+@@ -0,0 +1,1633 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -7588,19 +8094,32 @@ index 0000000000000000000000000000000000000000..eb7c5ba7168ba4903e93938dd8671227
 +    // atomic with respect to all add/remove/addandremove ticket calls for the given chunk
 +    public <T, V> void addAndRemoveTickets(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
 +                                           final TicketType removeType, final int removeLevel, final V removeIdentifier) {
-+        final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
++        this.addAndRemoveTickets(chunk, addType, addLevel, addIdentifier, removeType, removeLevel, removeIdentifier, true);
++    }
++
++    private <T, V> void addAndRemoveTickets(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
++                                           final TicketType removeType, final int removeLevel, final V removeIdentifier, final boolean lock) {
++        final ReentrantAreaLock.Node ticketLock = !lock ? null : this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
 +        try {
 +            this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier, false);
 +            this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier, false);
 +        } finally {
-+            this.ticketLockArea.unlock(ticketLock);
++            if (ticketLock != null) {
++                this.ticketLockArea.unlock(ticketLock);
++            }
 +        }
 +    }
 +
 +    // atomic with respect to all add/remove/addandremove ticket calls for the given chunk
 +    public <T, V> boolean addIfRemovedTicket(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
 +                                             final TicketType removeType, final int removeLevel, final V removeIdentifier) {
-+        final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
++        return this.addIfRemovedTicket(chunk, addType, addLevel, addIdentifier, removeType, removeLevel, removeIdentifier, true);
++    }
++
++    private <T, V> boolean addIfRemovedTicket(final long chunk, final TicketType addType, final int addLevel, final T addIdentifier,
++                                              final TicketType removeType, final int removeLevel, final V removeIdentifier,
++                                              final boolean lock) {
++        final ReentrantAreaLock.Node ticketLock = !lock ? null : this.ticketLockArea.lock(CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk));
 +        try {
 +            if (this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier, false)) {
 +                this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier, false);
@@ -7608,7 +8127,9 @@ index 0000000000000000000000000000000000000000..eb7c5ba7168ba4903e93938dd8671227
 +            }
 +            return false;
 +        } finally {
-+            this.ticketLockArea.unlock(ticketLock);
++            if (ticketLock != null) {
++                this.ticketLockArea.unlock(ticketLock);
++            }
 +        }
 +    }
 +
@@ -8242,42 +8763,67 @@ index 0000000000000000000000000000000000000000..eb7c5ba7168ba4903e93938dd8671227
 +        }
 +    }
 +
-+    private <T, V> boolean processTicketOp(TicketOperation<T, V> operation) {
-+        boolean ret = false;
++    private <T, V> boolean processTicketOp(final TicketOperation<T, V> operation, final boolean lock) {
 +        switch (operation.op) {
 +            case ADD: {
-+                ret |= this.addTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier);
-+                break;
++                return this.addTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier, lock);
 +            }
 +            case REMOVE: {
-+                ret |= this.removeTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier);
-+                break;
++                return this.removeTicketAtLevel(operation.ticketType, operation.chunkCoord, operation.ticketLevel, operation.identifier, lock);
 +            }
 +            case ADD_IF_REMOVED: {
-+                ret |= this.addIfRemovedTicket(
++                return this.addIfRemovedTicket(
 +                    operation.chunkCoord,
 +                    operation.ticketType, operation.ticketLevel, operation.identifier,
-+                    operation.ticketType2, operation.ticketLevel2, operation.identifier2
++                    operation.ticketType2, operation.ticketLevel2, operation.identifier2,
++                    lock
 +                );
-+                break;
 +            }
 +            case ADD_AND_REMOVE: {
-+                ret = true;
 +                this.addAndRemoveTickets(
 +                    operation.chunkCoord,
 +                    operation.ticketType, operation.ticketLevel, operation.identifier,
-+                    operation.ticketType2, operation.ticketLevel2, operation.identifier2
++                    operation.ticketType2, operation.ticketLevel2, operation.identifier2,
++                    lock
 +                );
-+                break;
++                return true;
++            }
++            default: {
++                throw new IllegalStateException("Unknown operation: " + operation.op);
 +            }
 +        }
-+
-+        return ret;
 +    }
 +
 +    public void performTicketUpdates(final Collection<TicketOperation<?, ?>> operations) {
++        final Long2ObjectOpenHashMap<List<TicketOperation<?, ?>>> operationsBySection = new Long2ObjectOpenHashMap<>();
++        final int sectionShift = this.ticketLockArea.coordinateShift;
++
 +        for (final TicketOperation<?, ?> operation : operations) {
-+            this.processTicketOp(operation);
++            final int sectionX = CoordinateUtils.getChunkX(operation.chunkCoord) >> sectionShift;
++            final int sectionZ = CoordinateUtils.getChunkZ(operation.chunkCoord) >> sectionShift;
++
++            final long key = CoordinateUtils.getChunkKey(sectionX, sectionZ);
++
++            operationsBySection.computeIfAbsent(key, (k) -> new ArrayList<>())
++                .add(operation);
++        }
++
++        for (final Iterator<Long2ObjectMap.Entry<List<TicketOperation<?, ?>>>> iterator = operationsBySection.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++            final Long2ObjectMap.Entry<List<TicketOperation<?, ?>>> entry = iterator.next();
++
++            final long key = entry.getLongKey();
++            final List<TicketOperation<?, ?>> sectionOps = entry.getValue();
++
++            final ReentrantAreaLock.Node ticketLock = this.ticketLockArea.lock(
++                CoordinateUtils.getChunkX(key) << sectionShift, CoordinateUtils.getChunkZ(key) << sectionShift
++            );
++            try {
++                for (final TicketOperation<?, ?> operation : sectionOps) {
++                    this.processTicketOp(operation, false);
++                }
++            } finally {
++                this.ticketLockArea.unlock(ticketLock);
++            }
 +        }
 +    }
 +
@@ -8301,7 +8847,7 @@ index 0000000000000000000000000000000000000000..eb7c5ba7168ba4903e93938dd8671227
 +        }
 +        final boolean isTickThread = TickThread.isTickThread();
 +
-+        if (!PlatformHooks.get().allowAsyncTicketUpdates() && isTickThread) {
++        if (!PlatformHooks.get().allowAsyncTicketUpdates() && !isTickThread) {
 +            TickThread.ensureTickThread("Cannot asynchronously process ticket updates");
 +        }
 +
@@ -16216,7 +16762,7 @@ index 0000000000000000000000000000000000000000..1414f25ef770b0fe73ea618a450ade2f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..54b2492c3ab6bf9ff52cec53dc4635f725f9eb4f
+index 0000000000000000000000000000000000000000..11d4f2d5caba52b492b8e130faa4701f3980b0f1
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 @@ -0,0 +1,2200 @@
@@ -16273,7 +16819,7 @@ index 0000000000000000000000000000000000000000..54b2492c3ab6bf9ff52cec53dc4635f7
 +    public static final DoubleArrayList ZERO_ONE = DoubleArrayList.wrap(new double[] { 0.0, 1.0 });
 +
 +    public static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
-+        return block.hasLargeCollisionShape() || block.getBlock() == Blocks.MOVING_PISTON;
++        return ((CollisionBlockState)block).moonrise$isSpecialCollidingBlock();
 +    }
 +
 +    public static boolean isEmpty(final AABB aabb) {
@@ -18456,10 +19002,10 @@ index 0000000000000000000000000000000000000000..35c8aaf0bfa42717f45eed1d1072e161
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java b/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a38ab583200ebf68ca68fdddf2d12077720b72b7
+index 0000000000000000000000000000000000000000..f8c1667ae36c2221b8bcca53bd69d86d4d3191ef
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,31 @@
 +package ca.spottedleaf.moonrise.patches.collisions.block;
 +
 +import net.minecraft.world.phys.shapes.VoxelShape;
@@ -18488,6 +19034,8 @@ index 0000000000000000000000000000000000000000..a38ab583200ebf68ca68fdddf2d12077
 +    public int moonrise$uniqueId2();
 +
 +    public VoxelShape moonrise$getConstantContextCollisionShape();
++
++    public boolean moonrise$isSpecialCollidingBlock();
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/shape/CachedShapeData.java b/ca/spottedleaf/moonrise/patches/collisions/shape/CachedShapeData.java
 new file mode 100644
@@ -18691,35 +19239,272 @@ index 0000000000000000000000000000000000000000..8e7472157a98de607c03769a91f64c83
 +    public boolean moonrise$hasPlayers();
 +
 +}
-diff --git a/ca/spottedleaf/moonrise/patches/fast_palette/FastPalette.java b/ca/spottedleaf/moonrise/patches/fast_palette/FastPalette.java
+diff --git a/ca/spottedleaf/moonrise/patches/fast_palette/FastHashMapPalette.java b/ca/spottedleaf/moonrise/patches/fast_palette/FastHashMapPalette.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a7abd239a9c59aa98947e7993962d75e9051902
+index 0000000000000000000000000000000000000000..449ac1bcd2c37994ce787e2baed7a73aed620d1f
 --- /dev/null
-+++ b/ca/spottedleaf/moonrise/patches/fast_palette/FastPalette.java
-@@ -0,0 +1,9 @@
++++ b/ca/spottedleaf/moonrise/patches/fast_palette/FastHashMapPalette.java
+@@ -0,0 +1,261 @@
 +package ca.spottedleaf.moonrise.patches.fast_palette;
 +
-+public interface FastPalette<T> {
++import net.minecraft.core.IdMap;
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.network.VarInt;
++import net.minecraft.world.level.chunk.MissingPaletteEntryException;
++import net.minecraft.world.level.chunk.Palette;
++import net.minecraft.world.level.chunk.PaletteResize;
++import java.util.Arrays;
++import java.util.List;
++import java.util.function.Predicate;
 +
-+    public default T[] moonrise$getRawPalette(final FastPaletteData<T> src) {
-+        return null;
++public final class FastHashMapPalette<T> implements Palette<T> {
++
++    private final T[] valueToIdKeys;
++    private final int[] valueToIdValues;
++    private final T[] idToValue;
++    private final int bits;
++    private int size;
++
++    private FastHashMapPalette(final int bits, final List<T> palette) {
++        final int mapSize = 1 << (bits + 1);
++        this.valueToIdKeys = (T[])new Object[mapSize];
++        this.valueToIdValues = new int[mapSize];
++        this.idToValue = (T[])new Object[1 << bits];
++        this.bits = bits;
++        // note: we need to be careful, palette may actually contain duplicates
++        for (int i = 0, len = this.size = palette.size(); i < len; ++i) {
++            final T value = palette.get(i);
++
++            this.idToValue[i] = value;
++            this.insertEntryIfAbsent(value, i);
++        }
 +    }
 +
-+}
-diff --git a/ca/spottedleaf/moonrise/patches/fast_palette/FastPaletteData.java b/ca/spottedleaf/moonrise/patches/fast_palette/FastPaletteData.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..4503f3495846a7d7ed082b9e24636044e4fbccd1
---- /dev/null
-+++ b/ca/spottedleaf/moonrise/patches/fast_palette/FastPaletteData.java
-@@ -0,0 +1,9 @@
-+package ca.spottedleaf.moonrise.patches.fast_palette;
++    private FastHashMapPalette(final FastHashMapPalette<T> other) {
++        this.valueToIdKeys = other.valueToIdKeys.clone();
++        this.valueToIdValues = other.valueToIdValues.clone();
++        this.idToValue = other.idToValue.clone();
++        this.bits = other.bits;
++        this.size = other.size;
++    }
 +
-+public interface FastPaletteData<T> {
++    private void clear() {
++        if (this.size != 0) {
++            this.size = 0;
++            Arrays.fill(this.valueToIdKeys, null);
++            Arrays.fill(this.valueToIdValues, 0);
++            Arrays.fill(this.idToValue, null);
++        }
++    }
 +
-+    public T[] moonrise$getPalette();
++    // we never replace the value if one is present, since the present
++    // value is always < the replacement
++    // this allows getEntry(key) to return the same value regardless of whether
++    // the linear search is used
++    // this does break from behaviour from HashMapPalette (always returns the largest
++    // duplicate id), but at the same time it preserves the behaviour for LinearPalette (always
++    // returns the smallest duplicate id)
++    private void insertEntryIfAbsent(final T key, final int value) {
++        final int hash = System.identityHashCode(key);
 +
-+    public void moonrise$setPalette(final T[] palette);
++        final T[] keys = this.valueToIdKeys;
++        final int[] values = this.valueToIdValues;
 +
++        for (int mask = keys.length - 1, index = hash & mask;; index = (index + 1) & mask) {
++            final T entry;
++            if ((entry = keys[index]) == null) {
++                keys[index] = key;
++                values[index] = value;
++                return;
++            }
++            if (entry == key) {
++                // value is present
++                return;
++            }
++        }
++    }
++
++    private static final int ENTRY_NOT_FOUND = -1;
++
++    private static final int LINEAR_THRESHOLD = 6;
++
++    private int getEntry(final T key) {
++        final int size = this.size;
++        // note: important that the size check is HERE
++        if (size <= LINEAR_THRESHOLD) {
++            for (int i = 0; i < size; ++i) {
++                if (key == this.idToValue[i]) {
++                    return i;
++                }
++            }
++            return ENTRY_NOT_FOUND;
++        } else {
++            int index = System.identityHashCode(key);
++
++            final T[] keys = this.valueToIdKeys;
++            final int[] values = this.valueToIdValues;
++
++            T entry;
++            final int mask = keys.length - 1;
++            index = index & mask;
++
++            if ((entry = keys[index]) == key) {
++                return values[index];
++            } else if (entry == null) {
++                return ENTRY_NOT_FOUND;
++            }
++
++            for (;;) {
++                if ((entry = keys[index = (index + 1) & mask]) == key) {
++                    return values[index];
++                } else if (entry == null) {
++                    return ENTRY_NOT_FOUND;
++                }
++            }
++        }
++    }
++
++    public static <A> FastHashMapPalette<A> create(final int bits, final List<A> palette) {
++        return new FastHashMapPalette<>(bits, palette);
++    }
++
++    @Override
++    public int idFor(final T value, final PaletteResize<T> onResize) {
++        final int ret = this.getEntry(value);
++        if (ret != ENTRY_NOT_FOUND) {
++            return ret;
++        }
++
++        final int nextId = this.size;
++
++        if (nextId < this.idToValue.length) {
++            // Paper start - Anti-Xray - publish the value before the size, as Anti-Xray reads palettes off-main
++            this.idToValue[nextId] = value;
++            this.insertEntryIfAbsent(value, nextId);
++            ++this.size;
++            // Paper end - Anti-Xray
++            return nextId;
++        }
++
++        return onResize.onResize(this.bits + 1, value);
++    }
++
++    @Override
++    public boolean maybeHas(final Predicate<T> predicate) {
++        final T[] values = this.idToValue;
++        for (int i = 0, len = this.size; i < len; ++i) {
++            if (predicate.test(values[i])) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public T directValueFor(final int id) {
++        return this.idToValue[id];
++    }
++
++    @Override
++    public T valueFor(final int id) {
++        if (id >= 0 && id < this.size) {
++            return this.idToValue[id];
++        }
++        throw new MissingPaletteEntryException(id);
++    }
++
++    // note: we need to be very careful here with read and write, as for some reason they differ in behaviour
++    //
++    //       single value palette does not write the size field
++    //       linear and hash palette write the size field
++
++
++    // note: must be careful, may contain duplicate entries
++    private void readLinearOrHash(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        this.size = friendlyByteBuf.readVarInt();
++
++        final T[] values = this.idToValue;
++        for (int i = 0, len = this.size; i < len; ++i) {
++            final T value = global.byIdOrThrow(friendlyByteBuf.readVarInt());
++
++            values[i] = value;
++            this.insertEntryIfAbsent(value, i);
++        }
++    }
++
++    private void writeLinearOrHash(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        friendlyByteBuf.writeVarInt(this.size);
++
++        final T[] values = this.idToValue;
++        for (int i = 0, len = this.size; i < len; ++i) {
++            friendlyByteBuf.writeVarInt(global.getIdOrThrow(values[i]));
++        }
++    }
++
++    private int writeSizeLinearOrHash(final IdMap<T> global) {
++        int ret = VarInt.getByteSize(this.size);
++
++        final T[] values = this.idToValue;
++        for (int i = 0, len = this.size; i < len; ++i) {
++            ret += VarInt.getByteSize(global.getIdOrThrow(values[i]));
++        }
++
++        return ret;
++    }
++
++    private void readSingle(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        this.size = 1;
++
++        final T value = global.byIdOrThrow(friendlyByteBuf.readVarInt());
++
++        this.idToValue[0] = value;
++        this.insertEntryIfAbsent(value, 0);
++    }
++
++    private void writeSingle(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        friendlyByteBuf.writeVarInt(global.getIdOrThrow(this.idToValue[0]));
++    }
++
++    private int writeSizeSingle(final IdMap<T> global) {
++        return VarInt.getByteSize(global.getIdOrThrow(this.idToValue[0]));
++    }
++
++    @Override
++    public void read(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        this.clear();
++        if (this.bits == 0) {
++            this.readSingle(friendlyByteBuf, global);
++        } else {
++            this.readLinearOrHash(friendlyByteBuf, global);
++        }
++    }
++
++    @Override
++    public void write(final FriendlyByteBuf friendlyByteBuf, final IdMap<T> global) {
++        if (this.bits == 0) {
++            this.writeSingle(friendlyByteBuf, global);
++        } else {
++            this.writeLinearOrHash(friendlyByteBuf, global);
++        }
++    }
++
++    @Override
++    public int getSerializedSize(final IdMap<T> global) {
++        if (this.bits == 0) {
++            return this.writeSizeSingle(global);
++        } else {
++            return this.writeSizeLinearOrHash(global);
++        }
++    }
++
++    @Override
++    public int getSize() {
++        return this.size;
++    }
++
++    @Override
++    public FastHashMapPalette<T> copy() {
++        return new FastHashMapPalette<>(this);
++    }
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/fluid/FluidFluidState.java b/ca/spottedleaf/moonrise/patches/fluid/FluidFluidState.java
 new file mode 100644
@@ -18734,17 +19519,20 @@ index 0000000000000000000000000000000000000000..107c97089354edd35f330582f5e0c8a1
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/getblock/GetBlockChunk.java b/ca/spottedleaf/moonrise/patches/getblock/GetBlockChunk.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..540c14a6d2c216cd3ef2a9c4056e15712bf8cb8c
+index 0000000000000000000000000000000000000000..7a3615acd91918c3bc4b4a4c931c953559fc8b6f
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/getblock/GetBlockChunk.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,12 @@
 +package ca.spottedleaf.moonrise.patches.getblock;
 +
 +import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.material.FluidState;
 +
 +public interface GetBlockChunk {
 +
 +    public BlockState moonrise$getBlock(final int x, final int y, final int z);
++
++    public FluidState moonrise$getFluid(final int x, final int y, final int z);
 +
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/poi_lookup/PoiAccess.java b/ca/spottedleaf/moonrise/patches/poi_lookup/PoiAccess.java
@@ -23675,6 +24463,21 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +
 +    private SaveUtil() {}
 +}
+diff --git a/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java b/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a5a4ae443
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java
+@@ -0,0 +1,9 @@
++package ca.spottedleaf.moonrise.patches.typed_instance;
++
++import net.minecraft.resources.Identifier;
++
++public interface InternIdentifier {
++
++    public Identifier moonrise$intern();
++
++}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
 index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608206a685a 100644
 --- a/io/papermc/paper/FeatureHooks.java
@@ -24462,6 +25265,39 @@ index 098af940bf4d626c98f5e64d2aac2d9df0a9e128..6405c8c92795232fd2ac3a4d7e2fb5e4
          return holder;
      }
  
+diff --git a/net/minecraft/resources/Identifier.java b/net/minecraft/resources/Identifier.java
+index df28b83ab34b2e44a6ce2dbb903ef94db5496aaa..f961326218d56f1455df8d3b7b6079e2126fb8ed 100644
+--- a/net/minecraft/resources/Identifier.java
++++ b/net/minecraft/resources/Identifier.java
+@@ -15,7 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
+ import net.minecraft.network.codec.StreamCodec;
+ import org.jspecify.annotations.Nullable;
+ 
+-public final class Identifier implements Comparable<Identifier> {
++public final class Identifier implements Comparable<Identifier>, ca.spottedleaf.moonrise.patches.typed_instance.InternIdentifier { // Paper - optimise TypedInstance
+     public static final Codec<Identifier> CODEC = Codec.STRING.<Identifier>comapFlatMap(Identifier::read, Identifier::toString).stable();
+     public static final StreamCodec<ByteBuf, Identifier> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(Identifier::parse, Identifier::toString);
+     public static final SimpleCommandExceptionType ERROR_INVALID = new SimpleCommandExceptionType(Component.translatable("argument.id.invalid"));
+@@ -27,6 +27,19 @@ public final class Identifier implements Comparable<Identifier> {
+     private final String namespace;
+     private final String path;
+ 
++    // Paper start - optimise TypedInstance
++    private static final com.google.common.collect.Interner<Identifier> IDENTIFIER_INTERNER = com.google.common.collect.Interners.newWeakInterner();
++    private static final com.google.common.collect.Interner<String> STRING_INTERNER = com.google.common.collect.Interners.newWeakInterner();
++
++    @Override
++    public final Identifier moonrise$intern() {
++        final String namespace = STRING_INTERNER.intern(this.namespace);
++        final String path = STRING_INTERNER.intern(this.path);
++
++        return IDENTIFIER_INTERNER.intern(new Identifier(namespace, path));
++    }
++    // Paper end - optimise TypedInstance
++
+     private Identifier(final String namespace, final String path) {
+         assert isValidNamespace(namespace);
+         assert isValidPath(path);
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
 index c4adc7266f41057bc93e8c34929c079c9c468d0b..255e01251005a547088aba437ca27ce06fc996e5 100644
 --- a/net/minecraft/server/MinecraftServer.java
@@ -28511,7 +29347,7 @@ index 47a0e17e4fed94828e02c7f4159d32195158f6cc..46e7478bd96e42487cf0fc467b6b9b83
              "Server weather",
              () -> String.format(
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index bae5ed2cdd6627a0934f0a7bbf85621db5bed2d8..b3b00964d91804f108b7bc5b5ffc853a2ac62f16 100644
+index 0af1b7ab2bcb96d82a2059572b990fcb6bca8774..576619ccf1f67aca9e5fdaecc68435ef96bb4c84 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -210,7 +210,7 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -29132,7 +29968,7 @@ index 7460b6071a59530719769b6d3ec6736a73b69e95..fed2a68bf1a9e9a169c0235e129346b9
          return this == PLUGIN ? PLUGIN_TYPE_TIMEOUT : this.timeout;
      }
 diff --git a/net/minecraft/server/level/WorldGenRegion.java b/net/minecraft/server/level/WorldGenRegion.java
-index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f95e6d12183eee59272927bb21def3729d8789c 100644
+index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f3b53b40df0263656dc195c82265de8374155d2 100644
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
 @@ -86,6 +86,36 @@ public class WorldGenRegion implements WorldGenLevel {
@@ -29172,6 +30008,41 @@ index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f95e6d12183eee59272927bb21def37
      public WorldGenRegion(final ServerLevel level, final StaticCache2D<GenerationChunkHolder> cache, final ChunkStep generatingStep, final ChunkAccess center) {
          this.generatingStep = generatingStep;
          this.cache = cache.map((holder, x, z) -> {
+@@ -122,9 +152,33 @@ public class WorldGenRegion implements WorldGenLevel {
+         this.currentlyGenerating = currentlyGenerating;
+     }
+ 
++    // Paper start - optimise chunk generation
++    @Override
++    public ChunkAccess getChunk(final BlockPos pos) {
++        return this.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
++    }
++
++    @Override
++    public ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status) {
++        if (status == ChunkStatus.EMPTY) {
++            return this.getChunk(chunkX, chunkZ);
++        } else {
++            return this.getChunk(chunkX, chunkZ, status, true);
++        }
++    }
++    // Paper end - optimise chunk generation
++
+     @Override
+     public ChunkAccess getChunk(final int chunkX, final int chunkZ) {
+-        return this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY);
++        // Paper start - optimise chunk generation
++        // We can skip the status checking logic, as it will never fail when status = EMPTY
++        final ChunkAccess ret = this.cache.get(chunkX, chunkZ);
++        if (ret != null) {
++            return ret;
++        }
++        // fall back to getChunk for error handling
++        return this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY, true);
++        // Paper end - optimise chunk generation
+     }
+ 
+     @Override
 diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
 index a46b89895a9ce86b6f5fabd373a4e91919d88033..22b10500ef74694243a4fec40822bb54ef96cc0c 100644
 --- a/net/minecraft/server/network/PlayerChunkSender.java
@@ -29244,8 +30115,42 @@ index b1bf82288596b686dfb4e19d274a6a623fbe1667..010c6c7e9bf59408bdac22a01f05fe2e
  
          for (ServerLevel level : this.server.getAllLevels()) {
              level.getChunkSource().setSimulationDistance(simulationDistance);
+diff --git a/net/minecraft/tags/TagKey.java b/net/minecraft/tags/TagKey.java
+index fa1009e4543927d53d28bf21a72cf7fa0bf5e24d..c8f09fc2d2ed990bb6581b678eea52ce9341ee1f 100644
+--- a/net/minecraft/tags/TagKey.java
++++ b/net/minecraft/tags/TagKey.java
+@@ -35,7 +35,7 @@ public record TagKey<T>(ResourceKey<? extends Registry<T>> registry, Identifier
+     }
+ 
+     public static <T> TagKey<T> create(final ResourceKey<? extends Registry<T>> registry, final Identifier location) {
+-        return (TagKey<T>)VALUES.intern(new TagKey<>(registry, location));
++        return (TagKey<T>)VALUES.intern(new TagKey<>(registry, ((ca.spottedleaf.moonrise.patches.typed_instance.InternIdentifier)location).moonrise$intern())); // Paper - optimise TypedInstance
+     }
+ 
+     public boolean isFor(final ResourceKey<? extends Registry<?>> registry) {
+@@ -46,6 +46,20 @@ public record TagKey<T>(ResourceKey<? extends Registry<T>> registry, Identifier
+         return this.isFor(registry) ? Optional.of((TagKey<E>)this) : Optional.empty();
+     }
+ 
++    // Paper start - optimise TypedInstance
++    @Override
++    public final boolean equals(final Object obj) {
++        if (obj == null || obj.getClass() != TagKey.class) {
++            return false;
++        }
++        if (this == obj) {
++            return true;
++        }
++        final TagKey<?> other = ((TagKey<?>)obj);
++        return this.registry == other.registry() && (this.location == other.location() || this.location.equals(other.location()));
++    }
++    // Paper end - optimise TypedInstance
++
+     @Override
+     public String toString() {
+         return "TagKey[" + this.registry.identifier() + " / " + this.location + "]";
 diff --git a/net/minecraft/util/BitStorage.java b/net/minecraft/util/BitStorage.java
-index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..ffe51944b729e52f9ef3a6cbc0f93e96052a5b7c 100644
+index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..a8205af32cf1f19670b8aa140727528eafb0e940 100644
 --- a/net/minecraft/util/BitStorage.java
 +++ b/net/minecraft/util/BitStorage.java
 @@ -2,7 +2,7 @@ package net.minecraft.util;
@@ -29257,7 +30162,7 @@ index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..ffe51944b729e52f9ef3a6cbc0f93e96
      int getAndSet(int index, int value);
  
      void set(int index, int value);
-@@ -22,4 +22,22 @@ public interface BitStorage {
+@@ -22,4 +22,41 @@ public interface BitStorage {
      void unpack(int[] output);
  
      BitStorage copy();
@@ -29265,66 +30170,42 @@ index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..ffe51944b729e52f9ef3a6cbc0f93e96
 +    // Paper start - block counting
 +    // provide default impl in case mods implement this...
 +    @Override
-+    public default it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> moonrise$countEntries() {
-+        final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
++    public default java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> moonrise$countBlocks(final net.minecraft.world.level.chunk.Palette<net.minecraft.world.level.block.state.BlockState> palette) {
++        final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> byPaletteId = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
++        final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>();
 +
 +        final int size = this.getSize();
 +        for (int index = 0; index < size; ++index) {
 +            final int paletteIdx = this.get(index);
-+            ret.computeIfAbsent(paletteIdx, (final int key) -> {
-+                return new it.unimi.dsi.fastutil.shorts.ShortArrayList();
-+            }).add((short)index);
++
++            final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry ifPresent = byPaletteId.get(paletteIdx);
++            if (ifPresent != null) {
++                ++ifPresent.count;
++                if (ifPresent.coords != null) {
++                    ifPresent.coords.add((short)index);
++                }
++            } else {
++                final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(paletteIdx);
++                final it.unimi.dsi.fastutil.shorts.ShortArrayList coords;
++                if (state.isRandomlyTicking()) {
++                    coords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
++                    coords.add((short)index);
++                } else {
++                    coords = null;
++                }
++
++                final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry entry = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(1, state, coords);
++                byPaletteId.put(paletteIdx, entry);
++                ret.add(entry);
++            }
 +        }
 +
 +        return ret;
 +    }
 +    // Paper end - block counting
  }
-diff --git a/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java b/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
-index 1086960c32e4b02d06a09ec8ebc80444c8c4b6cd..444aa788b4f8265fb675230000e606d746aeed42 100644
---- a/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
-+++ b/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
-@@ -7,7 +7,7 @@ import java.util.Iterator;
- import net.minecraft.core.IdMap;
- import org.jspecify.annotations.Nullable;
- 
--public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
-+public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K>, ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<K> { // Paper - optimise palette reads
-     private static final int NOT_FOUND = -1;
-     private static final Object EMPTY_SLOT = null;
-     private static final float LOADFACTOR = 0.8F;
-@@ -17,6 +17,16 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
-     private int nextId;
-     private int size;
- 
-+    // Paper start - optimise palette reads
-+    private ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<K> reference;
-+
-+    @Override
-+    public final K[] moonrise$getRawPalette(final ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<K> src) {
-+        this.reference = src;
-+        return this.byId;
-+    }
-+    // Paper end - optimise palette reads
-+
-     private CrudeIncrementalIntIdentityHashBiMap(final int capacity) {
-         this.keys = (K[])(new Object[capacity]);
-         this.values = new int[capacity];
-@@ -87,6 +97,12 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
-         this.byId = resized.byId;
-         this.nextId = resized.nextId;
-         this.size = resized.size;
-+        // Paper start - optimise palette reads
-+        final ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<K> ref = this.reference;
-+        if (ref != null) {
-+            ref.moonrise$setPalette(this.byId);
-+        }
-+        // Paper end - optimise palette reads
-     }
- 
-     public void addMapping(final K key, final int id) {
 diff --git a/net/minecraft/util/SimpleBitStorage.java b/net/minecraft/util/SimpleBitStorage.java
-index acdca907c54bf89a1018ee9f299680e8890b3c3b..ff663f8b15c10662ee39c8f27140d8fcda9de715 100644
+index acdca907c54bf89a1018ee9f299680e8890b3c3b..b775c716653b476da5aa039a1810e741a503509a 100644
 --- a/net/minecraft/util/SimpleBitStorage.java
 +++ b/net/minecraft/util/SimpleBitStorage.java
 @@ -209,6 +209,20 @@ public class SimpleBitStorage implements BitStorage {
@@ -29431,21 +30312,21 @@ index acdca907c54bf89a1018ee9f299680e8890b3c3b..ff663f8b15c10662ee39c8f27140d8fc
      }
  
      @Override
-@@ -369,6 +413,67 @@ public class SimpleBitStorage implements BitStorage {
+@@ -369,6 +413,96 @@ public class SimpleBitStorage implements BitStorage {
          return new SimpleBitStorage(this.bits, this.size, (long[])this.data.clone());
      }
  
 +    // Paper start - block counting
 +    @Override
-+    public final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> moonrise$countEntries() {
++    public final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> moonrise$countBlocks(final net.minecraft.world.level.chunk.Palette<net.minecraft.world.level.block.state.BlockState> palette) {
 +        final int valuesPerLong = this.valuesPerLong;
 +        final int bits = this.bits;
 +        final long mask = (1L << bits) - 1L;
 +        final int size = this.size;
 +
 +        if (bits <= 6) {
-+            final it.unimi.dsi.fastutil.shorts.ShortArrayList[] byId = new it.unimi.dsi.fastutil.shorts.ShortArrayList[1 << bits];
-+            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1 << bits);
++            final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry[] byPaletteId = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry[1 << bits];
++            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>(1 << bits);
 +
 +            int index = 0;
 +
@@ -29456,23 +30337,34 @@ index acdca907c54bf89a1018ee9f299680e8890b3c3b..ff663f8b15c10662ee39c8f27140d8fc
 +                    value >>= bits;
 +                    ++li;
 +
-+                    final it.unimi.dsi.fastutil.shorts.ShortArrayList coords = byId[paletteIdx];
-+                    if (coords != null) {
-+                        coords.add((short)index++);
-+                        continue;
++                    final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry ifPresent = byPaletteId[paletteIdx];
++                    if (ifPresent != null) {
++                        ++ifPresent.count;
++                        if (ifPresent.coords != null) {
++                            ifPresent.coords.add((short)index);
++                        }
 +                    } else {
-+                        final it.unimi.dsi.fastutil.shorts.ShortArrayList newCoords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
-+                        byId[paletteIdx] = newCoords;
-+                        newCoords.add((short)index++);
-+                        ret.put(paletteIdx, newCoords);
-+                        continue;
++                        final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(paletteIdx);
++                        final it.unimi.dsi.fastutil.shorts.ShortArrayList coords;
++                        if (state.isRandomlyTicking()) {
++                            coords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
++                            coords.add((short)index);
++                        } else {
++                            coords = null;
++                        }
++
++                        final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry entry = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(1, state, coords);
++                        byPaletteId[paletteIdx] = entry;
++                        ret.add(entry);
 +                    }
++                    ++index;
 +                } while (li < valuesPerLong && index < size);
 +            }
 +
 +            return ret;
 +        } else {
-+            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(
++            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>(1 << bits);
++            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> byPaletteId = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(
 +                1 << 6
 +            );
 +
@@ -29485,9 +30377,27 @@ index acdca907c54bf89a1018ee9f299680e8890b3c3b..ff663f8b15c10662ee39c8f27140d8fc
 +                    value >>= bits;
 +                    ++li;
 +
-+                    ret.computeIfAbsent(paletteIdx, (final int key) -> {
-+                        return new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
-+                    }).add((short)index++);
++                    final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry ifPresent = byPaletteId.get(paletteIdx);
++                    if (ifPresent != null) {
++                        ++ifPresent.count;
++                        if (ifPresent.coords != null) {
++                            ifPresent.coords.add((short)index);
++                        }
++                    } else {
++                        final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(paletteIdx);
++                        final it.unimi.dsi.fastutil.shorts.ShortArrayList coords;
++                        if (state.isRandomlyTicking()) {
++                            coords = new it.unimi.dsi.fastutil.shorts.ShortArrayList(64);
++                            coords.add((short)index);
++                        } else {
++                            coords = null;
++                        }
++
++                        final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry entry = new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(1, state, coords);
++                        byPaletteId.put(paletteIdx, entry);
++                        ret.add(entry);
++                    }
++                    ++index;
 +                } while (li < valuesPerLong && index < size);
 +            }
 +
@@ -29594,34 +30504,41 @@ index c08c8388b6a81f861caf6716c0c999205e1ae487..295b29ba4e46aa438813180802e6c452
          this.comparator = comparator;
          if (initialCapacity < 0) {
 diff --git a/net/minecraft/util/ZeroBitStorage.java b/net/minecraft/util/ZeroBitStorage.java
-index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..a6b5e56465a867a830a920cb4745ee85190b2f0a 100644
+index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc7413ad9482 100644
 --- a/net/minecraft/util/ZeroBitStorage.java
 +++ b/net/minecraft/util/ZeroBitStorage.java
-@@ -67,4 +67,22 @@ public class ZeroBitStorage implements BitStorage {
+@@ -67,4 +67,29 @@ public class ZeroBitStorage implements BitStorage {
      public BitStorage copy() {
          return this;
      }
 +
 +    // Paper start - block counting
 +    @Override
-+    public final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> moonrise$countEntries() {
++    public final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> moonrise$countBlocks(final net.minecraft.world.level.chunk.Palette<net.minecraft.world.level.block.state.BlockState> palette) {
 +        final int size = this.size;
 +
-+        final short[] raw = new short[size];
-+        for (int i = 0; i < size; ++i) {
-+            raw[i] = (short)i;
++        final net.minecraft.world.level.block.state.BlockState state = palette.valueFor(0);
++
++        final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates;
++        if (state.isRandomlyTicking()) {
++            final short[] raw = new short[size];
++            for (int i = 0; i < size; ++i) {
++                raw[i] = (short)i;
++            }
++
++            coordinates = it.unimi.dsi.fastutil.shorts.ShortArrayList.wrap(raw, size);
++        } else {
++            coordinates = null;
 +        }
 +
-+        final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = it.unimi.dsi.fastutil.shorts.ShortArrayList.wrap(raw, size);
-+
-+        final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> ret = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1);
-+        ret.put(0, coordinates);
++        final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> ret = new java.util.ArrayList<>(1);
++        ret.add(new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(size, state, coordinates));
 +        return ret;
 +    }
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5d085620140c5831e2219e9bb18846003d71b217..c9e0b378db4ca7efa018d5e9150f1c1372373f29 100644
+index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0783cbf27 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
@@ -32579,6 +33496,135 @@ index 0c1cbc03be2be78db5387d14a10f3c16067f32c9..65ac39fd0e481b83cb9fad00b6482051
 +        return (double)(((rval >> 24) & (1024 - 1)) - (1024/2)) * (0.9 / 1024.0); // Paper - avoid floorMod, fp division, and fp subtraction
      }
  }
+diff --git a/net/minecraft/world/level/biome/Climate.java b/net/minecraft/world/level/biome/Climate.java
+index 1f0c020207b5b1eb989ddad742e006a2c7fc2b01..54b608c5d2e36c5dec0fc2cbb1c074da946f6d7a 100644
+--- a/net/minecraft/world/level/biome/Climate.java
++++ b/net/minecraft/world/level/biome/Climate.java
+@@ -166,8 +166,22 @@ public class Climate {
+             return this.values;
+         }
+ 
++        // Paper start - optimise chunk generation
++        private static final boolean DEBUG_PARAM_LOOKUP = false;
++        // Paper end - optimise chunk generation
++
+         public T findValue(final Climate.TargetPoint target) {
+-            return this.findValueIndex(target);
++            // Paper start - optimise chunk generation
++            final T moonrise = ((ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.ChunkGenRTree<T>)this.index).moonrise$findNearest(target);
++            if (!DEBUG_PARAM_LOOKUP) {
++                return moonrise;
++            }
++            final T vanilla = this.findValueIndex(target);
++            if (vanilla != moonrise) {
++                throw new IllegalStateException();
++            }
++            return vanilla;
++            // Paper end - optimise chunk generation
+         }
+ 
+         @VisibleForTesting
+@@ -243,11 +257,66 @@ public class Climate {
+         }
+     }
+ 
+-    protected static final class RTree<T> {
++    public static final class RTree<T> implements ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.ChunkGenRTree<T> { // Paper - optimise chunk generation - public
+         private static final int CHILDREN_PER_NODE = 19;
+         private final Climate.RTree.Node<T> root;
+         private final ThreadLocal<Climate.RTree.@Nullable Leaf<T>> lastResult = new ThreadLocal<>();
+ 
++        // Paper start - optimise chunk generation
++        private final ThreadLocal<ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.RTreeLeafDistance<T>> lastReturned = ThreadLocal.withInitial(() -> {
++            return new ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.RTreeLeafDistance<>(null, Long.MAX_VALUE);
++        });
++
++        private void findNearest0(final long[] params, final ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.RTreeLeafDistance<T> suggested, final Climate.RTree.SubTree<T> node) {
++            for (final Climate.RTree.Node<T> child : node.children) {
++                final long childDist = child.distance(params);
++                if (childDist >= suggested.distance) {
++                    continue;
++                }
++                if (child instanceof Climate.RTree.Leaf<T> leaf) {
++                    suggested.leaf = leaf;
++                    suggested.distance = childDist;
++                    continue;
++                } else {
++                    this.findNearest0(params, suggested, (Climate.RTree.SubTree<T>)child);
++                    continue;
++                }
++            }
++        }
++
++        private static void toParameterArray(final Climate.TargetPoint target, final long[] params) {
++            params[0] = target.temperature();
++            params[1] = target.humidity();
++            params[2] = target.continentalness();
++            params[3] = target.erosion();
++            params[4] = target.depth();
++            params[5] = target.weirdness();
++            params[6] = 0L;
++        }
++
++        @Override
++        public final T moonrise$findNearest(final Climate.TargetPoint target) {
++            if (this.root == null) {
++                return null;
++            }
++
++            if (this.root instanceof Climate.RTree.Leaf<T> ret) {
++                return ret.value;
++            }
++
++            final ca.spottedleaf.moonrise.patches.chunk_gen.climate_rtree.RTreeLeafDistance<T> ret = this.lastReturned.get();
++            final long[] params = ret.parameterArray;
++            toParameterArray(target, params);
++            if (ret.leaf != null) {
++                ret.distance = ret.leaf.distance(params);
++            }
++
++            this.findNearest0(params, ret, ((Climate.RTree.SubTree<T>)this.root));
++
++            return ret.leaf.value;
++        }
++        // Paper end - optimise chunk generation
++
+         private RTree(final Climate.RTree.Node<T> root) {
+             this.root = root;
+         }
+@@ -397,7 +466,7 @@ public class Climate {
+             return leaf.value;
+         }
+ 
+-        private static final class Leaf<T> extends Climate.RTree.Node<T> {
++        public static final class Leaf<T> extends Climate.RTree.Node<T> { // Paper - optimise chunk generation - public
+             private final T value;
+ 
+             private Leaf(final Climate.ParameterPoint parameterPoint, final T value) {
+@@ -426,13 +495,21 @@ public class Climate {
+             );
+ 
+             protected long distance(final long[] target) {
++                // Paper start - optimise chunk generation
++                final Climate.Parameter[] params = this.parameterSpace;
++
++                if (params.length < 7 || target.length < 7) {
++                    throw new IndexOutOfBoundsException();
++                }
++
+                 long distance = 0L;
+ 
+-                for (int i = 0; i < 7; i++) {
+-                    distance += Mth.square(this.parameterSpace[i].distance(target[i]));
++                for (int i = 0; i < 7; ++i) {
++                    distance += Mth.square(params[i].distance(target[i]));
+                 }
+ 
+                 return distance;
++                // Paper end - optimise chunk generation
+             }
+ 
+             @Override
 diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
 index d6b840af9729234a51052a8ed57fd5de864cf142..1b89d481168347f8edd078a8ac190b38a4390a6f 100644
 --- a/net/minecraft/world/level/block/Block.java
@@ -32593,7 +33639,7 @@ index d6b840af9729234a51052a8ed57fd5de864cf142..1b89d481168347f8edd078a8ac190b38
  
      public void animateTick(final BlockState state, final Level level, final BlockPos pos, final RandomSource random) {
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca8d96466b 100644
+index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..44fcc919a2de54c3ceb0fd0875aadaea083fabad 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -436,7 +436,7 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -32605,7 +33651,7 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca
          private static final Direction[] DIRECTIONS = Direction.values();
          private static final VoxelShape[] EMPTY_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.empty()));
          private static final VoxelShape[] FULL_BLOCK_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.block()));
-@@ -471,6 +471,76 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -471,8 +471,98 @@ public abstract class BlockBehaviour implements FeatureElement {
          private boolean propagatesSkylightDown;
          private int lightDampening;
  
@@ -32627,6 +33673,12 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca
 +        private boolean emptyCollisionShape;
 +        private boolean emptyConstantCollisionShape;
 +        private VoxelShape constantCollisionShape;
++        private boolean isSpecialCollidingBlock;
++
++        private static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
++            // note: cannot reference Blocks here, as Blocks#<clinit> initialises the state caches in parallel
++            return block.hasLargeCollisionShape() || block.getBlock() instanceof net.minecraft.world.level.block.piston.MovingPistonBlock;
++        }
 +
 +        private static void initCaches(final VoxelShape shape, final boolean neighbours) {
 +            ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)shape).moonrise$isFullBlock();
@@ -32677,12 +33729,28 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca
 +        public final VoxelShape moonrise$getConstantContextCollisionShape() {
 +            return this.constantCollisionShape;
 +        }
++
++        @Override
++        public final boolean moonrise$isSpecialCollidingBlock() {
++            return this.isSpecialCollidingBlock;
++        }
 +        // Paper end - optimise collisions
++
++        // Paper start - optimise TypedInstance
++        private final Block blockOwner;
++        private final Holder.Reference<Block> reference;
++        // Paper end - optimise TypedInstance
 +
          protected BlockStateBase(final Block owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
              super(owner, propertyKeys, propertyValues);
++            // Paper start - optimise TypedInstance
++            this.blockOwner = owner;
++            this.reference = owner.builtInRegistryHolder();
++            // Paper end - optimise TypedInstance
              BlockBehaviour.Properties properties = owner.properties;
-@@ -554,6 +624,41 @@ public abstract class BlockBehaviour implements FeatureElement {
+             this.lightEmission = properties.lightEmission.applyAsInt(this.asState());
+             this.useShapeForLightOcclusion = owner.useShapeForLightOcclusion(this.asState());
+@@ -554,16 +644,84 @@ public abstract class BlockBehaviour implements FeatureElement {
  
              this.propagatesSkylightDown = this.owner.propagatesSkylightDown(this.asState());
              this.lightDampening = this.owner.getLightDampening(this.asState());
@@ -32690,6 +33758,7 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca
 +            this.isConditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion;
 +            // Paper end - rewrite chunk system
 +            // Paper start - optimise collisions
++            this.isSpecialCollidingBlock = isSpecialCollidingBlock(this);
 +            if (this.cache != null) {
 +                final VoxelShape collisionShape = this.cache.collisionShape;
 +                if (this.isAir()) {
@@ -32724,6 +33793,50 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..bebfe5b72c1dd812c480de3311ad36ca
          }
  
          public Block getBlock() {
+-            return this.owner;
++            return this.blockOwner; // Paper - optimise TypedInstance
+         }
+ 
+         @Override
+         public Holder<Block> typeHolder() {
+-            return this.getBlock().builtInRegistryHolder();
++            return this.reference; // Paper - optimise TypedInstance
++        }
++
++        // Paper start - optimise TypedInstance
++        @Override
++        public final java.util.stream.Stream<net.minecraft.tags.TagKey<Block>> tags() {
++            return this.reference.tags();
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.tags.TagKey<Block> tag) {
++            return this.reference.is(tag);
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.core.HolderSet<Block> set) {
++            return set.contains(this.reference);
++        }
++
++        @Override
++        public final boolean is(final Block rawType) {
++            return this.blockOwner == rawType;
++        }
++
++        @Override
++        public final boolean is(final Holder<Block> type) {
++            return this.reference == type;
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.resources.ResourceKey<Block> type) {
++            return this.reference.is(type);
+         }
++        // Paper end - optimise TypedInstance
+ 
+         @Deprecated
+         public boolean isSolid() {
 diff --git a/net/minecraft/world/level/block/state/StateDefinition.java b/net/minecraft/world/level/block/state/StateDefinition.java
 index e6953b5371aa94be4173857d5bae48c41cec6b7c..a93b55f5543d3624c39a4335c52e025e5675fa14 100644
 --- a/net/minecraft/world/level/block/state/StateDefinition.java
@@ -33097,7 +34210,7 @@ index b95665559d646ab8de313a19dadc197a1e8be02c..b82b935272efbc7a7518e148f665f4f2
  
      public Property.Value<T> value(final T value) {
 diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
-index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a215e2b54c 100644
+index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08dc3e0766 100644
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -56,7 +56,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
@@ -33118,7 +34231,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
      private final Map<Structure, StructureStart> structureStarts = Maps.newHashMap();
      private final Map<Structure, LongSet> structureReferences = Maps.newHashMap();
      protected final Map<BlockPos, CompoundTag> pendingBlockEntities = Maps.newHashMap();
-@@ -82,6 +82,57 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -82,6 +82,65 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
      public org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
      // CraftBukkit end
  
@@ -33172,11 +34285,34 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
 +    private final int minSection;
 +    private final int maxSection;
 +    // Paper end - get block chunk optimisation
++    // Paper start - getblock optimisations - cache world height/sections
++    private final int minY;
++    private final int height;
++    private final int maxY;
++    private final int minSectionY;
++    private final int maxSectionY;
++    private final int sectionsCount;
++    // Paper end - getblock optimisations - cache world height/sections
 +
      public ChunkAccess(
          final ChunkPos chunkPos,
          final UpgradeData upgradeData,
-@@ -99,7 +150,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -91,6 +150,14 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+         final LevelChunkSection @Nullable [] sections,
+         final @Nullable BlendingData blendingData
+     ) {
++        // Paper start - getblock optimisations - cache world height/sections
++        this.minY = levelHeightAccessor.getMinY();
++        this.height = levelHeightAccessor.getHeight();
++        this.maxY = this.minY + this.height - 1;
++        this.minSectionY = this.minY >> 4;
++        this.maxSectionY = this.maxY >> 4;
++        this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
++        // Paper end - getblock optimisations - cache world height/sections
+         this.locX = chunkPos.x(); this.locZ = chunkPos.z(); // Paper - reduce need for field lookups
+         this.chunkPos = chunkPos; this.coordinateKey = ChunkPos.pack(this.locX, this.locZ); // Paper - cache long key
+         this.upgradeData = upgradeData;
+@@ -99,7 +166,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
          this.inhabitedTime = inhabitedTime;
          this.postProcessing = new ShortList[levelHeightAccessor.getSectionsCount()];
          this.blendingData = blendingData;
@@ -33185,7 +34321,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
          if (sections != null) {
              if (this.sections.length == sections.length) {
                  System.arraycopy(sections, 0, this.sections, 0, this.sections.length);
-@@ -109,6 +160,16 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -109,6 +176,16 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
          }
  
          replaceMissingSections(containerFactory, this.sections);
@@ -33202,7 +34338,76 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
      }
  
      private static void replaceMissingSections(final PalettedContainerFactory containerFactory, final LevelChunkSection[] sections) {
-@@ -423,18 +484,22 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -404,14 +481,66 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+ 
+     @Override
+     public int getMinY() {
+-        return this.levelHeightAccessor.getMinY();
++        return this.minY; // Paper - getblock optimisations - cache world height/sections
+     }
+ 
+     @Override
+     public int getHeight() {
+-        return this.levelHeightAccessor.getHeight();
++        return this.height; // Paper - getblock optimisations - cache world height/sections
++    }
++
++    // Paper start - getblock optimisations - cache world height/sections
++    @Override
++    public int getMaxY() {
++        return this.maxY;
+     }
+ 
++    @Override
++    public int getSectionsCount() {
++        return this.sectionsCount;
++    }
++
++    @Override
++    public int getMinSectionY() {
++        return this.minSectionY;
++    }
++
++    @Override
++    public int getMaxSectionY() {
++        return this.maxSectionY;
++    }
++
++    @Override
++    public boolean isInsideBuildHeight(final int blockY) {
++        return blockY >= this.minY && blockY <= this.maxY;
++    }
++
++    @Override
++    public boolean isOutsideBuildHeight(final BlockPos pos) {
++        return this.isOutsideBuildHeight(pos.getY());
++    }
++
++    @Override
++    public boolean isOutsideBuildHeight(final int blockY) {
++        return blockY < this.minY || blockY > this.maxY;
++    }
++
++    @Override
++    public int getSectionIndex(final int blockY) {
++        return (blockY >> 4) - this.minSectionY;
++    }
++
++    @Override
++    public int getSectionIndexFromSectionY(final int sectionY) {
++        return sectionY - this.minSectionY;
++    }
++
++    @Override
++    public int getSectionYFromSectionIndex(final int sectionIdx) {
++        return sectionIdx + this.minSectionY;
++    }
++    // Paper end - getblock optimisations - cache world height/sections
++
+     @Deprecated
+     public BiomeGenerationSettings carverBiome(final Supplier<BiomeGenerationSettings> source) {
+         if (this.carverBiomeSettings == null) {
+@@ -423,18 +552,22 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
  
      @Override
      public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
@@ -33218,8 +34423,8 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
 -            category.setDetail("Location", () -> CrashReportCategory.formatLocation(this, quartX, quartY, quartZ));
 -            throw new ReportedException(report);
 +        // Paper start - get block chunk optimisation
-+        int sectionY = (quartY >> 2) - this.minSection;
-+        int rel = quartY & 3;
++        int sectionY = (quartY >> QuartPos.BITS) - this.minSection;
++        int rel = quartY & QuartPos.MASK;
 +
 +        final LevelChunkSection[] sections = this.sections;
 +
@@ -33228,15 +34433,15 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
 +            rel = 0;
 +        } else if (sectionY >= sections.length) {
 +            sectionY = sections.length - 1;
-+            rel = 3;
++            rel = QuartPos.MASK;
          }
 +
-+        return sections[sectionY].getNoiseBiome(quartX & 3, rel, quartZ & 3);
++        return sections[sectionY].getNoiseBiome(quartX & QuartPos.MASK, rel, quartZ & QuartPos.MASK);
 +        // Paper end - get block chunk optimisation
      }
  
      // CraftBukkit start
-@@ -480,12 +545,12 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -480,12 +613,12 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
      }
  
      public void initializeLightSources() {
@@ -33252,10 +34457,10 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..807529f25ed0ef03beef6746f706d8a2
  
      public static ProblemReporter.PathElement problemPath(final ChunkPos pos) {
 diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 3061b7335af71453dd75ee98539cc7535df747ae..bb484105c8bcbc277cd85b7d1168680bf0b1ce85 100644
+index 3061b7335af71453dd75ee98539cc7535df747ae..cc4800823c20e8ecbf0b4d74fd85a22bcb70c74c 100644
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -130,7 +130,7 @@ public abstract class ChunkGenerator {
+@@ -130,11 +130,14 @@ public abstract class ChunkGenerator {
          return CompletableFuture.supplyAsync(() -> {
              this.doCreateBiomes(blender, randomState, protoChunk);
              return protoChunk;
@@ -33264,7 +34469,30 @@ index 3061b7335af71453dd75ee98539cc7535df747ae..bb484105c8bcbc277cd85b7d1168680b
      }
  
      private void doCreateBiomes(final Blender blender, final RandomState randomState, final ChunkAccess protoChunk) {
-@@ -351,7 +351,7 @@ public abstract class ChunkGenerator {
+-        DensityBufferPool bufferPool = randomState.acquireDensityBufferPool();
++        // Paper start - optimise chunk generation - use thread local allocator
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalAllocator = ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.acquire();
++        DensityBufferPool bufferPool = threadLocalAllocator == null ? randomState.acquireDensityBufferPool() : threadLocalAllocator;
++        // Paper end - optimise chunk generation - use thread local allocator
+ 
+         try {
+             Climate.Sampler climateSampler = randomState.createClimateSampler(SamplerContext.builder().enableCaches().useBufferArena(bufferPool).build());
+@@ -151,7 +154,13 @@ public abstract class ChunkGenerator {
+                 );
+             protoChunk.fillBiomesFromNoise(this.decorateBiomeResolver(blender, protoChunk, biomeResolver));
+         } finally {
+-            randomState.releaseDensityBufferPool(bufferPool);
++            // Paper start - optimise chunk generation - use thread local allocator
++            if (!(bufferPool instanceof ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalDensityBufferArena)) {
++                randomState.releaseDensityBufferPool(bufferPool);
++            } else {
++                ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.release(threadLocalDensityBufferArena);
++            }
++            // Paper end - optimise chunk generation - use thread local allocator
+         }
+     }
+ 
+@@ -351,7 +360,7 @@ public abstract class ChunkGenerator {
                      return Pair.of(config.getLocatePos(chunkTarget), structure);
                  }
  
@@ -33273,6 +34501,43 @@ index 3061b7335af71453dd75ee98539cc7535df747ae..bb484105c8bcbc277cd85b7d1168680b
                  StructureStart start = structureManager.getStartForStructure(structure.value(), chunk);
                  if (start != null && start.isValid() && (!createReference || tryAddReference(structureManager, start))) {
                      return Pair.of(config.getLocatePos(start.getChunkPos()), structure);
+@@ -387,7 +396,17 @@ public abstract class ChunkGenerator {
+                 ChunkAccess chunkInRange = level.getChunk(chunkPos.x(), chunkPos.z());
+ 
+                 for (LevelChunkSection section : chunkInRange.getSections()) {
+-                    section.getBiomes().getAll(possibleBiomes::add);
++                    // Paper start - optimise chunk generation
++                    // We do not need to search the entire biome section, as the biome section is never
++                    // modified after being created - meaning that the palette only contains entries
++                    // that are present in the section (provided that the palette is NOT global).
++                    final PalettedContainerRO<Holder<Biome>> biomes = section.getBiomes();
++                    if (((PalettedContainer<Holder<Biome>>)biomes).data.palette() instanceof GlobalPalette<Holder<Biome>>) {
++                        biomes.getAll(possibleBiomes::add);
++                    } else {
++                        biomes.forEachInPalette(possibleBiomes::add);
++                    }
++                    // Paper end - optimise chunk generation
+                 }
+             });
+             possibleBiomes.retainAll(this.biomeSource.possibleBiomes());
+diff --git a/net/minecraft/world/level/chunk/Configuration.java b/net/minecraft/world/level/chunk/Configuration.java
+index 35e8ea13af811742f0e44afe66b53c3a513f210c..2521b46b128f175d82a9c8d8991346180583588b 100644
+--- a/net/minecraft/world/level/chunk/Configuration.java
++++ b/net/minecraft/world/level/chunk/Configuration.java
+@@ -31,7 +31,12 @@ public interface Configuration {
+ 
+         @Override
+         public <T> Palette<T> createPalette(final Strategy<T> strategy, final List<T> paletteEntries) {
+-            return this.factory.create(this.bits, paletteEntries);
++            // Paper start - optimise palette reads
++            // Force use of hash palette everywhere to eliminate indirection during palette use.
++            // The hash palette will internally switch to a linear lookup under a given threshold
++            // for Palette#idFor calls, preserving linear performance.
++            return ca.spottedleaf.moonrise.patches.fast_palette.FastHashMapPalette.create(this.bits, paletteEntries);
++            // Paper end - optimise palette reads
+         }
+ 
+         @Override
 diff --git a/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index f095ec93c0c5be6db15b6486ec22980ba74cf9e5..9ee8dc12f59ab8ccf03cae451174d023f2870df0 100644
 --- a/net/minecraft/world/level/chunk/EmptyLevelChunk.java
@@ -33327,31 +34592,8 @@ index f095ec93c0c5be6db15b6486ec22980ba74cf9e5..9ee8dc12f59ab8ccf03cae451174d023
      @Override
      public BlockState getBlockState(final BlockPos pos) {
          return Blocks.VOID_AIR.defaultBlockState();
-diff --git a/net/minecraft/world/level/chunk/HashMapPalette.java b/net/minecraft/world/level/chunk/HashMapPalette.java
-index fde0a0e4b2a3b2bd4f2ac893703c70dd55b1ddc2..3ee35885ea1f997bb5a36dd8d5f83b168883ba61 100644
---- a/net/minecraft/world/level/chunk/HashMapPalette.java
-+++ b/net/minecraft/world/level/chunk/HashMapPalette.java
-@@ -8,10 +8,17 @@ import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.VarInt;
- import net.minecraft.util.CrudeIncrementalIntIdentityHashBiMap;
- 
--public class HashMapPalette<T> implements Palette<T> {
-+public class HashMapPalette<T> implements Palette<T>, ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T> { // Paper - optimise palette reads
-     private final CrudeIncrementalIntIdentityHashBiMap<T> values;
-     private final int bits;
- 
-+    // Paper start - optimise palette reads
-+    @Override
-+    public final T[] moonrise$getRawPalette(final ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T> container) {
-+        return ((ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T>)this.values).moonrise$getRawPalette(container);
-+    }
-+    // Paper end - optimise palette reads
-+
-     public HashMapPalette(final int bits, final List<T> values) {
-         this(bits);
-         values.forEach(this.values::add);
 diff --git a/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
-index ddfb53c901eae74278c1636876e932765e0c1f2d..3b346da37c2c9e0bb64898cc48746f270899a728 100644
+index ddfb53c901eae74278c1636876e932765e0c1f2d..75499e774a386602241e97b27fb8eea59f294aaf 100644
 --- a/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 +++ b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 @@ -27,7 +27,7 @@ import net.minecraft.world.ticks.BlackholeTickAccess;
@@ -33363,7 +34605,7 @@ index ddfb53c901eae74278c1636876e932765e0c1f2d..3b346da37c2c9e0bb64898cc48746f27
      private final LevelChunk wrapped;
      private final boolean allowWrites;
  
-@@ -37,6 +37,48 @@ public class ImposterProtoChunk extends ProtoChunk {
+@@ -37,6 +37,60 @@ public class ImposterProtoChunk extends ProtoChunk {
          this.allowWrites = allowWrites;
      }
  
@@ -33409,11 +34651,23 @@ index ddfb53c901eae74278c1636876e932765e0c1f2d..3b346da37c2c9e0bb64898cc48746f27
 +    }
 +    // Paper end - rewrite chunk system
 +
++    // Paper start - get block chunk optimisation
++    @Override
++    public BlockState moonrise$getBlock(final int x, final int y, final int z) {
++        return this.wrapped.moonrise$getBlock(x, y, z);
++    }
++
++    @Override
++    public FluidState moonrise$getFluid(final int x, final int y, final int z) {
++        return this.wrapped.moonrise$getFluid(x, y, z);
++    }
++    // Paper end - get block chunk optimisation
++
      @Override
      public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
          return this.wrapped.getBlockEntity(pos);
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc43a578e6 100644
+index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..e482afb37a061ab720b72c4604dfafa42a198cd9 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -62,7 +62,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
@@ -33425,7 +34679,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final TickingBlockEntity NULL_TICKER = new TickingBlockEntity() {
          @Override
-@@ -101,6 +101,39 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -101,6 +101,44 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
      // Paper start
      boolean loadedTicketLevel;
      // Paper end
@@ -33461,11 +34715,16 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
 +    public final BlockState moonrise$getBlock(final int x, final int y, final int z) {
 +        return this.getBlockStateFinal(x, y, z);
 +    }
++
++    @Override
++    public FluidState moonrise$getFluid(final int x, final int y, final int z) {
++        return this.getFluidState(x, y, z);
++    }
 +    // Paper end - get block chunk optimisation
  
      public LevelChunk(final Level level, final ChunkPos pos) {
          this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -130,6 +163,14 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -130,6 +168,14 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
          this.postLoad = postLoad;
          this.blockTicks = blockTicks;
          this.fluidTicks = fluidTicks;
@@ -33480,7 +34739,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
      }
  
      public LevelChunk(final ServerLevel level, final ProtoChunk protoChunk, final LevelChunk.@Nullable PostLoadProcessor postLoad) {
-@@ -167,13 +208,19 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -167,13 +213,19 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
              }
          }
  
@@ -33501,7 +34760,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
      }
  
      public void setUnsavedListener(final LevelChunk.UnsavedListener unsavedListener) {
-@@ -346,7 +393,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -346,7 +398,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
          if (LightEngine.hasDifferentLightProperties(oldState, state)) {
              ProfilerFiller profiler = Profiler.get();
              profiler.push("updateSkyLightSources");
@@ -33510,7 +34769,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
              profiler.popPush("queueCheckLight");
              this.level.getChunkSource().getLightEngine().checkBlock(pos);
              profiler.pop();
-@@ -581,11 +628,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -581,11 +633,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
  
      // CraftBukkit start
      public void loadCallback() {
@@ -33524,7 +34783,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
          if (server != null) {
              /*
               * If it's a new world, the first few chunks are generated inside
-@@ -594,6 +642,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -594,6 +647,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
               */
              org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
              server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
@@ -33532,7 +34791,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
  
              if (this.needsDecoration) {
                  this.needsDecoration = false;
-@@ -620,13 +669,15 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -620,13 +674,15 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
      }
  
      public void unloadCallback() {
@@ -33550,7 +34809,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
          // Paper start
          this.loadedTicketLevel = false;
          // Paper end
-@@ -634,8 +685,31 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -634,8 +690,31 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
  
      @Override
      public boolean isUnsaved() {
@@ -33583,7 +34842,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
      // CraftBukkit end
  
      public boolean isEmpty() {
-@@ -716,6 +790,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+@@ -716,6 +795,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
  
          this.pendingBlockEntities.clear();
          this.upgradeData.upgrade(this);
@@ -33592,7 +34851,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..0e5869aaeac4063fbd3e985feda290cc
  
      private @Nullable BlockEntity promotePendingBlockEntity(final BlockPos pos, final CompoundTag tag) {
 diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
-index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc94feb3659 100644
+index f2117549758ad859d400ef649fe20db3ce4b5e81..77690d903b9fd791fba1325132769f5aef079fb5 100644
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -8,7 +8,7 @@ import net.minecraft.world.level.biome.BiomeResolver;
@@ -33690,7 +34949,7 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
          return previous;
      }
  
-@@ -119,37 +184,71 @@ public class LevelChunkSection {
+@@ -119,37 +184,69 @@ public class LevelChunkSection {
      }
  
      public void recalcBlockCounts() {
@@ -33721,21 +34980,18 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
 +            final int paletteSize = palette.getSize();
 +            final net.minecraft.util.BitStorage storage = data.storage();
 +
-+            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> counts;
++            final java.util.List<ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry> counts;
 +            if (paletteSize == 1) {
-+                counts = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1);
-+                counts.put(0, FULL_LIST);
++                counts = new java.util.ArrayList<>(1);
++                counts.add(new ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry(FULL_LIST.size(), palette.valueFor(0), FULL_LIST));
 +            } else {
-+                counts = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingBitStorage)storage).moonrise$countEntries();
++                counts = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingBitStorage)storage).moonrise$countBlocks(palette);
 +            }
 +
-+            for (final java.util.Iterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList>> iterator = counts.int2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
-+                final it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList> entry = iterator.next();
-+                final int paletteIdx = entry.getIntKey();
-+                final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = entry.getValue();
-+                final int paletteCount = coordinates.size();
-+
-+                final BlockState state = palette.valueFor(paletteIdx);
++            for (int i = 0, len = counts.size(); i < len; ++i) {
++                final ca.spottedleaf.moonrise.patches.block_counting.BlockCountingEntry blockCountingEntry = counts.get(i);
++                final int paletteCount = blockCountingEntry.count;
++                final BlockState state = blockCountingEntry.state;
 +
 +                if (state.isAir()) {
 +                    continue;
@@ -33746,6 +35002,7 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
 +                }
 +                this.nonEmptyBlockCount += (short)paletteCount;
 +                if (state.isRandomlyTicking()) {
++                    final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = blockCountingEntry.coords;
 +                    this.tickingBlockCount += (short) paletteCount;
 +                    final short[] raw = coordinates.elements();
 +                    final int rawLen = raw.length;
@@ -33755,8 +35012,8 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
 +                    tickingBlocks.setMinCapacity(Math.min((rawLen + tickingBlocks.size()) * 3 / 2, 16 * 16 * 16));
 +
 +                    java.util.Objects.checkFromToIndex(0, paletteCount, raw.length);
-+                    for (int i = 0; i < paletteCount; ++i) {
-+                        tickingBlocks.add(raw[i]);
++                    for (int k = 0; k < paletteCount; ++k) {
++                        tickingBlocks.add(raw[k]);
                      }
 +                }
  
@@ -33787,7 +35044,7 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
      }
  
      public PalettedContainer<BlockState> getStates() {
-@@ -167,6 +266,11 @@ public class LevelChunkSection {
+@@ -167,6 +264,11 @@ public class LevelChunkSection {
          PalettedContainer<Holder<Biome>> biomes = this.biomes.recreate();
          biomes.read(buffer);
          this.biomes = biomes;
@@ -33799,45 +35056,8 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..b2c6bcb8d82fc01bf4e8540c6d9f6bc9
      }
  
      public void readBiomes(final FriendlyByteBuf buffer) {
-diff --git a/net/minecraft/world/level/chunk/LinearPalette.java b/net/minecraft/world/level/chunk/LinearPalette.java
-index 51761bba718b5bc58524454137d7e526c74ce5d3..58f03cf8b32b141dc7df72568ef902eed53f4a5d 100644
---- a/net/minecraft/world/level/chunk/LinearPalette.java
-+++ b/net/minecraft/world/level/chunk/LinearPalette.java
-@@ -7,11 +7,18 @@ import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.VarInt;
- import org.apache.commons.lang3.Validate;
- 
--public class LinearPalette<T> implements Palette<T> {
-+public class LinearPalette<T> implements Palette<T>, ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T> { // Paper - optimise palette reads
-     private final T[] values;
-     private final int bits;
-     private int size;
- 
-+    // Paper start - optimise palette reads
-+    @Override
-+    public final T[] moonrise$getRawPalette(final ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T> container) {
-+        return this.values;
-+    }
-+    // Paper end - optimise palette reads
-+
-     private LinearPalette(final int bits, final List<T> paletteEntries) {
-         this.values = (T[])(new Object[1 << bits]);
-         this.bits = bits;
-diff --git a/net/minecraft/world/level/chunk/Palette.java b/net/minecraft/world/level/chunk/Palette.java
-index 9b9119afd89f60cd88c3d1e6ec4857b92e95ff11..eec56782be6e6e2c483e7435ff136bf885011eaf 100644
---- a/net/minecraft/world/level/chunk/Palette.java
-+++ b/net/minecraft/world/level/chunk/Palette.java
-@@ -5,7 +5,7 @@ import java.util.function.Predicate;
- import net.minecraft.core.IdMap;
- import net.minecraft.network.FriendlyByteBuf;
- 
--public interface Palette<T> {
-+public interface Palette<T> extends ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T> { // Paper - optimise palette reads
-     int idFor(T value, PaletteResize<T> resizeHandler);
- 
-     boolean maybeHas(Predicate<T> predicate);
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec395badb31 100644
+index 9591b8644da987a6e2dc77bb7388b99566a855e3..064a44c06a0232f92d5e0fc25b71da6f6a6f81ab 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
@@ -33849,66 +35069,24 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec3
      private final Strategy<T> strategy;
      //private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
  
-@@ -64,20 +64,50 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -64,6 +64,16 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              );
      }
  
 +    // Paper start - optimise palette reads
-+    private void updateData(final PalettedContainer.Data<T> data) {
-+        if (data != null) {
-+            ((ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T>)(Object)data).moonrise$setPalette(
-+                ((ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T>)data.palette).moonrise$getRawPalette((ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T>)(Object)data)
-+            );
++    private static <T> T readPalette(final PalettedContainer.Data<T> data, final int paletteIdx) {
++        final Palette<T> palette = data.palette;
++        if (palette instanceof ca.spottedleaf.moonrise.patches.fast_palette.FastHashMapPalette<T> hashMapPalette) {
++            return hashMapPalette.valueFor(paletteIdx);
 +        }
-+    }
-+
-+    private T readPaletteSlow(final PalettedContainer.Data<T> data, final int paletteIdx) {
-+        return data.palette.valueFor(paletteIdx);
-+    }
-+
-+    private T readPalette(final PalettedContainer.Data<T> data, final int paletteIdx) {
-+        final T[] palette = ((ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T>)(Object)data).moonrise$getPalette();
-+        if (palette == null) {
-+            return this.readPaletteSlow(data, paletteIdx);
-+        }
-+
-+        final T ret = palette[paletteIdx];
-+        if (ret == null) {
-+            throw new IllegalArgumentException("Palette index out of bounds");
-+        }
-+        return ret;
++        return palette.valueFor(paletteIdx);
 +    }
 +    // Paper end - optimise palette reads
 +
      private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette) {
          this.strategy = strategy;
          this.data = new PalettedContainer.Data<>(dataConfiguration, storage, palette);
-+        this.updateData(this.data); // Paper - optimise palette reads
-     }
- 
-     private PalettedContainer(final PalettedContainer<T> source) {
-         this.strategy = source.strategy;
-         this.data = source.data.copy();
-+        this.updateData(this.data); // Paper - optimise palette reads
-     }
- 
-     public PalettedContainer(final T initialValue, final Strategy<T> strategy) {
-         this.strategy = strategy;
-         this.data = this.createOrReuseData(null, 0);
-         this.data.palette.idFor(initialValue, this);
-+        this.updateData(this.data); // Paper - optimise palette reads
-     }
- 
-     private PalettedContainer.Data<T> createOrReuseData(final PalettedContainer.@Nullable Data<T> oldData, final int targetBits) {
-@@ -99,6 +129,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-         PalettedContainer.Data<T> newData = this.createOrReuseData(oldData, bits);
-         newData.copyFrom(oldData.palette, oldData.storage);
-         this.data = newData;
-+        this.updateData(this.data); // Paper - optimise palette reads
-         return newData.palette.idFor(lastAddedValue, PaletteResize.noResizeExpected());
-     }
- 
-@@ -117,9 +148,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -117,9 +127,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
      private T getAndSet(final int index, final T value) {
@@ -33919,12 +35097,12 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec3
 +        final int paletteIdx = this.data.palette.idFor(value, this);
 +        final PalettedContainer.Data<T> data = this.data;
 +        final int prev = data.storage.getAndSet(index, paletteIdx);
-+        return this.readPalette(data, prev);
++        return readPalette(data, prev);
 +        // Paper end - optimise palette reads
      }
  
      public synchronized void set(final int x, final int y, final int z, final T value) { // Paper - synchronize
-@@ -142,9 +176,11 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -142,9 +155,11 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return this.get(this.strategy.getIndex(x, y, z));
      }
  
@@ -33934,20 +35112,12 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec3
 +    public T get(final int index) { // Paper - public
 +        // Paper start - optimise palette reads
 +        final PalettedContainer.Data<T> data = this.data;
-+        return this.readPalette(data, data.storage.get(index));
++        return readPalette(data, data.storage.get(index));
 +        // Paper end - optimise palette reads
      }
  
      @Override
-@@ -164,6 +200,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-             newData.palette.read(buffer, this.strategy.globalMap());
-             buffer.readFixedSizeLongArray(newData.storage.getRaw());
-             this.data = newData;
-+            this.updateData(this.data); // Paper - optimise palette reads
-         } finally {
-             this.release();
-         }
-@@ -223,30 +260,104 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -223,30 +238,104 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return DataResult.success(new PalettedContainer<>(strategy, storedConfiguration, storage, palette));
      }
  
@@ -34049,13 +35219,13 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec3
 +                        dataArray = readoutCache.repack(bitsToUse, storage.getSize()).getRaw();
 +                    }
 +                }
++            }
++
++            if (DEBUG_PACKING) {
++                validate(newPalette, dataArray, bitsToUse, storage, palette);
              }
  
 -            return new PalettedContainerRO.PackedData<>(newPalette.getEntries(), values, bitsOnDisc);
-+            if (DEBUG_PACKING) {
-+                validate(newPalette, dataArray, bitsToUse, storage, palette);
-+            }
-+
 +            // why does this trash use streams...?
 +            return new PalettedContainerRO.PackedData<>(newPalette, dataArray == null ? Optional.empty() : Optional.of(Arrays.stream(dataArray)), bitsToUse);
          } finally {
@@ -34065,56 +35235,118 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec3
      }
  
      private static <T> int[] reencodeContents(final BitStorage storage, final Palette<T> oldPalette, final Palette<T> newPalette) {
-@@ -317,7 +428,43 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -317,7 +406,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          void accept(final T entry, final int count);
      }
  
 -    private record Data<T>(Configuration configuration, BitStorage storage, Palette<T> palette) {
-+    // Paper start - optimise palette reads
-+    public static final class Data<T> implements ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T> {
-+
-+        private final Configuration configuration;
-+        private final BitStorage storage;
-+        private final Palette<T> palette;
-+
-+        private T[] moonrise$palette;
-+
-+        public Data(final Configuration configuration, final BitStorage storage, final Palette<T> palette) {
-+            this.configuration = configuration;
-+            this.storage = storage;
-+            this.palette = palette;
-+        }
-+
-+        public Configuration configuration() {
-+            return this.configuration;
-+        }
-+
-+        public BitStorage storage() {
-+            return this.storage;
-+        }
-+
-+        public Palette<T> palette() {
-+            return this.palette;
-+        }
-+
-+        @Override
-+        public final T[] moonrise$getPalette() {
-+            return this.moonrise$palette;
-+        }
-+
-+        @Override
-+        public final void moonrise$setPalette(final T[] palette) {
-+            this.moonrise$palette = palette;
-+        }
-+        // Paper end - optimise palette reads
++    public record Data<T>(Configuration configuration, BitStorage storage, Palette<T> palette) { // Paper - public
          public void copyFrom(final Palette<T> oldPalette, final BitStorage oldStorage) {
              PaletteResize<T> dummyResizer = PaletteResize.noResizeExpected();
              if (oldPalette.getSize() == 1) {
 diff --git a/net/minecraft/world/level/chunk/ProtoChunk.java b/net/minecraft/world/level/chunk/ProtoChunk.java
-index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..769ec921f5ba1ee8146d5abeb287b14a24d1fbfa 100644
+index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..d3afcaa32dc9b46147c99972fbcca84be2a8e54d 100644
 --- a/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/net/minecraft/world/level/chunk/ProtoChunk.java
-@@ -155,7 +155,7 @@ public class ProtoChunk extends ChunkAccess {
+@@ -40,7 +40,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
+ import org.jspecify.annotations.Nullable;
+ import org.slf4j.Logger;
+ 
+-public class ProtoChunk extends ChunkAccess {
++public class ProtoChunk extends ChunkAccess implements ca.spottedleaf.moonrise.patches.getblock.GetBlockChunk { // Paper - get block chunk optimisation
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private volatile @Nullable LevelLightEngine lightEngine;
+     private volatile ChunkStatus status = ChunkStatus.EMPTY;
+@@ -48,6 +48,51 @@ public class ProtoChunk extends ChunkAccess {
+     private @Nullable BelowZeroRetrogen belowZeroRetrogen;
+     private final ProtoChunkTicks<Block> blockTicks;
+     private final ProtoChunkTicks<Fluid> fluidTicks;
++    // Paper start - get block chunk optimisation
++    private static final BlockState AIR_BLOCKSTATE = Blocks.AIR.defaultBlockState();
++    private static final FluidState AIR_FLUIDSTATE = Fluids.EMPTY.defaultFluidState();
++    private static final BlockState VOID_AIR_BLOCKSTATE = Blocks.VOID_AIR.defaultBlockState();
++    private final int minSection;
++    private final int maxSection;
++
++    @Override
++    public BlockState moonrise$getBlock(final int x, final int y, final int z) {
++        final int sectionY = (y >> 4) - this.minSection;
++
++        final LevelChunkSection[] sections = this.sections;
++        if (sectionY < 0 || sectionY >= sections.length) {
++            return VOID_AIR_BLOCKSTATE;
++        }
++
++        final LevelChunkSection section = sections[sectionY];
++
++        if (!section.hasOnlyAir()) {
++            final int index = (x & 15) | ((z & 15) << 4) | ((y & 15) << (4+4));
++            return section.getStates().get(index);
++        }
++
++        return AIR_BLOCKSTATE;
++    }
++
++    @Override
++    public FluidState moonrise$getFluid(final int x, final int y, final int z) {
++        final int sectionY = (y >> 4) - this.minSection;
++
++        final LevelChunkSection[] sections = this.sections;
++        if (sectionY < 0 || sectionY >= sections.length) {
++            return AIR_FLUIDSTATE;
++        }
++
++        final LevelChunkSection section = sections[sectionY];
++
++        if (!section.hasOnlyAir()) {
++            final int index = (x & 15) | ((z & 15) << 4) | ((y & 15) << (4+4));
++            return section.getStates().get(index).getFluidState();
++        }
++
++        return AIR_FLUIDSTATE;
++    }
++    // Paper end - get block chunk optimisation
+ 
+     public ProtoChunk(
+         final ChunkPos chunkPos,
+@@ -72,6 +117,10 @@ public class ProtoChunk extends ChunkAccess {
+         super(chunkPos, upgradeData, levelHeightAccessor, containerFactory, 0L, sections, blendingData);
+         this.blockTicks = blockTicks;
+         this.fluidTicks = fluidTicks;
++        // Paper start - get block chunk optimisation
++        this.minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(levelHeightAccessor);
++        this.maxSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(levelHeightAccessor);
++        // Paper end - get block chunk optimisation
+     }
+ 
+     @Override
+@@ -109,23 +158,12 @@ public class ProtoChunk extends ChunkAccess {
+ 
+     public BlockState getBlockState(final int x, final int y, final int z) {
+         // Paper end
+-        if (this.isOutsideBuildHeight(y)) {
+-            return Blocks.VOID_AIR.defaultBlockState();
+-        }
+-
+-        LevelChunkSection section = this.getSection(this.getSectionIndex(y));
+-        return section.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : section.getBlockState(x & 15, y & 15, z & 15); // Paper
++        return this.moonrise$getBlock(x, y, z); // Paper - get block chunk optimisation
+     }
+ 
+     @Override
+     public FluidState getFluidState(final BlockPos pos) {
+-        int y = pos.getY();
+-        if (this.isOutsideBuildHeight(y)) {
+-            return Fluids.EMPTY.defaultFluidState();
+-        }
+-
+-        LevelChunkSection section = this.getSection(this.getSectionIndex(y));
+-        return section.hasOnlyAir() ? Fluids.EMPTY.defaultFluidState() : section.getFluidState(pos.getX() & 15, y & 15, pos.getZ() & 15);
++        return this.moonrise$getFluid(pos.getX(), pos.getY(), pos.getZ()); // Paper - get block chunk optimisation
+     }
+ 
+     @Override
+@@ -155,7 +193,7 @@ public class ProtoChunk extends ChunkAccess {
              }
  
              if (LightEngine.hasDifferentLightProperties(oldState, state)) {
@@ -34123,57 +35355,19 @@ index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..769ec921f5ba1ee8146d5abeb287b14a
                  this.lightEngine.checkBlock(pos);
              }
          }
-diff --git a/net/minecraft/world/level/chunk/SingleValuePalette.java b/net/minecraft/world/level/chunk/SingleValuePalette.java
-index 1e3ae1ae9dac0c98f6840658d690f63deac5c406..06a7f795739df3ccb7cae0aa00c88eb8ceea8073 100644
---- a/net/minecraft/world/level/chunk/SingleValuePalette.java
-+++ b/net/minecraft/world/level/chunk/SingleValuePalette.java
-@@ -8,9 +8,21 @@ import net.minecraft.network.VarInt;
- import org.apache.commons.lang3.Validate;
- import org.jspecify.annotations.Nullable;
- 
--public class SingleValuePalette<T> implements Palette<T> {
-+public class SingleValuePalette<T> implements Palette<T>, ca.spottedleaf.moonrise.patches.fast_palette.FastPalette<T> { // Paper - optimise palette reads
-     private @Nullable T value;
- 
-+    // Paper start - optimise palette reads
-+    private T[] rawPalette;
-+
-+    @Override
-+    public final T[] moonrise$getRawPalette(final ca.spottedleaf.moonrise.patches.fast_palette.FastPaletteData<T> container) {
-+        if (this.rawPalette != null) {
-+            return this.rawPalette;
-+        }
-+        return this.rawPalette = (T[])new Object[] { this.value };
-+    }
-+    // Paper end - optimise palette reads
-+
-     public SingleValuePalette(final List<T> paletteEntries) {
-         if (!paletteEntries.isEmpty()) {
-             Validate.isTrue(paletteEntries.size() <= 1, "Can't initialize SingleValuePalette with %d values.", paletteEntries.size());
-@@ -29,6 +41,11 @@ public class SingleValuePalette<T> implements Palette<T> {
-         }
- 
-         this.value = value;
-+        // Paper start - optimise palette reads
-+        if (this.rawPalette != null) {
-+            this.rawPalette[0] = value;
-+        }
-+        // Paper end - optimise palette reads
-         return 0;
-     }
- 
-@@ -53,6 +70,11 @@ public class SingleValuePalette<T> implements Palette<T> {
-     @Override
-     public void read(final FriendlyByteBuf buffer, final IdMap<T> globalMap) {
-         this.value = globalMap.byIdOrThrow(buffer.readVarInt());
-+        // Paper start - optimise palette reads
-+        if (this.rawPalette != null) {
-+            this.rawPalette[0] = this.value;
-+        }
-+        // Paper end - optimise palette reads
-     }
- 
-     @Override
+diff --git a/net/minecraft/world/level/chunk/Strategy.java b/net/minecraft/world/level/chunk/Strategy.java
+index 5c518b6ec7da546460884c37e9af682b6ab9fc22..8fc956f434cd42fbe67316df36c125714ada9552 100644
+--- a/net/minecraft/world/level/chunk/Strategy.java
++++ b/net/minecraft/world/level/chunk/Strategy.java
+@@ -6,7 +6,7 @@ import net.minecraft.util.Mth;
+ public abstract class Strategy<T> {
+     private static final Palette.Factory SINGLE_VALUE_PALETTE_FACTORY = SingleValuePalette::create;
+     private static final Palette.Factory LINEAR_PALETTE_FACTORY = LinearPalette::create;
+-    private static final Palette.Factory HASHMAP_PALETTE_FACTORY = HashMapPalette::create;
++    private static final Palette.Factory HASHMAP_PALETTE_FACTORY = ca.spottedleaf.moonrise.patches.fast_palette.FastHashMapPalette::create; // Paper - optimise palette reads
+     private static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
+     private static final Configuration ONE_BIT_LINEAR = new Configuration.Simple(LINEAR_PALETTE_FACTORY, 1);
+     private static final Configuration TWO_BITS_LINEAR = new Configuration.Simple(LINEAR_PALETTE_FACTORY, 2);
 diff --git a/net/minecraft/world/level/chunk/status/ChunkPyramid.java b/net/minecraft/world/level/chunk/status/ChunkPyramid.java
 index 528990b8d5cc13cefdcfc090ab7e4b3aaa7bae9e..36a00bd4945e3f6b279aa339a5d3cb2369f78a67 100644
 --- a/net/minecraft/world/level/chunk/status/ChunkPyramid.java
@@ -35464,6 +36658,179 @@ index c31f66710036cb68500ed936b8a4b89a2cf57574..4d5e3cf76b64e57c22e2717ca395e23a
      }
  
      public void move(final ServerLevel level) {
+diff --git a/net/minecraft/world/level/levelgen/Beardifier.java b/net/minecraft/world/level/levelgen/Beardifier.java
+index 7041d673e6f6b7b629d325fee770e640f75725a1..7e2c64b1962fa36e006c0cd4a4f1df4616f419d8 100644
+--- a/net/minecraft/world/level/levelgen/Beardifier.java
++++ b/net/minecraft/world/level/levelgen/Beardifier.java
+@@ -42,6 +42,10 @@ public class Beardifier implements DensitySampler {
+     private final List<Beardifier.Rigid> pieces;
+     private final List<JigsawJunction> junctions;
+     private final @Nullable BoundingBox affectedBox;
++    // Paper start - optimise chunk generation
++    private final Beardifier.Rigid[] piecesArray;
++    private final JigsawJunction[] junctionsArray;
++    // Paper end - optimise chunk generation
+ 
+     public static Beardifier forStructuresInChunk(final StructureManager structureManager, final ChunkPos chunkPos) {
+         List<StructureStart> structureStarts = structureManager.startsForStructure(
+@@ -105,6 +109,10 @@ public class Beardifier implements DensitySampler {
+     public Beardifier(final List<Beardifier.Rigid> pieces, final List<JigsawJunction> junctions, final @Nullable BoundingBox affectedBox) {
+         this.pieces = pieces;
+         this.junctions = junctions;
++        // Paper start - optimise chunk generation
++        this.piecesArray = pieces.toArray(new Beardifier.Rigid[0]);
++        this.junctionsArray = junctions.toArray(new JigsawJunction[0]);
++        // Paper end - optimise chunk generation
+         this.affectedBox = affectedBox;
+     }
+ 
+@@ -140,41 +148,58 @@ public class Beardifier implements DensitySampler {
+         return this.affectedBox != null && this.affectedBox.isInside(blockX, blockY, blockZ) ? this.sampleValueUnchecked(blockX, blockY, blockZ) : 0.0F;
+     }
+ 
++    // Paper start - optimise chunk generation
++    // Avoid indirection through the list iterator and use arrays
+     private float sampleValueUnchecked(final int blockX, final int blockY, final int blockZ) {
+         float noiseValue = 0.0F;
+ 
+-        for (Beardifier.Rigid rigid : this.pieces) {
+-            BoundingBox box = rigid.box();
+-            int groundLevelDelta = rigid.groundLevelDelta();
+-            int dx = Math.max(0, Math.max(box.minX() - blockX, blockX - box.maxX()));
+-            int dz = Math.max(0, Math.max(box.minZ() - blockZ, blockZ - box.maxZ()));
+-            int groundY = box.minY() + groundLevelDelta;
+-            int dyToGround = blockY - groundY;
+-
+-            int dy = switch (rigid.terrainAdjustment()) {
+-                case NONE -> 0;
+-                case BURY, BEARD_THIN -> dyToGround;
+-                case BEARD_BOX -> Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
+-                case ENCAPSULATE -> Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
+-            };
+-
+-            noiseValue += switch (rigid.terrainAdjustment()) {
+-                case NONE -> 0.0F;
+-                case BURY -> getBuryContribution(dx, dy / 2.0F, dz);
+-                case BEARD_THIN, BEARD_BOX -> getBeardContribution(dx, dy, dz, dyToGround) * 0.8F;
+-                case ENCAPSULATE -> getBuryContribution(dx / 2.0F, dy / 2.0F, dz / 2.0F) * 0.8F;
+-            };
++        for (final Beardifier.Rigid rigid : this.piecesArray) {
++            final BoundingBox box = rigid.box();
++            final int groundLevelDelta = rigid.groundLevelDelta();
++            final int dx = Math.max(0, Math.max(box.minX() - blockX, blockX - box.maxX()));
++            final int dz = Math.max(0, Math.max(box.minZ() - blockZ, blockZ - box.maxZ()));
++            final int groundY = box.minY() + groundLevelDelta;
++            final int dyToGround = blockY - groundY;
++
++            switch (rigid.terrainAdjustment()) {
++                case NONE: {
++                    continue;
++                }
++                case BURY: {
++                    noiseValue += getBuryContribution((float)dx, (float)dyToGround / 2.0f, (float)dz);
++                    continue;
++                }
++                case BEARD_THIN: {
++                    noiseValue += getBeardContribution(dx, dyToGround, dz, dyToGround) * 0.8F;
++                    continue;
++                }
++                case BEARD_BOX: {
++                    final int dy = Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
++                    noiseValue += getBeardContribution(dx, dy, dz, dyToGround) * 0.8F;
++                    continue;
++                }
++                case ENCAPSULATE: {
++                    final int dy = Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
++                    noiseValue += getBuryContribution((float)dx / 2.0f, (float)dy / 2.0f, (float)dz / 2.0f) * 0.8F;
++                    continue;
++                }
++
++                default: {
++                    throw new IllegalStateException();
++                }
++            }
+         }
+ 
+-        for (JigsawJunction junction : this.junctions) {
+-            int dx = blockX - junction.getSourceX();
+-            int dy = blockY - junction.getSourceGroundY();
+-            int dz = blockZ - junction.getSourceZ();
++        for (final JigsawJunction junction : this.junctionsArray) {
++            final int dx = blockX - junction.getSourceX();
++            final int dy = blockY - junction.getSourceGroundY();
++            final int dz = blockZ - junction.getSourceZ();
+             noiseValue += getBeardContribution(dx, dy, dz, dy) * 0.4F;
+         }
+ 
+         return noiseValue;
+     }
++    // Paper end - optimise chunk generation
+ 
+     private static float getBuryContribution(final float dx, final float dy, final float dz) {
+         float distanceSq = Mth.lengthSquared(dx, dy, dz);
+diff --git a/net/minecraft/world/level/levelgen/Heightmap.java b/net/minecraft/world/level/levelgen/Heightmap.java
+index 50827f91da97201264e7da29b958ad6297da6540..22990ffcb40304279530462a72c489e8e1207e08 100644
+--- a/net/minecraft/world/level/levelgen/Heightmap.java
++++ b/net/minecraft/world/level/levelgen/Heightmap.java
+@@ -30,6 +30,17 @@ public class Heightmap {
+     private final BitStorage data;
+     private final Predicate<BlockState> isOpaque;
+     private final ChunkAccess chunk;
++    // Paper start - optimise heightmap access
++    private static final ThreadLocal<int[]> TEMP_ARRAY = ThreadLocal.withInitial(() -> {
++        return new int[16*16];
++    });
++
++    // note: as it stands, max block height is currently 4096
++    //       this will fit inside char
++    //       additionally, for normal worlds (height = 384 or 256) the number of
++    //       bytes used in the storage is 296 compared to this (512)
++    private final char[] heightmapRaw = new char[16*16];
++    // Paper end - optimise heightmap access
+ 
+     public Heightmap(final ChunkAccess chunk, final Heightmap.Types heightmapType) {
+         this.isOpaque = heightmapType.isOpaque();
+@@ -117,17 +128,29 @@ public class Heightmap {
+     }
+ 
+     private int getFirstAvailable(final int index) {
+-        return this.data.get(index) + this.chunk.getMinY();
++        return (int)this.heightmapRaw[index] + this.chunk.getMinY(); // Paper - optimise heightmap access
+     }
+ 
+     private void setHeight(final int x, final int z, final int height) {
+-        this.data.set(getIndex(x, z), height - this.chunk.getMinY());
++        // Paper start - optimise heightmap access
++        final int index = getIndex(x, z);
++        final int value = height - this.chunk.getMinY();
++        this.data.set(index, value);
++        this.heightmapRaw[index] = (char)value;
++        // Paper end - optimise heightmap access
+     }
+ 
+     public void setRawData(final ChunkAccess chunk, final Heightmap.Types type, final long[] data) {
+         long[] rawData = this.data.getRaw();
+         if (rawData.length == data.length) {
+             System.arraycopy(data, 0, rawData, 0, data.length);
++            // Paper start - optimise heightmap access
++            final int[] tmp = TEMP_ARRAY.get();
++            this.data.unpack(tmp);
++            for (int i = 0, len = tmp.length; i < len; ++i) {
++                this.heightmapRaw[i] = (char)tmp[i];
++            }
++            // Paper end - optimise heightmap access
+         } else {
+             LOGGER.warn("Ignoring heightmap data for chunk {}, size does not match; expected: {}, got: {}", chunk.getPos(), rawData.length, data.length);
+             primeHeightmaps(chunk, EnumSet.of(type));
+@@ -139,7 +162,7 @@ public class Heightmap {
+     }
+ 
+     private static int getIndex(final int x, final int z) {
+-        return x + z * 16;
++        return x | (z << 4); // Paper - optimise heightmap access
+     }
+ 
+     public enum Types implements StringRepresentable {
 diff --git a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 index 6b7720722bfd2b0afb2f972dfa4c86cc1f79646d..f0529d233b791e226cec469b2efebcffd02c6d58 100644
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
@@ -35477,6 +36844,214 @@ index 6b7720722bfd2b0afb2f972dfa4c86cc1f79646d..f0529d233b791e226cec469b2efebcff
      }
  
      private void doFill(final NoiseChunk noiseChunk, final ChunkAccess chunk) {
+diff --git a/net/minecraft/world/level/levelgen/NoiseChunk.java b/net/minecraft/world/level/levelgen/NoiseChunk.java
+index f580638bbe729d0706ebc64c0dcfe03f9f593c8e..738bed8b72741ba801a8d44d0d342c46393f2e8f 100644
+--- a/net/minecraft/world/level/levelgen/NoiseChunk.java
++++ b/net/minecraft/world/level/levelgen/NoiseChunk.java
+@@ -26,7 +26,10 @@ public class NoiseChunk implements AutoCloseable {
+     ) {
+         this.randomState = randomState;
+         this.volume = volume;
+-        this.bufferPool = randomState.acquireDensityBufferPool();
++        // Paper start - optimise chunk generation - use thread local allocator
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalAllocator = ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.acquire();
++        this.bufferPool = threadLocalAllocator == null ? randomState.acquireDensityBufferPool() : threadLocalAllocator;
++        // Paper end - optimise chunk generation - use thread local allocator
+         ContextMap.Builder samplerUserFields = ContextMap.builder().set(Beardifier.CONTEXT_KEY, beardifier);
+         if (!blender.isEmpty()) {
+             Blender.OutputBuffer blendBuffer = blender.blendOffsetAndFactor(volume);
+@@ -61,6 +64,12 @@ public class NoiseChunk implements AutoCloseable {
+ 
+     @Override
+     public void close() {
+-        this.randomState.releaseDensityBufferPool(this.bufferPool);
++        // Paper start - optimise chunk generation - use thread local allocator
++        if (!(this.bufferPool instanceof ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena threadLocalDensityBufferArena)) {
++            this.randomState.releaseDensityBufferPool(this.bufferPool);
++        } else {
++            ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalDensityBufferArena.release(threadLocalDensityBufferArena);
++        }
++        // Paper end - optimise chunk generation - use thread local allocator
+     }
+ }
+diff --git a/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java b/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
+index ec0ca312c28dc1ba4b4f310ff3f80f22fc3367a5..464fb72348084adcfd5cd40d9e926bb826f1a010 100644
+--- a/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
++++ b/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
+@@ -3,7 +3,7 @@ package net.minecraft.world.level.levelgen.densityfunction;
+ import java.util.Arrays;
+ 
+ public class DensityBuffer {
+-    protected final float[] values;
++    public final float[] values; // Paper - optimise chunk generation - public
+     protected int size;
+ 
+     protected DensityBuffer(final int size) {
+diff --git a/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java b/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
+index d40d9cb6835299f68ac8e8ebcbc26c7e091cc415..b86338083d5bd5a5878918bd94cbce23976640aa 100644
+--- a/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
++++ b/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
+@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
+ public class DensityBufferPool implements DensityBufferArena {
+     private static final int BUFFER_SIZE_INCREMENT = 16;
+     private static final int MAX_REUSE_SIZE_FACTOR = 2;
+-    private final int maxAge;
++    protected final int maxAge; // Paper - optimise chunk generation - protected
+     private final List<ScopedDensityBuffer> buffers = new ArrayList<>();
+ 
+     public DensityBufferPool(final int maxAge) {
+diff --git a/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java b/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
+index d2d24803dd0de42a7a6ffdbddfeed060d59028f2..ee8898d22cf05e749653628f0d9afc6c5c638ce4 100644
+--- a/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
++++ b/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
+@@ -5,13 +5,13 @@ public class ScopedDensityBuffer extends DensityBuffer implements AutoCloseable
+     private int age;
+     private boolean closed;
+ 
+-    ScopedDensityBuffer(final DensityBufferArena arena, final int capacity, final int size) {
++    public ScopedDensityBuffer(final DensityBufferArena arena, final int capacity, final int size) { // Paper - optimise chunk generation - public
+         super(capacity);
+         this.size = size;
+         this.arena = arena;
+     }
+ 
+-    void restore(final int size) {
++    public void restore(final int size) { // Paper - optimise chunk generation - public
+         if (size > this.values.length) {
+             throw new IllegalArgumentException("Cannot set size larger than buffer capacity");
+         }
+@@ -25,7 +25,7 @@ public class ScopedDensityBuffer extends DensityBuffer implements AutoCloseable
+         this.size = size;
+     }
+ 
+-    int incrementAge() {
++    public int incrementAge() { // Paper - optimise chunk generation - public
+         return ++this.age;
+     }
+ 
+diff --git a/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java b/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
+index 304e5d98b3367480eca22380af684f2cd22dd907..bff272eb3478bb0edac30051dbf9da6173c46658 100644
+--- a/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
+@@ -19,7 +19,7 @@ public abstract class AbstractOreFeature implements Feature {
+     protected final float discardChanceOnAirExposure;
+ 
+     public AbstractOreFeature(final List<BlockReplacement> targetStates, final int size, final float discardChanceOnAirExposure) {
+-        this.targetStates = targetStates;
++        this.targetStates = java.util.Arrays.asList(targetStates.toArray(new BlockReplacement[0])); // Paper - optimise chunk generation - avoid type indirection for iteration on targetStates
+         this.size = size;
+         this.discardChanceOnAirExposure = discardChanceOnAirExposure;
+     }
+diff --git a/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java b/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
+index 732889c980c3912f66400411b1ed4b3ec42050ce..45a42f68a2aff0f2dae5c7a1abca8c8c1ff81639 100644
+--- a/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
++++ b/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
+@@ -26,7 +26,7 @@ import net.minecraft.world.level.levelgen.synth.Noise;
+ import net.minecraft.world.level.levelgen.synth.NormalNoise;
+ import org.jspecify.annotations.Nullable;
+ 
+-public final class MaterialRuleContext {
++public final class MaterialRuleContext implements ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ChunkGenMaterialRuleContext { // Paper - optimise chunk generation
+     private static final int HOW_FAR_BELOW_PRELIMINARY_SURFACE_LEVEL_TO_BUILD_SURFACE = 8;
+     private final MaterialSystem system;
+     private final RandomState randomState;
+@@ -56,6 +56,21 @@ public final class MaterialRuleContext {
+     private int waterHeight;
+     private int stoneDepthBelow;
+     private int stoneDepthAbove;
++    // Paper start - optimise chunk generation
++    private ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator;
++
++    @Override
++    public final void moonrise$setDensityBufferAllocator(final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator) {
++        this.allocator = allocator;
++    }
++
++    @Override
++    public final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache moonrise$removeDensityBufferAllocator() {
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache ret = this.allocator;
++        this.allocator = null;
++        return ret;
++    }
++    // Paper end - optimise chunk generation
+ 
+     MaterialRuleContext(
+         final MaterialSystem system,
+@@ -199,7 +214,10 @@ public final class MaterialRuleContext {
+     public MaterialRules.DensityGetter getDensitiesInChunk(final DensityFunction function, final boolean prefill) {
+         DensitySampler.Bound sampler = this.densitySamplers.get(function);
+         if (prefill) {
+-            DensityBuffer buffer = DensityBuffer.createUnpooled(this.expectedVolume.size());
++            // Paper start - optimise chunk generation
++            // The allocations here are huge (typically 16x16x(1/2 world height)), and avoidable with pooling.
++            DensityBuffer buffer = this.allocator == null ? DensityBuffer.createUnpooled(this.expectedVolume.size()) : this.allocator.allocate(this.expectedVolume.size());
++            // Paper end - optimise chunk generation
+             sampler.sampleVolume(buffer, this.expectedVolume);
+             return () -> {
+                 int index = this.expectedVolume.indexOfBlock(this.blockX, this.blockY, this.blockZ);
+diff --git a/net/minecraft/world/level/levelgen/material/MaterialSystem.java b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+index f3807cc7b5d2313051981683ff13eb147b569af3..b339467cb268a023dd160d011bcc9ee94875fe01 100644
+--- a/net/minecraft/world/level/levelgen/material/MaterialSystem.java
++++ b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+@@ -82,6 +82,16 @@ public class MaterialSystem {
+         this.icebergSurfaceNoise = randomState.getOrCreateNoise(Noises.ICEBERG_SURFACE);
+     }
+ 
++    // Paper start - optimise chunk generation
++    private static final ThreadLocal<ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache> BUFFERS_FOR_BUILD_SURFACE = ThreadLocal.withInitial(() -> {
++        return new ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache();
++    });
++
++    private static final ThreadLocal<ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache> BUFFERS_FOR_TOP_MATERIAL = ThreadLocal.withInitial(() -> {
++        return new ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache();
++    });
++    // Paper end - optimise chunk generation
++
+     public void buildSurface(
+         final RandomState randomState,
+         final BiomeManager biomeManager,
+@@ -133,6 +143,7 @@ public class MaterialSystem {
+         MaterialRuleContext context = new MaterialRuleContext(
+             this, randomState, narrowedVolume, noiseChunk.cachingSamplers(), biomeManager::getBiome, generationContext, possibleBiomes
+         );
++        context.moonrise$setDensityBufferAllocator(BUFFERS_FOR_BUILD_SURFACE.get().acquire()); // Paper - optimise chunk generation - provide a buffer allocator to significantly reduce memory allocations
+         RuleEvaluator rule = ruleSource.compile(context);
+         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
+ 
+@@ -195,6 +206,7 @@ public class MaterialSystem {
+                 }
+             }
+         }
++        BUFFERS_FOR_BUILD_SURFACE.get().release(); // Paper - optimise chunk generation
+     }
+ 
+     private static int getSurfaceGradientX(final ChunkAccess protoChunk, final int x, final int z) {
+@@ -237,6 +249,11 @@ public class MaterialSystem {
+     ) {
+         DensityVolume volume = new DensityVolume(1, 1, 1, pos.getX(), pos.getY(), pos.getZ());
+         MaterialRuleContext context = new MaterialRuleContext(this, randomState, volume, densitySamplers, biomeGetter, worldGenerationContext, null);
++        // Paper start - optimise chunk generation - provide a buffer allocator to significantly reduce memory allocations
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache topMaterialAllocator = BUFFERS_FOR_TOP_MATERIAL.get();
++        context.moonrise$setDensityBufferAllocator(topMaterialAllocator == null ? null : topMaterialAllocator.acquire());
++        BUFFERS_FOR_TOP_MATERIAL.set(null);
++        // Paper end - optimise chunk generation
+         RuleEvaluator rule = ruleSource.compile(context);
+         int blockX = pos.getX();
+         int blockY = pos.getY();
+@@ -246,6 +263,13 @@ public class MaterialSystem {
+         context.updateXZ(blockX, blockZ, gradientX, gradientZ);
+         context.updateY(1, 1, underFluid ? blockY + 1 : Integer.MIN_VALUE, blockY);
+         BlockState state = rule.tryApply(blockX, blockY, blockZ);
++        // Paper start - optimise chunk generation
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator = context.moonrise$removeDensityBufferAllocator();
++        if (allocator != null) {
++            allocator.release();
++            BUFFERS_FOR_TOP_MATERIAL.set(allocator);
++        }
++        // Paper end - optimise chunk generation
+         return Optional.ofNullable(state);
+     }
+ 
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 index 6ff3a339da8ae6849985836c1138434e9b42bced..bd332a2a0fc1cef260a2a9a14401e551628db030 100644
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
@@ -35578,6 +37153,543 @@ index 6ff3a339da8ae6849985836c1138434e9b42bced..bd332a2a0fc1cef260a2a9a14401e551
  
              counts.computeInt(structure, (k, value) -> value == null ? 1 : value + 1);
              return counts;
+diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java b/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
+index d63fd86f1fd90a00eb35dc124879d8ee1d59ad5a..39d459593cba39005ec7f1b56fc67fa9e16e7965 100644
+--- a/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
++++ b/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
+@@ -9,14 +9,16 @@ import net.minecraft.world.level.block.state.BlockState;
+ public class AllOfRuleTest extends RuleTest {
+     public static final MapCodec<AllOfRuleTest> CODEC = RuleTest.CODEC.listOf().fieldOf("rules").xmap(AllOfRuleTest::new, t -> t.rules);
+     private final List<RuleTest> rules;
++    private final RuleTest[] rulesArray; // Paper - optimise chunk generation
+ 
+     public AllOfRuleTest(final List<RuleTest> rules) {
+         this.rules = rules;
++        this.rulesArray = rules.toArray(new RuleTest[0]); // Paper - optimise chunk generation
+     }
+ 
+     @Override
+     public boolean test(final BlockState blockState, final BlockPos pos, final RandomSource random) {
+-        for (RuleTest rule : this.rules) {
++        for (final RuleTest rule : this.rulesArray) { // Paper - optimise chunk generation
+             if (!rule.test(blockState, pos, random)) {
+                 return false;
+             }
+diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java b/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
+index 80d249aa5900aeafab15a0bf7e5bbaf0a50bad7e..e1a0a7fa37ee6e92241829b98631fb77ce7d7f9f 100644
+--- a/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
++++ b/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
+@@ -9,14 +9,16 @@ import net.minecraft.world.level.block.state.BlockState;
+ public class AnyOfRuleTest extends RuleTest {
+     public static final MapCodec<AnyOfRuleTest> CODEC = RuleTest.CODEC.listOf().fieldOf("rules").xmap(AnyOfRuleTest::new, t -> t.rules);
+     private final List<RuleTest> rules;
++    private final RuleTest[] rulesArray; // Paper - optimise chunk generation
+ 
+     public AnyOfRuleTest(final List<RuleTest> rules) {
+         this.rules = rules;
++        this.rulesArray = rules.toArray(new RuleTest[0]); // Paper - optimise chunk generation
+     }
+ 
+     @Override
+     public boolean test(final BlockState blockState, final BlockPos pos, final RandomSource random) {
+-        for (RuleTest rule : this.rules) {
++        for (final RuleTest rule : this.rulesArray) { // Paper - optimise chunk generation
+             if (rule.test(blockState, pos, random)) {
+                 return true;
+             }
+diff --git a/net/minecraft/world/level/levelgen/synth/GradientNoise.java b/net/minecraft/world/level/levelgen/synth/GradientNoise.java
+index d7b2a91df8c5c0ce480bc537b3457fcd144162e1..6da4d95f6a5f6043aaea6d62c550cd9f991da9ec 100644
+--- a/net/minecraft/world/level/levelgen/synth/GradientNoise.java
++++ b/net/minecraft/world/level/levelgen/synth/GradientNoise.java
+@@ -4,7 +4,7 @@ import net.minecraft.SharedConstants;
+ import net.minecraft.util.RandomSource;
+ 
+ public abstract class GradientNoise implements Noise {
+-    protected static final GradientNoise.Gradient[] GRADIENT = new GradientNoise.Gradient[]{
++    public static final GradientNoise.Gradient[] GRADIENT = new GradientNoise.Gradient[]{ // Paper - optimise chunk generation - public
+         new GradientNoise.Gradient(1, 1, 0),
+         new GradientNoise.Gradient(-1, 1, 0),
+         new GradientNoise.Gradient(1, -1, 0),
+@@ -70,7 +70,7 @@ public abstract class GradientNoise implements Noise {
+         }
+     }
+ 
+-    protected record Gradient(int x, int y, int z) {
++    public record Gradient(int x, int y, int z) { // Paper - optimise chunk generation - public
+         public double dot(final double x, final double y, final double z) {
+             return this.x * x + this.y * y + this.z * z;
+         }
+diff --git a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
+index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb4c7ee1b3 100644
+--- a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
++++ b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
+@@ -6,13 +6,39 @@ import net.minecraft.util.Mth;
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.world.level.levelgen.densityfunction.DensityBuffer;
+ import net.minecraft.world.level.levelgen.densityfunction.DensityVolume;
++// Paper start - optimise chunk generation
++import ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.DEBUG_NOISE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_MASK;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SIZE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SHIFT;
++// Paper end - optimise chunk generation
+ 
+-public class PerlinNoise extends GradientNoise {
++public class PerlinNoise extends GradientNoise implements ca.spottedleaf.moonrise.patches.chunk_gen.noise.ChunkGenPerlinNoise { // Paper - optimise chunk generation
+     public static final Interval RANGE = Interval.ofSymmetric(2.0F);
+     public static final double STANDARD_DEVIATION = 0.2702247831245211;
+ 
++    // Paper start - optimise chunk generation
++    protected final char[] pAdj = new char[PERM_SIZE];
++
++    @Override
++    public final char[] moonrise$getPAdj() {
++        return this.pAdj;
++    }
++
++    private final int p(final int x) {
++        return this.perms[x & PERM_MASK] & PERM_MASK;
++    }
++    // Paper end - optimise chunk generation
++
+     public PerlinNoise(final RandomSource random) {
+         super(random);
++        // Paper start - optimise chunk generation
++        // Initialise dual p lookup table
++        for (int i = 0; i < PERM_SIZE; ++i) {
++            this.pAdj[i] = (char)(this.p(i) | (this.p(i + 1) << PERM_SHIFT));
++        }
++        // Paper end - optimise chunk generation
+     }
+ 
+     @Override
+@@ -52,7 +78,55 @@ public class PerlinNoise extends GradientNoise {
+         return this.sampleWithDerivative(floorX, floorY, floorZ, relativeX, relativeY, relativeZ, derivativeOut);
+     }
+ 
+-    protected float sampleAndLerp(
++    // Paper start - optimise chunk generation
++    // Optimise this function (reduce p-table lookups by 2x)
++    protected float sampleAndLerp(final int x, final int y, final int z,
++                                  final float relativeX, final float relativeY, final float relativeZ,
++                                  final float originalRelativeY) {
++        final char[] p = this.pAdj;
++
++        // note: since the p table is arithmetic mod PERM_SIZE, we do not need to mask out the upper
++        final int x0 = (int)p[x & PERM_MASK];
++        final int x1 = x0 >>> PERM_SHIFT;
++
++        final int xy00 = (int)p[(x0 + y) & PERM_MASK];
++        final int xy01 = xy00 >>> PERM_SHIFT;
++
++        final int z000 = (int)p[(xy00 + z) & PERM_MASK];
++        final int z001 = (int)p[(xy01 + z) & PERM_MASK];
++
++        final float d000 = NoiseGradients.dot(z000 & 15, relativeX, relativeY, relativeZ);
++        final float d001 = NoiseGradients.dot((z000 >>> PERM_SHIFT) & 15, relativeX, relativeY, relativeZ - 1.0F);
++
++        final float d010 = NoiseGradients.dot(z001 & 15, relativeX, relativeY - 1.0F, relativeZ);
++        final float d011 = NoiseGradients.dot((z001 >>> PERM_SHIFT) & 15, relativeX, relativeY - 1.0F, relativeZ - 1.0F);
++
++
++        final int xy10 = (int)p[(x1 + y) & PERM_MASK];
++        final int xy11 = xy10 >>> PERM_SHIFT;
++
++        final int z100 = (int)p[(xy10 + z) & PERM_MASK];
++        final int z101 = (int)p[(xy11 + z) & PERM_MASK];
++
++        final float d100 = NoiseGradients.dot(z100 & 15, relativeX - 1.0F, relativeY, relativeZ);
++        final float d101 = NoiseGradients.dot((z100 >>> PERM_SHIFT) & 15, relativeX - 1.0F, relativeY, relativeZ - 1.0F);
++
++        final float d110 = NoiseGradients.dot(z101 & 15, relativeX - 1.0F, relativeY - 1.0F, relativeZ);
++        final float d111 = NoiseGradients.dot((z101 >>> PERM_SHIFT) & 15, relativeX - 1.0F, relativeY - 1.0F, relativeZ - 1.0F);
++
++        final float ret = Mth.lerp3(Mth.smoothstep(relativeX), Mth.smoothstep(originalRelativeY), Mth.smoothstep(relativeZ), d000, d100, d010, d110, d001, d101, d011, d111);
++        if (!DEBUG_NOISE) {
++            return ret;
++        }
++        if (ret != this.sampleAndLerpVanilla(x, y, z, relativeX, relativeY, relativeZ, originalRelativeY)) {
++            this.sampleAndLerpVanilla(x, y, z, relativeX, relativeY, relativeZ, originalRelativeY);
++            throw new IllegalStateException();
++        }
++        return ret;
++    }
++    // Paper end - optimise chunk generation
++
++    private float sampleAndLerpVanilla( // Paper - optimise chunk generation - rename, keep for debug parity check
+         final int x, final int y, final int z, final float relativeX, final float relativeY, final float relativeZ, final float originalRelativeY
+     ) {
+         int x0 = this.permute(x);
+@@ -75,8 +149,172 @@ public class PerlinNoise extends GradientNoise {
+         return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+     }
+ 
++    // Paper start - optimise chunk generation
++    // Optimise this function (reduce p-table lookups by 2x, eliminate redundant coordinate calculation)
+     @Override
+-    public void addToVolume(final DensityBuffer buffer, final DensityVolume volume, final double xzScale, final double yScale, final float amplitude) {
++    public void addToVolume(final DensityBuffer buffer, final DensityVolume volume,
++                            final double xzScale, final double yScale, final float amplitude) {
++        final float[] vanillaNoise;
++        if (DEBUG_NOISE) {
++            final float[] cpy = buffer.values.clone();
++            this.addToVolumeVanilla(buffer, volume, xzScale, yScale, amplitude);
++            vanillaNoise = buffer.values.clone();
++            System.arraycopy(cpy, 0, buffer.values, 0, cpy.length);
++        }
++        float d000xz = 0.0F;
++        float d100xz = 0.0F;
++        float d010xz = 0.0F;
++        float d110xz = 0.0F;
++        float d001xz = 0.0F;
++        float d101xz = 0.0F;
++        float d011xz = 0.0F;
++        float d111xz = 0.0F;
++        float g000y = 0.0F;
++        float g100y = 0.0F;
++        float g010y = 0.0F;
++        float g110y = 0.0F;
++        float g001y = 0.0F;
++        float g101y = 0.0F;
++        float g011y = 0.0F;
++        float g111y = 0.0F;
++
++        final int sX = volume.sizeX();
++        final int sY = volume.sizeY();
++        final int sZ = volume.sizeZ();
++
++        final NoiseGradients.CoordCache[] cacheX = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_X, sX);
++        final NoiseGradients.CoordCache[] cacheY = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_Y, sY);
++        final NoiseGradients.CoordCache[] cacheZ = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_Z, sZ);
++
++        // only compute coordinate ONCE
++        // note: we do not need the floating point value of the coordinate, all we need is floor, alpha, and relative
++
++        double xv = (double)volume.minBlockX(), xi = (double)volume.stepBlockX();
++        for (int x = 0; x < sX; ++x, xv += xi) {
++            final double val = wrap(xv * xzScale) + this.offsetX;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final float relative = (float)(val - floorD);
++            final float alpha = Mth.smoothstep(relative);
++
++            final NoiseGradients.CoordCache cx = cacheX[x];
++
++            cx.floor = floor;
++            cx.alpha = alpha;
++            cx.relative = relative;
++        }
++        double yv = (double)volume.minBlockY(), yi = (double)volume.stepBlockY();
++        for (int y = 0; y < sY; ++y, yv += yi) {
++            final double val = wrap(yv * yScale) + this.offsetY;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final float relative = (float)(val - floorD);
++            final float alpha = Mth.smoothstep(relative);
++
++            final NoiseGradients.CoordCache cy = cacheY[y];
++
++            cy.floor = floor;
++            cy.alpha = alpha;
++            cy.relative = relative;
++        }
++        double zv = (double)volume.minBlockZ(), zi = (double)volume.stepBlockZ();
++        for (int z = 0; z < sZ; ++z, zv += zi) {
++            final double val = wrap(zv * xzScale) + this.offsetZ;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final float relative = (float)(val - floorD);
++            final float alpha = Mth.smoothstep(relative);
++
++            final NoiseGradients.CoordCache cz = cacheZ[z];
++
++            cz.floor = floor;
++            cz.alpha = alpha;
++            cz.relative = relative;
++        }
++
++        // index = indexY + indexX*(sizeY) + indexZ*(sizeY*sizeX)
++
++        final char[] p = this.pAdj;
++
++        // re-order X to be primary so we never repeat the p table lookup
++        // note: this means we can no longer store index
++        for (int indexX = 0; indexX < sX; ++indexX) {
++            final NoiseGradients.CoordCache cx = cacheX[indexX];
++            final int floorX = cx.floor;
++            final float alphaX = cx.alpha;
++            final float relativeX = cx.relative;
++            // note: since the p table is arithmetic mod PERM_SIZE, we do not need to mask out the upper
++            final int x0 = (int)p[floorX & PERM_MASK];
++            final int x1 = x0 >>> PERM_SHIFT;
++
++            for (int indexZ = 0; indexZ < sZ; ++indexZ) {
++                final NoiseGradients.CoordCache cz = cacheZ[indexZ];
++                final int floorZ = cz.floor;
++                final float alphaZ = cz.alpha;
++                final float relativeZ = cz.relative;
++                int lastFloorY = Integer.MIN_VALUE;
++
++                int index = sY*(indexX + indexZ*sX);
++                for (int indexY = 0; indexY < sY; ++indexY) {
++                    final NoiseGradients.CoordCache cy = cacheY[indexY];
++                    final int floorY = cy.floor;
++                    final float alphaY = cy.alpha;
++                    final float relativeY = cy.relative;
++                    if (lastFloorY != floorY) {
++                        lastFloorY = floorY;
++                        final int xy00 = (int)p[(x0 + floorY) & PERM_MASK];
++                        final int xy01 = xy00 >>> PERM_SHIFT;
++
++                        final int z000 = (int)p[(xy00 + floorZ) & PERM_MASK];
++                        final int z010 = (int)p[(xy01 + floorZ) & PERM_MASK];
++                        final int g000 = z000 & 15;
++                        final int g001 = (z000 >>> PERM_SHIFT) & 15;
++                        d000xz = NoiseGradients.dotXz(g000, relativeX, relativeZ);
++                        g000y = NoiseGradients.gradY(g000);
++                        d001xz = NoiseGradients.dotXz(g001, relativeX, relativeZ - 1.0F);
++                        g001y = NoiseGradients.gradY(g001);
++
++                        final int g010 = z010 & 15;
++                        final int g011 = (z010 >>> PERM_SHIFT) & 15;
++                        d010xz = NoiseGradients.dotXz(g010, relativeX, relativeZ);
++                        g010y = NoiseGradients.gradY(g010);
++                        d011xz = NoiseGradients.dotXz(g011, relativeX, relativeZ - 1.0F);
++                        g011y = NoiseGradients.gradY(g011);
++
++                        final int xy10 = (int)p[(x1 + floorY) & PERM_MASK];
++                        final int xy11 = xy10 >>> PERM_SHIFT;
++
++                        final int z100 = (int)p[(xy10 + floorZ) & PERM_MASK];
++                        final int z110 = (int)p[(xy11 + floorZ) & PERM_MASK];
++                        final int g100 = z100 & 15;
++                        final int g101 = (z100 >>> PERM_SHIFT) & 15;
++                        d100xz = NoiseGradients.dotXz(g100, relativeX - 1.0F, relativeZ);
++                        g100y = NoiseGradients.gradY(g100);
++                        d101xz = NoiseGradients.dotXz(g101, relativeX - 1.0F, relativeZ - 1.0F);
++                        g101y = NoiseGradients.gradY(g101);
++
++                        final int g110 = z110 & 15;
++                        final int g111 = (z110 >>> PERM_SHIFT) & 15;
++                        d110xz = NoiseGradients.dotXz(g110, relativeX - 1.0F, relativeZ);
++                        g110y = NoiseGradients.gradY(g110);
++                        d111xz = NoiseGradients.dotXz(g111, relativeX - 1.0F, relativeZ - 1.0F);
++                        g111y = NoiseGradients.gradY(g111);
++                    }
++
++                    buffer.values[index++] += (amplitude * Mth.lerp3(alphaX, alphaY, alphaZ, d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F), d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY, d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)));
++                }
++            }
++        }
++
++        if (DEBUG_NOISE) {
++            if (!java.util.Arrays.equals(vanillaNoise, buffer.values)) {
++                throw new IllegalStateException();
++            }
++        }
++    }
++    // Paper end - optimise chunk generation
++
++    private void addToVolumeVanilla(final DensityBuffer buffer, final DensityVolume volume, final double xzScale, final double yScale, final float amplitude) { // Paper - optimise chunk generation - rename, keep for debug parity check
+         float d000xz = 0.0F;
+         float d100xz = 0.0F;
+         float d010xz = 0.0F;
+diff --git a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
+index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da6551f6ecc08 100644
+--- a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
++++ b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
+@@ -5,6 +5,13 @@ import net.minecraft.util.Mth;
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.world.level.levelgen.densityfunction.DensityBuffer;
+ import net.minecraft.world.level.levelgen.densityfunction.DensityVolume;
++// Paper start - optimise chunk generation
++import ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.DEBUG_NOISE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_MASK;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SIZE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SHIFT;
++// Paper end - optimise chunk generation
+ 
+ @Deprecated
+ public class SmearedPerlinNoise extends PerlinNoise {
+@@ -51,8 +58,175 @@ public class SmearedPerlinNoise extends PerlinNoise {
+         return Mth.floor(fudgeLimit / this.fudgeYScale + 1.0E-7F) * this.fudgeYScale;
+     }
+ 
++    // Paper start - optimise chunk generation
++    // Optimise this function (reduce p-table lookups by 2x, eliminate redundant coordinate calculation)
+     @Override
+-    public void addToVolume(final DensityBuffer buffer, final DensityVolume volume, final double xzScale, final double yScale, final float amplitude) {
++    public void addToVolume(final DensityBuffer buffer, final DensityVolume volume,
++                            final double xzScale, final double yScale, final float amplitude) {
++        final float[] vanillaNoise;
++        if (DEBUG_NOISE) {
++            final float[] cpy = buffer.values.clone();
++            this.addToVolumeVanilla(buffer, volume, xzScale, yScale, amplitude);
++            vanillaNoise = buffer.values.clone();
++            System.arraycopy(cpy, 0, buffer.values, 0, cpy.length);
++        }
++        float d000xz = 0.0F;
++        float d100xz = 0.0F;
++        float d010xz = 0.0F;
++        float d110xz = 0.0F;
++        float d001xz = 0.0F;
++        float d101xz = 0.0F;
++        float d011xz = 0.0F;
++        float d111xz = 0.0F;
++        float g000y = 0.0F;
++        float g100y = 0.0F;
++        float g010y = 0.0F;
++        float g110y = 0.0F;
++        float g001y = 0.0F;
++        float g101y = 0.0F;
++        float g011y = 0.0F;
++        float g111y = 0.0F;
++
++        final int sX = volume.sizeX();
++        final int sY = volume.sizeY();
++        final int sZ = volume.sizeZ();
++
++        final NoiseGradients.CoordCache[] cacheX = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_X, sX);
++        final NoiseGradients.CoordCache[] cacheY = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_Y, sY);
++        final NoiseGradients.CoordCache[] cacheZ = NoiseGradients.getCoordCache(NoiseGradients.COORD_CACHE_Z, sZ);
++
++        // only compute coordinate ONCE
++        // note: we do not need the floating point value of the coordinate, all we need is floor, alpha, and relative
++        //       this is the case even for smeared Y values
++
++        double xv = (double)volume.minBlockX(), xi = (double)volume.stepBlockX();
++        for (int x = 0; x < sX; ++x, xv += xi) {
++            final double val = wrap(xv * xzScale) + this.offsetX;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final float relative = (float)(val - floorD);
++            final float alpha = Mth.smoothstep(relative);
++
++            final NoiseGradients.CoordCache cx = cacheX[x];
++
++            cx.floor = floor;
++            cx.alpha = alpha;
++            cx.relative = relative;
++        }
++        double yv = (double)volume.minBlockY(), yi = (double)volume.stepBlockY();
++        for (int y = 0; y < sY; ++y, yv += yi) {
++            final double original = yv * yScale;
++            final double val = wrap(original) + this.offsetY;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final double relative = val - floorD;
++            final float fudgedRelative = (float)(relative - this.computeFudgeY(original, relative));
++            final float alpha = Mth.smoothstep((float)relative);
++
++            final NoiseGradients.CoordCache cy = cacheY[y];
++
++            cy.floor = floor;
++            cy.alpha = alpha;
++            cy.relative = fudgedRelative;
++        }
++        double zv = (double)volume.minBlockZ(), zi = (double)volume.stepBlockZ();
++        for (int z = 0; z < sZ; ++z, zv += zi) {
++            final double val = wrap(zv * xzScale) + this.offsetZ;
++            final double floorD = Math.floor(val);
++            final int floor = (int)floorD;
++            final float relative = (float)(val - floorD);
++            final float alpha = Mth.smoothstep(relative);
++
++            final NoiseGradients.CoordCache cz = cacheZ[z];
++
++            cz.floor = floor;
++            cz.alpha = alpha;
++            cz.relative = relative;
++        }
++
++        // index = indexY + indexX*(sizeY) + indexZ*(sizeY*sizeX)
++
++        final char[] p = this.pAdj;
++
++        // re-order X to be primary so we never repeat the p table lookup
++        // note: this means we can no longer store index
++        for (int indexX = 0; indexX < sX; ++indexX) {
++            final NoiseGradients.CoordCache cx = cacheX[indexX];
++            final int floorX = cx.floor;
++            final float alphaX = cx.alpha;
++            final float relativeX = cx.relative;
++            // note: since the p table is arithmetic mod PERM_SIZE, we do not need to mask out the upper
++            final int x0 = (int)p[floorX & PERM_MASK];
++            final int x1 = x0 >>> PERM_SHIFT;
++
++            for (int indexZ = 0; indexZ < sZ; ++indexZ) {
++                final NoiseGradients.CoordCache cz = cacheZ[indexZ];
++                final int floorZ = cz.floor;
++                final float alphaZ = cz.alpha;
++                final float relativeZ = cz.relative;
++                int lastFloorY = Integer.MIN_VALUE;
++
++                int index = sY*(indexX + indexZ*sX);
++                for (int indexY = 0; indexY < sY; ++indexY) {
++                    final NoiseGradients.CoordCache cy = cacheY[indexY];
++                    final int floorY = cy.floor;
++                    final float alphaY = cy.alpha;
++                    final float relativeY = cy.relative;
++                    if (lastFloorY != floorY) {
++                        lastFloorY = floorY;
++                        final int xy00 = (int)p[(x0 + floorY) & PERM_MASK];
++                        final int xy01 = xy00 >>> PERM_SHIFT;
++
++                        final int z000 = (int)p[(xy00 + floorZ) & PERM_MASK];
++                        final int z010 = (int)p[(xy01 + floorZ) & PERM_MASK];
++                        final int g000 = z000 & 15;
++                        final int g001 = (z000 >>> PERM_SHIFT) & 15;
++                        d000xz = NoiseGradients.dotXz(g000, relativeX, relativeZ);
++                        g000y = NoiseGradients.gradY(g000);
++                        d001xz = NoiseGradients.dotXz(g001, relativeX, relativeZ - 1.0F);
++                        g001y = NoiseGradients.gradY(g001);
++
++                        final int g010 = z010 & 15;
++                        final int g011 = (z010 >>> PERM_SHIFT) & 15;
++                        d010xz = NoiseGradients.dotXz(g010, relativeX, relativeZ);
++                        g010y = NoiseGradients.gradY(g010);
++                        d011xz = NoiseGradients.dotXz(g011, relativeX, relativeZ - 1.0F);
++                        g011y = NoiseGradients.gradY(g011);
++
++                        final int xy10 = (int)p[(x1 + floorY) & PERM_MASK];
++                        final int xy11 = xy10 >>> PERM_SHIFT;
++
++                        final int z100 = (int)p[(xy10 + floorZ) & PERM_MASK];
++                        final int z110 = (int)p[(xy11 + floorZ) & PERM_MASK];
++                        final int g100 = z100 & 15;
++                        final int g101 = (z100 >>> PERM_SHIFT) & 15;
++                        d100xz = NoiseGradients.dotXz(g100, relativeX - 1.0F, relativeZ);
++                        g100y = NoiseGradients.gradY(g100);
++                        d101xz = NoiseGradients.dotXz(g101, relativeX - 1.0F, relativeZ - 1.0F);
++                        g101y = NoiseGradients.gradY(g101);
++
++                        final int g110 = z110 & 15;
++                        final int g111 = (z110 >>> PERM_SHIFT) & 15;
++                        d110xz = NoiseGradients.dotXz(g110, relativeX - 1.0F, relativeZ);
++                        g110y = NoiseGradients.gradY(g110);
++                        d111xz = NoiseGradients.dotXz(g111, relativeX - 1.0F, relativeZ - 1.0F);
++                        g111y = NoiseGradients.gradY(g111);
++                    }
++
++                    buffer.values[index++] += (amplitude * Mth.lerp3(alphaX, alphaY, alphaZ, d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F), d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY, d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)));
++                }
++            }
++        }
++
++        if (DEBUG_NOISE) {
++            if (!java.util.Arrays.equals(vanillaNoise, buffer.values)) {
++                throw new IllegalStateException();
++            }
++        }
++    }
++    // Paper end - optimise chunk generation
++
++    private void addToVolumeVanilla(final DensityBuffer buffer, final DensityVolume volume, final double xzScale, final double yScale, final float amplitude) { // Paper - optimise chunk generation - rename, keep for debug parity check
+         float d000xz = 0.0F;
+         float d100xz = 0.0F;
+         float d010xz = 0.0F;
 diff --git a/net/minecraft/world/level/lighting/LevelLightEngine.java b/net/minecraft/world/level/lighting/LevelLightEngine.java
 index 64194984fa30038b5bd53140511faf2b5784ead5..c6825283ad1787fcf4bfb93b32ca8396ac44f503 100644
 --- a/net/minecraft/world/level/lighting/LevelLightEngine.java
@@ -35956,10 +38068,10 @@ index 75745ac2cee1ae4fa66f9c0ea30ea916a557662d..660a8785fca8dd885318e05cb19255fa
  
      protected abstract boolean canConvertToSource(ServerLevel level);
 diff --git a/net/minecraft/world/level/material/FluidState.java b/net/minecraft/world/level/material/FluidState.java
-index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe60a1edb00 100644
+index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..385408597bff901e8017dd224a34e016dfd16488 100644
 --- a/net/minecraft/world/level/material/FluidState.java
 +++ b/net/minecraft/world/level/material/FluidState.java
-@@ -21,12 +21,30 @@ import net.minecraft.world.phys.Vec3;
+@@ -21,27 +21,54 @@ import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import org.jspecify.annotations.Nullable;
  
@@ -35988,10 +38100,23 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
 +    }
 +    // Paper end - fluid method optimisations
 +
++    // Paper start - optimise TypedInstance
++    private final Fluid fluidOwner;
++    private final Holder.Reference<Fluid> reference;
++    // Paper end - optimise TypedInstance
++
      public FluidState(final Fluid owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
          super(owner, propertyKeys, propertyValues);
++        // Paper start - optimise TypedInstance
++        this.fluidOwner = owner;
++        this.reference = owner.builtInRegistryHolder();
++        // Paper end - optimise TypedInstance
          this.isEmpty = owner.isEmpty(); // Paper - Perf: moved from isEmpty()
-@@ -37,11 +55,11 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+     }
+ 
+     public Fluid getType() {
+-        return this.owner;
++        return this.fluidOwner; // Paper - optimise TypedInstance
      }
  
      public boolean isSource() {
@@ -36005,7 +38130,7 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
      }
  
      public boolean isEmpty() {
-@@ -64,7 +82,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+@@ -64,7 +91,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
      }
  
      public float getOwnHeight() {
@@ -36014,7 +38139,7 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
      }
  
      public boolean isFull() {
-@@ -72,7 +90,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+@@ -72,7 +99,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
      }
  
      public int getAmount() {
@@ -36023,7 +38148,7 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
      }
  
      public boolean shouldRenderBackwardUpFace(final BlockGetter level, final BlockPos above) {
-@@ -98,7 +116,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+@@ -98,7 +125,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
      }
  
      public boolean isRandomlyTicking() {
@@ -36032,7 +38157,7 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
      }
  
      public void randomTick(final ServerLevel level, final BlockPos pos, final RandomSource random) {
-@@ -110,7 +128,12 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+@@ -110,7 +137,12 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
      }
  
      public BlockState createLegacyBlock() {
@@ -36046,6 +38171,48 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..efa2b4178a6c0c310c23201e1fb3bfe6
      }
  
      public @Nullable ParticleOptions getDripParticle() {
+@@ -119,8 +151,40 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+ 
+     @Override
+     public Holder<Fluid> typeHolder() {
+-        return this.getType().builtInRegistryHolder();
++        return this.reference; // Paper - optimise TypedInstance
++    }
++
++    // Paper start - optimise TypedInstance
++    @Override
++    public final java.util.stream.Stream<net.minecraft.tags.TagKey<Fluid>> tags() {
++        return this.reference.tags();
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.tags.TagKey<Fluid> tag) {
++        return this.reference.is(tag);
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.core.HolderSet<Fluid> set) {
++        return set.contains(this.reference);
++    }
++
++    @Override
++    public final boolean is(final Fluid rawType) {
++        return this.fluidOwner == rawType;
++    }
++
++    @Override
++    public final boolean is(final Holder<Fluid> type) {
++        return this.reference == type;
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.resources.ResourceKey<Fluid> type) {
++        return this.reference.is(type);
+     }
++    // Paper end - optimise TypedInstance
+ 
+     public float getExplosionResistance() {
+         return this.getType().getExplosionResistance();
 diff --git a/net/minecraft/world/level/portal/PortalForcer.java b/net/minecraft/world/level/portal/PortalForcer.java
 index e3a0d0f56207b7eab2f982bdaa421dc456ab52ba..d5697697d48963a01f8d4c3570b75da2c8f6f102 100644
 --- a/net/minecraft/world/level/portal/PortalForcer.java
