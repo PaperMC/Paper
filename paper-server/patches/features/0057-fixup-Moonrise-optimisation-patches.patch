@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 18:01:38 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/net/minecraft/world/level/levelgen/material/MaterialSystem.java b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+index 81bc7a066630c2fc37a01a3e9bbb9b093ab21625..3d3b6e5e2aa516c1ed04be8b2c22d75c76192044 100644
+--- a/net/minecraft/world/level/levelgen/material/MaterialSystem.java
++++ b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
+@@ -90,28 +90,9 @@ public class MaterialSystem {
+     private static final ThreadLocal<ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache> BUFFERS_FOR_TOP_MATERIAL = ThreadLocal.withInitial(() -> {
+         return new ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache();
+     });
+-
+-    // Provide a buffer allocator to the MaterialRuleContext to significantly reduce memory allocations
+-    public void buildSurface(
+-        final RandomState randomState,
+-        final BiomeManager biomeManager,
+-        final WorldGenerationContext generationContext,
+-        final ChunkAccess protoChunk,
+-        final NoiseChunk noiseChunk,
+-        final MaterialRule ruleSource,
+-        final @Nullable Set<Holder<Biome>> possibleBiomes
+-    ) {
+-        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator = BUFFERS_FOR_BUILD_SURFACE.get().acquire();
+-        try {
+-            this.buildSurface(allocator, randomState, biomeManager, generationContext, protoChunk, noiseChunk, ruleSource, possibleBiomes);
+-        } finally {
+-            allocator.release();
+-        }
+-    }
+     // Paper end - optimise chunk generation
+ 
+-    private void buildSurface( // Paper - optimise chunk generation - private
+-        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator, // Paper - optimise chunk generation
++    public void buildSurface(
+         final RandomState randomState,
+         final BiomeManager biomeManager,
+         final WorldGenerationContext generationContext,
+@@ -162,7 +143,7 @@ public class MaterialSystem {
+         MaterialRuleContext context = new MaterialRuleContext(
+             this, randomState, narrowedVolume, noiseChunk.cachingSamplers(), biomeManager::getBiome, generationContext, possibleBiomes
+         );
+-        context.moonrise$setDensityBufferAllocator(allocator); // Paper - optimise chunk generation
++        context.moonrise$setDensityBufferAllocator(BUFFERS_FOR_BUILD_SURFACE.get().acquire()); // Paper - optimise chunk generation - provide a buffer allocator to significantly reduce memory allocations
+         RuleEvaluator rule = ruleSource.compile(context);
+         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
+ 
+@@ -225,6 +206,7 @@ public class MaterialSystem {
+                 }
+             }
+         }
++        BUFFERS_FOR_BUILD_SURFACE.get().release(); // Paper - optimise chunk generation
+     }
+ 
+     private static int getSurfaceGradientX(final ChunkAccess protoChunk, final int x, final int z) {
+@@ -254,8 +236,6 @@ public class MaterialSystem {
+         return this.seaLevel;
+     }
+ 
+-    // Paper start - optimise chunk generation
+-    // Provide a buffer allocator to the MaterialRuleContext to significantly reduce memory allocations
+     @Deprecated
+     public Optional<BlockState> topMaterial(
+         final MaterialRule ruleSource,
+@@ -266,33 +246,13 @@ public class MaterialSystem {
+         final DensitySamplerSet densitySamplers,
+         final BlockPos pos,
+         final boolean underFluid
+-    ) {
+-        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator = BUFFERS_FOR_TOP_MATERIAL.get().acquire();
+-        BUFFERS_FOR_TOP_MATERIAL.set(null);
+-        try {
+-            return this.topMaterial(allocator, ruleSource, randomState, worldGenerationContext, biomeGetter, chunk, densitySamplers, pos, underFluid);
+-        } finally {
+-            allocator.release();
+-            BUFFERS_FOR_TOP_MATERIAL.set(allocator);
+-        }
+-    }
+-    // Paper end - optimise chunk generation
+-
+-    @Deprecated
+-    private Optional<BlockState> topMaterial( // Paper - optimise chunk generation - private
+-        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator, // Paper - optimise chunk generation
+-        final MaterialRule ruleSource,
+-        final RandomState randomState,
+-        final WorldGenerationContext worldGenerationContext,
+-        final Function<BlockPos, Holder<Biome>> biomeGetter,
+-        final ChunkAccess chunk,
+-        final DensitySamplerSet densitySamplers,
+-        final BlockPos pos,
+-        final boolean underFluid
+     ) {
+         DensityVolume volume = new DensityVolume(1, 1, 1, pos.getX(), pos.getY(), pos.getZ());
+         MaterialRuleContext context = new MaterialRuleContext(this, randomState, volume, densitySamplers, biomeGetter, worldGenerationContext, null);
+-        context.moonrise$setDensityBufferAllocator(allocator); // Paper - optimise chunk generation
++        // Paper start - optimise chunk generation - provide a buffer allocator to significantly reduce memory allocations
++        context.moonrise$setDensityBufferAllocator(BUFFERS_FOR_TOP_MATERIAL.get().acquire());
++        BUFFERS_FOR_TOP_MATERIAL.set(null);
++        // Paper end - optimise chunk generation
+         RuleEvaluator rule = ruleSource.compile(context);
+         int blockX = pos.getX();
+         int blockY = pos.getY();
+@@ -302,6 +262,13 @@ public class MaterialSystem {
+         context.updateXZ(blockX, blockZ, gradientX, gradientZ);
+         context.updateY(1, 1, underFluid ? blockY + 1 : Integer.MIN_VALUE, blockY);
+         BlockState state = rule.tryApply(blockX, blockY, blockZ);
++        // Paper start - optimise chunk generation
++        final ca.spottedleaf.moonrise.patches.chunk_gen.buffer_alloc.ThreadLocalFixedDensityBufferCache allocator = context.moonrise$removeDensityBufferAllocator();
++        if (allocator != null) {
++            allocator.release();
++            BUFFERS_FOR_TOP_MATERIAL.set(allocator);
++        }
++        // Paper end - optimise chunk generation
+         return Optional.ofNullable(state);
+     }
+ 
