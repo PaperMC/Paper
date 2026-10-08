@@ -1,0 +1,228 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 17:24:48 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java b/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a5a4ae443
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/typed_instance/InternIdentifier.java
+@@ -0,0 +1,9 @@
++package ca.spottedleaf.moonrise.patches.typed_instance;
++
++import net.minecraft.resources.Identifier;
++
++public interface InternIdentifier {
++
++    public Identifier moonrise$intern();
++
++}
+diff --git a/net/minecraft/resources/Identifier.java b/net/minecraft/resources/Identifier.java
+index df28b83ab34b2e44a6ce2dbb903ef94db5496aaa..f961326218d56f1455df8d3b7b6079e2126fb8ed 100644
+--- a/net/minecraft/resources/Identifier.java
++++ b/net/minecraft/resources/Identifier.java
+@@ -15,7 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
+ import net.minecraft.network.codec.StreamCodec;
+ import org.jspecify.annotations.Nullable;
+ 
+-public final class Identifier implements Comparable<Identifier> {
++public final class Identifier implements Comparable<Identifier>, ca.spottedleaf.moonrise.patches.typed_instance.InternIdentifier { // Paper - optimise TypedInstance
+     public static final Codec<Identifier> CODEC = Codec.STRING.<Identifier>comapFlatMap(Identifier::read, Identifier::toString).stable();
+     public static final StreamCodec<ByteBuf, Identifier> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(Identifier::parse, Identifier::toString);
+     public static final SimpleCommandExceptionType ERROR_INVALID = new SimpleCommandExceptionType(Component.translatable("argument.id.invalid"));
+@@ -27,6 +27,19 @@ public final class Identifier implements Comparable<Identifier> {
+     private final String namespace;
+     private final String path;
+ 
++    // Paper start - optimise TypedInstance
++    private static final com.google.common.collect.Interner<Identifier> IDENTIFIER_INTERNER = com.google.common.collect.Interners.newWeakInterner();
++    private static final com.google.common.collect.Interner<String> STRING_INTERNER = com.google.common.collect.Interners.newWeakInterner();
++
++    @Override
++    public final Identifier moonrise$intern() {
++        final String namespace = STRING_INTERNER.intern(this.namespace);
++        final String path = STRING_INTERNER.intern(this.path);
++
++        return IDENTIFIER_INTERNER.intern(new Identifier(namespace, path));
++    }
++    // Paper end - optimise TypedInstance
++
+     private Identifier(final String namespace, final String path) {
+         assert isValidNamespace(namespace);
+         assert isValidPath(path);
+diff --git a/net/minecraft/tags/TagKey.java b/net/minecraft/tags/TagKey.java
+index fa1009e4543927d53d28bf21a72cf7fa0bf5e24d..c8f09fc2d2ed990bb6581b678eea52ce9341ee1f 100644
+--- a/net/minecraft/tags/TagKey.java
++++ b/net/minecraft/tags/TagKey.java
+@@ -35,7 +35,7 @@ public record TagKey<T>(ResourceKey<? extends Registry<T>> registry, Identifier
+     }
+ 
+     public static <T> TagKey<T> create(final ResourceKey<? extends Registry<T>> registry, final Identifier location) {
+-        return (TagKey<T>)VALUES.intern(new TagKey<>(registry, location));
++        return (TagKey<T>)VALUES.intern(new TagKey<>(registry, ((ca.spottedleaf.moonrise.patches.typed_instance.InternIdentifier)location).moonrise$intern())); // Paper - optimise TypedInstance
+     }
+ 
+     public boolean isFor(final ResourceKey<? extends Registry<?>> registry) {
+@@ -46,6 +46,20 @@ public record TagKey<T>(ResourceKey<? extends Registry<T>> registry, Identifier
+         return this.isFor(registry) ? Optional.of((TagKey<E>)this) : Optional.empty();
+     }
+ 
++    // Paper start - optimise TypedInstance
++    @Override
++    public final boolean equals(final Object obj) {
++        if (obj == null || obj.getClass() != TagKey.class) {
++            return false;
++        }
++        if (this == obj) {
++            return true;
++        }
++        final TagKey<?> other = ((TagKey<?>)obj);
++        return this.registry == other.registry() && (this.location == other.location() || this.location.equals(other.location()));
++    }
++    // Paper end - optimise TypedInstance
++
+     @Override
+     public String toString() {
+         return "TagKey[" + this.registry.identifier() + " / " + this.location + "]";
+diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 558f230c4ee0f33c70493e738da8a49e8a33210c..31fdb8fef9072b8dbf5ca724434a6592097e437b 100644
+--- a/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -551,8 +551,17 @@ public abstract class BlockBehaviour implements FeatureElement {
+         }
+         // Paper end - optimise collisions
+ 
++        // Paper start - optimise TypedInstance
++        private final Block blockOwner;
++        private final Holder.Reference<Block> reference;
++        // Paper end - optimise TypedInstance
++
+         protected BlockStateBase(final Block owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
+             super(owner, propertyKeys, propertyValues);
++            // Paper start - optimise TypedInstance
++            this.blockOwner = owner;
++            this.reference = owner.builtInRegistryHolder();
++            // Paper end - optimise TypedInstance
+             BlockBehaviour.Properties properties = owner.properties;
+             this.lightEmission = properties.lightEmission.applyAsInt(this.asState());
+             this.useShapeForLightOcclusion = owner.useShapeForLightOcclusion(this.asState());
+@@ -673,13 +682,45 @@ public abstract class BlockBehaviour implements FeatureElement {
+         }
+ 
+         public Block getBlock() {
+-            return this.owner;
++            return this.blockOwner; // Paper - optimise TypedInstance
+         }
+ 
+         @Override
+         public Holder<Block> typeHolder() {
+-            return this.getBlock().builtInRegistryHolder();
++            return this.reference; // Paper - optimise TypedInstance
++        }
++
++        // Paper start - optimise TypedInstance
++        @Override
++        public final java.util.stream.Stream<net.minecraft.tags.TagKey<Block>> tags() {
++            return this.reference.tags();
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.tags.TagKey<Block> tag) {
++            return this.reference.is(tag);
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.core.HolderSet<Block> set) {
++            return set.contains(this.reference);
++        }
++
++        @Override
++        public final boolean is(final Block rawType) {
++            return this.blockOwner == rawType;
++        }
++
++        @Override
++        public final boolean is(final Holder<Block> type) {
++            return this.reference == type;
++        }
++
++        @Override
++        public final boolean is(final net.minecraft.resources.ResourceKey<Block> type) {
++            return this.reference.is(type);
+         }
++        // Paper end - optimise TypedInstance
+ 
+         @Deprecated
+         public boolean isSolid() {
+diff --git a/net/minecraft/world/level/material/FluidState.java b/net/minecraft/world/level/material/FluidState.java
+index efa2b4178a6c0c310c23201e1fb3bfe60a1edb00..385408597bff901e8017dd224a34e016dfd16488 100644
+--- a/net/minecraft/world/level/material/FluidState.java
++++ b/net/minecraft/world/level/material/FluidState.java
+@@ -45,13 +45,22 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+     }
+     // Paper end - fluid method optimisations
+ 
++    // Paper start - optimise TypedInstance
++    private final Fluid fluidOwner;
++    private final Holder.Reference<Fluid> reference;
++    // Paper end - optimise TypedInstance
++
+     public FluidState(final Fluid owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
+         super(owner, propertyKeys, propertyValues);
++        // Paper start - optimise TypedInstance
++        this.fluidOwner = owner;
++        this.reference = owner.builtInRegistryHolder();
++        // Paper end - optimise TypedInstance
+         this.isEmpty = owner.isEmpty(); // Paper - Perf: moved from isEmpty()
+     }
+ 
+     public Fluid getType() {
+-        return this.owner;
++        return this.fluidOwner; // Paper - optimise TypedInstance
+     }
+ 
+     public boolean isSource() {
+@@ -142,8 +151,40 @@ public final class FluidState extends StateHolder<Fluid, FluidState> implements
+ 
+     @Override
+     public Holder<Fluid> typeHolder() {
+-        return this.getType().builtInRegistryHolder();
++        return this.reference; // Paper - optimise TypedInstance
++    }
++
++    // Paper start - optimise TypedInstance
++    @Override
++    public final java.util.stream.Stream<net.minecraft.tags.TagKey<Fluid>> tags() {
++        return this.reference.tags();
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.tags.TagKey<Fluid> tag) {
++        return this.reference.is(tag);
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.core.HolderSet<Fluid> set) {
++        return set.contains(this.reference);
++    }
++
++    @Override
++    public final boolean is(final Fluid rawType) {
++        return this.fluidOwner == rawType;
++    }
++
++    @Override
++    public final boolean is(final Holder<Fluid> type) {
++        return this.reference == type;
++    }
++
++    @Override
++    public final boolean is(final net.minecraft.resources.ResourceKey<Fluid> type) {
++        return this.reference.is(type);
+     }
++    // Paper end - optimise TypedInstance
+ 
+     public float getExplosionResistance() {
+         return this.getType().getExplosionResistance();
