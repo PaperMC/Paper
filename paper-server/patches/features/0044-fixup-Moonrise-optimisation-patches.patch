@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 17:17:30 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
+index 54b2492c3ab6bf9ff52cec53dc4635f725f9eb4f..11d4f2d5caba52b492b8e130faa4701f3980b0f1 100644
+--- a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
++++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
+@@ -51,7 +51,7 @@ public final class CollisionUtil {
+     public static final DoubleArrayList ZERO_ONE = DoubleArrayList.wrap(new double[] { 0.0, 1.0 });
+ 
+     public static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
+-        return block.hasLargeCollisionShape() || block.getBlock() == Blocks.MOVING_PISTON;
++        return ((CollisionBlockState)block).moonrise$isSpecialCollidingBlock();
+     }
+ 
+     public static boolean isEmpty(final AABB aabb) {
+diff --git a/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java b/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java
+index a38ab583200ebf68ca68fdddf2d12077720b72b7..f8c1667ae36c2221b8bcca53bd69d86d4d3191ef 100644
+--- a/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java
++++ b/ca/spottedleaf/moonrise/patches/collisions/block/CollisionBlockState.java
+@@ -26,4 +26,6 @@ public interface CollisionBlockState {
+     public int moonrise$uniqueId2();
+ 
+     public VoxelShape moonrise$getConstantContextCollisionShape();
++
++    public boolean moonrise$isSpecialCollidingBlock();
+ }
+diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
+index bebfe5b72c1dd812c480de3311ad36ca8d96466b..558f230c4ee0f33c70493e738da8a49e8a33210c 100644
+--- a/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -489,6 +489,11 @@ public abstract class BlockBehaviour implements FeatureElement {
+         private boolean emptyCollisionShape;
+         private boolean emptyConstantCollisionShape;
+         private VoxelShape constantCollisionShape;
++        private boolean isSpecialCollidingBlock;
++
++        private static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
++            return block.hasLargeCollisionShape() || block.getBlock() == Blocks.MOVING_PISTON;
++        }
+ 
+         private static void initCaches(final VoxelShape shape, final boolean neighbours) {
+             ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)shape).moonrise$isFullBlock();
+@@ -539,6 +544,11 @@ public abstract class BlockBehaviour implements FeatureElement {
+         public final VoxelShape moonrise$getConstantContextCollisionShape() {
+             return this.constantCollisionShape;
+         }
++
++        @Override
++        public final boolean moonrise$isSpecialCollidingBlock() {
++            return this.isSpecialCollidingBlock;
++        }
+         // Paper end - optimise collisions
+ 
+         protected BlockStateBase(final Block owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
+@@ -628,6 +638,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+             this.isConditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion;
+             // Paper end - rewrite chunk system
+             // Paper start - optimise collisions
++            this.isSpecialCollidingBlock = isSpecialCollidingBlock(this);
+             if (this.cache != null) {
+                 final VoxelShape collisionShape = this.cache.collisionShape;
+                 if (this.isAir()) {
