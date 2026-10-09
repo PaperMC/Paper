@@ -307,4 +307,13 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     public SignText.Builder signText() {
         return new PaperSignText.BuilderImpl();
     }
+    @Override
+    public BrewingFuel.Builder brewingFuel() {
+        return new PaperBrewingFuel.BuilderImpl();
+    }
+
+    @Override
+    public CookingFuel.Builder cookingFuel() {
+        return new PaperCookingFuel.BuilderImpl();
+    }
 }
