@@ -593,9 +593,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public @NotNull ItemStack getWeapon() {
+    public @Nullable ItemStack getWeapon() {
         net.minecraft.world.item.ItemStack stack = this.getHandle().getWeaponItem();
-        return stack == null ? ItemStack.empty() : CraftItemStack.asBukkitCopy(stack);
+        return stack == null ? null : CraftItemStack.asBukkitCopy(stack);
     }
 
     @Override

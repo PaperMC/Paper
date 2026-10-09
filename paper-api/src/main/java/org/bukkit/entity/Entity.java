@@ -682,8 +682,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return The weapon item
      */
-    @NotNull
-    ItemStack getWeapon();
+    @Nullable ItemStack getWeapon();
 
     /**
      * Returns a unique and persistent id for this entity
