@@ -828,7 +828,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().swing(InteractionHand.OFF_HAND, this.getSwingAnimation(InteractionHand.OFF_HAND), true);
     }
 
-    // Paper start - swing hand API
     @Override
     public void swingHand(org.bukkit.inventory.EquipmentSlot hand, io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
@@ -841,7 +840,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             .get(net.minecraft.core.component.DataComponents.ATTACK_ANIMATION);
         return animation != null ? animation : SwingAnimation.DEFAULT;
     }
-    // Paper end - swing hand API
 
     @Override
     public void playHurtAnimation(float yaw) {
