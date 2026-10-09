@@ -174,13 +174,18 @@ public final class FoliaEntityScheduler implements EntityScheduler {
                 this.plugin.getLogger().log(Level.WARNING, "Entity task for " + this.plugin.getDescription().getFullName() + " generated an exception", throwable);
             } finally {
                 boolean reschedule = false;
-                 if (!repeating && !retired) {
+                if (!repeating && !retired) {
                     this.setStateVolatile(STATE_FINISHED);
                 } else if (retired || !this.plugin.isEnabled()) {
-                     this.setStateVolatile(STATE_CANCELLED);
-                } else if (STATE_EXECUTING == this.compareAndExchangeStateVolatile(STATE_EXECUTING, STATE_IDLE)) {
-                    reschedule = true;
-                } // else: cancelled repeating task
+                    this.setStateVolatile(STATE_CANCELLED);
+                } else {
+                    final int previousState = this.compareAndExchangeStateVolatile(STATE_EXECUTING, STATE_IDLE);
+                    if (previousState == STATE_EXECUTING) {
+                        reschedule = true;
+                    } else if (previousState == STATE_EXECUTING_CANCELLED) {
+                        this.setStateVolatile(STATE_CANCELLED);
+                    }
+                }
 
                 if (!reschedule) {
                     this.run = null;
