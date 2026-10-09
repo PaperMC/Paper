@@ -1435,7 +1435,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean addRecipes(Iterable<Recipe> recipes) {
-        Preconditions.checkArgument(recipes != null, "recipes == null");
+        Preconditions.checkArgument(recipes != null, "recipes cannot be null");
         boolean anyAdded = false;
         RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (Recipe recipe : recipes) {
@@ -1622,21 +1622,21 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean hasRecipe(NamespacedKey recipeKey) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         return getServer().getRecipeManager().byKey(id).isPresent();
     }
 
     @Override
     public boolean removeRecipe(NamespacedKey recipeKey) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         return this.getServer().getRecipeManager().removeRecipe(id);
     }
 
     @Override
     public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
-        Preconditions.checkArgument(recipeKeys != null, "recipeKeys == null");
+        Preconditions.checkArgument(recipeKeys != null, "recipeKeys cannot be null");
         boolean anyRemoved = false;
         RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (NamespacedKey recipeKey : recipeKeys) {
