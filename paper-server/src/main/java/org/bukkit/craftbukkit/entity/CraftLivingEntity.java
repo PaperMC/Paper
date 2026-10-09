@@ -819,15 +819,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void swingMainHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
-
-        this.getHandle().swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
+        this.getHandle().swing(InteractionHand.MAIN_HAND, this.getSwingAnimation(InteractionHand.MAIN_HAND), true);
     }
 
     @Override
     public void swingOffHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
+        this.getHandle().swing(InteractionHand.OFF_HAND, this.getSwingAnimation(InteractionHand.OFF_HAND), true);
+    }
 
-        this.getHandle().swing(InteractionHand.OFF_HAND, SwingAnimation.DEFAULT, true);
+    @Override
+    public void swingHand(org.bukkit.inventory.EquipmentSlot hand, io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation) {
+        Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
+        this.getHandle().swing(CraftEquipmentSlot.getHand(hand), ((io.papermc.paper.datacomponent.item.PaperSwingAnimation) swingAnimation).getHandle(), true);
+    }
+
+    private net.minecraft.world.item.component.SwingAnimation getSwingAnimation(InteractionHand hand) {
+        net.minecraft.world.item.component.SwingAnimation animation = this.getHandle()
+            .getItemInHand(hand)
+            .get(net.minecraft.core.component.DataComponents.ATTACK_ANIMATION);
+        return animation != null ? animation : SwingAnimation.DEFAULT;
     }
 
     @Override
