@@ -61,6 +61,8 @@ import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.generator.structure.Structure;
+import org.bukkit.map.MapCursor;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.CachedServerIcon;
 import org.jetbrains.annotations.ApiStatus;
@@ -872,8 +874,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Create a new explorer map targeting the closest nearby structure of a
      * given {@link StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -882,7 +883,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type)}
+     * @deprecated use {@link #createExplorerMap(World, Location, StructureType, MapCursor.Type)}
      */
     @Deprecated // Paper
     @NotNull
@@ -904,7 +905,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type, int, boolean)}
+     * @deprecated use {@link #createExplorerMap(World, Location, StructureType, MapCursor.Type, int, boolean)}
      */
     @Deprecated // Paper
     @NotNull
@@ -912,10 +913,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Paper start
     /**
      * Create a new explorer map targeting the closest nearby structure of a
-     * given {@link org.bukkit.generator.structure.StructureType}.
+     * given {@link StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -924,15 +924,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return a newly created item stack or null if it can't find a location
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
-     *      org.bukkit.generator.structure.StructureType, int, boolean)
+     *      StructureType, int, boolean)
      */
-    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull org.bukkit.map.MapCursor.Type mapIcon) {
+    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type mapIcon) {
         return this.createExplorerMap(world, location, structureType, mapIcon, 100, true);
     }
 
     /**
      * Create a new explorer map targeting the closest nearby structure of a
-     * given {@link org.bukkit.generator.structure.StructureType}.
+     * given {@link StructureType}.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -944,9 +944,47 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the newly created item stack or null if it can't find a location
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
-     *      org.bukkit.generator.structure.StructureType, int, boolean)
+     *      StructureType, int, boolean)
      */
-    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored);
+    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type mapIcon, int radius, boolean findUnexplored);
+
+    /**
+     * Create a new explorer map targeting the closest nearby specific
+     * {@link Structure}.
+     * <br>
+     * This method uses a radius of 100 and only searches for unexplored structures.
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structure the specific structure to find
+     * @param mapIcon the map icon to use on the map
+     * @return a newly created item stack or null if it can't find a location
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      Structure, int, boolean)
+     */
+    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull Structure structure, @NotNull MapCursor.Type mapIcon) {
+        return this.createExplorerMap(world, location, structure, mapIcon, 100, true);
+    }
+
+    /**
+     * Create a new explorer map targeting the closest nearby specific
+     * {@link Structure}.
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structure the specific structure to find
+     * @param mapIcon the map icon to use on the map
+     * @param radius radius to search, see World#locateNearestStructure for more
+     *               information
+     * @param findUnexplored whether to find unexplored structures
+     * @return the newly created item stack or null if it can't find a location
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      Structure, int, boolean)
+     */
+    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull Structure structure, @NotNull MapCursor.Type mapIcon, int radius, boolean findUnexplored);
+
     // Paper end
 
     /**
