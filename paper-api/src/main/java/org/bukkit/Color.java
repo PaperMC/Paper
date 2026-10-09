@@ -6,10 +6,12 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import net.kyori.adventure.util.ARGBLike;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * A container for a color palette. This class is immutable; the set methods
@@ -17,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * but subject to change.
  */
 @SerializableAs("Color")
-public final class Color implements ConfigurationSerializable {
+public final class Color implements ConfigurationSerializable, ARGBLike {
     private static final int BIT_MASK = 0xff;
     private static final int DEFAULT_ALPHA = 255;
 
@@ -122,7 +124,12 @@ public final class Color implements ConfigurationSerializable {
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     @NotNull
-    public static Color fromARGB(int alpha, int red, int green, int blue) throws IllegalArgumentException {
+    public static Color fromARGB(
+        @Range(from = 0, to = 255) int alpha,
+        @Range(from = 0, to = 255) int red,
+        @Range(from = 0, to = 255) int green,
+        @Range(from = 0, to = 255) int blue
+    ) throws IllegalArgumentException {
         return new Color(alpha, red, green, blue);
     }
 
@@ -136,7 +143,11 @@ public final class Color implements ConfigurationSerializable {
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     @NotNull
-    public static Color fromRGB(int red, int green, int blue) throws IllegalArgumentException {
+    public static Color fromRGB(
+        @Range(from = 0, to = 255) int red,
+        @Range(from = 0, to = 255) int green,
+        @Range(from = 0, to = 255) int blue
+    ) throws IllegalArgumentException {
         return new Color(DEFAULT_ALPHA, red, green, blue);
     }
 
@@ -150,7 +161,11 @@ public final class Color implements ConfigurationSerializable {
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     @NotNull
-    public static Color fromBGR(int blue, int green, int red) throws IllegalArgumentException {
+    public static Color fromBGR(
+        @Range(from = 0, to = 255) int blue,
+        @Range(from = 0, to = 255) int green,
+        @Range(from = 0, to = 255) int red
+    ) throws IllegalArgumentException {
         return new Color(DEFAULT_ALPHA, red, green, blue);
     }
 
@@ -217,8 +232,18 @@ public final class Color implements ConfigurationSerializable {
      *
      * @return alpha component, from 0 to 255
      */
-    public int getAlpha() {
+    public @Range(from = 0, to = 255) int getAlpha() {
         return BIT_MASK & alpha;
+    }
+
+    /**
+     * Gets the alpha component
+     *
+     * @return alpha component, from 0 to 255
+     */
+    @Override
+    public @Range(from = 0, to = 255) int alpha() {
+        return getAlpha();
     }
 
     /**
@@ -228,7 +253,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new color object with the alpha component
      */
     @NotNull
-    public Color setAlpha(int alpha) {
+    public Color setAlpha(@Range(from = 0, to = 255) int alpha) {
         return fromARGB(alpha, getRed(), getGreen(), getBlue());
     }
 
@@ -237,8 +262,18 @@ public final class Color implements ConfigurationSerializable {
      *
      * @return red component, from 0 to 255
      */
-    public int getRed() {
+    public @Range(from = 0, to = 255) int getRed() {
         return BIT_MASK & red;
+    }
+
+    /**
+     * Gets the red component
+     *
+     * @return red component, from 0 to 255
+     */
+    @Override
+    public @Range(from = 0, to = 255) int red() {
+        return getRed();
     }
 
     /**
@@ -248,7 +283,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new color object with the red component
      */
     @NotNull
-    public Color setRed(int red) {
+    public Color setRed(@Range(from = 0, to = 255) int red) {
         return fromARGB(getAlpha(), red, getGreen(), getBlue());
     }
 
@@ -257,8 +292,18 @@ public final class Color implements ConfigurationSerializable {
      *
      * @return green component, from 0 to 255
      */
-    public int getGreen() {
+    public @Range(from = 0, to = 255) int getGreen() {
         return BIT_MASK & green;
+    }
+
+    /**
+     * Gets the green component
+     *
+     * @return green component, from 0 to 255
+     */
+    @Override
+    public @Range(from = 0, to = 255) int green() {
+        return getGreen();
     }
 
     /**
@@ -268,7 +313,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new color object with the green component
      */
     @NotNull
-    public Color setGreen(int green) {
+    public Color setGreen(@Range(from = 0, to = 255) int green) {
         return fromARGB(getAlpha(), getRed(), green, getBlue());
     }
 
@@ -277,8 +322,18 @@ public final class Color implements ConfigurationSerializable {
      *
      * @return blue component, from 0 to 255
      */
-    public int getBlue() {
+    public @Range(from = 0, to = 255) int getBlue() {
         return BIT_MASK & blue;
+    }
+
+    /**
+     * Gets the blue component
+     *
+     * @return blue component, from 0 to 255
+     */
+    @Override
+    public @Range(from = 0, to = 255) int blue() {
+        return getBlue();
     }
 
     /**
@@ -288,7 +343,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new color object with the blue component
      */
     @NotNull
-    public Color setBlue(int blue) {
+    public Color setBlue(@Range(from = 0, to = 255) int blue) {
         return fromARGB(getAlpha(), getRed(), getGreen(), blue);
     }
 
