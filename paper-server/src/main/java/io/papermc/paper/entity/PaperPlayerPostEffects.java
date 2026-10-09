@@ -56,4 +56,9 @@ public final class PaperPlayerPostEffects implements PlayerPostEffects {
         return this.getHandle().clearPostEffects();
     }
 
+    @Override
+    public void update() {
+        this.getHandle().sendPostEffects();
+    }
+
 }

@@ -9,8 +9,8 @@ import org.bukkit.block.EnderChest;
 
 public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity> implements EnderChest {
 
-    public CraftEnderChest(World world, EnderChestBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftEnderChest(World world, EnderChestBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftEnderChest(CraftEnderChest state, Location location) {

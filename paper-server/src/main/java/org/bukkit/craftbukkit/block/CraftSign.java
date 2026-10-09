@@ -26,8 +26,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     private @MonotonicNonNull CraftSignSide front;
     private @MonotonicNonNull CraftSignSide back;
 
-    public CraftSign(World world, T blockEntity) {
-        super(world, blockEntity);
+    public CraftSign(World world, T blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftSign(CraftSign<T> state, Location location) {

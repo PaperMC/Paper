@@ -21,8 +21,8 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     private final CraftTrialSpawnerConfiguration normalConfig;
     private final CraftTrialSpawnerConfiguration ominousConfig;
 
-    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
         this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().normalConfig(), this.getSnapshot());
         this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().ominousConfig(), this.getSnapshot());
     }
