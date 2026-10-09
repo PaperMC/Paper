@@ -1029,26 +1029,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @see #addRecipe(Recipe, boolean)
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
      */
     @Contract("null -> false")
     boolean addRecipe(@Nullable Recipe recipe);
 
-    // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
      * @param recipe the recipe to add
      * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on recipe add
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on a recipe added
      */
-    @Deprecated
+    @Deprecated(since = "26.3")
     @Contract("null, _ -> false")
     default boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
         return this.addRecipe(recipe);
     }
-    // Paper end - method to send recipes immediately
 
     /**
      * Adds multiple recipes to the crafting manager at once, resending recipes only once
@@ -1057,6 +1056,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
      * @param recipes the recipes to add
      * @return true if any recipe was added, false if none were for some reason
+     * @throws IllegalStateException if any of the recipes are already added to the crafting manager
      * @see #addRecipe
      */
     boolean addRecipes(@NotNull Iterable<Recipe> recipes);
@@ -1241,7 +1241,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     boolean removeRecipe(@NotNull NamespacedKey key);
 
-    // Paper start - method to resend recipes
     /**
      * Remove a recipe from the server.
      * <p>
@@ -1254,11 +1253,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return True if recipe was removed
      * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
-    @Deprecated
+    @Deprecated(since = "26.3")
     default boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
         return this.removeRecipe(key);
     }
-    // Paper end - method to resend recipes
 
     /**
      * Remove multiple recipes from the server.

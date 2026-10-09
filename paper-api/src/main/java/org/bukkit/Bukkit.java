@@ -1119,7 +1119,7 @@ public final class Bukkit {
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @see #addRecipe(Recipe, boolean)
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
      */
     @Contract("null -> false")
     public static boolean addRecipe(@Nullable Recipe recipe) {
@@ -1132,9 +1132,10 @@ public final class Bukkit {
      * @param recipe the recipe to add
      * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on recipe add
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on a recipe added
      */
-    @Deprecated
+    @Deprecated(since = "26.3")
     @Contract("null, _ -> false")
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
         return server.addRecipe(recipe);
@@ -1147,6 +1148,7 @@ public final class Bukkit {
      * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
      * @param recipes the recipes to add
      * @return true if any recipe was added, false if none were for some reason
+     * @throws IllegalStateException if any of the recipes are already added to the crafting manager
      * @see #addRecipe
      */
     public static boolean addRecipes(@NotNull Iterable<Recipe> recipes) {
@@ -1342,7 +1344,7 @@ public final class Bukkit {
 
     /**
      * Remove a recipe from the server.
-     *
+     * <br>
      * <b>Note that removing a recipe may cause permanent loss of data
      * associated with that recipe (eg whether it has been discovered by
      * players).</b>
@@ -1354,7 +1356,6 @@ public final class Bukkit {
         return server.removeRecipe(key);
     }
 
-    // Paper start - method to resend recipes
     /**
      * Remove a recipe from the server.
      * <p>
@@ -1367,11 +1368,10 @@ public final class Bukkit {
      * @return True if recipe was removed
      * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
-    @Deprecated
+    @Deprecated(since = "26.3")
     public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
         return server.removeRecipe(key);
     }
-    // Paper end - method to resend recipes
 
     /**
      * Remove multiple recipes from the server.
