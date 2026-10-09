@@ -199,16 +199,14 @@ part of what you submit. Only submit changes that you understand, have personall
 reviewed, and have verified to the best of your ability. You should be able to
 explain why the change is needed, how it works, and what tradeoffs it makes.
 
-Issues, discussion posts, pull request descriptions, comments, and review
-responses should be written by you, in your own words. Do not pass generated
-responses on to maintainers or use an AI tool as a proxy for the conversation.
-If a tool helped you investigate or implement something, read and validate its
-output, then communicate the relevant conclusions yourself.
+Project communication, including issues, discussion posts, pull request
+descriptions, comments, and review responses, should be written by you in your
+own words. Do not use an AI tool as a proxy for the conversation. Validate any
+tool output you rely on, then communicate the relevant conclusions yourself.
 
-Do not conceal or misrepresent meaningful AI involvement; be transparent about
-how these tools contributed to your work. Transparency does not excuse
-submitting work you do not understand, review, verify, and take responsibility
-for.
+Do not conceal or misrepresent meaningful AI involvement. Be transparent about
+how these tools contributed to your work; that transparency does not replace
+your responsibility for the contribution.
 
 Review is a collaborative process, not a way to outsource completion of a
 generated change to maintainers. Be prepared to answer questions about your
