@@ -158,7 +158,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.180")
+    implementation("me.lucko:spark-paper:1.10.191")
 }
 
 tasks.jar {
@@ -246,6 +246,16 @@ tasks.test {
     val provider = objects.newInstance<MockitoAgentProvider>()
     provider.fileCollection.from(mockitoAgent)
     jvmArgumentProviders.add(provider)
+
+    // Hides repeated jline/joml warnings due to forking
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    systemProperty("joml.nounsafe", true)
+}
+
+tasks.withType<io.papermc.paperweight.tasks.CreateBundlerJar>().configureEach {
+    extraManifestMainAttributes = mapOf(
+        "Enable-Native-Access" to "ALL-UNNAMED",
+    )
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
@@ -294,6 +304,7 @@ fun TaskContainer.registerRunTask(
     systemProperty("paper.alwaysPrintWarningState", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
+    systemProperty("joml.nounsafe", true)
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
