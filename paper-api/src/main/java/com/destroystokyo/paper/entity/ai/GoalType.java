@@ -10,7 +10,7 @@ public enum GoalType {
     JUMP,
     TARGET,
     /**
-     * Used to map vanilla goals, that are a behavior goal but don't have a type set...
+     * Used to map vanilla goals, that are a behavior goal but don't have a type set.
      */
     UNKNOWN_BEHAVIOR,
 
