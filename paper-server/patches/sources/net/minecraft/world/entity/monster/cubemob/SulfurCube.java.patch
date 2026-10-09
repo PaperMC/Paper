@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-@@ -295,13 +_,34 @@
+@@ -295,13 +_,35 @@
  
          if (!this.explosionData.isEmpty()) {
              if (this.fuse == 0) {
@@ -30,6 +30,7 @@
 +                        if (primeEvent.isCancelled()) {
 +                            this.setFuse(PrimedTnt.NO_FUSE);
 +                            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
++                            this.setInvulnerable(false);
 +                            return;
 +                        }
 +                        afterEvent.run();
@@ -37,7 +38,7 @@
                          level.explode(
                              this,
                              Explosion.getDefaultDamageSource(this.level(), this),
-@@ -309,16 +_,20 @@
+@@ -309,17 +_,27 @@
                              this.getX(),
                              this.getY(0.0625),
                              this.getZ(),
@@ -59,8 +60,15 @@
 -                this.discard();
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
              }
++        // Paper start - properly reset fuse if explosion data was unset by game
++        } else if (this.tickCount > 1 && this.isPrimed()) {
++            this.setFuse(PrimedTnt.NO_FUSE);
++            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
++            this.setInvulnerable(false);
++        // Paper end - properly reset fuse if explosion data was unset by game
          }
      }
+ 
 @@ -340,6 +_,12 @@
              && !this.isPrimed()) {
              int fuse = this.explosionData.get().fuse();
