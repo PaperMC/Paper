@@ -96,8 +96,11 @@ final class LegacyCraftBukkitWorldMigration {
             this.migrateLegacyCraftBukkitPaperData(tempStorage, levelDataResult.dataTag());
             tempStorage.saveAndJoin();
         }
-        deleteMigratedSeparateRoot(this.sourceRoot);
-        LOGGER.info("Completed legacy CraftBukkit import for world '{}' ({})", this.context.worldName(), this.context.dimensionKey().identifier());
+
+        final Path oldSourceRoot = this.sourceRoot.resolveSibling(this.sourceRoot.getFileName() + ".old");
+
+        Files.move(this.sourceRoot, oldSourceRoot);
+        LOGGER.info("Completed legacy CraftBukkit import for world '{}' ({}), the old world was moved into '{}'", this.context.worldName(), this.context.dimensionKey().identifier(), oldSourceRoot);
     }
 
     private void migrateSharedSavedData() throws IOException {
@@ -185,18 +188,6 @@ final class LegacyCraftBukkitWorldMigration {
         final SavedDataType<?> type
     ) throws IOException {
         WorldMigrationSupport.copySavedDataIfPresent(this.sourceDataRoots, this.targetDataRoot, type, true);
-    }
-
-    private static void deleteMigratedSeparateRoot(final Path sourceRoot) throws IOException {
-        if (!Files.exists(sourceRoot)) {
-            return;
-        }
-
-        try (final var paths = Files.walk(sourceRoot)) {
-            for (final Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        }
     }
 
     private @Nullable Path findExplicitFile(
