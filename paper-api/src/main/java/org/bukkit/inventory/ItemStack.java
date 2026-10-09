@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
+import java.io.OutputStream;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -755,29 +756,98 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
-     * use the built-in data converter instead of bukkits dangerous serialization system.
-     *
+     * Deserializes this itemstack from a stream of uncompressed NBT data.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     * <p>
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
-     * the {@link #serializeAsBytes()} API returned.
-     * @param bytes bytes representing an item in NBT
+     * the {@link #serializeBytes(java.io.OutputStream)} API returned.
+     *
+     * @param input the InputStream of uncompressed data as saved by {@link #serializeBytes(OutputStream)}
+     * @throws java.io.IOException if there was an IO problem
      * @return ItemStack migrated to this version of Minecraft if needed.
+     * @since 26.2
      */
-    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
-        Preconditions.checkArgument(bytes != null, "null cannot be deserialized");
-        Preconditions.checkArgument(bytes.length > 0, "cannot deserialize nothing");
+    public static @NotNull ItemStack deserializeBytes(final @NotNull java.io.InputStream input) throws java.io.IOException {
+        Preconditions.checkNotNull(input, "InputStream cannot be null");
 
-        return InternalAPIBridge.get().deserializeItem(bytes);
+        return InternalAPIBridge.get().deserializeItem(input);
     }
 
     /**
-     * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
-     * use the built-in data converter instead of bukkits dangerous serialization system.
+     * Serializes this itemstack as uncompressed NBT data to the provided OutputStream.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
      *
-     * @return bytes representing this item in NBT.
+     * @param output the OutputStream to write the NBT data to
+     * @throws java.io.IOException if there was an IO problem
+     * @since 26.2
+     */
+    public void serializeBytes(final @NotNull java.io.OutputStream output) throws java.io.IOException {
+        this.craftDelegate.serializeBytes(output);
+    }
+
+    /**
+     * Deserializes this itemstack from NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     * <p>
+     * This expects that the DataVersion was stored on the root of the Compound, as saved from
+     * the {@link #serializeAsBytes()} API returned.
+     *
+     * @param bytes bytes representing this item in NBT
+     * @return ItemStack migrated to this version of Minecraft if needed
+     */
+    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
+        return deserializeBytes(bytes, true);
+    }
+
+    /**
+     * Deserializes this itemstack from NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     * <p>
+     * This expects that the DataVersion was stored on the root of the Compound, as saved from
+     * the {@link #serializeAsBytes(boolean)} API returned.
+     *
+     * @param bytes bytes representing this item in NBT
+     * @param decompress if the input needs to be decompressed. See {@link #serializeAsBytes(boolean)}
+     * @return ItemStack migrated to this version of Minecraft if needed
+     * @since 26.2
+     */
+    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes, final boolean decompress) {
+        Preconditions.checkArgument(bytes != null, "null cannot be deserialized");
+        Preconditions.checkArgument(bytes.length > 0, "cannot deserialize nothing");
+
+        return InternalAPIBridge.get().deserializeItem(bytes, decompress);
+    }
+
+    /**
+     * Serializes this itemstack as GZip-compressed NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     *
+     * @return bytes representing this item in GZip-compressed NBT
+     * @apiNote For high-frequency use, consider {@link #serializeAsBytes(boolean)} to avoid
+     * compression overhead.
      */
     public byte @NotNull [] serializeAsBytes() {
-        return this.craftDelegate.serializeAsBytes();
+        return serializeAsBytes(true);
+    }
+
+    /**
+     * Serializes this itemstack as NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     *
+     * @param compress true for GZip-compressed output, false for uncompressed output.
+     * @return bytes representing this item in NBT
+     * @since 26.2
+     */
+    public byte @NotNull [] serializeAsBytes(final boolean compress) {
+        return this.craftDelegate.serializeAsBytes(compress);
     }
 
     /**

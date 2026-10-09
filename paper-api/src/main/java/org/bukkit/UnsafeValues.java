@@ -172,10 +172,12 @@ public interface UnsafeValues {
     @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 
     /**
-     * Serializes the provided entity.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @return serialized entity data
+     * @apiNote For high-frequency use, consider {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * to avoid compression overhead.
      * @see #serializeEntity(Entity, EntitySerializationFlag...)
      * @see #deserializeEntity(byte[], World, boolean, boolean)
      * @throws IllegalArgumentException if couldn't serialize the entity
@@ -186,19 +188,50 @@ public interface UnsafeValues {
     }
 
     /**
-     * Serializes the provided entity.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @param serializationFlags serialization flags
      * @return serialized entity data
+     * @apiNote For high-frequency use, consider {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * to avoid compression overhead.
      * @throws IllegalArgumentException if couldn't serialize the entity
      * @see #deserializeEntity(byte[], World, boolean, boolean)
      * @since 1.21.4
      */
-    byte @NotNull [] serializeEntity(@NotNull Entity entity, @NotNull EntitySerializationFlag... serializationFlags);
+    default byte @NotNull [] serializeEntity(@NotNull Entity entity, @NotNull EntitySerializationFlag... serializationFlags) {
+        return serializeEntity(entity, true, serializationFlags);
+    }
 
     /**
-     * Deserializes the entity from data.
+     * Serializes the provided entity as optionally GZip-compressed NBT.
+     *
+     * @param entity entity
+     * @param compress true for compressed GZip output, false for uncompressed output.
+     * @param serializationFlags serialization flags
+     * @return serialized entity data
+     * @throws IllegalArgumentException if couldn't serialize the entity
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @since 26.2
+     */
+    byte @NotNull [] serializeEntity(@NotNull Entity entity, boolean compress, @NotNull EntitySerializationFlag... serializationFlags);
+
+    /**
+     * Serializes the provided entity as uncompressed NBT to the provided OutputStream.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.
+     *
+     * @param entity entity
+     * @param output the stream to write the data to
+     * @param serializationFlags serialization flags
+     * @throws IllegalArgumentException if it couldn't serialize the entity
+     * @throws java.io.IOException if there was an IO problem
+     * @see #deserializeEntity(java.io.InputStream, World, boolean, boolean)
+     * @since 26.2
+     */
+    void serializeEntity(@NotNull Entity entity, @NotNull java.io.OutputStream output, @NotNull EntitySerializationFlag... serializationFlags) throws java.io.IOException;
+
+    /**
+     * Deserializes the entity from GZip-compressed NBT data.
      * <br>The entity's {@link java.util.UUID} as well as passengers will not be preserved.
      *
      * @param data serialized entity data
@@ -215,7 +248,7 @@ public interface UnsafeValues {
     }
 
     /**
-     * Deserializes the entity from data.
+     * Deserializes the entity from GZip-compressed NBT data.
      * <br>The entity's passengers will not be preserved.
      *
      * @param data serialized entity data
@@ -233,7 +266,7 @@ public interface UnsafeValues {
     }
 
     /**
-     * Deserializes the entity from data.
+     * Deserializes the entity from GZip-compressed NBT data.
      *
      * @param data serialized entity data
      * @param world world
@@ -245,7 +278,42 @@ public interface UnsafeValues {
      * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
      * @since 1.21.4
      */
-    @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
+    default @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID, boolean preservePassengers) {
+        return deserializeEntity(data, true, world, preserveUUID, preservePassengers);
+    }
+
+    /**
+     * Deserializes the entity from NBT data.
+     *
+     * @param data serialized entity data
+     * @param decompress if the input needs to be decompressed. See {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * @param world world
+     * @param preserveUUID whether to preserve uuids of the entity and its passengers
+     * @param preservePassengers whether to preserve passengers
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @see #serializeEntity(Entity, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 26.2
+     */
+    @NotNull Entity deserializeEntity(byte @NotNull [] data, boolean decompress, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
+
+    /**
+     * Deserializes the entity from a stream of uncompressed NBT data.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.
+     *
+     * @param input the InputStream of raw, uncompressed NBT data
+     * @param world world
+     * @param preserveUUID whether to preserve uuids of the entity and its passengers
+     * @param preservePassengers whether to preserve passengers
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @throws java.io.IOException if there was an IO problem
+     * @see #serializeEntity(Entity, java.io.OutputStream, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 26.2
+     */
+    @NotNull Entity deserializeEntity(@NotNull java.io.InputStream input, @NotNull World world, boolean preserveUUID, boolean preservePassengers) throws java.io.IOException;
 
     /**
      * Creates and returns the next EntityId available.
