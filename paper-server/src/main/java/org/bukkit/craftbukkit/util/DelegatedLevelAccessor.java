@@ -658,23 +658,8 @@ public abstract class DelegatedLevelAccessor implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
-        return this.delegate.setBlock(pos, blockState, updateFlags);
-    }
-
-    @Override
     public boolean removeBlock(BlockPos pos, boolean movedByPiston) {
         return this.delegate.removeBlock(pos, movedByPiston);
-    }
-
-    @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropResources) {
-        return this.delegate.destroyBlock(pos, dropResources);
-    }
-
-    @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropResources, Entity breaker) {
-        return this.delegate.destroyBlock(pos, dropResources, breaker);
     }
 
     @Override

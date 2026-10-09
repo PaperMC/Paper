@@ -6,13 +6,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds all projectiles that have been loaded into a Crossbow.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CHARGED_PROJECTILES
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ChargedProjectiles {
 

@@ -32,7 +32,8 @@ public final class OversizedItemComponentSanitizer {
     public static final Codec<ChargedProjectiles> CHARGED_PROJECTILES = codec(ChargedProjectiles.CODEC, OversizedItemComponentSanitizer::sanitizeChargedProjectiles);
     public static final StreamCodec<RegistryFriendlyByteBuf, ItemContainerContents> CONTAINER_STREAM = codec(ItemContainerContents.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
     public static final Codec<ItemContainerContents> CONTAINER = codec(ItemContainerContents.CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
-    public static final Codec<BundleContents> BUNDLE_CONTENTS = new Codec<>() {
+    public static final Codec<BundleContents> BUNDLE_CONTENTS = new BundleContentsCodec();
+    static class BundleContentsCodec implements Codec<BundleContents>, ObfuscationDependantCodec {
 
         @Override
         public <T> DataResult<Pair<BundleContents, T>> decode(final DynamicOps<T> ops, final T input) {
@@ -51,7 +52,8 @@ public final class OversizedItemComponentSanitizer {
             }
         }
     };
-    public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS_STREAM = new StreamCodec<>() {
+    public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS_STREAM = new BundleContentsStreamCodec();
+    static class BundleContentsStreamCodec implements StreamCodec<RegistryFriendlyByteBuf, BundleContents>, ObfuscationDependantCodec {
         @Override
         public BundleContents decode(final RegistryFriendlyByteBuf buffer) {
             return BundleContents.STREAM_CODEC.decode(buffer);

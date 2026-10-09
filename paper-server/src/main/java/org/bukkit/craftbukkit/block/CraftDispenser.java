@@ -16,8 +16,8 @@ import org.bukkit.projectiles.BlockProjectileSource;
 
 public class CraftDispenser extends CraftLootable<DispenserBlockEntity> implements Dispenser {
 
-    public CraftDispenser(World world, DispenserBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftDispenser(World world, DispenserBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftDispenser(CraftDispenser state, Location location) {
