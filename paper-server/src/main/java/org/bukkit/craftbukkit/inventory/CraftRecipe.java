@@ -38,7 +38,7 @@ public interface CraftRecipe extends Recipe {
     RecipeHolder<?> toMinecraftRecipe();
 
     default void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
+        MinecraftServer.getServer().getRecipeManager().addRecipe(this.toMinecraftRecipe());
     }
 
     static Optional<Ingredient> toPossibleIngredient(@Nullable RecipeChoice bukkit, boolean requireNotEmpty) {

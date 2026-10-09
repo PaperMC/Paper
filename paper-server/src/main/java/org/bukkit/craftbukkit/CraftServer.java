@@ -1424,7 +1424,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean addRecipe(Recipe recipe) {
-        CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+        final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
         if (craftRecipe == null) {
             return false;
         }
@@ -1435,11 +1435,12 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean addRecipes(Iterable<Recipe> recipes) {
+        org.spigotmc.AsyncCatcher.catchOp("Recipes Add");
         Preconditions.checkArgument(recipes != null, "recipes cannot be null");
         boolean anyAdded = false;
-        RecipeManager recipeManager = this.getServer().getRecipeManager();
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (Recipe recipe : recipes) {
-            CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+            final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
             if (craftRecipe != null) {
                 recipeManager.recipes.addRecipe(craftRecipe.toMinecraftRecipe());
                 anyAdded = true;
@@ -1638,7 +1639,7 @@ public final class CraftServer implements Server {
     public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
         Preconditions.checkArgument(recipeKeys != null, "recipeKeys cannot be null");
         boolean anyRemoved = false;
-        RecipeManager recipeManager = this.getServer().getRecipeManager();
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (NamespacedKey recipeKey : recipeKeys) {
             final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
             if (recipeManager.recipes.removeRecipe(id)) {
