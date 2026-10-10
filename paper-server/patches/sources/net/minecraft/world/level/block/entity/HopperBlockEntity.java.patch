@@ -64,7 +64,21 @@
                  setChanged(level, pos, state);
                  return true;
              }
-@@ -155,14 +_,46 @@
+@@ -151,25 +_,92 @@
+             return false;
+         }
+ 
++        // Paper start - Add PrepareHopperTransferEvent
++        final io.papermc.paper.event.inventory.@Nullable PrepareHopperTransferEvent prepareEvent = callPrepareTransferEvent(level, self, container, true);
++        boolean disallowedSlot = false;
++        // Paper end - Add PrepareHopperTransferEvent
+         for (int slot = 0; slot < self.getContainerSize(); slot++) {
++            // Paper start - Add PrepareHopperTransferEvent
++            if (prepareEvent != null && !prepareEvent.isSlotAllowed(slot)) {
++                disallowedSlot = true;
++                continue;
++            }
++            // Paper end - Add PrepareHopperTransferEvent
              ItemStack itemStack = self.getItem(slot);
              if (!itemStack.isEmpty()) {
                  int originalCount = itemStack.getCount();
@@ -113,15 +127,68 @@
                      self.setItem(slot, itemStack);
                  }
              }
-@@ -223,7 +_,7 @@
+         }
+ 
++        if (disallowedSlot) self.setCooldown(level.spigotConfig.hopperTransfer); // Paper - Add PrepareHopperTransferEvent
+         return false;
+     }
++
++    // Paper start - Add PrepareHopperTransferEvent
++    private static io.papermc.paper.event.inventory.@Nullable PrepareHopperTransferEvent callPrepareTransferEvent(final Level level, final Container source, final Container destination, final boolean didSourceInitiate) {
++        if (io.papermc.paper.event.inventory.PrepareHopperTransferEvent.getHandlerList().getRegisteredListeners().length == 0 || level.paperConfig().hopper.disableMoveEvent || source.isEmpty()) {
++            return null;
++        }
++        final io.papermc.paper.event.inventory.PrepareHopperTransferEvent event = new io.papermc.paper.event.inventory.PrepareHopperTransferEvent(getInventory(source), getInventory(destination), didSourceInitiate);
++        event.callEvent();
++        return event;
++    }
++
++    private static org.bukkit.inventory.Inventory getInventory(final Container container) {
++        final org.bukkit.inventory.Inventory sourceInventory;
++        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++            // Have to special-case large chests as they work oddly
++            sourceInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
++        } else if (container.getOwner() != null) {
++            sourceInventory = container.getOwner().getInventory();
++        } else {
++            sourceInventory = new org.bukkit.craftbukkit.inventory.CraftInventory(container);
++        }
++        return sourceInventory;
++    }
++    // Paper end - Add PrepareHopperTransferEvent
+ 
+     private static int[] getSlots(final Container container, final Direction direction) {
+         if (container instanceof WorldlyContainer worldlyContainer) {
+@@ -221,13 +_,28 @@
+         Container container = getSourceContainer(level, hopper, blockPos, blockState);
+         if (container != null) {
              Direction direction = Direction.DOWN;
++            // Paper start - Add PrepareHopperTransferEvent
++            final io.papermc.paper.event.inventory.@Nullable PrepareHopperTransferEvent prepareEvent = callPrepareTransferEvent(level, container, hopper, false);
++            boolean disallowedSlot = false;
++            // Paper end - Add PrepareHopperTransferEvent
  
              for (int slot : getSlots(container, direction)) {
 -                if (tryTakeInItemFromSlot(hopper, container, slot, direction)) {
++                // Paper start - Add PrepareHopperTransferEvent
++                if (prepareEvent != null && !prepareEvent.isSlotAllowed(slot)) {
++                    disallowedSlot = true;
++                    continue;
++                }
++                // Paper end - Add PrepareHopperTransferEvent
 +                if (tryTakeInItemFromSlot(hopper, container, slot, direction, level)) { // Spigot
                      return true;
                  }
              }
+ 
++            // Paper start - Add PrepareHopperTransferEvent
++            if (disallowedSlot && hopper instanceof final HopperBlockEntity hopperBlockEntity) {
++                hopperBlockEntity.setCooldown(level.spigotConfig.hopperTransfer);
++            }
++            // Paper end - Add PrepareHopperTransferEvent
+             return false;
+         } else {
+             boolean isBlocked = hopper.isGridAligned()
 @@ -245,18 +_,55 @@
          }
      }
