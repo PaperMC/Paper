@@ -12,8 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a hopper or hopper minecart is about to choose an item to move,
  * before any {@link InventoryMoveItemEvent}.
  * <p>
- * Disallowed slots of the source are skipped. If nothing is left to move, the
- * hopper goes on cooldown as if the move was cancelled.
+ * The hopper treats disallowed slots of the source as if they do not exist, so
+ * a source with items only in disallowed slots is treated as empty.
  */
 @NullMarked
 public class PrepareHopperTransferEvent extends Event {
@@ -23,7 +23,7 @@ public class PrepareHopperTransferEvent extends Event {
     private final Inventory source;
     private final Inventory destination;
     private final boolean didSourceInitiate;
-    private long disallowedSlots;
+    protected long disallowedSlots;
 
     @ApiStatus.Internal
     public PrepareHopperTransferEvent(final Inventory source, final Inventory destination, final boolean didSourceInitiate) {
