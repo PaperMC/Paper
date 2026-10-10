@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <C> built component type
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DataComponentBuilder<C> {
 

@@ -8,6 +8,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,7 +26,7 @@ public class EntityTypeAttributesTest {
     @Test
     public void testLegalEntity() {
         assertTrue(EntityType.ZOMBIE.hasDefaultAttributes());
-        EntityType.ZOMBIE.getDefaultAttributes();
+        assertDoesNotThrow(EntityType.ZOMBIE::getDefaultAttributes);
     }
 
     @Test

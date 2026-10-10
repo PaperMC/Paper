@@ -1223,7 +1223,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param hand the hand that contains the item to be used
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void startUsingItem(@NotNull org.bukkit.inventory.EquipmentSlot hand);
 
     /**
@@ -1234,7 +1233,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * This method does not make any guarantees about the effect of this method
      * as such depends on the entity and its state.
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void completeUsingActiveItem();
 
     /**
@@ -1520,7 +1518,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the entity's combat tracker
      */
-    @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
 
     /**
