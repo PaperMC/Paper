@@ -675,6 +675,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public EntityDamageEvent getLastDamageCause();
 
     /**
+     * Gets the item being used as a weapon by this entity.
+     * <p>
+     * Note: In most cases this is the item in the entity's main hand, but
+     * it may be the offhand if for ex: the entity is using the riptide
+     * enchantment on a trident.
+     *
+     * @return The weapon item
+     */
+    @Nullable ItemStack getWeapon();
+
+    /**
      * Returns a unique and persistent id for this entity
      *
      * @return unique id
@@ -933,6 +944,27 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param gravity whether gravity should apply
      */
     void setGravity(boolean gravity);
+
+    /**
+     * Returns the default acceleration due to gravity (in blocks per tick). Ignores {@link Entity#hasGravity()}.
+     *
+     * @return the default acceleration due to gravity
+     */
+    double getDefaultGravity();
+
+    /**
+     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is false, returns 0.
+     *
+     * @return the acceleration due to gravity
+     */
+    double getGravity();
+
+    /**
+     * Returns the air drag factor applied to this entity.
+     *
+     * @return the air drag factor
+     */
+    float getAirDrag();
 
     /**
      * Gets the period of time (in ticks) before this entity can use a portal.

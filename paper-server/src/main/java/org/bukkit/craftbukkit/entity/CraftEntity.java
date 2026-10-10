@@ -595,6 +595,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public @Nullable ItemStack getWeapon() {
+        net.minecraft.world.item.ItemStack stack = this.getHandle().getWeaponItem();
+        return stack == null ? null : CraftItemStack.asBukkitCopy(stack);
+    }
+
+    @Override
     public UUID getUniqueId() {
         return this.entity.getUUID();
     }
@@ -942,6 +948,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void setGravity(boolean gravity) {
         this.getHandle().setNoGravity(!gravity);
+    }
+
+    @Override
+    public double getDefaultGravity() {
+        return this.getHandle().getDefaultGravity();
+    }
+
+    @Override
+    public double getGravity() {
+        return this.getHandle().getGravity();
+    }
+
+    @Override
+    public float getAirDrag() {
+        return this.getHandle().getAirDrag();
     }
 
     @Override

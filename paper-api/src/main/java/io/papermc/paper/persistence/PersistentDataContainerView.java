@@ -1,6 +1,7 @@
 package io.papermc.paper.persistence;
 
 import java.util.Set;
+import com.google.common.base.Preconditions;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -67,6 +68,32 @@ public interface PersistentDataContainerView {
     boolean has(NamespacedKey key);
 
     /**
+     * Returns if the persistent metadata provider has metadata registered
+     * matching the provided parameters.
+     * <p>
+     * This method will only return true if the found value has the same primitive
+     * data type as the provided data key.
+     * <p>
+     * Storing a value using a custom {@link PersistentDataType} implementation
+     * will not store the complex data type. Therefore, storing a UUID (by
+     * storing a byte[]) will match has("key", {@link PersistentDataType#BYTE_ARRAY}).
+     * Likewise, a stored byte[] will always match your UUID {@link PersistentDataType}
+     * even if it is not 16 bytes long.
+     * <p>
+     * This method is only usable for custom object keys. Overwriting existing
+     * tags, like the display name, will not work as the values are stored
+     * using your namespace.
+     *
+     * @param dataKey the data key the value is stored under
+     * @return if a value with the provided key and type exists
+     * @throws IllegalArgumentException if the key to look up is null
+     */
+    default boolean has(final PersistentDataKey<?> dataKey) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.has(dataKey.key(), dataKey.dataType());
+    }
+
+    /**
      * Returns the metadata value that is stored on the
      * {@link PersistentDataHolder} instance.
      *
@@ -109,6 +136,46 @@ public interface PersistentDataContainerView {
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
+
+    /**
+     * Returns the metadata value that is stored on the
+     * {@link PersistentDataHolder} instance.
+     *
+     * @param dataKey the data key to look up in the custom tag map
+     * @param <C> the generic type of the eventually created complex object
+     * @return the value or {@code null} if no value was mapped under the given
+     * value
+     * @throws IllegalArgumentException if the data key to look up is null
+     * @throws IllegalArgumentException if a value exists under the given key,
+     * but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
+     * the {@link PersistentDataType#getPrimitiveType()}
+     */
+    default <C> @Nullable C get(final PersistentDataKey<C> dataKey) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.get(dataKey.key(), dataKey.dataType());
+    }
+
+    /**
+     * Returns the metadata value that is stored on the
+     * {@link PersistentDataHolder} instance. If the value does not exist in the
+     * container, the default value provided is returned.
+     *
+     * @param dataKey the data key to look up in the custom tag map
+     * @param defaultValue the default value to return if no value was found for
+     * the provided key
+     * @param <C> the generic type of the eventually created complex object
+     * @return the value or the default value if no value was mapped under the given key
+     * @throws IllegalArgumentException if the data key to look up is null
+     * @throws IllegalArgumentException if a value exists under the given key,
+     * but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
+     * the {@link PersistentDataType#getPrimitiveType()}
+     */
+    default <C> C getOrDefault(final PersistentDataKey<C> dataKey, final C defaultValue) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.getOrDefault(dataKey.key(), dataKey.dataType(), defaultValue);
+    }
 
     /**
      * Get the set of keys present on this {@link PersistentDataContainer}

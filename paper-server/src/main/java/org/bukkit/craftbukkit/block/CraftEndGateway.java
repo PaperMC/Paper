@@ -10,8 +10,8 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class CraftEndGateway extends CraftBlockEntityState<TheEndGatewayBlockEntity> implements EndGateway {
 
-    public CraftEndGateway(World world, TheEndGatewayBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftEndGateway(World world, TheEndGatewayBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftEndGateway(CraftEndGateway state, Location location) {

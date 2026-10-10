@@ -9,8 +9,8 @@ import org.bukkit.inventory.ShelfInventory;
 
 public class CraftShelf extends CraftBlockEntityState<ShelfBlockEntity> implements Shelf {
 
-    public CraftShelf(World world, ShelfBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftShelf(World world, ShelfBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftShelf(CraftShelf state, Location location) {

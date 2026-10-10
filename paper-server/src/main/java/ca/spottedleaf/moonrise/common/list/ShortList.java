@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 public final class ShortList {
 
-    private final Short2ShortOpenHashMap map = new Short2ShortOpenHashMap();
+    private final Short2ShortOpenHashMap map = new Short2ShortOpenHashMap(0);
     {
         this.map.defaultReturnValue(Short.MIN_VALUE);
     }
