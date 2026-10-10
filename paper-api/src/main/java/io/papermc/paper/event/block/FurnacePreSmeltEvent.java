@@ -11,17 +11,18 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Called every tick before a furnace checks whether its current recipe can be smelted.
  * <p>
- * This event can be used to control whether smelting proceeds and to change the
- * total cooking time for the current smelt operation.
+ * This event can be used to control whether smelting proceeds, replace the
+ * cooking recipe, and change the total cooking time for the current smelt operation.
  */
 @NullMarked
 public class FurnacePreSmeltEvent extends BlockEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final ItemStack source;
-    private final CookingRecipe<?> recipe;
+    private CookingRecipe<?> recipe;
     private boolean allowed;
     private int totalCookTime;
+    private boolean totalCookTimeChanged;
 
     @ApiStatus.Internal
     public FurnacePreSmeltEvent(
@@ -57,6 +58,22 @@ public class FurnacePreSmeltEvent extends BlockEvent {
     }
 
     /**
+     * Sets the cooking recipe to use for this smelt operation.
+     * <p>
+     * The recipe must already be registered on the server and must match
+     * the type of furnace performing the smelt. The registered recipe
+     * identified by the supplied recipe's key will be used.
+     * <p>
+     * Changing properties of a recipe object without changing its key
+     * does not modify the registered recipe.
+     *
+     * @param recipe the registered cooking recipe to use
+     */
+    public void setRecipe(final CookingRecipe<?> recipe) {
+        this.recipe = java.util.Objects.requireNonNull(recipe, "recipe");
+    }
+
+    /**
      * Gets whether the smelting is allowed to proceed.
      *
      * @return {@code true} if smelting is allowed
@@ -89,7 +106,21 @@ public class FurnacePreSmeltEvent extends BlockEvent {
      * @param totalCookTime the total cooking time in ticks
      */
     public void setTotalCookTime(final int totalCookTime) {
+        if (totalCookTime < 1) {
+            throw new IllegalArgumentException("Total cooking time must be at least 1 tick");
+        }
         this.totalCookTime = totalCookTime;
+        this.totalCookTimeChanged = true;
+    }
+
+    /**
+     * Gets whether the total cooking time was explicitly changed.
+     *
+     * @return whether the total cooking time was changed
+     */
+    @ApiStatus.Internal
+    public boolean isTotalCookTimeChanged() {
+        return this.totalCookTimeChanged;
     }
 
     @Override

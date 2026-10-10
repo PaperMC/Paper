@@ -1,17 +1,21 @@
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -111,6 +_,7 @@
+@@ -111,13 +_,51 @@
      };
      public final Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> recipesUsed = new Reference2IntOpenHashMap<>();
      public final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
++    private final RecipeType<? extends AbstractCookingRecipe> recipeType; // Paper - FurnacePreSmeltEvent recipe replacement
 +    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
  
      protected AbstractFurnaceBlockEntity(
          final BlockEntityType<?> type, final BlockPos worldPosition, final BlockState blockState, final RecipeType<? extends AbstractCookingRecipe> recipeType
-@@ -119,6 +_,41 @@
+     ) {
+         super(type, worldPosition, blockState);
          this.quickCheck = RecipeManager.createCheck(recipeType);
-     }
- 
+-    }
++        this.recipeType = recipeType; // Paper - FurnacePreSmeltEvent recipe replacement
++    }
++
 +    // CraftBukkit start - add fields and methods
 +    private int maxStack = MAX_STACK;
 +    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
@@ -46,10 +50,9 @@
 +        this.maxStack = size;
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      protected void loadAdditional(final ValueInput input) {
-         super.loadAdditional(input);
 @@ -131,6 +_,7 @@
          this.speedMultiplier = input.getFloatOr("speed_multiplier", 1.0F);
          this.recipesUsed.clear();
@@ -66,7 +69,7 @@
      }
  
      public static void serverTick(final ServerLevel level, final BlockPos pos, BlockState state, final AbstractFurnaceBlockEntity entity) {
-@@ -169,9 +_,31 @@
+@@ -169,33 +_,99 @@
                  if (recipe != null) {
                      int maxStackSize = entity.getMaxStackSize();
                      ItemStack burnResult = recipe.value().assemble(input);
@@ -81,8 +84,34 @@
 +                        entity.cookingTotalTime
 +                    );
 +                    preSmeltEvent.callEvent();
-+                    canBurn = preSmeltEvent.isAllowed();
-+                    entity.cookingTotalTime = preSmeltEvent.getTotalCookTime();
++                    // Paper start - support mutable FurnacePreSmeltEvent recipe
++                    org.bukkit.inventory.CookingRecipe<?> selectedRecipe = preSmeltEvent.getRecipe();
++                    boolean replacementApplied = false;
++                    if (!org.bukkit.craftbukkit.util.CraftNamespacedKey.toResourceKey(
++                        net.minecraft.core.registries.Registries.RECIPE, selectedRecipe.getKey()
++                    ).equals(recipe.id())) {
++                        final var recipeKey = org.bukkit.craftbukkit.util.CraftNamespacedKey.toResourceKey(
++                            net.minecraft.core.registries.Registries.RECIPE, selectedRecipe.getKey()
++                        );
++                        final var replacement = level.recipeAccess().byKey(recipeKey);
++                        if (replacement.isEmpty()
++                            || !(replacement.get().value() instanceof AbstractCookingRecipe cookingRecipe)
++                            || cookingRecipe.getType() != entity.recipeType) {
++                            preSmeltEvent.setAllowed(false); // Paper - reject invalid replacement recipes
++                        } else {
++                            recipe = new RecipeHolder<>(recipeKey, cookingRecipe);
++                            burnResult = recipe.value().assemble(input);
++                            replacementApplied = true;
++                        }
++                    }
++                    // Paper end - support mutable FurnacePreSmeltEvent recipe
++                    canBurn = preSmeltEvent.isAllowed() && !burnResult.isEmpty()
++                        && canBurn(entity.items, maxStackSize, burnResult);
++                    if (preSmeltEvent.isTotalCookTimeChanged()) {
++                        entity.cookingTotalTime = preSmeltEvent.getTotalCookTime();
++                    } else if (replacementApplied && entity.cookingTimer == 0 && canBurn) {
++                        entity.cookingTotalTime = getTotalCookTime(recipe, entity);
++                    }
 +                    // Paper end - add FurnacePreSmeltEvent
 +                    if (canBurn) {
                          if (!isLit) {
@@ -99,7 +128,13 @@
                              float newSpeedMultiplier = entity.getSpeedMultiplier(level, fuel);
                              entity.litTimeRemaining = newLitTime;
                              entity.litTotalTime = newLitTime;
-@@ -182,20 +_,36 @@
+                             entity.speedMultiplier = newSpeedMultiplier;
+                             if (entity.cookingTotalTime > 0 && entity.cookingTimer < entity.cookingTotalTime) {
+                                 float completionRatio = (float)entity.cookingTimer / entity.cookingTotalTime;
+-                                entity.cookingTotalTime = getTotalCookTime(recipe, entity);
++                                if (!preSmeltEvent.isTotalCookTimeChanged()) {
++                                    entity.cookingTotalTime = getTotalCookTime(recipe, entity);
++                                }
                                  entity.cookingTimer = (int)Math.ceil(completionRatio * entity.cookingTotalTime);
                              }
  
