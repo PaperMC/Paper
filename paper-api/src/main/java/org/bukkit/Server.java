@@ -1022,32 +1022,44 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     /**
      * Adds a recipe to the crafting manager.
-     * Recipes added with this method won't be sent to the client automatically.
+     * Recipes added with this method will be sent to the client automatically.
      * <p>
      * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @see #addRecipe(Recipe, boolean)
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
      */
     @Contract("null -> false")
-    default boolean addRecipe(@Nullable Recipe recipe) {
-        return this.addRecipe(recipe, false);
-    }
+    boolean addRecipe(@Nullable Recipe recipe);
 
-    // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
-     * @apiNote resendRecipes is ignored for now for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
-     * @param resendRecipes true to update the client with the full set of recipes
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on a recipe added
      */
+    @Deprecated(since = "26.3")
     @Contract("null, _ -> false")
-    boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
-    // Paper end - method to send recipes immediately
+    default boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
+        return this.addRecipe(recipe);
+    }
+
+    /**
+     * Adds multiple recipes to the crafting manager at once, resending recipes only once
+     * after all have been added.
+     *
+     * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
+     * @param recipes the recipes to add
+     * @return true if any recipe was added, false if none were for some reason
+     * @throws IllegalStateException if any of the recipes are already added to the crafting manager
+     * @see #addRecipe
+     */
+    boolean addRecipes(@NotNull Iterable<Recipe> recipes);
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1210,6 +1222,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void resetRecipes();
 
     /**
+     * Checks if the server has a recipe
+     *
+     * @param key NamespacedKey of recipe to check for
+     * @return True if there is a recipe with a matching key
+     */
+    boolean hasRecipe(@NotNull NamespacedKey key);
+
+    /**
      * Remove a recipe from the server.
      *
      * <b>Note that removing a recipe may cause permanent loss of data
@@ -1219,11 +1239,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
      */
-    default boolean removeRecipe(@NotNull NamespacedKey key) {
-        return this.removeRecipe(key, false);
-    }
+    boolean removeRecipe(@NotNull NamespacedKey key);
 
-    // Paper start - method to resend recipes
     /**
      * Remove a recipe from the server.
      * <p>
@@ -1232,12 +1249,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * players).</b>
      *
      * @param key NamespacedKey of recipe to remove.
-     * @param resendRecipes true to update all clients on the new recipe list.
-     *                      Will only update if a recipe was actually removed
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return True if recipe was removed
+     * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
-    boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
-    // Paper end - method to resend recipes
+    @Deprecated(since = "26.3")
+    default boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
+        return this.removeRecipe(key);
+    }
+
+    /**
+     * Remove multiple recipes from the server.
+     *
+     * @apiNote This method differs from {@link #removeRecipe} in that it will only resend the recipe book once instead of once per every recipe removed
+     * @param keys the NamespacedKeys of the recipes to remove
+     * @return true if any recipe was removed, false if none were for some reason
+     * @see #removeRecipe
+     */
+    boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys);
 
     /**
      * Gets a list of command aliases defined in the server properties.
