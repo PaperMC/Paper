@@ -1,5 +1,9 @@
 package org.bukkit.event;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -14,6 +18,16 @@ import org.jetbrains.annotations.NotNull;
  * A list of event handlers, stored per-event. Based on lahwran's fevents.
  */
 public class HandlerList {
+    private static final MethodHandle EVENT_CALL_EVENT;
+
+    static {
+        try {
+            EVENT_CALL_EVENT = MethodHandles.lookup()
+                .findVirtual(Event.class, "callEvent", MethodType.methodType(boolean.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Handler array. This field being an array is the key to this system's
@@ -27,6 +41,9 @@ public class HandlerList {
      * they have changed.
      */
     private final EnumMap<EventPriority, ArrayList<RegisteredListener>> handlerslots;
+
+    public final MutableCallSite callEvent;
+    public final MutableCallSite hasListeners;
 
     /**
      * List of all HandlerLists which have been created, for use in bakeAll()
@@ -111,6 +128,8 @@ public class HandlerList {
         synchronized (allLists) {
             allLists.add(this);
         }
+        this.callEvent = new MutableCallSite(MethodHandles.dropArguments(MethodHandles.constant(boolean.class, true), 0, EVENT_CALL_EVENT.type().parameterList()));
+        this.hasListeners = new MutableCallSite(MethodHandles.constant(boolean.class, false));
     }
 
     /**
@@ -123,6 +142,11 @@ public class HandlerList {
             throw new IllegalStateException("This listener is already registered to priority " + listener.getPriority().toString());
         handlers = null;
         handlerslots.get(listener.getPriority()).add(listener);
+        if (callEvent.getTarget() != EVENT_CALL_EVENT) {
+            callEvent.setTarget(EVENT_CALL_EVENT);
+            hasListeners.setTarget(MethodHandles.constant(boolean.class, true));
+            MutableCallSite.syncAll(new MutableCallSite[]{callEvent, hasListeners});
+        }
     }
 
     /**

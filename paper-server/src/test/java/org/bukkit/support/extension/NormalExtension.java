@@ -1,5 +1,8 @@
 package org.bukkit.support.extension;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MutableCallSite;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.RegistryAccess;
@@ -10,6 +13,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.event.Event;
 import org.bukkit.support.DummyServerHelper;
 import org.bukkit.support.RegistryHelper;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -56,6 +60,16 @@ public class NormalExtension extends BaseExtension {
 
     @Override
     void runBeforeEach(ExtensionContext extensionContext) {
+        try {
+            final Field empty = Event.class.getDeclaredField("EMPTY");
+            empty.trySetAccessible();
+            final Field callEvent = Event.class.getDeclaredField("CALL_EVENT");
+            callEvent.trySetAccessible();
+            final MutableCallSite m = (MutableCallSite) callEvent.get(null);
+            m.setTarget((MethodHandle) empty.get(null));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private <T extends Keyed> Registry<T> createMockBukkitRegistry(Class<T> keyed) {
