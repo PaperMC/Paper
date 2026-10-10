@@ -3,18 +3,17 @@ package org.bukkit.command;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a {@link Command} belonging to a plugin
  *
- * @apiNote plugin developers should prefer to use the
+ * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@ApiStatus.Obsolete(since = "26.3")
+@Deprecated(since = "26.4")
 public final class PluginCommand extends Command implements PluginIdentifiableCommand {
     private final Plugin owningPlugin;
     private CommandExecutor executor;
