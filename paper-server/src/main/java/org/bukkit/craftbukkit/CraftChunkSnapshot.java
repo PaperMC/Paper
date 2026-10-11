@@ -136,14 +136,6 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
             return current.get(x, relativeY, z);
         }
 
-        int highestNonEmpty = this.empty.length - 1;
-        while (highestNonEmpty >= 0 && this.empty[highestNonEmpty]) {
-            highestNonEmpty--;
-        }
-        if (sectionY > highestNonEmpty) {
-            return 15;
-        }
-
         for (int i = sectionY + 1; i < this.skylight.length; i++) {
             DataLayer above = this.skylight[i];
             if (above != null) return above.get(x, 0, z);

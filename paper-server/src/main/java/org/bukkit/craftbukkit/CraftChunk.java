@@ -273,23 +273,24 @@ public class CraftChunk implements Chunk {
         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
         DataLayer[] sectionSkyLights = includeLightData ? new DataLayer[cs.length] : null;
         DataLayer[] sectionEmitLights = includeLightData ? new DataLayer[cs.length] : null;
+        boolean onlyEmpty = true;
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
 
-        for (int i = 0; i < cs.length; i++) {
+        for (int i = cs.length - 1; i >= 0; i--) {
 
-            // Paper start - Fix ChunkSnapshot#isSectionEmpty(int); and remove codec usage
-            sectionEmpty[i] = cs[i].hasOnlyAir(); // fix sectionEmpty array not being filled
-            if (!sectionEmpty[i]) {
-                sectionBlockIDs[i] = cs[i].getStates().copy(); // use copy instead of round tripping with codecs
-            } else {
+            boolean empty = sectionEmpty[i] = cs[i].hasOnlyAir();
+            if (empty) {
                 sectionBlockIDs[i] = CraftChunk.emptyBlockIDs; // use cached instance for empty block sections
+            } else {
+                sectionBlockIDs[i] = cs[i].getStates().copy(); // use copy instead
             }
-            // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
             if (includeLightData) {
+                onlyEmpty &= empty;
                 if (this.level.dimensionType().hasSkyLight()) {
-                    sectionSkyLights[i] = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.SKY, i);
+                    DataLayer sky = FeatureHooks.copyLightDataLayer(this.level, chunk, LightLayer.SKY, i);
+                    sectionSkyLights[i] = onlyEmpty && sky == null ? CraftChunk.FULL_LIGHT : sky;
                 } else {
                     sectionSkyLights[i] = CraftChunk.EMPTY_LIGHT;
                 }
