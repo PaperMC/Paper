@@ -136,14 +136,16 @@ public interface Villager extends AbstractVillager {
      * @param location the location of the bed
      * @return whether the sleep was successful
      */
-    public boolean sleep(@NotNull Location location);
+    @Override
+    boolean sleep(@NotNull Location location);
 
     /**
      * Causes this villager to wake up if he's currently sleeping.
      *
      * @throws IllegalStateException if not sleeping
      */
-    public void wakeup();
+    @Override
+    void wakeup();
 
     /**
      * Causes this villager to shake his head.
