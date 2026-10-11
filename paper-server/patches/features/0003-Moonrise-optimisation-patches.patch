@@ -24477,7 +24477,7 @@ index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a
 +
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608206a685a 100644
+index ae0c88af0658030319facb0153e5b97dc217a034..e68c826eb7b6b9d67ffaa4a5e1d148ef703f7c2d 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -24666,7 +24666,7 @@ index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
-@@ -214,35 +162,31 @@ public final class FeatureHooks {
+@@ -214,40 +162,108 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
@@ -24708,7 +24708,85 @@ index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
+     public static java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> getChunkGenerationStateAsync(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        // Paper start - rewrite chunk system
++        final java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> ret = new java.util.concurrent.CompletableFuture<>();
++
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler scheduler = level.moonrise$getChunkTaskScheduler();
++
++        // a chunk that is loaded to full is up to date, as it will be saved at the current version
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = scheduler.chunkHolderManager.getChunkHolder(chunkX, chunkZ);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.ChunkCompletion completion = holder == null ? null : holder.getLastChunkCompletion();
++        if (completion != null && completion.genStatus() == net.minecraft.world.level.chunk.status.ChunkStatus.FULL) {
++            ret.complete(io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED);
++            return ret;
++        }
++
++        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadDataAsync(
++            level, chunkX, chunkZ,
++            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA,
++            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag data, final Throwable throwable) -> {
++                // complete off of the I/O thread so that callbacks cannot stall I/O
++                scheduler.loadExecutor.createTask(() -> {
++                    if (throwable != null) {
++                        ret.completeExceptionally(throwable);
++                        return;
++                    }
++                    try {
++                        ret.complete(getChunkGenerationState(data, chunkX, chunkZ));
++                    } catch (final Throwable thr) {
++                        ret.completeExceptionally(thr);
++                    }
++                }, ca.spottedleaf.concurrentutil.util.Priority.NORMAL).queue();
++            },
++            false
++        );
++
++        return ret;
++        // Paper end - rewrite chunk system
++    }
++
++    // Paper start - rewrite chunk system
++    private static io.papermc.paper.world.chunk.ChunkGenerationState getChunkGenerationState(final net.minecraft.nbt.CompoundTag data, final int chunkX, final int chunkZ) {
++        if (data == null) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.NOT_GENERATED;
++        }
++
++        final int dataVersion = net.minecraft.nbt.NbtUtils.getDataVersion(data, -1);
++        final int currentVersion = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
++        if (dataVersion > currentVersion) {
++            throw new IllegalStateException("Chunk (" + chunkX + ", " + chunkZ + ") was saved by a newer version (data version " + dataVersion + ", current " + currentVersion + ")");
++        }
++        if (dataVersion < currentVersion) {
++            // status may not be accurate before the data is upgraded, and loading will rewrite the chunk regardless
++            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED_OUTDATED;
++        }
++
++        if (data.getIntOr(net.minecraft.world.level.chunk.storage.SerializableChunkData.X_POS_TAG, 0) != chunkX
++            || data.getIntOr(net.minecraft.world.level.chunk.storage.SerializableChunkData.Z_POS_TAG, 0) != chunkZ) {
++            // loading will relocate the chunk
++            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED_OUTDATED;
++        }
++
++        final net.minecraft.world.level.chunk.status.ChunkStatus status = data.read("Status", net.minecraft.world.level.chunk.status.ChunkStatus.CODEC).orElse(net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
++        final net.minecraft.world.level.levelgen.BelowZeroRetrogen retrogen = data.read("below_zero_retrogen", net.minecraft.world.level.levelgen.BelowZeroRetrogen.CODEC).orElse(null);
++        if (retrogen == null) {
++            return status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)
++                ? io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED
++                : io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
++        }
++        // upgraded pre-1.18 chunks are stored with an empty status, and their original status as the retrogen target;
++        // pre-1.18 full chunks get a target of heightmaps, later remapped to spawn
++        if (status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL) || retrogen.targetStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN)) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED_OUTDATED;
++        }
++        return io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
+     }
++    // Paper end - rewrite chunk system
+ 
      public static void flushAsyncAppenders() {
+         // Paper start - add explicit flush method
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..d86bd11e0155f767c3bf66ac05fa4acf6d2bfccb
@@ -30536,7 +30614,7 @@ index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc74
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0783cbf27 100644
+index 1b992081db53711161235da364b97aff8116581b..066a43d178464c265da29c765be15a36c1c0b739 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
