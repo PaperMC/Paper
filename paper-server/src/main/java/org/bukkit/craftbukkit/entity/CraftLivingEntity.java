@@ -783,8 +783,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
         Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
 
-        this.getHandle().startSleeping(CraftLocation.toBlockPos(location));
-        return true;
+        return this.getHandle().startSleeping(CraftLocation.toBlockPos(location));
     }
 
     @Override
