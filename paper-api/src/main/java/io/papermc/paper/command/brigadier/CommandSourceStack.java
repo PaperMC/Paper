@@ -151,30 +151,6 @@ public interface CommandSourceStack {
 
     /**
      * Sends a system message with the MiniMessage format to the {@link #getSender()}, admins, and console indicating
-     * successful command execution according to vanilla semantics.
-     *
-     * <p>This currently includes checking for environments with suppressed output,
-     * {@link GameRules#SEND_COMMAND_FEEDBACK}, and {@link GameRules#LOG_ADMIN_COMMANDS}.</p>
-     *
-     * <p>See <a href="https://docs.papermc.io/adventure/minimessage/">MiniMessage docs</a> and
-     * <a href="https://docs.papermc.io/adventure/minimessage/dynamic-replacements/">MiniMessage Placeholders docs</a>
-     * for more information on the format.</p>
-     *
-     * <p>This method provides the {@link CommandSender} of this command as a {@link net.kyori.adventure.pointer.Pointered}
-     * to the MiniMessage {@link MiniMessage#deserialize(String, Pointered, TagResolver...)} method.</p>
-     *
-     * @param message the MiniMessage message to send
-     * @param allowInformingAdmins whether admins and console may be informed of this success
-     * @param resolvers resolvers to use
-     * @throws IllegalArgumentException if the message is null
-     */
-    default void sendRichSuccess(String message, boolean allowInformingAdmins, TagResolver... resolvers) {
-        Preconditions.checkArgument(message != null, "message cannot be null.");
-        this.sendSuccess(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers), allowInformingAdmins);
-    }
-
-    /**
-     * Sends a system message with the MiniMessage format to the {@link #getSender()}, admins, and console indicating
      * successful command execution according to vanilla semantics. This method informs admins and the console of
      * this success.
      *
@@ -194,7 +170,8 @@ public interface CommandSourceStack {
      * @throws IllegalArgumentException if the message is null
      */
     default void sendRichSuccess(String message, TagResolver... resolvers) {
-        this.sendRichSuccess(message, true, resolvers);
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.sendSuccess(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers), true);
     }
 
     /**
