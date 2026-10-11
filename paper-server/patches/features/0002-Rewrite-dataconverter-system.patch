@@ -18212,7 +18212,7 @@ index 0000000000000000000000000000000000000000..e6a2f29b20aa6d7cd431fc63c2d8ed70
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f72096b3c2
+index 0000000000000000000000000000000000000000..2c4cc929984e03ddd509bea4ad5643a9b9cbb0ec
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java
 @@ -0,0 +1,205 @@
@@ -18266,12 +18266,12 @@ index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f7
 +                        continue;
 +                    }
 +
-+                    final String poolElement = child.getString("pool_element");
-+                    if (!"minecraft:feature_pool_element".equals(poolElement)) {
++                    final MapType poolElement = child.getMap("pool_element");
++                    if (poolElement == null || !"minecraft:feature_pool_element".equals(poolElement.getString("element_type"))) {
 +                        continue;
 +                    }
 +
-+                    final MapType feature = child.getMap("feature");
++                    final MapType feature = poolElement.getMap("feature");
 +                    if (feature == null) {
 +                        continue;
 +                    }
@@ -18279,7 +18279,7 @@ index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f7
 +                    final String replacement = convertToString(feature);
 +
 +                    if (replacement != null) {
-+                        child.setString("feature", replacement);
++                        poolElement.setString("feature", replacement);
 +                    }
 +                }
 +
@@ -28137,17 +28137,22 @@ index 0000000000000000000000000000000000000000..eb2f1f913fbc02aa3e01f36d11ddf8fc
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3443c948c59bd1808667603642f9eb126e447be
+index 0000000000000000000000000000000000000000..2ee438b5b8bed4cf6d7bdaa110206f0d4f148fc2
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,148 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
++import ca.spottedleaf.converter.datatypes.DataWalker;
++import ca.spottedleaf.converter.types.ListType;
 +import ca.spottedleaf.converter.types.MapType;
++import ca.spottedleaf.converter.types.ObjectType;
 +import ca.spottedleaf.converter.util.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
 +import org.jspecify.annotations.NullMarked;
 +import org.jspecify.annotations.Nullable;
 +
@@ -28169,6 +28174,117 @@ index 0000000000000000000000000000000000000000..e3443c948c59bd1808667603642f9eb1
 +                return null;
 +            }
 +        });
++
++        // previous version: 1466
++        MCTypeRegistry.STRUCTURE_FEATURE.addStructureWalker(VERSION, new DataWalker<>() {
++            @Override
++            public @Nullable MapType walk(final MapType data, final long fromVersion, final long toVersion) {
++                final ListType list = data.getList("Children", ObjectType.MAP);
++                if (list != null) {
++                    for (int i = 0, len = list.size(); i < len; ++i) {
++                        final MapType child = list.getMap(i);
++
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CA", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CB", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CC", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CD", fromVersion, toVersion);
++
++                        walkPoolElement(child.getMap("pool_element"), fromVersion, toVersion);
++                    }
++                }
++
++                WalkerUtils.convert(MCTypeRegistry.BIOME, data, "biome", fromVersion, toVersion);
++
++                return null;
++            }
++        });
++    }
++
++    private static void walkPoolElement(final @Nullable MapType element, final long fromVersion, final long toVersion) {
++        if (element == null) {
++            return;
++        }
++
++        final ListType elements = element.getList("elements", ObjectType.MAP);
++        if (elements != null) {
++            for (int i = 0, len = elements.size(); i < len; ++i) {
++                walkPoolElement(elements.getMap(i), fromVersion, toVersion);
++            }
++        }
++
++        final Object processors = element.getGeneric("processors");
++        if (processors instanceof ListType list) {
++            walkProcessors(list, fromVersion, toVersion);
++        } else if (processors instanceof MapType map) {
++            walkProcessors(map.getList("processors", ObjectType.MAP), fromVersion, toVersion);
++        }
++    }
++
++    private static void walkProcessors(final @Nullable ListType processors, final long fromVersion, final long toVersion) {
++        if (processors == null) {
++            return;
++        }
++
++        for (int i = 0, len = processors.size(); i < len; ++i) {
++            walkProcessor(processors.getMap(i, null), fromVersion, toVersion);
++        }
++    }
++
++    private static void walkProcessor(final @Nullable MapType processor, final long fromVersion, final long toVersion) {
++        if (processor == null) {
++            return;
++        }
++
++        switch (NamespaceUtil.correctNamespace(processor.getString("processor_type", ""))) {
++            case "minecraft:rule": {
++                final ListType rules = processor.getList("rules", ObjectType.MAP);
++                if (rules == null) {
++                    break;
++                }
++
++                for (int i = 0, len = rules.size(); i < len; ++i) {
++                    final MapType rule = rules.getMap(i);
++
++                    walkRuleTest(rule.getMap("input_predicate"), fromVersion, toVersion);
++                    walkRuleTest(rule.getMap("location_predicate"), fromVersion, toVersion);
++                    WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, rule, "output_state", fromVersion, toVersion);
++                }
++                break;
++            }
++            case "minecraft:block_ignore": {
++                WalkerUtils.convertList(MCTypeRegistry.BLOCK_STATE, processor, "blocks", fromVersion, toVersion);
++                break;
++            }
++            case "minecraft:capped": {
++                walkProcessor(processor.getMap("delegate"), fromVersion, toVersion);
++                break;
++            }
++            default: {
++                break;
++            }
++        }
++    }
++
++    private static void walkRuleTest(final @Nullable MapType test, final long fromVersion, final long toVersion) {
++        if (test == null) {
++            return;
++        }
++
++        switch (NamespaceUtil.correctNamespace(test.getString("predicate_type", ""))) {
++            case "minecraft:block_match":
++            case "minecraft:random_block_match": {
++                WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, test, "block", fromVersion, toVersion);
++                break;
++            }
++            case "minecraft:blockstate_match":
++            case "minecraft:random_blockstate_match": {
++                WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, test, "block_state", fromVersion, toVersion);
++                break;
++            }
++            default: {
++                break;
++            }
++        }
 +    }
 +
 +    private V5006() {}
