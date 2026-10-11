@@ -9,6 +9,7 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.PaperRegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import java.util.Objects;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
@@ -25,16 +26,20 @@ import org.jspecify.annotations.Nullable;
 
 public class Conversions {
 
-    public static Conversions STATIC = new Conversions(new RegistryOps.HolderLookupAdapter(RegistryLayer.STATIC_ACCESS));
-
     private static @Nullable Conversions globalInstance;
+
     public static Conversions global() {
-        if (globalInstance == null) {
-            final RegistryAccess globalAccess = CraftRegistry.getMinecraftRegistry();
-            Preconditions.checkState(globalAccess != null, "Global registry access is not available");
-            globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(globalAccess));
-        }
-        return globalInstance;
+        return Objects.requireNonNull(globalInstance, "Global conversions not yet defined");
+    }
+
+    public static void initStaticConversions() {
+        globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(RegistryLayer.STATIC_ACCESS));
+    }
+
+    public static void initGlobalConversions() {
+        final RegistryAccess globalAccess = CraftRegistry.getMinecraftRegistry();
+        Preconditions.checkState(globalAccess != null, "Global registry access is not available");
+        globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(globalAccess));
     }
 
     private final RegistryOps.RegistryInfoLookup lookup;

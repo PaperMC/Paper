@@ -10,6 +10,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.util.FormattedCharSequence;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +25,10 @@ public final class AdventureComponent implements net.minecraft.network.chat.Comp
     public net.minecraft.network.chat.Component deepConverted() {
         net.minecraft.network.chat.Component vanilla = this.vanilla;
         if (vanilla == null) {
-            vanilla = Conversions.STATIC.asVanilla(this.adventure);
+            if (CraftRegistry.getMinecraftRegistry() == null) {
+                return Conversions.global().asVanilla(this.adventure);
+            }
+            vanilla = PaperAdventure.WRAPPER_AWARE_SERIALIZER.serialize(this.adventure);
             this.vanilla = vanilla;
         }
         return vanilla;
