@@ -24477,7 +24477,7 @@ index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a
 +
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index ae0c88af0658030319facb0153e5b97dc217a034..e68c826eb7b6b9d67ffaa4a5e1d148ef703f7c2d 100644
+index b711c1fba85d866a2cae702e26942744da5d744e..5f83bbfd509d74bfeb16db56a5594b9da0fd0a24 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -24666,7 +24666,7 @@ index ae0c88af0658030319facb0153e5b97dc217a034..e68c826eb7b6b9d67ffaa4a5e1d148ef
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
-@@ -214,40 +162,108 @@ public final class FeatureHooks {
+@@ -214,44 +162,144 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
@@ -24708,39 +24708,66 @@ index ae0c88af0658030319facb0153e5b97dc217a034..e68c826eb7b6b9d67ffaa4a5e1d148ef
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
-     public static java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> getChunkGenerationStateAsync(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
+     public static io.papermc.paper.world.chunk.ChunkGenerationState getChunkGenerationState(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
 -        throw new UnsupportedOperationException("Not implemented yet");
 +        // Paper start - rewrite chunk system
-+        final java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> ret = new java.util.concurrent.CompletableFuture<>();
-+
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler scheduler = level.moonrise$getChunkTaskScheduler();
-+
-+        // a chunk that is loaded to full is up to date, as it will be saved at the current version
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = scheduler.chunkHolderManager.getChunkHolder(chunkX, chunkZ);
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.ChunkCompletion completion = holder == null ? null : holder.getLastChunkCompletion();
-+        if (completion != null && completion.genStatus() == net.minecraft.world.level.chunk.status.ChunkStatus.FULL) {
-+            ret.complete(io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED);
-+            return ret;
++        final io.papermc.paper.world.chunk.ChunkGenerationState loaded = getLoadedChunkGenerationState(level, chunkX, chunkZ);
++        if (loaded != null) {
++            return loaded;
 +        }
 +
++        // only hand the data off on the I/O thread, and classify it on the waiting thread
++        final java.util.concurrent.CompletableFuture<net.minecraft.nbt.CompoundTag> data = new java.util.concurrent.CompletableFuture<>();
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadDataAsync(
 +            level, chunkX, chunkZ,
 +            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA,
-+            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag data, final Throwable throwable) -> {
-+                // complete off of the I/O thread so that callbacks cannot stall I/O
-+                scheduler.loadExecutor.createTask(() -> {
++            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag tag, final Throwable throwable) -> {
++                if (throwable != null) {
++                    data.completeExceptionally(throwable);
++                } else {
++                    data.complete(tag);
++                }
++            },
++            true, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.getIOBlockingPriorityForCurrentThread()
++        );
++
++        final net.minecraft.nbt.CompoundTag tag;
++        try {
++            tag = data.join();
++        } catch (final java.util.concurrent.CompletionException ex) {
++            throw new RuntimeException("Failed to read chunk data at (" + chunkX + ", " + chunkZ + ")", ex.getCause());
++        }
++        return classifyChunkGenerationState(tag, chunkX, chunkZ);
++        // Paper end - rewrite chunk system
+     }
+ 
+     public static java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> getChunkGenerationStateAsync(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        // Paper start - rewrite chunk system
++        final io.papermc.paper.world.chunk.ChunkGenerationState loaded = getLoadedChunkGenerationState(level, chunkX, chunkZ);
++        if (loaded != null) {
++            return java.util.concurrent.CompletableFuture.completedFuture(loaded);
++        }
++
++        final java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> ret = new java.util.concurrent.CompletableFuture<>();
++        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadDataAsync(
++            level, chunkX, chunkZ,
++            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA,
++            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag tag, final Throwable throwable) -> {
++                // classify and complete off of the I/O thread so that neither the classification nor callbacks stall I/O
++                level.moonrise$getChunkTaskScheduler().loadExecutor.createTask(() -> {
 +                    if (throwable != null) {
 +                        ret.completeExceptionally(throwable);
 +                        return;
 +                    }
 +                    try {
-+                        ret.complete(getChunkGenerationState(data, chunkX, chunkZ));
++                        ret.complete(classifyChunkGenerationState(tag, chunkX, chunkZ));
 +                    } catch (final Throwable thr) {
 +                        ret.completeExceptionally(thr);
 +                    }
 +                }, ca.spottedleaf.concurrentutil.util.Priority.NORMAL).queue();
 +            },
-+            false
++            false, ca.spottedleaf.concurrentutil.util.Priority.NORMAL
 +        );
 +
 +        return ret;
@@ -24748,7 +24775,17 @@ index ae0c88af0658030319facb0153e5b97dc217a034..e68c826eb7b6b9d67ffaa4a5e1d148ef
 +    }
 +
 +    // Paper start - rewrite chunk system
-+    private static io.papermc.paper.world.chunk.ChunkGenerationState getChunkGenerationState(final net.minecraft.nbt.CompoundTag data, final int chunkX, final int chunkZ) {
++    private static io.papermc.paper.world.chunk.ChunkGenerationState getLoadedChunkGenerationState(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
++        // a chunk that is loaded to full is up to date, as it will be saved at the current version
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = level.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkX, chunkZ);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.ChunkCompletion completion = holder == null ? null : holder.getLastChunkCompletion();
++        if (completion != null && completion.genStatus() == net.minecraft.world.level.chunk.status.ChunkStatus.FULL) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED;
++        }
++        return null;
++    }
++
++    private static io.papermc.paper.world.chunk.ChunkGenerationState classifyChunkGenerationState(final net.minecraft.nbt.CompoundTag data, final int chunkX, final int chunkZ) {
 +        if (data == null) {
 +            return io.papermc.paper.world.chunk.ChunkGenerationState.NOT_GENERATED;
 +        }

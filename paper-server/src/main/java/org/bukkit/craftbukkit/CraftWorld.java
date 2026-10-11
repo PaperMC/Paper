@@ -430,6 +430,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public ChunkGenerationState getChunkGenerationState(final int x, final int z) {
+        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
+        return FeatureHooks.getChunkGenerationState(this.world, x, z);
+    }
+
+    @Override
     public CompletableFuture<ChunkGenerationState> getChunkGenerationStateAsync(final int x, final int z) {
         warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
         return FeatureHooks.getChunkGenerationStateAsync(this.world, x, z);
