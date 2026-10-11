@@ -112,11 +112,11 @@ public interface CommandSourceStack {
      * @param resolvers resolvers to use
      * @throws IllegalArgumentException if the message is null
      */
-    default void sendRichReply(String message, TagResolver... resolvers) {
+    default void sendRichReply(final String message, final TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendReply(MiniMessage.miniMessage().deserialize(
             message,
-            this.getExecutor() instanceof Player player ? player : this.getSender(),
+            this.getExecutor() instanceof final Player player ? player : this.getSender(),
             resolvers
         ));
     }
@@ -145,7 +145,7 @@ public interface CommandSourceStack {
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
      * @throws IllegalArgumentException if the message is null
      */
-    default void sendSuccess(ComponentLike message) {
+    default void sendSuccess(final ComponentLike message) {
         this.sendSuccess(message, true);
     }
 
@@ -169,7 +169,7 @@ public interface CommandSourceStack {
      * @see #sendSuccess(ComponentLike, boolean) to disable if admins and console should be informed
      * @throws IllegalArgumentException if the message is null
      */
-    default void sendRichSuccess(String message, TagResolver... resolvers) {
+    default void sendRichSuccess(final String message, final TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendSuccess(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers), true);
     }
@@ -202,7 +202,7 @@ public interface CommandSourceStack {
      * @param resolvers resolvers to use
      * @throws IllegalArgumentException if the message is null
      */
-    default void sendRichFailure(String message, TagResolver... resolvers) {
+    default void sendRichFailure(final String message, final TagResolver... resolvers) {
         Preconditions.checkArgument(message != null, "message cannot be null.");
         this.sendFailure(MiniMessage.miniMessage().deserialize(message, this.getSender(), resolvers));
     }
