@@ -398,6 +398,28 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Checks the generation state of the {@link Chunk} at the specified coordinates
+     * without loading it, blocking until the state is known.
+     *
+     * <p>
+     * This may read chunk data from disk, which blocks the calling thread. Prefer
+     * {@link #getChunkGenerationStateAsync(int, int)} where possible.
+     * </p>
+     *
+     * <p>
+     * The result is a snapshot: the chunk may be generated, loaded, or saved
+     * concurrently, so the state may be stale by the time it is observed.
+     * </p>
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return the generation state of the chunk
+     * @throws RuntimeException if the chunk data cannot be read, or if it was saved
+     *     by a newer version of the game
+     */
+    @NotNull ChunkGenerationState getChunkGenerationState(int x, int z);
+
+    /**
+     * Checks the generation state of the {@link Chunk} at the specified coordinates
      * without loading it.
      *
      * <p>
@@ -408,6 +430,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * The returned future is completed on an unspecified thread. Callers that need to
      * interact with the world should move to the appropriate thread themselves.
+     * </p>
+     *
+     * <p>
+     * If the main thread will block on the result, use {@link #getChunkGenerationState(int, int)}
+     * instead, which reads the chunk data at a priority suitable for blocking.
      * </p>
      *
      * <p>
