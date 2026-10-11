@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data.dialog;
 
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.item.ItemStackTemplate;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.action.DialogActionCallback;
 import io.papermc.paper.registry.data.dialog.body.ItemDialogBody;
@@ -23,7 +24,6 @@ import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -55,7 +55,7 @@ public interface DialogInstancesProvider {
     DialogAction.CustomClickAction customClick(Key id, @Nullable BinaryTagHolder additions);
 
     // bodies
-    ItemDialogBody.Builder itemDialogBodyBuilder(ItemStack itemStack);
+    ItemDialogBody.Builder itemDialogBodyBuilder(ItemStackTemplate template);
 
     PlainMessageDialogBody plainMessageDialogBody(Component component);
 

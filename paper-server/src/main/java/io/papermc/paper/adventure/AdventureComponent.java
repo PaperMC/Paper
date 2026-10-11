@@ -1,6 +1,7 @@
 package io.papermc.paper.adventure;
 
 import java.util.List;
+import io.papermc.paper.registry.data.util.Conversions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -23,7 +24,7 @@ public final class AdventureComponent implements net.minecraft.network.chat.Comp
     public net.minecraft.network.chat.Component deepConverted() {
         net.minecraft.network.chat.Component vanilla = this.vanilla;
         if (vanilla == null) {
-            vanilla = PaperAdventure.WRAPPER_AWARE_SERIALIZER.serialize(this.adventure);
+            vanilla = Conversions.STATIC.asVanilla(this.adventure);
             this.vanilla = vanilla;
         }
         return vanilla;

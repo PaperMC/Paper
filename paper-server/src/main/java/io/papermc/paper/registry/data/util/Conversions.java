@@ -17,12 +17,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.RegistryLayer;
 import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 public class Conversions {
+
+    public static Conversions STATIC = new Conversions(new RegistryOps.HolderLookupAdapter(RegistryLayer.STATIC_ACCESS));
 
     private static @Nullable Conversions globalInstance;
     public static Conversions global() {
