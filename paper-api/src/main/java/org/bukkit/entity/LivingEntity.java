@@ -845,9 +845,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Attempts to make the entity sleep at the given location.
      * <br>
-     * The location must be in the entity's current world. A bed is not
-     * required; if a bed is present at the location, it will be marked as
-     * occupied. For players, the vanilla sleeping checks apply, see
+     * The location must be in the entity's current world and have a bed placed
+     * at the location. The bed will be marked as occupied. For players, the
+     * vanilla sleeping checks apply, see
      * {@link HumanEntity#sleep(Location, boolean)}.
      *
      * @param location the location to sleep at
