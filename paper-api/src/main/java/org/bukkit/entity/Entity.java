@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.RemovalReason;
+import io.papermc.paper.math.Angle;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -22,6 +24,7 @@ import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
@@ -135,8 +138,19 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
     public void setRotation(float yaw, float pitch);
+
+    /**
+     * Sets the entity's rotation.
+     * <p>
+     * Note that if the entity is affected by AI, it may override this rotation.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(@NotNull Angle yaw, @NotNull Angle pitch);
 
     // Paper start - Teleport API
     /**
@@ -489,6 +503,19 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public void remove();
 
     /**
+     * Gets the cause used for this entity's remove event.
+     *
+     * @return the remove event cause, or null if this entity has not been removed or no event cause was supplied
+     */
+    @Nullable
+    EntityRemoveEvent.Cause getRemoveEventCause();
+
+    /**
+     * {@return the reason this entity was removed}
+     */
+    @Nullable RemovalReason getRemovalReason();
+
+    /**
      * Returns true if this entity has been marked for removal.
      *
      * @return True if it is dead.
@@ -645,6 +672,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @Nullable
     public EntityDamageEvent getLastDamageCause();
+
+    /**
+     * Gets the item being used as a weapon by this entity.
+     * <p>
+     * Note: In most cases this is the item in the entity's main hand, but
+     * it may be the offhand if for ex: the entity is using the riptide
+     * enchantment on a trident.
+     *
+     * @return The weapon item
+     */
+    @Nullable ItemStack getWeapon();
 
     /**
      * Returns a unique and persistent id for this entity
@@ -882,6 +920,27 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param gravity whether gravity should apply
      */
     void setGravity(boolean gravity);
+
+    /**
+     * Returns the default acceleration due to gravity (in blocks per tick). Ignores {@link Entity#hasGravity()}.
+     *
+     * @return the default acceleration due to gravity
+     */
+    double getDefaultGravity();
+
+    /**
+     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is false, returns 0.
+     *
+     * @return the acceleration due to gravity
+     */
+    double getGravity();
+
+    /**
+     * Returns the air drag factor applied to this entity.
+     *
+     * @return the air drag factor
+     */
+    float getAirDrag();
 
     /**
      * Gets the period of time (in ticks) before this entity can use a portal.

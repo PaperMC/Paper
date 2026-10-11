@@ -13,7 +13,6 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -28,7 +27,6 @@ public interface TrimPattern extends Keyed, Translatable {
      * @param value a consumer for the builder factory
      * @return the created trim pattern
      */
-    @ApiStatus.Experimental
     static TrimPattern create(final Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createTrimPattern(value);
     }

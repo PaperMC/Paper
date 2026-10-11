@@ -17,7 +17,7 @@ public class MobGoalConverterTest {
     @Test
     public void testBukkitMap() {
         final List<Class<Mob>> classes;
-        try (ScanResult scanResult = new ClassGraph().enableClassInfo().whitelistPackages(Entity.class.getPackageName()).scan()) {
+        try (ScanResult scanResult = new ClassGraph().enableClassInfo().acceptPackages(Entity.class.getPackageName()).scan()) {
             classes = scanResult.getSubclasses(Mob.class.getName()).loadClasses(Mob.class);
         }
 

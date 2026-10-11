@@ -23,8 +23,8 @@ import java.util.UUID;
 @NullMarked
 public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
 
-    public CraftVault(World world, VaultBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftVault(World world, VaultBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftVault(CraftVault state, @Nullable Location location) {
@@ -71,7 +71,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public ItemStack getKeyItem() {
-        return this.getSnapshot().getConfig().keyItem().asBukkitCopy();
+        return CraftItemStack.asBukkitCopy(this.getSnapshot().getConfig().keyItem());
     }
 
     @Override

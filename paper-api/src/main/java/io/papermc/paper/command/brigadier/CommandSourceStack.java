@@ -1,10 +1,12 @@
 package io.papermc.paper.command.brigadier;
 
 import com.mojang.brigadier.RedirectModifier;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -47,6 +49,18 @@ public interface CommandSourceStack {
      * @return entity that executes this command
      */
     @Nullable Entity getExecutor();
+
+    /**
+     * {@return the {@link Player} that is executing this command}
+     * @throws CommandSyntaxException if the {@link #getExecutor() executor} of this command is not a {@link Player}
+     */
+    Player getPlayerOrThrow() throws CommandSyntaxException;
+
+    /**
+     * {@return the {@link Entity} that is executing this command}
+     * @throws CommandSyntaxException if the {@link #getExecutor() executor} of this command is not an {@link Entity}
+     */
+    Entity getEntityOrThrow() throws CommandSyntaxException;
 
     /**
      * Creates a new CommandSourceStack object with a different location for redirecting commands to other nodes.

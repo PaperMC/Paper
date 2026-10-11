@@ -24,7 +24,6 @@ import org.jspecify.annotations.NullMarked;
  * @see Player#openVirtualSign(Position, Side)
  */
 @NullMarked
-@ApiStatus.Experimental
 public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

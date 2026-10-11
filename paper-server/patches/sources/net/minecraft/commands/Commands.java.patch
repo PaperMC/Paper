@@ -1,22 +1,22 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -157,6 +_,7 @@
+@@ -159,6 +_,7 @@
  import org.slf4j.Logger;
  
  public class Commands {
-+    public interface RestrictedMarker { } // Paper - restricted api
++    public interface RestrictedMarker { boolean restricted(); } // Paper - restricted api
      public static final String COMMAND_PREFIX = "/";
      private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -181,6 +_,7 @@
+@@ -183,6 +_,7 @@
  
          @Override
          public boolean isRestricted(final CommandNode<CommandSourceStack> node) {
-+            if (node.getRequirement() instanceof RestrictedMarker) return true; // Paper - restricted api
++            if (node.getRequirement() instanceof RestrictedMarker marker) return marker.restricted(); // Paper - restricted api
              Predicate<CommandSourceStack> requirement = node.getRequirement();
              return !requirement.test(this.noPermissionSource);
          }
-@@ -188,6 +_,11 @@
+@@ -190,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(final Commands.CommandSelection commandSelection, final CommandBuildContext context) {
@@ -28,7 +28,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -300,6 +_,42 @@
+@@ -304,6 +_,42 @@
              UnpublishCommand.register(this.dispatcher);
          }
  
@@ -71,7 +71,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -319,6 +_,13 @@
+@@ -323,6 +_,13 @@
      }
  
      public void performCommand(final ParseResults<CommandSourceStack> command, final String commandString) {
@@ -85,7 +85,7 @@
          CommandSourceStack sender = command.getContext().getSource();
          Profiler.get().push(() -> "/" + commandString);
          ContextChain<CommandSourceStack> commandChain = finishParsing(command, commandString, sender);
-@@ -332,10 +_,12 @@
+@@ -336,10 +_,12 @@
                      )
                  );
              }
@@ -101,7 +101,7 @@
                  StackTraceElement[] stackTrace = e.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -366,7 +_,11 @@
+@@ -370,12 +_,16 @@
              return ContextChain.tryFlatten(command.getContext().build(commandString))
                  .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(command.getReader()));
          } catch (CommandSyntaxException e) {
@@ -114,7 +114,13 @@
              if (e.getInput() != null && e.getCursor() >= 0) {
                  int cursor = Math.min(e.getInput().length(), e.getCursor());
                  MutableComponent context = Component.empty()
-@@ -383,7 +_,17 @@
+                     .withStyle(ChatFormatting.GRAY)
+-                    .withStyle(s -> s.withClickEvent(new ClickEvent.SuggestCommand("/" + commandString)));
++                    .withStyle(s -> s.withClickEvent(new ClickEvent.SuggestCommand("/" + net.minecraft.util.StringUtil.filterText(commandString)))); // Paper - Filter out disallowed control chars
+                 if (cursor > 10) {
+                     context.append(CommonComponents.ELLIPSIS);
+                 }
+@@ -387,7 +_,17 @@
                  }
  
                  context.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -133,7 +139,7 @@
              }
  
              return null;
-@@ -411,19 +_,112 @@
+@@ -415,10 +_,65 @@
      }
  
      public void sendCommands(final ServerPlayer player) {
@@ -146,9 +152,10 @@
 +        // CraftBukkit start
 +        // Register Vanilla commands into builtRoot as before
 +        // Paper start - Perf: Async command map building
-+        // Copy root children to avoid concurrent modification during building
-+        final java.util.Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
-+        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, commandNodes));
++        // Copy root node to avoid concurrent modification during building
++        final RootCommandNode<CommandSourceStack> rootNode = new RootCommandNode<>();
++        this.dispatcher.getRoot().getChildren().forEach(rootNode::addChild);
++        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, rootNode));
 +    }
 +
 +    // Fixed pool, but with discard policy
@@ -162,20 +169,23 @@
 +        new java.util.concurrent.ThreadPoolExecutor.DiscardPolicy()
 +    );
 +
-+    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
++    private void sendAsync(ServerPlayer player, RootCommandNode<CommandSourceStack> dispatcherRoot) {
 +        // Paper end - Perf: Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<CommandSourceStack>> playerCommands = new HashMap<>();
          RootCommandNode<CommandSourceStack> root = new RootCommandNode<>();
-         playerCommands.put(this.dispatcher.getRoot(), root);
+-        playerCommands.put(this.dispatcher.getRoot(), root);
 -        fillUsableCommands(this.dispatcher.getRoot(), root, player.createCommandSourceStack(), playerCommands);
-+        fillUsableCommands(dispatcherRootChildren, root, player.createCommandSourceStack(), playerCommands); // Paper - Perf: Async command map building; pass copy of children
++        // Paper start - Perf: Async command map building; pass copy of root
++        playerCommands.put(dispatcherRoot, root);
++        fillUsableCommands(dispatcherRoot, root, player.createCommandSourceStack(), playerCommands);
++        // Paper end - Perf: Async command map building; pass copy of root
 +
 +        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
-+        for (CommandNode node : root.getChildren()) {
++        for (CommandNode<?> node : root.getChildren()) {
 +            bukkit.add(node.getName());
 +        }
 +        // Paper start - Perf: Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) root, false).callEvent(); // Paper - Brigadier API
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<>(player.getBukkitEntity(), root, false).callEvent(); // Paper - Brigadier API
 +        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
 +            runSync(player, bukkit, root);
 +        });
@@ -183,7 +193,7 @@
 +
 +    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<CommandSourceStack> root) {
 +        // Paper end - Perf: Async command map building
-+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) root, true).callEvent(); // Paper - Brigadier API
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<>(player.getBukkitEntity(), root, true).callEvent(); // Paper - Brigadier API
 +        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
 +        event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
@@ -197,12 +207,10 @@
          player.connection.send(new ClientboundCommandsPacket(root, COMMAND_NODE_INSPECTOR));
      }
  
-     private static <S> void fillUsableCommands(
--        final CommandNode<S> source, final CommandNode<S> target, final S commandFilter, final Map<CommandNode<S>, CommandNode<S>> converted
-+        final java.util.Collection<CommandNode<S>> children, final CommandNode<S> target, final S commandFilter, final Map<CommandNode<S>, CommandNode<S>> converted // Paper - Perf: Async command map building; pass copy of children
+@@ -426,8 +_,49 @@
+         final CommandNode<S> source, final CommandNode<S> target, final S commandFilter, final Map<CommandNode<S>, CommandNode<S>> converted
      ) {
--        for (CommandNode<S> child : source.getChildren()) {
-+        for (CommandNode<S> child : children) { // Paper - Perf: Async command map building; pass copy of children
+         for (CommandNode<S> child : source.getChildren()) {
 +            // Paper start - Brigadier API
 +            if (child.clientNode != null) {
 +                child = child.clientNode;
@@ -249,12 +257,3 @@
                  if (builder.getRedirect() != null) {
                      builder.redirect(converted.get(builder.getRedirect()));
                  }
-@@ -432,7 +_,7 @@
-                 converted.put(child, node);
-                 target.addChild(node);
-                 if (!child.getChildren().isEmpty()) {
--                    fillUsableCommands(child, node, commandFilter, converted);
-+                    fillUsableCommands(child.getChildren(), node, commandFilter, converted); // Paper - Perf: Async command map building; pass copy of children
-                 }
-             }
-         }

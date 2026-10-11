@@ -97,7 +97,23 @@ public interface Commands extends Registrar {
      * @return a new predicate with restricted execution behavior
      */
     static Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        return InternalAPIBridge.get().restricted(predicate);
+        return InternalAPIBridge.get().restricted(predicate, true);
+    }
+
+    /**
+     * Creates an unrestricted {@link Predicate} that wraps the given predicate.
+     * <p>
+     * A restricted predicate prevents execution in unattended contexts, such as from chat click events.
+     * Unrestricting prevents the warning shown on the client before executing the command.
+     * <p>
+     * This is used by vanilla to prevent invocation of sensitive commands (like op) from
+     * players without their knowledge.
+     *
+     * @param predicate the original predicate to wrap
+     * @return a new predicate with unrestricted execution behavior
+     */
+    static Predicate<CommandSourceStack> unrestricted(final Predicate<CommandSourceStack> predicate) {
+        return InternalAPIBridge.get().restricted(predicate, false);
     }
 
     /**
@@ -119,7 +135,6 @@ public interface Commands extends Registrar {
      *
      * @return the dispatcher instance
      */
-    @ApiStatus.Experimental
     CommandDispatcher<CommandSourceStack> getDispatcher();
 
     /**
