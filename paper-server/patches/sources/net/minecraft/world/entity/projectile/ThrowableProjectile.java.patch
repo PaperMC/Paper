@@ -1,11 +1,84 @@
 --- a/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 +++ b/net/minecraft/world/entity/projectile/ThrowableProjectile.java
-@@ -60,7 +_,7 @@
+@@ -12,6 +_,9 @@
+ 
+ public abstract class ThrowableProjectile extends Projectile {
+     private static final float MIN_CAMERA_DISTANCE_SQUARED = 12.25F;
++    public boolean legacyFlight = false;
++    private int legacyAirTicks;
++    private @org.jspecify.annotations.Nullable Vec3 legacyImpactOrigin;
+ 
+     protected ThrowableProjectile(final EntityType<? extends ThrowableProjectile> type, final Level level) {
+         super(type, level);
+@@ -45,9 +_,15 @@
+     @Override
+     public void tick() {
+         this.handleFirstTickBubbleColumn();
+-        this.applyGravity();
+-        this.applyInertia();
+-        HitResult result = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
++        Vec3 legacyOrigin = this.legacyFlight ? this.position() : null;
++        if (this.legacyFlight) {
++            super.tick();
++            this.legacyAirTicks++;
++        } else {
++            this.applyGravity();
++            this.applyInertia();
++        }
++        HitResult result = this.legacyFlight ? this.findLegacyHit() : ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+         Vec3 newPosition;
+         if (result.getType() != HitResult.Type.MISS) {
+             newPosition = result.getLocation();
+@@ -58,10 +_,41 @@
+         this.setPos(newPosition);
+         this.updateRotation();
          this.applyEffectsFromBlocks();
-         super.tick();
+-        super.tick();
++        if (!this.legacyFlight) super.tick();
          if (result.getType() != HitResult.Type.MISS && this.isAlive()) {
 -            this.hitTargetOrDeflectSelf(result);
-+            this.preHitTargetOrDeflectSelf(result); // CraftBukkit - projectile hit event
-         }
+-        }
++            this.legacyImpactOrigin = legacyOrigin;
++            try {
++                this.preHitTargetOrDeflectSelf(result); // CraftBukkit - projectile hit event
++            } finally {
++                this.legacyImpactOrigin = null;
++            }
++        }
++        if (this.legacyFlight) {
++            this.applyInertia();
++            this.applyGravity();
++        }
++    }
++
++    public @org.jspecify.annotations.Nullable Vec3 getLegacyImpactOrigin() {
++        return this.legacyImpactOrigin;
++    }
++
++    @Override
++    protected boolean canCollideWithOwner(final net.minecraft.world.entity.Entity owner, final net.minecraft.world.entity.Entity entity) {
++        return this.legacyFlight ? entity != owner || this.legacyAirTicks >= 5 : super.canCollideWithOwner(owner, entity);
++    }
++
++    @Override
++    protected void addAdditionalSaveData(final net.minecraft.world.level.storage.ValueOutput output) {
++        super.addAdditionalSaveData(output);
++        if (this.legacyFlight) output.putBoolean("LegacyFlight", true);
++    }
++
++    @Override
++    protected void readAdditionalSaveData(final net.minecraft.world.level.storage.ValueInput input) {
++        super.readAdditionalSaveData(input);
++        this.legacyFlight = input.getBooleanOr("LegacyFlight", false);
++        this.legacyAirTicks = 0;
      }
  
+     private void applyInertia() {
+@@ -109,6 +_,6 @@
+ 
+     @Override
+     protected double getDefaultGravity() {
+-        return 0.03;
++        return this.legacyFlight ? (double) 0.03F : 0.03;
+     }
+ }

@@ -74,6 +74,46 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
 
+    /**
+     * Selects 1.7.10-style combat physics for this player. Disabled by default.
+     * Classic explosion damage uses the legacy integer curve. Small velocity
+     * components use the legacy cutoff and jumps replace vertical velocity. Base knockback
+     * halves all velocity axes even in the air, attack bonuses
+     * add an impulse, and melee velocity is delivered by the native tracker.
+     * Spear, mace-smash and shield-block impulses retain native physics.
+     * Native damage acceptance, resistance attributes and knockback/velocity
+     * events remain authoritative. This runtime setting is not persisted.
+     *
+     * @param legacyCombat whether to use legacy combat physics
+     */
+    void setLegacyCombat(boolean legacyCombat);
+
+    /**
+     * Gets whether this player uses legacy combat physics.
+     *
+     * @return legacy combat physics enabled
+     */
+    boolean hasLegacyCombat();
+
+    /**
+     * Controls off-hand equipment eligibility, player-inventory menu placement
+     * and automatic merging into stored off-hand items. Enabled by default.
+     * Disabling this runtime setting does not
+     * remove stored items or prevent their pickup. Other inventory mutations,
+     * hand-swap and creative actions remain governed by their native events.
+     * The setting is copied when this player respawns and is not persisted.
+     *
+     * @param enabled whether off-hand equipment is enabled
+     */
+    void setOffHandEnabled(boolean enabled);
+
+    /**
+     * Gets whether off-hand equipment is enabled for this player.
+     *
+     * @return whether off-hand placement is enabled
+     */
+    boolean isOffHandEnabled();
+
     // Paper start
     @Override
     default net.kyori.adventure.identity.Identity identity() {

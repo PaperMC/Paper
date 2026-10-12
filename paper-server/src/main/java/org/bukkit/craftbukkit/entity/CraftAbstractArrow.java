@@ -28,6 +28,16 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     }
 
     @Override
+    public void setLegacyFlight(boolean legacyFlight) {
+        this.getHandle().legacyFlight = legacyFlight;
+    }
+
+    @Override
+    public boolean hasLegacyFlight() {
+        return this.getHandle().legacyFlight;
+    }
+
+    @Override
     public void setKnockbackStrength(int knockbackStrength) {
     }
 

@@ -26,4 +26,14 @@ public abstract class CraftThrowableProjectile extends CraftProjectile implement
     public void setItem(ItemStack item) {
         this.getHandle().setItem(CraftItemStack.asNMSCopy(item));
     }
+    @Override
+    public void setLegacyFlight(boolean legacyFlight) {
+        this.getHandle().legacyFlight = legacyFlight;
+    }
+
+    @Override
+    public boolean hasLegacyFlight() {
+        return this.getHandle().legacyFlight;
+    }
+
 }

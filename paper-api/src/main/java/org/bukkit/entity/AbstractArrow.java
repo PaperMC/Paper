@@ -13,6 +13,29 @@ import org.jetbrains.annotations.Unmodifiable;
 public interface AbstractArrow extends Projectile {
 
     /**
+     * Enables Minecraft 1.7-style flight for this arrow only. Disabled by default.
+     * This selects the nearest ray intersection against a constant 0.3-block
+     * entity margin, permits owner collision from the fifth airborne tick, and
+     * applies water drag after movement. Native collision, damage, visibility,
+     * protection and knockback events remain authoritative.
+     * <p>
+     * Launch position, initial velocity and combat balance remain the caller's
+     * responsibility. The setting survives chunk unloads; airborne owner-immunity
+     * age resets on load, as in the legacy implementation.
+     * Apply before insertion into the world for a complete flight.
+     *
+     * @param legacyFlight whether to use legacy flight
+     */
+    void setLegacyFlight(boolean legacyFlight);
+
+    /**
+     * Returns whether this arrow uses legacy flight.
+     *
+     * @return legacy flight enabled
+     */
+    boolean hasLegacyFlight();
+
+    /**
      * Gets the knockback strength for an arrow, which is the
      * {@link org.bukkit.enchantments.Enchantment#KNOCKBACK KnockBack} level
      * of the bow that shot it.

@@ -147,7 +147,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(final HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-@@ -313,16 +_,36 @@
+@@ -313,17 +_,92 @@
      }
  
      protected void onHitBlock(final BlockHitResult hitResult) {
@@ -172,6 +172,7 @@
          }
  
          Entity owner = this.getOwner();
+-        return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
 +        // Paper start - Cancel hit for vanished entities
 +        if (owner instanceof net.minecraft.server.level.ServerPlayer) {
 +            org.bukkit.entity.Entity collided = entity.getBukkitEntity();
@@ -181,9 +182,65 @@
 +            }
 +        }
 +        // Paper end - Cancel hit for vanished entities
-         return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
++        return owner == null || this.canCollideWithOwner(owner, entity);
++    }
++
++    // Opt-in legacy projectile flight can replace only the owner-immunity rule, after all
++    // native eligibility and Paper visibility checks have passed.
++    protected boolean canCollideWithOwner(final Entity owner, final Entity entity) {
++        return this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
++    }
++
++    protected final HitResult findLegacyHit() {
++        Vec3 from = this.position();
++        Vec3 to = from.add(this.getDeltaMovement());
++        HitResult result = this.level().clipIncludingBorder(new net.minecraft.world.level.ClipContext(from, to,
++            net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
++        Vec3 endpoint = result.getType() == HitResult.Type.MISS ? to : result.getLocation();
++        double nearestDistance = Double.MAX_VALUE;
++        for (Entity target : this.level().getEntities(this, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0), this::canHitEntity)) {
++            Vec3 intersection = legacyClip(target.getBoundingBox().inflate((double) 0.3F), from, endpoint);
++            if (intersection != null) {
++                double distance = from.distanceToSqr(intersection);
++                if (distance < nearestDistance) {
++                    nearestDistance = distance;
++                    result = new EntityHitResult(target, intersection);
++                }
++            }
++        }
++        return result;
++    }
++
++    protected static @Nullable Vec3 legacyClip(final AABB bounds, final Vec3 from, final Vec3 to) {
++        Vec3 delta = to.subtract(from);
++        Vec3 nearest = null;
++        double nearestDistance = Double.MAX_VALUE;
++        for (int face = 0; face < 6; face++) {
++            int axis = face / 2;
++            double component = axis == 0 ? delta.x : axis == 1 ? delta.y : delta.z;
++            if (component * component < (double) 1.0E-7F) continue;
++            double origin = axis == 0 ? from.x : axis == 1 ? from.y : from.z;
++            double plane = axis == 0 ? (face % 2 == 0 ? bounds.minX : bounds.maxX)
++                : axis == 1 ? (face % 2 == 0 ? bounds.minY : bounds.maxY)
++                : (face % 2 == 0 ? bounds.minZ : bounds.maxZ);
++            double t = (plane - origin) / component;
++            if (t < 0.0 || t > 1.0) continue;
++            Vec3 candidate = from.add(delta.scale(t));
++            boolean within = axis == 0 ? candidate.y >= bounds.minY && candidate.y <= bounds.maxY && candidate.z >= bounds.minZ && candidate.z <= bounds.maxZ
++                : axis == 1 ? candidate.x >= bounds.minX && candidate.x <= bounds.maxX && candidate.z >= bounds.minZ && candidate.z <= bounds.maxZ
++                : candidate.x >= bounds.minX && candidate.x <= bounds.maxX && candidate.y >= bounds.minY && candidate.y <= bounds.maxY;
++            if (within) {
++                double distance = from.distanceToSqr(candidate);
++                if (distance < nearestDistance) {
++                    nearestDistance = distance;
++                    nearest = candidate;
++                }
++            }
++        }
++        return nearest;
      }
  
+     protected void updateRotation() {
 @@ -334,13 +_,7 @@
      }
  

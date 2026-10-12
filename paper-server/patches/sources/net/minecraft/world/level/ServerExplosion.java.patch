@@ -51,7 +51,7 @@
                              }
  
                              xp += xd * 0.3F;
-@@ -178,8 +_,9 @@
+@@ -178,29 +_,68 @@
              int y1 = Mth.floor(this.center.y + doubleRadius + 1.0);
              int z0 = Mth.floor(this.center.z - doubleRadius - 1.0);
              int z1 = Mth.floor(this.center.z + doubleRadius + 1.0);
@@ -60,10 +60,14 @@
 -            for (Entity entity : this.level.getEntities(this.source, new AABB(x0, y0, z0, x1, y1, z1))) {
 +            for (Entity entity : list) { // Paper - used in loop
                  if (!entity.ignoreExplosion(this)) {
-                     double dist = Math.sqrt(entity.distanceToSqr(this.center)) / doubleRadius;
+-                    double dist = Math.sqrt(entity.distanceToSqr(this.center)) / doubleRadius;
++                    boolean legacyPhysics = this.damageCalculator.usesLegacyPhysics(this, entity);
++                    double dist = this.damageCalculator.getEntityDistance(this, entity) / doubleRadius;
                      if (!(dist > 1.0)) {
-@@ -187,20 +_,56 @@
-                         Vec3 direction = entityOrigin.subtract(this.center).normalize();
+-                        Vec3 entityOrigin = entity instanceof PrimedTnt ? entity.position() : entity.getEyePosition();
+-                        Vec3 direction = entityOrigin.subtract(this.center).normalize();
++                        Vec3 direction = this.damageCalculator.getEntityKnockbackDirection(this, entity);
++                        if (legacyPhysics && direction.equals(Vec3.ZERO)) continue;
                          boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
                          float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
 -                        float exposure = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : getSeenPercent(this.center, entity);
@@ -92,7 +96,8 @@
 +                                    }
 +                                }
 +                            } else {
-+                                entity.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, exposure));
++                                boolean accepted = entity.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, exposure));
++                                if (legacyPhysics && !accepted) continue;
 +                            }
 +
 +                            if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled

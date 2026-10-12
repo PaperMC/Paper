@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/level/ExplosionDamageCalculator.java
++++ b/net/minecraft/world/level/ExplosionDamageCalculator.java
+@@ -30,9 +_,47 @@
+ 
+     public float getEntityDamageAmount(final Explosion explosion, final Entity entity, final float exposure) {
+         float doubleRadius = explosion.radius() * 2.0F;
+-        Vec3 center = explosion.center();
+-        double dist = Math.sqrt(entity.distanceToSqr(center)) / doubleRadius;
++        boolean legacy = this.usesLegacyPhysics(explosion, entity);
++        double dist = this.getEntityDistance(explosion, entity) / doubleRadius;
+         double pow = (1.0 - dist) * exposure;
+-        return (float)((pow * pow + pow) / 2.0 * 7.0 * doubleRadius + 1.0);
++        return legacy
++            ? (float) ((int) ((pow * pow + pow) / 2.0 * 8.0 * doubleRadius + 1.0))
++            : (float) ((pow * pow + pow) / 2.0 * 7.0 * doubleRadius + 1.0);
++    }
++
++    // Generic player opt-in, limited to vanilla's classic explosion sources.
++    // Simple/custom calculators, wind charges and modern explosions
++    // retain their own damage and impulse policy.
++    public boolean usesLegacyPhysics(final Explosion explosion, final Entity entity) {
++        if (!(entity instanceof net.minecraft.world.entity.player.Player player && player.legacyCombat)
++            || this.getClass() != ExplosionDamageCalculator.class && this.getClass() != EntityBasedExplosionDamageCalculator.class) return false;
++        Entity source = explosion.getDirectSourceEntity();
++        if (source == null) {
++            return this.getClass() == ExplosionDamageCalculator.class
++                && explosion instanceof ServerExplosion serverExplosion
++                && serverExplosion.getDamageSource().is(net.minecraft.world.damagesource.DamageTypes.BAD_RESPAWN_POINT);
++        }
++        return source instanceof net.minecraft.world.entity.item.PrimedTnt
++            || source instanceof net.minecraft.world.entity.monster.Creeper
++            || source instanceof net.minecraft.world.entity.vehicle.minecart.MinecartTNT
++            || source instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
++            || source instanceof net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull
++            || source instanceof net.minecraft.world.entity.boss.wither.WitherBoss
++            || source instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal;
++    }
++
++    public double getEntityDistance(final Explosion explosion, final Entity entity) {
++        double distance = Math.sqrt(entity.distanceToSqr(explosion.center()));
++        return this.usesLegacyPhysics(explosion, entity) ? (double) (float) distance : distance;
++    }
++
++    public Vec3 getEntityKnockbackDirection(final Explosion explosion, final Entity entity) {
++        if (this.usesLegacyPhysics(explosion, entity)) {
++            Vec3 delta = new Vec3(entity.getX(), entity.getY() + (double) 1.62F, entity.getZ()).subtract(explosion.center());
++            double length = (double) (float) Math.sqrt(delta.lengthSqr());
++            return length == 0.0 ? Vec3.ZERO : new Vec3(delta.x / length, delta.y / length, delta.z / length);
++        }
++        Vec3 origin = entity instanceof net.minecraft.world.entity.item.PrimedTnt ? entity.position() : entity.getEyePosition();
++        return origin.subtract(explosion.center()).normalize();
+     }
+ }

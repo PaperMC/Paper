@@ -9,10 +9,12 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -172,6 +_,18 @@
+@@ -172,6 +_,20 @@
      private Optional<GlobalPos> lastDeathLocation = Optional.empty();
      public @Nullable FishingHook fishing;
      public float hurtDir;
++    public boolean legacyCombat = false; // Generic opt-in native combat profile
++    public boolean offHandEnabled = true; // Generic player-inventory menu capability
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
 +    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
 +
@@ -28,6 +30,18 @@
  
      public Player(final Level level, final GameProfile gameProfile) {
          super(EntityTypes.PLAYER, level);
+@@ -187,6 +_,11 @@
+         return new PlayerEquipment(this);
+     }
+ 
++    @Override
++    public boolean canUseSlot(final EquipmentSlot slot) {
++        return (slot != EquipmentSlot.OFFHAND || this.offHandEnabled) && super.canUseSlot(slot);
++    }
++
+     public boolean blockActionRestricted(final Level level, final BlockPos pos, final GameType gameType) {
+         if (!gameType.isBlockPlacingRestricted()) {
+             return false;
 @@ -242,6 +_,13 @@
  
          if (this.isSleeping()) {
@@ -310,7 +324,8 @@
 +            // Paper end - Configurable sprint interruption on attack
          }
  
-         if (entity instanceof ServerPlayer serverPlayer && entity.hurtMarked) {
+-        if (entity instanceof ServerPlayer serverPlayer && entity.hurtMarked) {
++        if (entity instanceof ServerPlayer serverPlayer && entity.hurtMarked && (!serverPlayer.legacyCombat || hasModernDamageKnockback(damageSource))) {
 +            // CraftBukkit start - Add Velocity Event
 +            boolean cancelled = false;
 +            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entity.getBukkitEntity();
@@ -482,6 +497,21 @@
              }
          }
      }
+@@ -1808,6 +_,14 @@
+     }
+ 
+     public float getAttackStrengthScale(final float a) {
++        if (this.legacyCombat) {
++            ItemStack held = this.getMainHandItem();
++            if (!held.has(DataComponents.KINETIC_WEAPON) && !held.has(DataComponents.PIERCING_WEAPON)
++                && !(held.getItem() instanceof net.minecraft.world.item.MaceItem)
++                && !(held.getItem() instanceof net.minecraft.world.item.TridentItem)) {
++                return 1.0F; // Classic combat had no attack-speed damage or critical-hit penalty.
++            }
++        }
+         return Mth.clamp((this.attackStrengthTicker + a) / this.getCurrentItemAttackStrengthDelay(), 0.0F, 1.0F);
+     }
+ 
 @@ -1821,10 +_,39 @@
      }
  
@@ -526,7 +556,7 @@
  
      public void resetOnlyAttackStrengthTicker() {
          this.attackStrengthTicker = 0;
-@@ -1857,19 +_,34 @@
+@@ -1857,27 +_,44 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -562,8 +592,10 @@
 +        supportedProjectiles = ((ProjectileWeaponItem)heldWeapon.getItem()).getAllSupportedProjectiles().and(item -> this.tryReadyArrow(heldWeapon, item, anyEventCancelled)); // Paper - PlayerReadyArrowEvent
  
          for (int i = 0; i < this.inventory.getContainerSize(); i++) {
++            if (i == Inventory.SLOT_OFFHAND && !this.canUseSlot(EquipmentSlot.OFFHAND)) continue;
              ItemStack itemStack = this.inventory.getItem(i);
-@@ -1878,6 +_,7 @@
+             if (supportedProjectiles.test(itemStack)) {
+                 return itemStack;
              }
          }
  

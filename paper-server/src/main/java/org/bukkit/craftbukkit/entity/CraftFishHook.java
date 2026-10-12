@@ -246,4 +246,14 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
         return fishingHook.retrieve(itemInHand, hand);
     }
+    @Override
+    public void setLegacyFlight(boolean legacyFlight) {
+        this.getHandle().legacyFlight = legacyFlight;
+    }
+
+    @Override
+    public boolean hasLegacyFlight() {
+        return this.getHandle().legacyFlight;
+    }
+
 }

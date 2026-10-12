@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.Optionull;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityReference;
@@ -15,6 +16,14 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
     @Override
     public net.minecraft.world.entity.projectile.Projectile getHandle() {
         return (net.minecraft.world.entity.projectile.Projectile) this.entity;
+    }
+
+    @Override
+    public void setPositionBeforeSpawn(org.bukkit.Location position) {
+        Preconditions.checkArgument(position != null && this.getWorld().equals(position.getWorld()), "Initial position must be in the projectile's world");
+        position.checkFinite();
+        Preconditions.checkState(!this.getHandle().valid && this.getHandle().tickCount == 0 && this.getHandle().isAlive(), "Projectile has already been inserted or ticked");
+        this.getHandle().setPos(position.getX(), position.getY(), position.getZ());
     }
 
     @Override

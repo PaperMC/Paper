@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownSplashPotion.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownSplashPotion.java
-@@ -38,13 +_,14 @@
+@@ -38,23 +_,45 @@
      }
  
      @Override
@@ -10,21 +10,27 @@
          float durationScale = potionItem.getOrDefault(DataComponents.POTION_DURATION_SCALE, 1.0F);
          Iterable<MobEffectInstance> mobEffects = contents.getAllEffects();
 -        AABB potionAabb = this.getBoundingBox().move(hitResult.getLocation().subtract(this.position()));
-+        AABB potionAabb = hitResult == null ? this.getBoundingBox() : this.getBoundingBox().move(hitResult.getLocation().subtract(this.position())); // Paper - More projectile API
++        net.minecraft.world.phys.Vec3 legacyOrigin = this.legacyFlight ? this.getLegacyImpactOrigin() : null;
++        AABB potionAabb = legacyOrigin != null ? this.getBoundingBox().move(legacyOrigin.subtract(this.position()))
++            : hitResult == null ? this.getBoundingBox() : this.getBoundingBox().move(hitResult.getLocation().subtract(this.position())); // Paper - More projectile API
          AABB effectAabb = potionAabb.inflate(4.0, 2.0, 4.0);
          List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, effectAabb);
 +        java.util.Map<org.bukkit.entity.LivingEntity, Double> affected = new java.util.HashMap<>(); // CraftBukkit
          float margin = ProjectileUtil.computeMargin(this);
          if (!entities.isEmpty()) {
              Entity effectSource = this.getEffectSource();
-@@ -53,8 +_,25 @@
+ 
+             for (LivingEntity entity : entities) {
                  if (entity.isAffectedByPotions()) {
-                     double dist = potionAabb.distanceToSqr(entity.getBoundingBox().inflate(margin));
+-                    double dist = potionAabb.distanceToSqr(entity.getBoundingBox().inflate(margin));
++                    double dist = legacyOrigin != null ? legacyOrigin.distanceToSqr(entity.position())
++                        : potionAabb.distanceToSqr(entity.getBoundingBox().inflate(margin));
                      if (dist < 16.0) {
 -                        double scale = 1.0 - Math.sqrt(dist) / 4.0;
 -
 +                        double scale = 1.0 - Math.sqrt(dist) / 4.0; // Paper - diff on change, used when calling the splash event for water splash potions
 +                        // CraftBukkit start
++                        if (legacyOrigin != null && hitResult instanceof net.minecraft.world.phys.EntityHitResult directHit && directHit.getEntity() == entity) scale = 1.0;
 +                        affected.put(entity.getBukkitLivingEntity(), scale);
 +                    }
 +                }

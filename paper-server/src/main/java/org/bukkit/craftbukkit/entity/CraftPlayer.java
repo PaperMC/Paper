@@ -255,6 +255,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public void setLegacyCombat(boolean legacyCombat) {
+        this.getHandle().legacyCombat = legacyCombat;
+    }
+
+    @Override
+    public boolean hasLegacyCombat() {
+        return this.getHandle().legacyCombat;
+    }
+
+    @Override
+    public void setOffHandEnabled(boolean enabled) {
+        this.getHandle().offHandEnabled = enabled;
+    }
+
+    @Override
+    public boolean isOffHandEnabled() {
+        return this.getHandle().offHandEnabled;
+    }
+
+    @Override
     public ServerPlayer getHandle() {
         return (ServerPlayer) this.entity;
     }

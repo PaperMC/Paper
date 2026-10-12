@@ -1,9 +1,20 @@
 --- a/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/net/minecraft/world/entity/projectile/FishingHook.java
-@@ -70,10 +_,26 @@
+@@ -25,6 +_,7 @@
+ import net.minecraft.world.entity.EntityEvent;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.EntityTypes;
++import net.minecraft.world.entity.EquipmentSlot;
+ import net.minecraft.world.entity.ExperienceOrb;
+ import net.minecraft.world.entity.InterpolationHandler;
+ import net.minecraft.world.entity.MoverType;
+@@ -70,10 +_,29 @@
      private final int lureSpeed;
      private final InterpolationHandler interpolationHandler = new InterpolationHandler(this);
  
++    public boolean legacyFlight = false; // Generic opt-in PvP flight/impact/reel profile
++    private int legacyAirTicks;
++
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
 +    public int minWaitTime = 100;
 +    public int maxWaitTime = 600;
@@ -42,7 +53,11 @@
                      return;
                  }
              } else {
-@@ -176,12 +_,14 @@
+@@ -173,20 +_,24 @@
+             }
+ 
+             boolean isInWater = liquidHeight > 0.0F;
++            if (this.legacyFlight && !this.onGround()) this.legacyAirTicks++;
              if (this.currentState == FishingHook.FishHookState.FLYING) {
                  if (this.hookedIn != null) {
                      this.setDeltaMovement(Vec3.ZERO);
@@ -51,12 +66,20 @@
                      return;
                  }
  
-                 if (isInWater) {
+-                if (isInWater) {
++                if (this.legacyFlight && isInWater) this.checkCollision();
++                if (isInWater && (!this.legacyFlight || this.hookedIn == null)) {
                      this.setDeltaMovement(this.getDeltaMovement().multiply(0.3, 0.2, 0.3));
 +                    new io.papermc.paper.event.entity.FishHookStateChangeEvent((org.bukkit.entity.FishHook) getBukkitEntity(), org.bukkit.entity.FishHook.HookState.BOBBING).callEvent(); // Paper - Add FishHookStateChangeEvent. #BOBBING
                      this.currentState = FishingHook.FishHookState.BOBBING;
                      return;
                  }
+ 
+-                this.checkCollision();
++                if (!this.legacyFlight || !isInWater) this.checkCollision();
+             } else {
+                 if (this.currentState == FishingHook.FishHookState.HOOKED_IN_ENTITY) {
+                     if (this.hookedIn != null) {
 @@ -196,6 +_,7 @@
                              this.setPos(this.hookedIn.getX(), this.hookedIn.getY(0.8), this.hookedIn.getZ());
                          } else {
@@ -65,7 +88,41 @@
                              this.currentState = FishingHook.FishHookState.FLYING;
                          }
                      }
-@@ -262,13 +_,13 @@
+@@ -204,6 +_,14 @@
+                 }
+ 
+                 if (this.currentState == FishingHook.FishHookState.BOBBING) {
++                    if (this.legacyFlight) {
++                        this.checkCollision();
++                        if (this.hookedIn != null) {
++                            new io.papermc.paper.event.entity.FishHookStateChangeEvent((org.bukkit.entity.FishHook) getBukkitEntity(), org.bukkit.entity.FishHook.HookState.HOOKED_ENTITY).callEvent();
++                            this.currentState = FishingHook.FishHookState.HOOKED_IN_ENTITY;
++                            return;
++                        }
++                    }
+                     Vec3 movement = this.getDeltaMovement();
+                     double force = this.getY() + movement.y - blockPos.getY() - liquidHeight;
+                     if (Math.abs(force) < 0.01) {
+@@ -234,6 +_,11 @@
+                 }
+             }
+ 
++            if (this.legacyFlight && this.currentState == FishingHook.FishHookState.FLYING && !fluidState.is(FluidTags.WATER)) {
++                this.moveLegacyAirborne();
++                return;
++            }
++
+             if (!fluidState.is(FluidTags.WATER) && !this.onGround() && this.hookedIn == null) {
+                 this.setDeltaMovement(this.getDeltaMovement().add(0.0, -0.03, 0.0));
+             }
+@@ -256,19 +_,19 @@
+             ItemStack selectedItem = owner.getMainHandItem();
+             ItemStack selectedItemOffHand = owner.getOffhandItem();
+             boolean mainHandIsFishing = selectedItem.is(Items.FISHING_ROD);
+-            boolean offHandIsFishing = selectedItemOffHand.is(Items.FISHING_ROD);
++            boolean offHandIsFishing = owner.canUseSlot(EquipmentSlot.OFFHAND) && selectedItemOffHand.is(Items.FISHING_ROD);
+             if ((mainHandIsFishing || offHandIsFishing) && this.distanceToSqr(owner) <= 1024.0) {
+                 return false;
              }
          }
  
@@ -75,12 +132,40 @@
      }
  
      private void checkCollision() {
-         HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+-        HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
 -        this.hitTargetOrDeflectSelf(hitResult);
++        HitResult hitResult = this.legacyFlight ? this.findLegacyHit() : ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
 +        this.preHitTargetOrDeflectSelf(hitResult);
      }
  
      @Override
+@@ -280,11 +_,26 @@
+     protected void onHitEntity(final EntityHitResult hitResult) {
+         super.onHitEntity(hitResult);
+         if (!this.level().isClientSide()) {
++            if (this.legacyFlight && this.level() instanceof ServerLevel level
++                && !hitResult.getEntity().hurtServer(level, this.damageSources().thrown(this, this.getOwner()), 0.0F)) return;
+             this.setHookedEntity(hitResult.getEntity());
+         }
+     }
+ 
+     @Override
++    protected boolean canCollideWithOwner(final Entity owner, final Entity entity) {
++        return this.legacyFlight ? entity != owner || this.legacyAirTicks >= 5 : super.canCollideWithOwner(owner, entity);
++    }
++
++    private void moveLegacyAirborne() {
++        this.move(MoverType.SELF, this.getDeltaMovement());
++        this.applyEffectsFromBlocks();
++        this.updateRotation();
++        float drag = this.onGround() || this.horizontalCollision ? 0.5F : 0.92F;
++        this.setDeltaMovement(this.getDeltaMovement().add(0.0, -(double) 0.04F, 0.0).scale((double) drag));
++    }
++
++    @Override
+     protected void onHitBlock(final BlockHitResult hitResult) {
+         super.onHitBlock(hitResult);
+         this.setDeltaMovement(this.getDeltaMovement().normalize().scale(hitResult.distanceTo(this)));
 @@ -299,11 +_,11 @@
          ServerLevel serverLevel = (ServerLevel)this.level();
          int fishingSpeed = 1;
@@ -242,6 +327,20 @@
              return dmg;
          } else {
              return 0;
+@@ -507,6 +_,13 @@
+         Entity owner = this.getOwner();
+         if (owner != null) {
+             Vec3 delta = new Vec3(owner.getX() - this.getX(), owner.getY() - this.getY(), owner.getZ() - this.getZ()).scale(0.1);
++            if (this.legacyFlight) {
++                double dx = owner.getX() - this.getX();
++                double dy = owner.getY() - this.getY();
++                double dz = owner.getZ() - this.getZ();
++                double distance = (double) (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
++                delta = delta.add(0.0, (double) (float) Math.sqrt(distance) * 0.08, 0.0);
++            }
+             entity.setDeltaMovement(entity.getDeltaMovement().add(delta));
+         }
+     }
 @@ -517,9 +_,9 @@
      }
  

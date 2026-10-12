@@ -26,6 +26,18 @@
      }
  
      public void setSoundEvent(final SoundEvent soundEvent) {
+@@ -148,6 +_,11 @@
+         entityData.define(IN_GROUND, false);
+     }
+ 
++    // Generic opt-in; item identity, launch and damage policy belong to plugins.
++    public boolean legacyFlight = false;
++    private int legacyAirTicks;
++    private @Nullable Vec3 legacyBlockHitOrigin;
++
+     @Override
+     public void shoot(final double xd, final double yd, final double zd, final float pow, final float uncertainty) {
+         super.shoot(xd, yd, zd, pow, uncertainty);
 @@ -157,7 +_,11 @@
      @Override
      public void lerpMotion(final Vec3 movement) {
@@ -39,7 +51,7 @@
          if (this.isInGround() && movement.lengthSqr() > 0.0) {
              this.setInGround(false);
          }
-@@ -218,6 +_,10 @@
+@@ -218,9 +_,14 @@
                  this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
              }
          } else {
@@ -48,8 +60,51 @@
 +            if (maxArrowDespawnInvulnerability.enabled() && this.tickCount > maxArrowDespawnInvulnerability.intValue()) this.tickDespawn();
 +            // Paper end - tick life regardless after X seconds
              this.inGroundTime = 0;
++            if (this.legacyFlight && physicsEnabled) this.legacyAirTicks++;
              Vec3 originalPosition = this.position();
-             if (this.isInWater()) {
+-            if (this.isInWater()) {
++            if (this.isInWater() && !this.legacyFlight) {
+                 this.applyInertia(this.getWaterInertia());
+                 this.addBubbleParticles(originalPosition);
+             }
+@@ -262,9 +_,7 @@
+                 this.applyEffectsFromBlocks();
+             }
+ 
+-            if (!this.isInWater()) {
+-                this.applyInertia(this.getAirDrag());
+-            }
++            this.applyFlightDrag(originalPosition);
+ 
+             if (physicsEnabled && !this.isInGround()) {
+                 this.applyGravity();
+@@ -279,6 +_,18 @@
+         return 0.99F;
+     }
+ 
++    private void applyFlightDrag(final Vec3 originalPosition) {
++        if (this.legacyFlight && this.isInWater()) {
++            this.applyInertia(0.8F);
++            this.addBubbleParticles(originalPosition);
++        } else if (!this.isInWater()) {
++            this.applyInertia(this.getAirDrag());
++        }
++        // The legacy impact tick applied gravity even after becoming embedded.
++        // Ground ticks never enter this flight helper. Keep the retained release motion.
++        if (this.legacyFlight && this.isInGround() && !this.noPhysics) this.applyGravity();
++    }
++
+     private void stepMoveAndHit(final BlockHitResult blockHitResult) {
+         while (this.isAlive()) {
+             Vec3 initialPosition = this.position();
+@@ -286,6 +_,7 @@
+             entitiesHit.sort(Comparator.comparingDouble(c -> initialPosition.distanceToSqr(c.getEntity().position())));
+             EntityHitResult firstEntityHit = entitiesHit.isEmpty() ? null : entitiesHit.getFirst();
+             Vec3 nextLocation = Objects.requireNonNullElse(firstEntityHit, blockHitResult).getLocation();
++            if (this.legacyFlight) this.legacyBlockHitOrigin = initialPosition;
+             this.setPos(nextLocation);
+             this.applyEffectsFromBlocks(initialPosition, nextLocation);
+             if (this.portalProcess != null && this.portalProcess.isInsidePortalThisTick()) {
 @@ -294,7 +_,7 @@
  
              if (entitiesHit.isEmpty()) {
@@ -68,7 +123,7 @@
              if (!this.isAlive() || deflection != ProjectileDeflection.NONE) {
                  return deflection;
              }
-@@ -343,20 +_,37 @@
+@@ -343,20 +_,38 @@
          }
      }
  
@@ -87,7 +142,8 @@
 +
      @Override
      protected double getDefaultGravity() {
-         return 0.05;
+-        return 0.05;
++        return this.legacyFlight ? (double) 0.05F : 0.05;
      }
  
      private boolean shouldFall() {
@@ -97,6 +153,7 @@
  
      private void startFalling() {
          this.setInGround(false);
++        this.legacyAirTicks = 0;
          Vec3 deltaMovement = this.getDeltaMovement();
          this.setDeltaMovement(deltaMovement.multiply(this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F));
 -        this.life = 0;
@@ -158,7 +215,7 @@
          }
  
          if (entity.hurtOrSimulate(damageSource, damage)) {
-@@ -503,7 +_,7 @@
+@@ -503,18 +_,26 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -167,7 +224,20 @@
              }
          } else {
              entity.setRemainingFireTicks(remainingFireTicks);
-@@ -514,7 +_,7 @@
+-            this.deflect(ProjectileDeflection.REVERSE, entity, this.owner, false);
+-            this.setDeltaMovement(this.getDeltaMovement().scale(0.2));
++            if (this.legacyFlight) {
++                this.setDeltaMovement(this.getDeltaMovement().scale((double) -0.1F));
++                this.setYRot(this.getYRot() + 180.0F);
++                this.yRotO += 180.0F;
++                this.legacyAirTicks = 0;
++                this.needsSync = true;
++            } else {
++                this.deflect(ProjectileDeflection.REVERSE, entity, this.owner, false);
++                this.setDeltaMovement(this.getDeltaMovement().scale(0.2));
++            }
+             if (this.level() instanceof ServerLevel level && this.getDeltaMovement().lengthSqr() < 1.0E-7) {
+                 if (this.pickup == AbstractArrow.Pickup.ALLOWED) {
                      this.spawnAtLocation(level, this.getPickupItem(), 0.1F);
                  }
  
@@ -176,16 +246,110 @@
              }
          }
      }
-@@ -527,7 +_,7 @@
+@@ -525,9 +_,18 @@
+             : 0.0F;
+         if (knockback > 0.0) {
              double knockbackResistance = Math.max(0.0, 1.0 - mob.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
-             Vec3 movement = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(knockback * 0.6 * knockbackResistance);
+-            Vec3 movement = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(knockback * 0.6 * knockbackResistance);
++            Vec3 flight = this.getDeltaMovement();
++            Vec3 movement;
++            if (this.legacyFlight) {
++                float length = (float) Math.sqrt(flight.x * flight.x + flight.z * flight.z);
++                movement = length > 0.0F ? new Vec3(
++                    flight.x * knockback * (double) 0.6F / (double) length * knockbackResistance, 0.0,
++                    flight.z * knockback * (double) 0.6F / (double) length * knockbackResistance) : Vec3.ZERO;
++            } else {
++                movement = flight.multiply(1.0, 0.0, 1.0).normalize().scale(knockback * 0.6 * knockbackResistance);
++            }
              if (movement.lengthSqr() > 0.0) {
 -                mob.push(movement.x, 0.1, movement.z);
 +                mob.push(movement.x, 0.1, movement.z, this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
              }
          }
      }
-@@ -627,7 +_,7 @@
+@@ -542,10 +_,22 @@
+         }
+ 
+         Vec3 movement = this.getDeltaMovement();
+-        Vec3 offsetDirection = new Vec3(Math.signum(movement.x), Math.signum(movement.y), Math.signum(movement.z));
+-        Vec3 scaledMovement = offsetDirection.scale(0.05F);
+-        this.setPos(this.position().subtract(scaledMovement));
+-        this.setDeltaMovement(Vec3.ZERO);
++        if (this.legacyFlight && this.legacyBlockHitOrigin != null) {
++            Vec3 origin = this.legacyBlockHitOrigin;
++            Vec3 hit = hitResult.getLocation();
++            Vec3 segment = new Vec3((float) (hit.x - origin.x), (float) (hit.y - origin.y), (float) (hit.z - origin.z));
++            float length = (float) Math.sqrt(segment.lengthSqr());
++            Vec3 backoff = length > 0.0F ? new Vec3(segment.x / length * (double) 0.05F,
++                segment.y / length * (double) 0.05F, segment.z / length * (double) 0.05F) : Vec3.ZERO;
++            this.setPos(origin.subtract(backoff).add(segment));
++            this.setDeltaMovement(segment);
++            this.legacyBlockHitOrigin = null;
++        } else {
++            Vec3 offsetDirection = new Vec3(Math.signum(movement.x), Math.signum(movement.y), Math.signum(movement.z));
++            Vec3 scaledMovement = offsetDirection.scale(0.05F);
++            this.setPos(this.position().subtract(scaledMovement));
++            this.setDeltaMovement(Vec3.ZERO);
++        }
+         this.playSound(this.getHitGroundSoundEvent(), 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+         this.setInGround(true);
+         this.shakeTime = 7;
+@@ -592,12 +_,40 @@
+     }
+ 
+     protected Collection<EntityHitResult> findHitEntities(final Vec3 from, final Vec3 to) {
++        if (this.legacyFlight) {
++            // The caller clips `to` at the first native block intersection.
++            // Use the nearest ray entry, rather than modern center-distance
++            // ordering or a margin which grows with projectile age.
++            EntityHitResult nearest = null;
++            double nearestDistance = Double.MAX_VALUE;
++            AABB search = this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0);
++            for (Entity target : this.level().getEntities(this, search, this::canHitEntity)) {
++                Vec3 intersection = legacyClip(target.getBoundingBox().inflate((double) 0.3F), from, to);
++                if (intersection != null) {
++                    double distance = from.distanceToSqr(intersection);
++                    if (distance < nearestDistance) {
++                        nearestDistance = distance;
++                        nearest = new EntityHitResult(target, intersection);
++                    }
++                }
++            }
++            // Return one native result. stepMoveAndHit still dispatches the
++            // cancellable projectile-hit event before native damage and Punch.
++            return nearest == null ? java.util.List.of() : java.util.List.of(nearest);
++        }
+         return ProjectileUtil.getManyEntityHitResult(
+             this.level(), this, from, to, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0), this::canHitEntity, false
+         );
+     }
+ 
+     @Override
++    protected boolean canCollideWithOwner(final Entity owner, final Entity entity) {
++        return this.legacyFlight
++            ? entity != owner || this.legacyAirTicks >= 5
++            : super.canCollideWithOwner(owner, entity);
++    }
++
++    @Override
+     protected boolean canHitEntity(final Entity entity) {
+         return !(entity instanceof Player playerEntity && this.getOwner() instanceof Player player && !player.canHarmPlayer(playerEntity))
+             && super.canHitEntity(entity)
+@@ -607,6 +_,7 @@
+     @Override
+     protected void addAdditionalSaveData(final ValueOutput output) {
+         super.addAdditionalSaveData(output);
++        if (this.legacyFlight) output.putBoolean("LegacyFlight", true);
+         output.putShort("life", (short)this.life);
+         output.storeNullable("inBlockState", BlockState.CODEC, this.lastState);
+         output.putByte("shake", (byte)this.shakeTime);
+@@ -623,11 +_,13 @@
+     @Override
+     protected void readAdditionalSaveData(final ValueInput input) {
+         super.readAdditionalSaveData(input);
++        this.legacyFlight = input.getBooleanOr("LegacyFlight", false);
++        this.legacyAirTicks = 0; // Air age was not saved by the legacy arrow either.
+         this.life = input.getShortOr("life", (short)0);
          this.lastState = input.read("inBlockState", BlockState.CODEC).orElse(null);
          this.shakeTime = input.getByteOr("shake", (byte)0) & 255;
          this.setInGround(input.getBooleanOr("inGround", false));

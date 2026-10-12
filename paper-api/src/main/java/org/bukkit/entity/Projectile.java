@@ -9,6 +9,17 @@ import org.jetbrains.annotations.Nullable;
 public interface Projectile extends Entity {
 
     /**
+     * Changes the initial position of an projectile before its native spawn attempt.
+     * Does not insert, teleport, replace or respawn the entity, and leaves the
+     * cancellable native launch/spawn transaction in control.
+     *
+     * @param position finite coordinates in this projectile's world
+     * @throws IllegalArgumentException if the position is invalid or in another world
+     * @throws IllegalStateException if the projectile has already been inserted or ticked
+     */
+    void setPositionBeforeSpawn(@org.jetbrains.annotations.NotNull org.bukkit.Location position);
+
+    /**
      * Retrieve the shooter of this projectile.
      *
      * @return the {@link ProjectileSource} that shot this projectile

@@ -520,7 +520,7 @@
              this.hurtHelmet(source, damage);
              damage *= 0.75F;
          }
-@@ -1214,19 +_,40 @@
+@@ -1214,19 +_,44 @@
              damage = Float.MAX_VALUE;
          }
  
@@ -542,7 +542,9 @@
 +            if (!this.actuallyHurt(level, source, (float)event.getFinalDamage(), event)) { // Paper - fix invulnerability reduction in EntityDamageEvent - no longer subtract lastHurt, that is part of the damage event calc now
 +                return false;
 +            }
-+            if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
++            if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0
++                && !(source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.FishingHook hook && hook.legacyFlight
++                    || source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.ThrowableProjectile thrown && thrown.legacyFlight)) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
 +            // CraftBukkit end
              this.lastHurt = damage;
              tookFullDamage = false;
@@ -555,7 +557,9 @@
 +            if (!this.actuallyHurt(level, source, (float)event.getFinalDamage(), event)) {
 +                return false;
 +            }
-+            if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
++            if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0
++                && !(source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.FishingHook hook && hook.legacyFlight
++                    || source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.ThrowableProjectile thrown && thrown.legacyFlight)) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
              this.lastHurt = damage;
 -            this.invulnerableTime = 20;
 -            this.actuallyHurt(level, source, damage);
@@ -565,7 +569,7 @@
              this.hurtDuration = 10;
              this.hurtTime = this.hurtDuration;
          }
-@@ -1241,7 +_,7 @@
+@@ -1241,30 +_,28 @@
                  level.broadcastDamageEvent(this, source);
              }
  
@@ -574,7 +578,11 @@
                  this.markHurt();
              }
  
-@@ -1252,19 +_,17 @@
+-            if (!source.is(DamageTypeTags.NO_KNOCKBACK)) {
++            if (this.shouldApplyDefaultKnockback(source)) {
+                 this.dealDefaultKnockback(source, damage, blocked);
+             }
+         }
  
          if (this.isDeadOrDying()) {
              if (!this.checkTotemDeathProtection(source)) {
@@ -597,11 +605,56 @@
          if (success) {
              this.lastDamageSource = source;
              this.lastDamageStamp = this.level().getGameTime();
-@@ -1300,13 +_,28 @@
+@@ -1288,7 +_,26 @@
+         return success;
+     }
+ 
++    protected static boolean hasModernDamageKnockback(final DamageSource source) {
++        return source.is(DamageTypes.SPEAR) || source.is(DamageTypes.MACE_SMASH)
++            || source.is(DamageTypes.TRIDENT) || source.is(DamageTypes.WIND_CHARGE)
++            || source.is(DamageTypes.FIREWORKS) || source.is(DamageTypes.SONIC_BOOM);
++    }
++
++    private boolean shouldApplyDefaultKnockback(final DamageSource source) {
++        return !source.is(DamageTypeTags.NO_KNOCKBACK)
++            || this instanceof Player player && player.legacyCombat && source.getEntity() != null
++                && (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
++                && (source.getDirectEntity() instanceof net.minecraft.world.entity.item.PrimedTnt
++                    || source.getDirectEntity() instanceof net.minecraft.world.entity.monster.Creeper
++                    || source.getDirectEntity() instanceof net.minecraft.world.entity.boss.wither.WitherBoss);
++    }
++
+     public void dealDefaultKnockback(final DamageSource source, final float damage, final boolean blocked) {
++        // Legacy damage with no responsible entity had no base knockback.
++        // Native damage acceptance still precedes every base and explosion impulse.
++        if (this instanceof Player player && player.legacyCombat && !hasModernDamageKnockback(source) && source.getEntity() == null) return;
++
+         double xd = 0.0;
+         double zd = 0.0;
+         if (source.getDirectEntity() instanceof Projectile projectile) {
+@@ -1300,13 +_,46 @@
              zd = source.getSourcePosition().z() - this.getZ();
          }
  
 -        this.knockback(0.4F, xd, zd, source, damage);
++        // Legacy arrows retain their shooter for damage attribution and base
++        // knockback; native damage acceptance and both event families still run.
++        if (!hasModernDamageKnockback(source) && (this instanceof Player player && player.legacyCombat
++            || source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow && arrow.legacyFlight)) {
++            Entity owner = source.getEntity();
++            if (owner == null && source.getDirectEntity() instanceof Projectile projectile) {
++                owner = projectile.getOwner() != null ? projectile.getOwner() : projectile;
++            }
++            if (owner != null) {
++                xd = owner.getX() - this.getX();
++                zd = owner.getZ() - this.getZ();
++            }
++            while (xd * xd + zd * zd < 1.0E-4) {
++                xd = (Math.random() - Math.random()) * 0.01;
++                zd = (Math.random() - Math.random()) * 0.01;
++            }
++        }
++
 +        // Paper start - Check distance in entity interactions; see for loop in knockback method
 +        if (Math.abs(xd) > 200) {
 +            xd = Math.random() - Math.random();
@@ -902,14 +955,26 @@
              Vec3 deltaMovement = this.getDeltaMovement();
  
              while (xd * xd + zd * zd < 1.0E-5F) {
-@@ -1651,16 +_,32 @@
+@@ -1650,17 +_,42 @@
+                 zd = (this.random.nextDouble() - this.random.nextDouble()) * 0.01;
              }
  
-             Vec3 deltaVector = new Vec3(xd, 0.0, zd).normalize().scale(power);
+-            Vec3 deltaVector = new Vec3(xd, 0.0, zd).normalize().scale(power);
 -            this.setDeltaMovement(
-+            Vec3 targetMovement = new Vec3( // Paper - knockback events
++            boolean legacyBase = !comesFromEffect && !hasModernDamageKnockback(source)
++                && eventCause != io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK && (this instanceof Player player && player.legacyCombat
++                || source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow && arrow.legacyFlight);
++            double length = legacyBase ? (double) (float) Math.sqrt(xd * xd + zd * zd) : 0.0;
++            Vec3 deltaVector = legacyBase ? new Vec3(xd / length * power, 0.0, zd / length * power)
++                : new Vec3(xd, 0.0, zd).normalize().scale(power);
++            boolean legacyExtra = comesFromEffect && !hasModernDamageKnockback(source) && attacker instanceof Player player && player.legacyCombat
++                && eventCause == io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK;
++            Vec3 targetMovement = legacyExtra ? deltaMovement.add(-xd * power, power > 0.0 ? 0.1 : 0.0, -zd * power) : new Vec3( // Paper - knockback events
                  deltaMovement.x / 2.0 - deltaVector.x,
-                 this.onGround() ? Math.min(0.4, deltaMovement.y / 2.0 + power) : deltaMovement.y,
+-                this.onGround() ? Math.min(0.4, deltaMovement.y / 2.0 + power) : deltaMovement.y,
++                legacyBase
++                    ? Math.min((double) 0.4F, deltaMovement.y / 2.0 + power)
++                    : this.onGround() ? Math.min(0.4, deltaMovement.y / 2.0 + power) : deltaMovement.y,
                  deltaMovement.z / 2.0 - deltaVector.z
              );
 +            // Paper start - knockback events
@@ -954,9 +1019,24 @@
      }
  
      public boolean isLookingAtMe(
-@@ -1805,10 +_,15 @@
+@@ -1790,7 +_,8 @@
+     @Override
+     public boolean causeFallDamage(final double fallDistance, final float damageModifier, final DamageSource damageSource) {
+         double effectiveFallDistance;
+-        if (this.isIgnoringFallDamageFromCurrentImpulse()) {
++        boolean modernImpulse = this.isIgnoringFallDamageFromCurrentImpulse();
++        if (modernImpulse) {
+             effectiveFallDistance = Math.min(fallDistance, this.currentImpulseImpactPos.y - this.getY());
+             boolean hasLandedAboveCurrentImpulseImpactPosY = effectiveFallDistance <= 0.0;
+             if (hasLandedAboveCurrentImpulseImpactPosY) {
+@@ -1803,12 +_,19 @@
+         }
+ 
          boolean damaged = super.causeFallDamage(effectiveFallDistance, damageModifier, damageSource);
-         int dmg = this.calculateFallDamage(effectiveFallDistance, damageModifier);
+-        int dmg = this.calculateFallDamage(effectiveFallDistance, damageModifier);
++        int dmg = modernImpulse && this instanceof Player player && player.legacyCombat
++            ? this.calculateNativeFallDamage(effectiveFallDistance, damageModifier)
++            : this.calculateFallDamage(effectiveFallDistance, damageModifier);
          if (dmg > 0) {
 +            // CraftBukkit start
 +            if (!this.hurtServer((ServerLevel)this.level(), damageSource, (float)dmg)) {
@@ -971,6 +1051,22 @@
              return true;
          } else {
              return damaged;
+@@ -1848,6 +_,15 @@
+     }
+ 
+     protected int calculateFallDamage(final double fallDistance, final float damageModifier) {
++        if (this instanceof Player player && player.legacyCombat && !this.isIgnoringFallDamageFromCurrentImpulse()) {
++            if (this.is(EntityTypeTags.FALL_DAMAGE_IMMUNE)) return 0;
++            double power = (double) (float) fallDistance - this.getAttributeValue(Attributes.SAFE_FALL_DISTANCE);
++            return Mth.ceil(power * damageModifier * this.getAttributeValue(Attributes.FALL_DAMAGE_MULTIPLIER));
++        }
++        return this.calculateNativeFallDamage(fallDistance, damageModifier);
++    }
++
++    private int calculateNativeFallDamage(final double fallDistance, final float damageModifier) {
+         if (this.is(EntityTypeTags.FALL_DAMAGE_IMMUNE)) {
+             return 0;
+         }
 @@ -1905,7 +_,7 @@
  
      protected float getDamageAfterArmorAbsorb(final DamageSource damageSource, float damage) {
@@ -1217,6 +1313,15 @@
      }
  
      protected void updateSwingTime() {
+@@ -2256,7 +_,7 @@
+     }
+ 
+     public boolean isHolding(final Predicate<ItemStack> itemPredicate) {
+-        return itemPredicate.test(this.getMainHandItem()) || itemPredicate.test(this.getOffhandItem());
++        return itemPredicate.test(this.getMainHandItem()) || this.canUseSlot(EquipmentSlot.OFFHAND) && itemPredicate.test(this.getOffhandItem());
+     }
+ 
+     public ItemStack getItemInHand(final InteractionHand hand) {
 @@ -2294,7 +_,13 @@
      }
  
@@ -1232,7 +1337,7 @@
      }
  
      public float getArmorCoverPercentage() {
-@@ -2387,14 +_,27 @@
+@@ -2387,15 +_,30 @@
          return this.hasEffect(MobEffects.JUMP_BOOST) ? 0.1F * (this.getEffect(MobEffects.JUMP_BOOST).getAmplifier() + 1.0F) : 0.0F;
      }
  
@@ -1242,6 +1347,7 @@
          float jumpPower = this.getJumpPower();
          if (!(jumpPower <= 1.0E-5F)) {
              Vec3 movement = this.getDeltaMovement();
+-            this.setDeltaMovement(movement.x, Math.max(jumpPower, movement.y), movement.z);
 +            // Paper start - Prevent excessive velocity through repeated crits
 +            long time = System.nanoTime();
 +            boolean canCrit = true;
@@ -1253,13 +1359,17 @@
 +                }
 +            }
 +            // Paper end - Prevent excessive velocity through repeated crits
-             this.setDeltaMovement(movement.x, Math.max(jumpPower, movement.y), movement.z);
++            this.setDeltaMovement(movement.x, this instanceof net.minecraft.world.entity.player.Player player && player.legacyCombat ? jumpPower : Math.max(jumpPower, movement.y), movement.z);
              if (this.isSprinting()) {
                  float angle = this.getYRot() * Mth.DEG_TO_RAD;
+-                this.addDeltaMovement(new Vec3(-Mth.sin(angle) * 0.2, 0.0, Mth.cos(angle) * 0.2));
 +                if (canCrit) // Paper - Prevent excessive velocity through repeated crits
-                 this.addDeltaMovement(new Vec3(-Mth.sin(angle) * 0.2, 0.0, Mth.cos(angle) * 0.2));
++                this.addDeltaMovement(this instanceof net.minecraft.world.entity.player.Player player && player.legacyCombat
++                    ? new Vec3((double) (-Mth.sin(angle) * 0.2F), 0.0, (double) (Mth.cos(angle) * 0.2F))
++                    : new Vec3(-Mth.sin(angle) * 0.2, 0.0, Mth.cos(angle) * 0.2));
              }
  
+             this.needsSync = true;
 @@ -2597,8 +_,10 @@
      }
  
@@ -1397,6 +1507,35 @@
      }
  
      protected void tickHeadTurn(final float yBodyRotT) {
+@@ -3056,22 +_,24 @@
+         double dx = movement.x;
+         double dy = movement.y;
+         double dz = movement.z;
+-        if (this.is(EntityTypes.PLAYER)) {
++        boolean legacyMovement = this instanceof net.minecraft.world.entity.player.Player player && player.legacyCombat;
++        double movementThreshold = legacyMovement ? 0.005 : 0.003;
++        if (!legacyMovement && this.is(EntityTypes.PLAYER)) {
+             if (movement.horizontalDistanceSqr() < 9.0E-6) {
+                 dx = 0.0;
+                 dz = 0.0;
+             }
+         } else {
+-            if (Math.abs(movement.x) < 0.003) {
++            if (Math.abs(movement.x) < movementThreshold) {
+                 dx = 0.0;
+             }
+ 
+-            if (Math.abs(movement.z) < 0.003) {
++            if (Math.abs(movement.z) < movementThreshold) {
+                 dz = 0.0;
+             }
+         }
+ 
+-        if (Math.abs(movement.y) < 0.003) {
++        if (Math.abs(movement.y) < movementThreshold) {
+             dy = 0.0;
+         }
+ 
 @@ -3104,8 +_,10 @@
              if (!inWaterAndHasFluidHeight || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                  if (!this.isInLava() || this.onGround() && this.isInShallowFluid(FluidTags.LAVA)) {
