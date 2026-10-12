@@ -375,12 +375,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isInvulnerableTo(final org.bukkit.damage.@NonNull DamageSource source) {
+        Preconditions.checkArgument(source != null, "DamageSource cannot be null");
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), ((CraftDamageSource) source).getHandle());
-    }
-
-    @Override
-    public boolean isInvulnerable() {
-        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
     }
 
     @Override

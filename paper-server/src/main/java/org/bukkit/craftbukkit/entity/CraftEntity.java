@@ -922,12 +922,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInvulnerableTo(final @NotNull DamageSource source) {
+        Preconditions.checkArgument(source != null, "DamageSource cannot be null");
         return this.getHandle().isInvulnerableToBase(((CraftDamageSource) source).getHandle());
-    }
-
-    @Override
-    public boolean isInvulnerable() {
-        return this.getHandle().isInvulnerableToBase(this.getHandle().damageSources().generic());
     }
 
     @Override

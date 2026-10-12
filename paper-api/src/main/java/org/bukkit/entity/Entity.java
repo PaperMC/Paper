@@ -23,6 +23,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
 import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
@@ -913,7 +914,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *   Use {@link #isInvulnerableTo(DamageSource)} with {@code DamageSource.builder(DamageType.GENERIC).build()} as a direct replacement to this method.
      */
     @Deprecated(since = "26.3")
-    boolean isInvulnerable();
+    default boolean isInvulnerable() {
+        return this.isInvulnerableTo(DamageSource.builder(DamageType.GENERIC).build());
+    }
 
     /**
      * Gets whether the entity is silent or not.
