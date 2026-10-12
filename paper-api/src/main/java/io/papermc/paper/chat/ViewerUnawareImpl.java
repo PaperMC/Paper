@@ -5,13 +5,11 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @ApiStatus.Internal
 @NullMarked
 sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
     private final ViewerUnaware unaware;
-    private @Nullable Component message;
 
     ViewerUnawareImpl(final ViewerUnaware unaware) {
         this.unaware = unaware;
@@ -24,13 +22,12 @@ sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnawa
 
     @Override
     public Component render(final Player source, final Component sourceDisplayName, final Component message) {
-        if (this.message == null) {
-            this.message = this.unaware.render(source, sourceDisplayName, message);
-        }
-        return this.message;
+        return this.unaware.render(source, sourceDisplayName, message);
     }
 
     static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
+        static final ViewerUnawareImpl.Default INSTANCE = new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
+
         Default(final ViewerUnaware unaware) {
             super(unaware);
         }

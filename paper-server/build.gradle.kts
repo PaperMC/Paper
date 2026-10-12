@@ -8,13 +8,13 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.12"
+    id("io.papermc.fill.gradle") version "1.0.14"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:26.2+build.1")
+    mache("io.papermc:mache:26.3+build.1")
     paperclip("io.papermc:paperclip:3.0.4")
 }
 
@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
+        //oldPaperCommit = "e5fe71723e2ffde7cc9fafc085ac3bb73e63175e"
     }
 }
 
@@ -90,9 +90,9 @@ val log4jPlugins = sourceSets.create("log4jPlugins")
 configurations.named(log4jPlugins.compileClasspathConfigurationName) {
     extendsFrom(configurations.compileClasspath.get())
 }
-val alsoShade: Configuration by configurations.creating
+val alsoShade: Configuration = configurations.create("alsoShade")
 
-val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
+configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
     extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
 }
@@ -110,9 +110,11 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.0.0")
-    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation(platform("ca.spottedleaf.leafpile:bom:1.2.4"))
+    implementation("ca.spottedleaf.leafpile:common")
+    implementation("ca.spottedleaf.leafpile:concurrentutil")
+    implementation("ca.spottedleaf.leafpile:converter")
+    implementation("org.jline:jline-terminal-ffm:4.4.6")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
 
@@ -127,10 +129,10 @@ dependencies {
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
-    implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
+    implementation("com.velocitypowered:velocity-native:4.1.0") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
@@ -156,7 +158,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.152")
+    implementation("me.lucko:spark-paper:1.10.191")
 }
 
 tasks.jar {
@@ -209,7 +211,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
 }
 
-val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
@@ -244,6 +246,16 @@ tasks.test {
     val provider = objects.newInstance<MockitoAgentProvider>()
     provider.fileCollection.from(mockitoAgent)
     jvmArgumentProviders.add(provider)
+
+    // Hides repeated jline/joml warnings due to forking
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    systemProperty("joml.nounsafe", true)
+}
+
+tasks.withType<io.papermc.paperweight.tasks.CreateBundlerJar>().configureEach {
+    extraManifestMainAttributes = mapOf(
+        "Enable-Native-Access" to "ALL-UNNAMED",
+    )
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
@@ -275,7 +287,7 @@ fun TaskContainer.registerRunTask(
         // TODO - JB runtime 25 has issues with spark rn
         // vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    //jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
@@ -289,8 +301,10 @@ fun TaskContainer.registerRunTask(
         systemProperty("disable.watchdog", true)
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
+    systemProperty("paper.alwaysPrintWarningState", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
+    systemProperty("joml.nounsafe", true)
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")

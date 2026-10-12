@@ -90,8 +90,6 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
     public double configMinChunkUnloadFraction(final ServerLevel world);
 
-    public boolean configFixMC159283();
-
     // support for CB chunk mustNotSave
     public boolean forceNoSave(final ChunkAccess chunk);
 
