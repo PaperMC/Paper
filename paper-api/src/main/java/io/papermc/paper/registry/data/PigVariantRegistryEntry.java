@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Pig.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PigVariantRegistryEntry {
 
@@ -59,7 +58,6 @@ public interface PigVariantRegistryEntry {
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends PigVariantRegistryEntry, RegistryBuilder<Pig.Variant> {
 

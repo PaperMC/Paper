@@ -31,6 +31,7 @@ import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.bukkit.plugin.Plugin;
@@ -40,9 +41,31 @@ import org.jspecify.annotations.Nullable;
 public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience, PluginMessageBridgeImpl {
 
     private @Nullable Pointers adventurePointers;
+    private @Nullable Integer internalPluginDefinedEntityId;
 
     public PaperPlayerConfigurationConnection(final ServerConfigurationPacketListenerImpl packetListener) {
         super(packetListener);
+    }
+
+    /**
+     * Internal only API that allows plugins to assign a specific entity network id to the player instance once
+     * configuration phase finishes.
+     * <p>
+     * It is fully up to the calling plugin to ensure that no other entity has or will have the passed entity id.
+     * Additionally, as with any other internal API, no backwards compatibility is guaranteed across versions or builds.
+     * Use at own risk.
+     *
+     * @param entityId the network entity id to assign to the player.
+     */
+    public void setInternalPluginDefinedEntityId(final int entityId) {
+        this.internalPluginDefinedEntityId = entityId;
+    }
+
+    // Part of the above internal API.
+    public void applyPendingEntityId(final ServerPlayer player) {
+        if (this.internalPluginDefinedEntityId != null) {
+            player.setId(this.internalPluginDefinedEntityId);
+        }
     }
 
     @Override

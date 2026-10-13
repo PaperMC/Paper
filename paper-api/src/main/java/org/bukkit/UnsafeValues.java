@@ -2,7 +2,9 @@ package org.bukkit;
 
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.List;
 import java.util.Map;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -13,6 +15,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,26 +53,58 @@ public interface UnsafeValues {
 
     /**
      * Load an advancement represented by the specified string into the server.
-     * The advancement format is governed by Minecraft and has no specified
-     * layout.
-     * <br>
-     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
-     * <br>
+     * The advancement format is governed by Minecraft and has no specified layout.
+     * <p>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement_definition">Minecraft wiki</a>.
+     * <p>
      * Loaded advancements will be stored and persisted across server restarts
      * and reloads.
-     * <br>
-     * Callers should be prepared for {@link Exception} to be thrown.
      *
      * @param key the unique advancement key
      * @param advancement representation of the advancement
-     * @return the loaded advancement or null if an error occurred
+     * @return the loaded advancement or {@code null} if an error occurred
      */
-    Advancement loadAdvancement(NamespacedKey key, String advancement);
+    default @Nullable Advancement loadAdvancement(final NamespacedKey key, @Language("json") final String advancement) {
+        return this.loadAdvancement(key, advancement, true);
+    }
+
+    /**
+     * Load an advancement represented by the specified string into the server.
+     * The advancement format is governed by Minecraft and has no specified layout.
+     * <p>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement_definition">Minecraft wiki</a>.
+     * <p>
+     * Loaded advancements will only be stored and persisted across server restarts
+     * and reloads, if the {@code persist} parameter is set to {@code true}.
+     *
+     * @param key the unique advancement key
+     * @param advancement representation of the advancement
+     * @param persist whether to store this advancement in the bukkit datapack for persistence
+     * @return the loaded advancement or {@code null} if an error occurred
+     */
+    @Nullable Advancement loadAdvancement(Key key, @Language("json") String advancement, boolean persist);
+
+    /**
+     * Load multiple advancements represented by the specified strings into the server.
+     * The advancement format is governed by Minecraft and has no specified layout.
+     * <p>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement_definition">Minecraft wiki</a>.
+     * <p>
+     * Loaded advancements will only be stored and persisted across server restarts
+     * and reloads, if the {@code persist} parameter is set to true.
+     * <p>
+     * Callers should be prepared for {@link Exception} to be thrown.
+     *
+     * @param advancements the advancements to register. The key is the unique advancement key and the value is the advancement's JSON representation
+     * @param persist whether to store this advancement in the bukkit datapack for persistence
+     * @return list of all successfully loaded advancements
+     */
+    List<Advancement> loadAdvancements(Map<Key, String> advancements, boolean persist);
 
     /**
      * Delete an advancement which was loaded and saved by
-     * {@link #loadAdvancement(org.bukkit.NamespacedKey, java.lang.String)}.
-     * <br>
+     * {@link #loadAdvancement(Key, String, boolean)} or {@link #loadAdvancements(Map, boolean)}.
+     * <p>
      * This method will only remove advancement from persistent storage. It
      * should be accompanied by a call to {@link Server#reloadData()} in order
      * to fully remove it from the running instance.
