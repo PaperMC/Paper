@@ -15,6 +15,7 @@ public final class LoggerShutdown {
         ShutdownHooks.runTasks();
 
         try {
+            // This may end up calling AbstractTerminal#close twice which doesn't have any guards for that, consider patching TCA if it becomes an issue
             net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Use TerminalConsoleAppender
         } catch (final Exception ignored) {
         }
