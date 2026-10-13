@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import com.google.common.base.Function;
+import io.papermc.paper.damage.DamageCalculation;
 import java.util.Map;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -47,6 +48,23 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
     @ApiStatus.Internal
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, boolean critical) {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
+        this.damager = damager;
+        this.critical = critical;
+    }
+
+    /**
+     * Creates an entity damage event with a calculation supplied by the server.
+     *
+     * @param damager the damaging entity
+     * @param damagee the damaged entity
+     * @param cause the Bukkit damage cause
+     * @param damageSource the damage source
+     * @param calculation the damage calculation
+     * @param critical whether the hit was critical
+     */
+    @ApiStatus.Internal
+    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final DamageCalculation calculation, final boolean critical) {
+        super(damagee, cause, damageSource, calculation);
         this.damager = damager;
         this.critical = critical;
     }
