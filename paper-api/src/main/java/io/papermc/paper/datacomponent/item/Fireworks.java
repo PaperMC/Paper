@@ -7,14 +7,11 @@ import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Stores all explosions crafted into a Firework Rocket, as well as flight duration.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#FIREWORKS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Fireworks {
 
@@ -47,7 +44,6 @@ public interface Fireworks {
     /**
      * Builder for {@link Fireworks}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Fireworks> {
 

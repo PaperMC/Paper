@@ -1,5 +1,6 @@
 package org.bukkit.tag;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
  */
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags
@@ -29,6 +30,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> BURNS_ARMOR_STANDS = getTag("burns_armor_stands");
 
     public static final Tag<DamageType> BYPASSES_ARMOR = getTag("bypasses_armor");
+
+    public static final Tag<DamageType> BYPASSES_COOLDOWN = getTag("bypasses_cooldown");
 
     public static final Tag<DamageType> BYPASSES_EFFECTS = getTag("bypasses_effects");
 
@@ -71,6 +74,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> NO_IMPACT = getTag("no_impact");
 
     public static final Tag<DamageType> NO_KNOCKBACK = getTag("no_knockback");
+
+    public static final Tag<DamageType> NO_WOLF_RETALIATION = getTag("no_wolf_retaliation");
 
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 

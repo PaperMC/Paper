@@ -26,7 +26,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public ItemStack getItemStack() {
-        return CraftItemStack.asCraftMirror(this.getHandle().getItem());
+        return CraftItemStack.asBukkitMirror(this.getHandle().getItem());
     }
 
     @Override

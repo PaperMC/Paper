@@ -30,23 +30,23 @@
          }
  
          Projectile projectileEntity = super.createProjectile(level, shooter, heldItem, projectile, isCrit);
-@@ -187,7 +_,7 @@
-         if (level instanceof ServerLevel serverLevel) {
+@@ -188,7 +_,7 @@
              ChargedProjectiles charged = weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
              if (charged != null && !charged.isEmpty()) {
--                this.shoot(serverLevel, shooter, hand, weapon, charged.itemCopies(), power, uncertainty, shooter instanceof Player, targetOverride);
-+                this.shoot(serverLevel, shooter, hand, weapon, charged.itemCopies(), power, uncertainty, shooter instanceof Player, targetOverride, 1.0F); // Paper - Pass draw strength
+                 List<ItemStack> projectiles = charged.itemCopies().toList();
+-                this.shoot(serverLevel, shooter, hand, weapon, projectiles, power, uncertainty, shooter instanceof Player, targetOverride);
++                this.shoot(serverLevel, shooter, hand, weapon, projectiles, power, uncertainty, shooter instanceof Player, targetOverride, 1.0F); // Paper - Pass draw strength
                  if (shooter instanceof ServerPlayer player) {
                      CriteriaTriggers.SHOT_CROSSBOW.trigger(player, weapon);
                      player.awardStat(Stats.ITEM_USED.get(weapon.getItem()));
-@@ -227,7 +_,13 @@
+@@ -228,7 +_,13 @@
                      .ifPresent(sound -> level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), sound.value(), SoundSource.PLAYERS, 0.5F, 1.0F));
              }
  
 -            if (tickPercent >= 1.0F && !isCharged(itemStack) && tryLoadProjectiles(entity, itemStack)) {
 +            if (tickPercent >= 1.0F && !isCharged(itemStack)) {
 +                // Paper start - Add EntityLoadCrossbowEvent
-+                final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(entity.getBukkitLivingEntity(), itemStack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(entity.getUsedItemHand()));
++                final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(itemStack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(entity.getUsedItemHand()));
 +                if (!event.callEvent() || !tryLoadProjectiles(entity, itemStack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
 +                    return;
 +                }

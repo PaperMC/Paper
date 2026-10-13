@@ -1079,7 +1079,11 @@ public final class Bukkit {
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public static PluginCommand getPluginCommand(@NotNull String name) {
         return server.getPluginCommand(name);
@@ -1108,14 +1112,14 @@ public final class Bukkit {
 
     /**
      * Adds a recipe to the crafting manager.
-     * Recipes added with this method won't be sent to the client automatically.
+     * Recipes added with this method will be sent to the client automatically.
      * <p>
      * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @see #addRecipe(Recipe, boolean)
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
      */
     @Contract("null -> false")
     public static boolean addRecipe(@Nullable Recipe recipe) {
@@ -1125,14 +1129,30 @@ public final class Bukkit {
     /**
      * Adds a recipe to the crafting manager.
      *
-     * @apiNote resendRecipes is ignored at the moment for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
-     * @param resendRecipes true to update the client with the full set of recipes
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on a recipe added
      */
+    @Deprecated(since = "26.3")
     @Contract("null, _ -> false")
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
-        return server.addRecipe(recipe, resendRecipes);
+        return server.addRecipe(recipe);
+    }
+
+    /**
+     * Adds multiple recipes to the crafting manager at once, resending recipes only once
+     * after all have been added.
+     *
+     * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
+     * @param recipes the recipes to add
+     * @return true if any recipe was added, false if none were for some reason
+     * @throws IllegalStateException if any of the recipes are already added to the crafting manager
+     * @see #addRecipe
+     */
+    public static boolean addRecipes(@NotNull Iterable<Recipe> recipes) {
+        return server.addRecipes(recipes);
     }
 
     /**
@@ -1313,8 +1333,18 @@ public final class Bukkit {
     }
 
     /**
-     * Remove a recipe from the server.
+     * Checks if the server has a recipe
      *
+     * @param key NamespacedKey of recipe to check for
+     * @return True if there is a recipe with a matching key
+     */
+    public static boolean hasRecipe(@NotNull NamespacedKey key) {
+        return server.hasRecipe(key);
+    }
+
+    /**
+     * Remove a recipe from the server.
+     * <br>
      * <b>Note that removing a recipe may cause permanent loss of data
      * associated with that recipe (eg whether it has been discovered by
      * players).</b>
@@ -1326,7 +1356,6 @@ public final class Bukkit {
         return server.removeRecipe(key);
     }
 
-    // Paper start - method to resend recipes
     /**
      * Remove a recipe from the server.
      * <p>
@@ -1335,14 +1364,26 @@ public final class Bukkit {
      * players).</b>
      *
      * @param key NamespacedKey of recipe to remove.
-     * @param resendRecipes true to update all clients on the new recipe list.
-     *                      Will only update if a recipe was actually removed
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return True if recipe was removed
+     * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
+    @Deprecated(since = "26.3")
     public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
-        return server.removeRecipe(key, resendRecipes);
+        return server.removeRecipe(key);
     }
-    // Paper end - method to resend recipes
+
+    /**
+     * Remove multiple recipes from the server.
+     *
+     * @apiNote This method differs from {@link #removeRecipe} in that it will only resend the recipe book once instead of once per every recipe removed
+     * @param keys the NamespacedKeys of the recipes to remove
+     * @return true if any recipe was removed, false if none were for some reason
+     * @see #removeRecipe
+     */
+    public static boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys) {
+        return server.removeRecipes(keys);
+    }
 
     /**
      * Gets a list of command aliases defined in the server properties.
@@ -1367,11 +1408,7 @@ public final class Bukkit {
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
-     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
-     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
-     * via events or third-party plugin APIs.
      */
-    @Deprecated(since = "1.21.4", forRemoval = true)
     public static void setSpawnRadius(int value) {
         server.setSpawnRadius(value);
     }
@@ -2148,7 +2185,6 @@ public final class Bukkit {
      * @return the server's links
      */
     @NotNull
-    @ApiStatus.Experimental
     public static ServerLinks getServerLinks() {
         return server.getServerLinks();
     }
@@ -2659,7 +2695,11 @@ public final class Bukkit {
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     public static org.bukkit.command.CommandMap getCommandMap() {
         return server.getCommandMap();
@@ -2831,7 +2871,11 @@ public final class Bukkit {
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
         return server.getPotionBrewer();
     }

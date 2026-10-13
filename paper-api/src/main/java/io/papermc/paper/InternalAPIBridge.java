@@ -5,6 +5,7 @@ import com.destroystokyo.paper.util.VersionFetcher;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.persistence.PersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.util.Services;
@@ -29,12 +31,13 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -44,7 +47,6 @@ import org.jspecify.annotations.Nullable;
  * cause issues when called under unexpected circumstances.
  */
 @ApiStatus.Internal
-@NullMarked
 public interface InternalAPIBridge {
 
     /**
@@ -54,6 +56,7 @@ public interface InternalAPIBridge {
      */
     static InternalAPIBridge get() {
         class Holder {
+
             public static final InternalAPIBridge INSTANCE = Services.service(InternalAPIBridge.class).orElseThrow();
         }
 
@@ -69,14 +72,15 @@ public interface InternalAPIBridge {
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 
     /**
-     * Causes this predicate to be considered restricted.
-     * Applying this to a command node prevents this command from being executed from an
-     * unattended context, such as click events.
+     * Allows overriding default restricted check.
+     * Applying this to a command node forcefully prevents or permits this command to be
+     * executed from an unattended context, such as click events.
      *
-     * @param predicate wrapped predicate
+     * @param predicate  wrapped predicate
+     * @param restricted restricted status of the predicate
      * @return wrapped predicate
      */
-    Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
+    Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate, boolean restricted);
 
     ResolvableProfile defaultMannequinProfile();
 
@@ -96,6 +100,8 @@ public interface InternalAPIBridge {
     DamageEffect getDamageEffect(String key);
 
     String getTranslationKey(EntityType entityType);
+
+    SpawnCategory getSpawnCategory(EntityType entityType);
 
     /*
      * Called once by the version command on first use, then cached.
@@ -119,4 +125,6 @@ public interface InternalAPIBridge {
     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
 
     ComponentFlattener componentFlattener();
+
+    <C> PersistentDataKey<C> createPersistentDataKey(Key key, PersistentDataType<?, C> type);
 }

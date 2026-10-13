@@ -1,41 +1,25 @@
 package io.papermc.paper.registry.data;
 
-import io.papermc.paper.datacomponent.item.Equippable;
 import io.papermc.paper.registry.RegistryBuilder;
-import java.util.Map;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.inventory.meta.trim.TrimMaterial} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface TrimMaterialRegistryEntry {
 
     /**
-     * Provides the base asset path for the trim material.
+     * Provides the palette texture id to be used for this trim material.
      *
-     * @return the base asset path
+     * @return the palette texture id
      */
     @Contract(pure = true)
-    @KeyPattern.Value String baseAssetPath();
-
-    /**
-     * An immutable map of asset path overrides for the trim material.
-     * <p>
-     * The key is the identifier of the asset, and the value is the path to the asset.
-     *
-     * @return the asset path overrides
-     * @see Equippable#assetId()
-     */
-    @Contract(pure = true)
-    @Unmodifiable Map<Key, String> assetPathOverrides();
+    Key paletteId();
 
     /**
      * Provides the description of the trim material.
@@ -50,33 +34,22 @@ public interface TrimMaterialRegistryEntry {
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #baseAssetPath(String)}</li>
+     *     <li>{@link #paletteId(Key)}</li>
      *     <li>{@link #description(Component)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends TrimMaterialRegistryEntry, RegistryBuilder<TrimMaterial> {
 
         /**
-         * Sets the base asset path for the trim material.
+         * Sets the palette texture id to be used for this trim material.
          *
-         * @param baseAssetPath the base asset path
+         * @param paletteId the palette texture id
          * @return this builder instance
-         * @see #baseAssetPath()
+         * @see #paletteId()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder baseAssetPath(@KeyPattern.Value String baseAssetPath);
-
-        /**
-         * Sets the asset path overrides for the trim material.
-         *
-         * @param assetPathOverrides the asset path overrides
-         * @return this builder instance
-         * @see #assetPathOverrides()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder assetPathOverrides(Map<Key, String> assetPathOverrides);
+        Builder paletteId(Key paletteId);
 
         /**
          * Sets the description for the trim material.

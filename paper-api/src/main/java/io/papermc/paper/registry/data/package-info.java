@@ -7,6 +7,8 @@
  * exposed during registry creation/modification.
  */
 @NullMarked
+@MinecraftVersionDependent
 package io.papermc.paper.registry.data;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.jspecify.annotations.NullMarked;

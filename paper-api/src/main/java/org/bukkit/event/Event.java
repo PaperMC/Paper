@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class Event {
 
-    private String name;
     private final boolean isAsync;
 
     /**
@@ -60,10 +59,7 @@ public abstract class Event {
      */
     @NotNull
     public String getEventName() {
-        if (this.name == null) {
-            this.name = this.getClass().getSimpleName();
-        }
-        return this.name;
+        return this.getClass().getSimpleName();
     }
 
     @NotNull
