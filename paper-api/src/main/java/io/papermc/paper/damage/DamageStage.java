@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.function.DoubleUnaryOperator;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * One stage in an entity damage calculation. A stage contributes a signed
@@ -18,7 +18,7 @@ public final class DamageStage {
     private final DamageCalculation calculation;
     private final Key key;
     private final DoubleUnaryOperator formula;
-    private DoubleUnaryOperator edits;
+    private @Nullable DoubleUnaryOperator edits;
     private final double originalInput;
     private final double originalChange;
     double input;
@@ -39,7 +39,6 @@ public final class DamageStage {
      *
      * @return the stage identifier
      */
-    @NotNull
     public Key key() {
         return this.key;
     }

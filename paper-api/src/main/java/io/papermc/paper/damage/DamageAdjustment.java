@@ -2,7 +2,6 @@ package io.papermc.paper.damage;
 
 import com.google.common.base.Preconditions;
 import java.util.function.DoubleUnaryOperator;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A fixed or proportional adjustment inserted into a damage calculation.
@@ -25,7 +24,6 @@ public final class DamageAdjustment {
      * @return a flat adjustment
      * @throws IllegalArgumentException if the change is not finite
      */
-    @NotNull
     public static DamageAdjustment flat(final double change) {
         Preconditions.checkArgument(Double.isFinite(change), "change must be finite");
         return new DamageAdjustment(input -> Math.max(0, input + change) - input);
@@ -39,7 +37,6 @@ public final class DamageAdjustment {
      * @return a proportional adjustment
      * @throws IllegalArgumentException if the multiplier is negative or not finite
      */
-    @NotNull
     public static DamageAdjustment multiply(final double multiplier) {
         Preconditions.checkArgument(Double.isFinite(multiplier) && multiplier >= 0, "multiplier must be finite and non-negative");
         return new DamageAdjustment(input -> input * multiplier - input);

@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.function.DoubleUnaryOperator;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * The ordered, mutable damage calculation for this entity damage event.
@@ -50,8 +49,7 @@ public final class DamageCalculation {
      * @throws IllegalArgumentException if the key is null, already used, or the formula is null
      */
     @ApiStatus.Internal
-    @NotNull
-    public DamageStage addStage(@NotNull final Key key, final double originalChange, @NotNull final DoubleUnaryOperator formula) {
+    public DamageStage addStage(final Key key, final double originalChange, final DoubleUnaryOperator formula) {
         Preconditions.checkArgument(key != null, "key cannot be null");
         Preconditions.checkArgument(formula != null, "formula cannot be null");
         Preconditions.checkArgument(this.stage(key).isEmpty(), "Damage stage already exists: %s", key);
@@ -76,8 +74,7 @@ public final class DamageCalculation {
      * @throws IllegalArgumentException if the key is null, already used, or the formula is null
      */
     @ApiStatus.Internal
-    @NotNull
-    public DamageStage addStage(@NotNull final Key key, @NotNull final DoubleUnaryOperator formula) {
+    public DamageStage addStage(final Key key, final DoubleUnaryOperator formula) {
         Preconditions.checkArgument(formula != null, "formula cannot be null");
         return this.addStage(key, formula.applyAsDouble(this.originalAmount), formula);
     }
@@ -125,7 +122,6 @@ public final class DamageCalculation {
      *
      * @return the stages currently in this calculation
      */
-    @NotNull
     public List<DamageStage> stages() {
         return List.copyOf(this.stages);
     }
@@ -137,8 +133,7 @@ public final class DamageCalculation {
      * @return the stage, or an empty optional if it does not apply to this hit
      * @throws IllegalArgumentException if the key is null
      */
-    @NotNull
-    public Optional<DamageStage> stage(@NotNull final Key key) {
+    public Optional<DamageStage> stage(final Key key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
         for (final DamageStage stage : this.stages) {
             if (stage.key().equals(key)) {
@@ -156,8 +151,7 @@ public final class DamageCalculation {
      * @return an insertion point before that stage
      * @throws IllegalArgumentException if the key is null or the stage does not apply to this hit
      */
-    @NotNull
-    public InsertionPoint before(@NotNull final Key key) {
+    public InsertionPoint before(final Key key) {
         final DamageStage anchor = this.stage(key).orElseThrow(() -> new IllegalArgumentException("Damage stage is not applicable: " + key));
         return new InsertionPoint(anchor);
     }
@@ -203,8 +197,7 @@ public final class DamageCalculation {
          * @throws IllegalArgumentException if the key or adjustment is null, or
          *     the identifier is already in use
          */
-        @NotNull
-        public DamageStage add(@NotNull final Key key, @NotNull final DamageAdjustment adjustment) {
+        public DamageStage add(final Key key, final DamageAdjustment adjustment) {
             Preconditions.checkArgument(key != null, "key cannot be null");
             Preconditions.checkArgument(adjustment != null, "adjustment cannot be null");
             Preconditions.checkArgument(DamageCalculation.this.stage(key).isEmpty(), "Damage stage already exists: %s", key);
