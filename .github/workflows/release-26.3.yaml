@@ -1,6 +1,7 @@
 name: Release 26.3
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,16 +10,23 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-26.3
   cancel-in-progress: false
+  group: release-26.3
 
 jobs:
   release:
+    # guard for manual dispatch
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: namespace-profile-linux-default
     timeout-minutes: 30
     #env:
     #  BUILD_NUMBER: ${{ github.run_number }}
     steps:
+      - name: "environment"
+        run: |
+          echo "BUILD_NUMBER=$((129 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "BUILD_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - name: "git / checkout"
         uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
         with:
@@ -26,18 +34,23 @@ jobs:
 
       - uses: papermc/ci/setup-gradle@main
 
-      - name: "build number"
-        run: echo "BUILD_NUMBER=$((129 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
-
       - uses: papermc/ci/build-paper@main
+
+      - if: ${{ !cancelled() }}
+        uses: papermc/ci/upload-event-data@main
+        with:
+          path: ${{ github.event_path }}
 
       - if: ${{ !cancelled() }}
         uses: papermc/ci/upload-test-results@main
 
-      - uses: papermc/ci/publish-paper@main
+      - uses: papermc/ci/publish-fill@main
         with:
           fill_api_url: ${{ secrets.FILL_API_URL }}
           fill_api_key: ${{ secrets.FILL_API_KEY }}
+
+      - uses: papermc/ci/publish-maven@main
+        with:
           maven_username: ${{ secrets.ARTIFACTORY_USERNAME }}
           maven_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          maven_tasks: :paper-api:publish publishDevBundlePublicationToPaperReleasesRepository
+          maven_tasks: -PpublishDevBundle :paper-api:publish publishDevBundlePublicationToPaperReleasesRepository

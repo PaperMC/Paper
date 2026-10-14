@@ -511,6 +511,8 @@ public class WorldConfiguration extends ConfigurationPart {
         public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
         public int maxAutoSaveChunksPerTick = 24;
         public int fixedChunkInhabitedTime = -1;
+        public int minChunkUnloadCount = 50;
+        public double minChunkUnloadFraction = 0.05;
         public boolean preventMovingIntoUnloadedChunks = false;
         public Duration delayChunkUnloadsBy = Duration.of("10s");
         public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
