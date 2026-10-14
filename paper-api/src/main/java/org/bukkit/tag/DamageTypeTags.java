@@ -31,6 +31,8 @@ public final class DamageTypeTags {
 
     public static final Tag<DamageType> BYPASSES_ARMOR = getTag("bypasses_armor");
 
+    public static final Tag<DamageType> BYPASSES_COOLDOWN = getTag("bypasses_cooldown");
+
     public static final Tag<DamageType> BYPASSES_EFFECTS = getTag("bypasses_effects");
 
     public static final Tag<DamageType> BYPASSES_ENCHANTMENTS = getTag("bypasses_enchantments");
@@ -72,6 +74,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> NO_IMPACT = getTag("no_impact");
 
     public static final Tag<DamageType> NO_KNOCKBACK = getTag("no_knockback");
+
+    public static final Tag<DamageType> NO_WOLF_RETALIATION = getTag("no_wolf_retaliation");
 
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 

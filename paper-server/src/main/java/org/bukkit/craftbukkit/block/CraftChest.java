@@ -19,8 +19,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest {
 
-    public CraftChest(World world, ChestBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftChest(World world, ChestBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftChest(CraftChest state, Location location) {

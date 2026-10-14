@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
@@ -193,6 +194,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.BannerPatternKeys
      */
     RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
+    /**
+     * Data-driven registry for decorated pot patterns.
+     * @see io.papermc.paper.registry.keys.DecoratedPotPatternKeys
+     */
+    RegistryKey<PotPatternType> DECORATED_POT_PATTERN = create("decorated_pot_pattern");
     /**
      * Data-driven registry for painting variants.
      * @see io.papermc.paper.registry.keys.PaintingVariantKeys

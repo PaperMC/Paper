@@ -56,12 +56,15 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -211,7 +214,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         // Paper end
         this.entity.setDeltaMovement(CraftVector.toVec3(velocity));
-        this.entity.hurtMarked = true;
+        this.entity.syncVelocity = true;
     }
 
     /**
@@ -568,7 +571,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public ItemStack getPickItemStack() {
         net.minecraft.world.item.ItemStack stack = this.getHandle().getPickResult();
-        return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
+        return stack == null ? ItemStack.empty() : CraftItemStack.asBukkitCopy(stack);
     }
 
     @Override
@@ -589,6 +592,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public EntityDamageEvent getLastDamageCause() {
         return this.lastDamageEvent;
+    }
+
+    @Override
+    public @Nullable ItemStack getWeapon() {
+        net.minecraft.world.item.ItemStack stack = this.getHandle().getWeaponItem();
+        return stack == null ? null : CraftItemStack.asBukkitCopy(stack);
     }
 
     @Override
@@ -903,12 +912,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setInvulnerable(boolean flag) {
-        this.getHandle().setInvulnerable(flag);
+        this.getHandle().setPermanentlyInvulnerable(flag);
     }
 
     @Override
-    public boolean isInvulnerable() {
-        return this.getHandle().isInvulnerableToBase(this.getHandle().damageSources().generic());
+    public boolean isMarkedInvulnerable() {
+        return this.getHandle().isInvulnerable();
+    }
+
+    @Override
+    public boolean isInvulnerableTo(final @NotNull DamageSource source) {
+        Preconditions.checkArgument(source != null, "DamageSource cannot be null");
+        return this.getHandle().isInvulnerableToBase(((CraftDamageSource) source).getHandle());
     }
 
     @Override
@@ -929,6 +944,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void setGravity(boolean gravity) {
         this.getHandle().setNoGravity(!gravity);
+    }
+
+    @Override
+    public double getDefaultGravity() {
+        return this.getHandle().getDefaultGravity();
+    }
+
+    @Override
+    public double getGravity() {
+        return this.getHandle().getGravity();
+    }
+
+    @Override
+    public float getAirDrag() {
+        return this.getHandle().getAirDrag();
     }
 
     @Override

@@ -4,13 +4,14 @@ import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.holder.RegistryHolder;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import java.util.function.Consumer;
 
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.MusicInstrument} type.
@@ -34,7 +35,7 @@ public interface InstrumentRegistryEntry {
      * @see MusicInstrument#getDuration()
      */
     @Contract(pure = true)
-    @Positive float duration();
+    @NonNegative float duration();
 
     /**
      * Provides the range of the instrument, which is range of the sound.
@@ -44,6 +45,14 @@ public interface InstrumentRegistryEntry {
      */
     @Contract(pure = true)
     @Positive float range();
+
+    /**
+     * Provides the amount of durability to consume on each use.
+     *
+     * @return the amount of durability to consume
+     */
+    @Contract(pure = true)
+    @NonNegative int durabilityDamage();
 
     /**
      * Provides the description of the instrument, which is used in the item tooltip.
@@ -114,13 +123,13 @@ public interface InstrumentRegistryEntry {
         /**
          * Sets the duration of use for this instrument.
          *
-         * @param duration the duration (positive)
+         * @param duration the duration (non-negative)
          * @return this builder instance
          * @see InstrumentRegistryEntry#duration()
          * @see MusicInstrument#getDuration()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder duration(@Positive float duration);
+        Builder duration(@NonNegative float duration);
 
         /**
          * Sets the range for this instrument.
@@ -132,6 +141,16 @@ public interface InstrumentRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder range(@Positive float range);
+
+        /**
+         * Sets the durability damage for this instrument.
+         *
+         * @param durabilityDamage the damage (non-negative)
+         * @return this builder instance
+         * @see InstrumentRegistryEntry#durabilityDamage()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder durabilityDamage(@NonNegative int durabilityDamage);
 
         /**
          * Sets the description for this instrument.
