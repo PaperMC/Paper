@@ -1,4 +1,4 @@
-package io.papermc.paper.util;
+package io.papermc.paper.adventure;
 
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.HolderLookup;
