@@ -24477,7 +24477,7 @@ index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a
 +
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index b711c1fba85d866a2cae702e26942744da5d744e..e710c914ee645a66ad5ca3ff0463ac0ace561da7 100644
+index b711c1fba85d866a2cae702e26942744da5d744e..7a04214fcb23ca8cbf9ef7d50cfb28584ac4dc5f 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -24666,7 +24666,7 @@ index b711c1fba85d866a2cae702e26942744da5d744e..e710c914ee645a66ad5ca3ff0463ac0a
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
-@@ -214,44 +162,144 @@ public final class FeatureHooks {
+@@ -214,44 +162,149 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
@@ -24776,13 +24776,18 @@ index b711c1fba85d866a2cae702e26942744da5d744e..e710c914ee645a66ad5ca3ff0463ac0a
 +
 +    // Paper start - rewrite chunk system
 +    private static io.papermc.paper.world.chunk.ChunkGenerationState getLoadedChunkGenerationState(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
-+        // a chunk that is loaded to full is up to date, as it will be saved at the current version
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = level.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkX, chunkZ);
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.ChunkCompletion completion = holder == null ? null : holder.getLastChunkCompletion();
-+        if (completion != null && completion.genStatus() == net.minecraft.world.level.chunk.status.ChunkStatus.FULL) {
++        if (holder == null) {
++            return null;
++        }
++        final net.minecraft.world.level.chunk.ChunkAccess chunk = holder.getChunkIfPresentUnchecked(net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
++        if (chunk == null) {
++            return null;
++        }
++        if (chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)) {
 +            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED;
 +        }
-+        return null;
++        return io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
 +    }
 +
 +    private static io.papermc.paper.world.chunk.ChunkGenerationState classifyChunkGenerationState(final net.minecraft.nbt.CompoundTag data, final int chunkX, final int chunkZ) {
@@ -28672,7 +28677,7 @@ index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b
          List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 47a0e17e4fed94828e02c7f4159d32195158f6cc..46e7478bd96e42487cf0fc467b6b9b83f2887d10 100644
+index 9193fc073a6dbf0f7dcdd2b06ddf59a4e4355428..5090c9780ada3c8a7fd070bc6aec3ff1af034d73 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,7 +183,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
