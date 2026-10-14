@@ -22,6 +22,8 @@ import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
@@ -877,19 +879,44 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets whether the entity is invulnerable or not.
      * <p>
-     * When an entity is invulnerable it can only be damaged by players in
+     * When an entity is invulnerable, it can only be damaged by players in
      * creative mode.
      *
      * @param flag if the entity is invulnerable
      */
-    public void setInvulnerable(boolean flag);
+    void setInvulnerable(boolean flag);
 
     /**
-     * Gets whether the entity is invulnerable or not.
+     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
      *
-     * @return whether the entity is
+     * @return whether the entity is invulnerable
+     * @see #isInvulnerableTo(DamageSource)
      */
-    public boolean isInvulnerable();
+    boolean isMarkedInvulnerable();
+
+    /**
+     * Determines if the entity is invulnerable to the specified damage source.
+     * <p>
+     * Using this method with {@code DamageSource.builder(DamageType.GENERIC).build()} is equivalent to {@link #isInvulnerable()}
+     *
+     * @param source the damage source to check against
+     * @return {@code true} if the entity is invulnerable to the given damage source, {@code false} otherwise
+     */
+    boolean isInvulnerableTo(@NotNull DamageSource source);
+
+    /**
+     * Gets whether the entity is invulnerable or not
+     *
+     * @return whether the entity is invulnerable
+     * @see #isInvulnerableTo(DamageSource)
+     * @deprecated This method does not reflect the invulnerability state set by
+     *   {@link #setInvulnerable(boolean)}, use {@link #isMarkedInvulnerable()} for that instead.
+     *   Use {@link #isInvulnerableTo(DamageSource)} with {@code DamageSource.builder(DamageType.GENERIC).build()} as a direct replacement to this method.
+     */
+    @Deprecated(since = "26.3")
+    default boolean isInvulnerable() {
+        return this.isInvulnerableTo(DamageSource.builder(DamageType.GENERIC).build());
+    }
 
     /**
      * Gets whether the entity is silent or not.
@@ -920,6 +947,27 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param gravity whether gravity should apply
      */
     void setGravity(boolean gravity);
+
+    /**
+     * Returns the default acceleration due to gravity (in blocks per tick). Ignores {@link Entity#hasGravity()}.
+     *
+     * @return the default acceleration due to gravity
+     */
+    double getDefaultGravity();
+
+    /**
+     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is false, returns 0.
+     *
+     * @return the acceleration due to gravity
+     */
+    double getGravity();
+
+    /**
+     * Returns the air drag factor applied to this entity.
+     *
+     * @return the air drag factor
+     */
+    float getAirDrag();
 
     /**
      * Gets the period of time (in ticks) before this entity can use a portal.
