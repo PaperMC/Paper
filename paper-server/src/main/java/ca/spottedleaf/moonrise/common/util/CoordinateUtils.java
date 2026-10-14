@@ -16,11 +16,12 @@ public final class CoordinateUtils {
     }
 
     public static long getChunkKey(final Entity entity) {
-        return ((Mth.lfloor(entity.getZ()) >> 4) << 32) | ((Mth.lfloor(entity.getX()) >> 4) & 0xFFFFFFFFL);
+        final ChunkPos pos = entity.chunkPosition();
+        return ((long)pos.z() << 32) | (pos.x() & 0xFFFFFFFFL);
     }
 
     public static long getChunkKey(final ChunkPos pos) {
-        return ((long)pos.z << 32) | (pos.x & 0xFFFFFFFFL);
+        return ((long)pos.z() << 32) | (pos.x() & 0xFFFFFFFFL);
     }
 
     public static long getChunkKey(final SectionPos pos) {
@@ -70,9 +71,9 @@ public final class CoordinateUtils {
     }
 
     public static long getChunkSectionKey(final ChunkPos pos, final int y) {
-        return ((pos.x & SECTION_X_MASK) << SECTION_X_SHIFT)
+        return ((pos.x() & SECTION_X_MASK) << SECTION_X_SHIFT)
                 | ((y & SECTION_Y_MASK) << SECTION_Y_SHIFT)
-                | ((pos.z & SECTION_Z_MASK) << SECTION_Z_SHIFT);
+                | ((pos.z() & SECTION_Z_MASK) << SECTION_Z_SHIFT);
     }
 
     public static long getChunkSectionKey(final BlockPos pos) {

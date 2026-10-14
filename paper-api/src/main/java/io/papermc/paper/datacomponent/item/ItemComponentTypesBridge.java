@@ -2,7 +2,6 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -11,20 +10,17 @@ import net.kyori.adventure.util.TriState;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.map.MapCursor;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
-@ApiStatus.Internal
 interface ItemComponentTypesBridge {
 
-    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class).findFirst();
+    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class, ItemComponentTypesBridge.class.getClassLoader()).findFirst();
 
     static ItemComponentTypesBridge bridge() {
         return BRIDGE.orElseThrow();
@@ -33,8 +29,6 @@ interface ItemComponentTypesBridge {
     ChargedProjectiles.Builder chargedProjectiles();
 
     PotDecorations.Builder potDecorations();
-
-    Unbreakable.Builder unbreakable();
 
     ItemLore.Builder lore();
 
@@ -52,11 +46,9 @@ interface ItemComponentTypesBridge {
 
     SuspiciousStewEffects.Builder suspiciousStewEffects();
 
-    MapItemColor.Builder mapItemColor();
-
     MapDecorations.Builder mapDecorations();
 
-    MapDecorations.DecorationEntry decorationEntry(MapCursor.Type type, double x, double z, float rotation);
+    MapDecorations.DecorationEntry mapDecorationEntry(MapCursor.Type type, double x, double z, float rotation);
 
     SeededContainerLoot.Builder seededContainerLoot(Key lootTableKey);
 
@@ -70,9 +62,13 @@ interface ItemComponentTypesBridge {
 
     Fireworks.Builder fireworks();
 
+    ResolvableProfile resolvableProfile(PlayerProfile profile);
+
     ResolvableProfile.Builder resolvableProfile();
 
-    ResolvableProfile resolvableProfile(PlayerProfile profile);
+    ResolvableProfile.SkinPatchBuilder skinPatch();
+
+    ResolvableProfile.SkinPatch emptySkinPatch();
 
     BannerPatternLayers.Builder bannerPatternLayers();
 
@@ -84,7 +80,7 @@ interface ItemComponentTypesBridge {
 
     Tool.Builder tool();
 
-    Tool.Rule rule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
+    Tool.Rule toolRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
 
     ItemAdventurePredicate.Builder itemAdventurePredicate();
 
@@ -92,13 +88,13 @@ interface ItemComponentTypesBridge {
 
     MapId mapId(int id);
 
-    UseRemainder useRemainder(ItemStack itemStack);
+    UseRemainder useRemainder(ItemStack stack);
 
     Consumable.Builder consumable();
 
     UseCooldown.Builder useCooldown(final float seconds);
 
-    DamageResistant damageResistant(TagKey<DamageType> types);
+    DamageResistant damageResistant(RegistryKeySet<DamageType> types);
 
     Enchantable enchantable(int level);
 
@@ -109,4 +105,30 @@ interface ItemComponentTypesBridge {
     DeathProtection.Builder deathProtection();
 
     OminousBottleAmplifier ominousBottleAmplifier(int amplifier);
+
+    BlocksAttacks.Builder blocksAttacks();
+
+    TooltipDisplay.Builder tooltipDisplay();
+
+    Weapon.Builder weapon();
+
+    KineticWeapon.Builder kineticWeapon();
+
+    KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
+
+    UseEffects.Builder useEffects();
+
+    PiercingWeapon.Builder piercingWeapon();
+
+    AttackRange.Builder attackRange();
+
+    SwingAnimation.Builder swingAnimation();
+
+    SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
+
+    MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
+
+    VillagerFood villagerFood(int nutrition);
+
+    SignText.Builder signText();
 }

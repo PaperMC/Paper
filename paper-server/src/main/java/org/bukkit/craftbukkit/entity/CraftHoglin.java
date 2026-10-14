@@ -11,6 +11,11 @@ public class CraftHoglin extends CraftAnimals implements Hoglin, CraftEnemy {
     }
 
     @Override
+    public net.minecraft.world.entity.monster.hoglin.Hoglin getHandle() {
+        return (net.minecraft.world.entity.monster.hoglin.Hoglin) this.entity;
+    }
+
+    @Override
     public boolean isImmuneToZombification() {
         return this.getHandle().isImmuneToZombification();
     }
@@ -39,25 +44,15 @@ public class CraftHoglin extends CraftAnimals implements Hoglin, CraftEnemy {
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().timeInOverworld = -1;
+            this.getHandle().setTimeInOverworld(-1);
             this.getHandle().setImmuneToZombification(false);
         } else {
-            this.getHandle().timeInOverworld = time;
+            this.getHandle().setTimeInOverworld(time);
         }
     }
 
     @Override
     public boolean isConverting() {
         return this.getHandle().isConverting();
-    }
-
-    @Override
-    public net.minecraft.world.entity.monster.hoglin.Hoglin getHandle() {
-        return (net.minecraft.world.entity.monster.hoglin.Hoglin) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftHoglin";
     }
 }

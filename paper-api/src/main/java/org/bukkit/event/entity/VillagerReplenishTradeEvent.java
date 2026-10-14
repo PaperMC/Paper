@@ -5,6 +5,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,14 +17,21 @@ import org.jetbrains.annotations.NotNull;
  */
 public class VillagerReplenishTradeEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    //
-    private MerchantRecipe recipe;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    public VillagerReplenishTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe) {
-        super(what);
+    private MerchantRecipe recipe;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public VillagerReplenishTradeEvent(@NotNull AbstractVillager villager, @NotNull MerchantRecipe recipe) {
+        super(villager);
         this.recipe = recipe;
+    }
+
+    @NotNull
+    @Override
+    public AbstractVillager getEntity() {
+        return (AbstractVillager) super.getEntity();
     }
 
     /**
@@ -33,7 +41,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      */
     @NotNull
     public MerchantRecipe getRecipe() {
-        return recipe;
+        return this.recipe;
     }
 
     /**
@@ -54,7 +62,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      */
     @Deprecated(since = "1.18.1")
     public int getBonus() {
-        return recipe.getUses();
+        return this.recipe.getUses();
     }
 
     /**
@@ -70,7 +78,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -80,18 +88,12 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
 
     @NotNull
     @Override
-    public AbstractVillager getEntity() {
-        return (AbstractVillager) super.getEntity();
-    }
-
-    @NotNull
-    @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

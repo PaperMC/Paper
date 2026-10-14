@@ -6,21 +6,25 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when any Entity changes a block and a more specific event is not available.
  */
 public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Block block;
-    private boolean cancel;
     private final BlockData to;
 
-    public EntityChangeBlockEvent(@NotNull final Entity what, @NotNull final Block block, @NotNull final BlockData to) {
-        super(what);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public EntityChangeBlockEvent(@NotNull final Entity entity, @NotNull final Block block, @NotNull final BlockData to) {
+        super(entity);
         this.block = block;
-        this.cancel = false;
         this.to = to;
     }
 
@@ -31,17 +35,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Block getBlock() {
-        return block;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        return this.block;
     }
 
     /**
@@ -51,7 +45,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Material getTo() {
-        return to.getMaterial();
+        return this.to.getMaterial();
     }
 
     /**
@@ -61,17 +55,27 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public BlockData getBlockData() {
-        return to.clone(); // Paper - clone because mutation isn't used
+        return this.to.clone();
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

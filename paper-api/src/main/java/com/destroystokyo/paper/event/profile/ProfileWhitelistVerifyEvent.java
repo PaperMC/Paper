@@ -50,12 +50,6 @@ public class ProfileWhitelistVerifyEvent extends Event {
     private boolean whitelisted;
     private @Nullable Component kickMessage;
 
-    @Deprecated
-    @ApiStatus.Internal
-    public ProfileWhitelistVerifyEvent(final PlayerProfile profile, final boolean whitelistEnabled, final boolean whitelisted, final boolean isOp, final @Nullable String kickMessage) {
-        this(profile, whitelistEnabled, whitelisted, isOp, kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
-    }
-
     @ApiStatus.Internal
     public ProfileWhitelistVerifyEvent(final PlayerProfile profile, final boolean whitelistEnabled, final boolean whitelisted, final boolean isOp, final @Nullable Component kickMessage) {
         this.profile = profile;

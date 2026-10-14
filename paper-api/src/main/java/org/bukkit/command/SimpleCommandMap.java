@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -14,32 +13,35 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.HelpCommand;
-import org.bukkit.command.defaults.PluginsCommand;
 import org.bukkit.command.defaults.ReloadCommand;
-import org.bukkit.command.defaults.VersionCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @apiNote plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
+ */
+@ApiStatus.Obsolete(since = "26.3")
 public class SimpleCommandMap implements CommandMap {
-    protected final Map<String, Command> knownCommands; // Paper
+    protected final Map<String, Command> knownCommands;
     private final Server server;
 
-    // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     public SimpleCommandMap(@NotNull final Server server, Map<String, Command> backing) {
         this.knownCommands = backing;
-    // Paper end
         this.server = server;
         setDefaultCommands();
     }
 
     private void setDefaultCommands() {
-        register("bukkit", new VersionCommand("version"));
-        register("bukkit", new ReloadCommand("reload"));
-        //register("bukkit", new PluginsCommand("plugins")); // Paper
-        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
+        final ReloadCommand reload = new ReloadCommand("reload");
+        this.knownCommands.put("bukkit:reload", reload);
+        this.knownCommands.put("bukkit:rl", reload);
+        register("bukkit", new co.aikar.timings.TimingsCommand("timings"));
     }
 
     public void setFallbackCommands() {

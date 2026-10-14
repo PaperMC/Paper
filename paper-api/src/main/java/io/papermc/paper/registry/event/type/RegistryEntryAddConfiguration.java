@@ -4,15 +4,15 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
 import io.papermc.paper.registry.TypedKey;
 import java.util.function.Predicate;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Specific configuration for {@link io.papermc.paper.registry.event.RegistryEntryAddEvent}s.
  *
  * @param <T> registry entry type
  */
-@NullMarked
+@ApiStatus.NonExtendable
 public interface RegistryEntryAddConfiguration<T> extends PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> {
 
     /**

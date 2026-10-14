@@ -39,9 +39,9 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
 
     /**
      * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
-     *
-     * <p>The set returned may auto-populate on access. Any listener accessing the returned set should be aware that
-     * it may reduce performance for a lazy set implementation.</p>
+     * <p>
+     * The set returned may auto-populate on access. Any listener accessing the returned set should be aware that
+     * it may reduce performance for a lazy set implementation.
      *
      * @return a mutable set of {@link Audience audiences} who will receive the chat message
      */

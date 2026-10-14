@@ -2,26 +2,22 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
-import java.util.UUID;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.LivingEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Fox;
-import org.bukkit.entity.Fox.Type;
 
 public class CraftFox extends CraftAnimals implements Fox {
 
-    public CraftFox(CraftServer server, net.minecraft.world.entity.animal.Fox entity) {
+    public CraftFox(CraftServer server, net.minecraft.world.entity.animal.fox.Fox entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Fox getHandle() {
-        return (net.minecraft.world.entity.animal.Fox) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFox";
+    public net.minecraft.world.entity.animal.fox.Fox getHandle() {
+        return (net.minecraft.world.entity.animal.fox.Fox) this.entity;
     }
 
     @Override
@@ -33,7 +29,7 @@ public class CraftFox extends CraftAnimals implements Fox {
     public void setFoxType(Type type) {
         Preconditions.checkArgument(type != null, "type");
 
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.Fox.Variant.values()[type.ordinal()]);
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.fox.Fox.Variant.values()[type.ordinal()]);
     }
 
     @Override
@@ -61,52 +57,45 @@ public class CraftFox extends CraftAnimals implements Fox {
         this.getHandle().setSleeping(sleeping);
     }
 
+    private AnimalTamer getTrustedPlayer(EntityDataAccessor<Optional<EntityReference<LivingEntity>>> entityDataKey) {
+        return this.getHandle().getEntityData().get(entityDataKey)
+            .map(EntityReference::getUUID)
+            .map(uuid -> {
+                AnimalTamer player = this.getServer().getPlayer(uuid);
+                if (player == null) {
+                    player = this.getServer().getOfflinePlayer(uuid);
+                }
+                return player;
+            })
+            .orElse(null);
+    }
+
     @Override
     public AnimalTamer getFirstTrustedPlayer() {
-        UUID uuid = this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_0).orElse(null);
-        if (uuid == null) {
-            return null;
-        }
-
-        AnimalTamer player = this.getServer().getPlayer(uuid);
-        if (player == null) {
-            player = this.getServer().getOfflinePlayer(uuid);
-        }
-
-        return player;
+        return this.getTrustedPlayer(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_0);
     }
 
     @Override
     public void setFirstTrustedPlayer(AnimalTamer player) {
         if (player == null) {
-            Preconditions.checkState(this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_1).isEmpty(), "Must remove second trusted player first");
+            Preconditions.checkState(this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_1).isEmpty(), "Must remove second trusted player first");
         }
 
-        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_0, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_0, player == null ? Optional.empty() : Optional.of(EntityReference.of(player.getUniqueId())));
     }
 
     @Override
     public AnimalTamer getSecondTrustedPlayer() {
-        UUID uuid = this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_1).orElse(null);
-        if (uuid == null) {
-            return null;
-        }
-
-        AnimalTamer player = this.getServer().getPlayer(uuid);
-        if (player == null) {
-            player = this.getServer().getOfflinePlayer(uuid);
-        }
-
-        return player;
+        return this.getTrustedPlayer(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_1);
     }
 
     @Override
     public void setSecondTrustedPlayer(AnimalTamer player) {
         if (player != null) {
-            Preconditions.checkState(this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_0).isPresent(), "Must add first trusted player first");
+            Preconditions.checkState(this.getHandle().getEntityData().get(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_0).isPresent(), "Must add first trusted player first");
         }
 
-        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.Fox.DATA_TRUSTED_ID_1, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.fox.Fox.DATA_TRUSTED_ID_1, player == null ? Optional.empty() : Optional.of(EntityReference.of(player.getUniqueId())));
     }
 
     @Override

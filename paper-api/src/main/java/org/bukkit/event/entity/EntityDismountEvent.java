@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,21 +11,23 @@ import org.jetbrains.annotations.NotNull;
  */
 public class EntityDismountEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private final Entity dismounted;
-    private final boolean isCancellable; // Paper
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted) {
-        // Paper start
-        this(what, dismounted, true);
+    private final Entity dismounted;
+    private final boolean isCancellable;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public EntityDismountEvent(@NotNull Entity entity, @NotNull Entity dismounted) {
+        this(entity, dismounted, true);
     }
 
-    public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted, boolean isCancellable) {
-        // Paper end
-        super(what);
+    @ApiStatus.Internal
+    public EntityDismountEvent(@NotNull Entity entity, @NotNull Entity dismounted, boolean isCancellable) {
+        super(entity);
         this.dismounted = dismounted;
-        this.isCancellable = isCancellable; // Paper
+        this.isCancellable = isCancellable;
     }
 
     /**
@@ -34,17 +37,16 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Entity getDismounted() {
-        return dismounted;
+        return this.dismounted;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        // Paper start
         if (cancel && !this.isCancellable) {
             return;
         }
@@ -53,17 +55,16 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
 
     public boolean isCancellable() {
         return this.isCancellable;
-        // Paper end
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

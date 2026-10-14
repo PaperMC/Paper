@@ -1,18 +1,23 @@
 package com.destroystokyo.paper.loottable;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.configuration.WorldConfiguration;
 import io.papermc.paper.configuration.type.DurationOrDisabled;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.entity.Player;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -163,58 +168,38 @@ public class PaperLootableInventoryData {
     private static final String NUM_REFILLS = "numRefills";
     private static final String LOOTED_PLAYERS = "lootedPlayers";
 
-    public void loadNbt(final CompoundTag base) {
-        if (!base.contains(ROOT, Tag.TAG_COMPOUND)) {
-            return;
-        }
-        final CompoundTag comp = base.getCompound(ROOT);
-        if (comp.contains(LAST_FILL)) {
-            this.lastFill = comp.getLong(LAST_FILL);
-        }
-        if (comp.contains(NEXT_REFILL)) {
-            this.nextRefill = comp.getLong(NEXT_REFILL);
-        }
-
-        if (comp.contains(NUM_REFILLS)) {
-            this.numRefills = comp.getInt(NUM_REFILLS);
-        }
-        if (comp.contains(LOOTED_PLAYERS, Tag.TAG_LIST)) {
-            final ListTag list = comp.getList(LOOTED_PLAYERS, Tag.TAG_COMPOUND);
-            final int size = list.size();
-            if (size > 0) {
-                this.lootedPlayers = new HashMap<>(list.size());
-            }
-            for (int i = 0; i < size; i++) {
-                final CompoundTag cmp = list.getCompound(i);
-                this.lootedPlayers.put(cmp.getUUID("UUID"), cmp.getLong("Time"));
-            }
+    public void loadNbt(final ValueInput input) {
+        final ValueInput data = input.childOrEmpty(ROOT);
+        this.lastFill = data.getLongOr(LAST_FILL, -1);
+        this.nextRefill = data.getLongOr(NEXT_REFILL, -1);
+        this.numRefills = data.getIntOr(NUM_REFILLS, 0);
+        final ValueInput.TypedInputList<SerializedLootedPlayerEntry> list = data.listOrEmpty(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
+        if (!list.isEmpty()) {
+            this.lootedPlayers = new HashMap<>();
+            list.forEach(serializedLootedPlayerEntry -> lootedPlayers.put(serializedLootedPlayerEntry.uuid, serializedLootedPlayerEntry.time));
         }
     }
 
-    public void saveNbt(final CompoundTag base) {
-        final CompoundTag comp = new CompoundTag();
+    public void saveNbt(final ValueOutput output) {
+        final ValueOutput data = output.child(ROOT);
         if (this.nextRefill != -1) {
-            comp.putLong(NEXT_REFILL, this.nextRefill);
+            data.putLong(NEXT_REFILL, this.nextRefill);
         }
         if (this.lastFill != -1) {
-            comp.putLong(LAST_FILL, this.lastFill);
+            data.putLong(LAST_FILL, this.lastFill);
         }
         if (this.numRefills != 0) {
-            comp.putInt(NUM_REFILLS, this.numRefills);
+            data.putInt(NUM_REFILLS, this.numRefills);
         }
         if (this.lootedPlayers != null && !this.lootedPlayers.isEmpty()) {
-            final ListTag list = new ListTag();
+            final ValueOutput.TypedOutputList<SerializedLootedPlayerEntry> list = data.list(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
             for (final Map.Entry<UUID, Long> entry : this.lootedPlayers.entrySet()) {
-                final CompoundTag cmp = new CompoundTag();
-                cmp.putUUID("UUID", entry.getKey());
-                cmp.putLong("Time", entry.getValue());
-                list.add(cmp);
+                list.add(new SerializedLootedPlayerEntry(entry.getKey(), entry.getValue()));
             }
-            comp.put(LOOTED_PLAYERS, list);
         }
 
-        if (!comp.isEmpty()) {
-            base.put(ROOT, comp);
+        if (data.isEmpty()) {
+            output.discard(ROOT);
         }
     }
 
@@ -245,5 +230,15 @@ public class PaperLootableInventoryData {
 
     @Nullable Long getLastLooted(final UUID player) {
         return this.lootedPlayers != null ? this.lootedPlayers.get(player) : null;
+    }
+
+    record SerializedLootedPlayerEntry(UUID uuid, long time) {
+        public static final Codec<SerializedLootedPlayerEntry> CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                    UUIDUtil.CODEC.fieldOf("UUID").forGetter(SerializedLootedPlayerEntry::uuid),
+                    Codec.LONG.optionalFieldOf("Time", 0L).forGetter(SerializedLootedPlayerEntry::time)
+                )
+                .apply(instance, SerializedLootedPlayerEntry::new)
+        );
     }
 }

@@ -4,16 +4,13 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.JukeboxSong;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the jukebox song for an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
+public interface JukeboxPlayable  {
 
     @Contract(value = "_ -> new", pure = true)
     static JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
@@ -26,9 +23,8 @@ public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
     /**
      * Builder for {@link JukeboxPlayable}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<JukeboxPlayable.Builder>, DataComponentBuilder<JukeboxPlayable> {
+    interface Builder extends DataComponentBuilder<JukeboxPlayable> {
 
         /**
          * Sets the jukebox song.

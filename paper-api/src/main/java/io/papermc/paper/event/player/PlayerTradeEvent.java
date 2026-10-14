@@ -12,21 +12,25 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PlayerTradeEvent extends PlayerPurchaseEvent {
 
-    private final AbstractVillager villager;
-
     @ApiStatus.Internal
     public PlayerTradeEvent(final Player player, final AbstractVillager villager, final MerchantRecipe trade, final boolean rewardExp, final boolean increaseTradeUses) {
-        super(player, trade, rewardExp, increaseTradeUses);
-        this.villager = villager;
+        super(player, villager, trade, rewardExp, increaseTradeUses);
+    }
+
+    @Override
+    public AbstractVillager getMerchant() {
+        return (AbstractVillager) super.getMerchant();
     }
 
     /**
      * Gets the Villager or Wandering trader associated with this event
      *
      * @return the villager or wandering trader
+     * @see #getMerchant()
      */
+    @ApiStatus.Obsolete
     public AbstractVillager getVillager() {
-        return this.villager;
+        return getMerchant();
     }
 
 }

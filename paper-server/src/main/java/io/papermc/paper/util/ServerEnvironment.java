@@ -3,7 +3,7 @@ package io.papermc.paper.util;
 import com.sun.security.auth.module.NTSystem;
 import com.sun.security.auth.module.UnixSystem;
 import java.util.Set;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 public class ServerEnvironment {
     private static final boolean RUNNING_AS_ROOT_OR_ADMIN;

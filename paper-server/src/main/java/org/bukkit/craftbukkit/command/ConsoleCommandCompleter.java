@@ -8,12 +8,10 @@ import net.minecraft.server.dedicated.DedicatedServer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.Waitable;
 
-// Paper start - JLine update
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
-// Paper end
 import org.bukkit.event.server.TabCompleteEvent;
 
 public class ConsoleCommandCompleter implements Completer {
@@ -40,7 +38,7 @@ public class ConsoleCommandCompleter implements Completer {
             // Still fire sync event with the provided completions, if someone is listening
             if (!event.isCancelled() && TabCompleteEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> finalCompletions = new java.util.ArrayList<>(completions);
-                Waitable<List<String>> syncCompletions = new Waitable<List<String>>() {
+                Waitable<List<String>> syncCompletions = new Waitable<>() {
                     @Override
                     protected List<String> evaluate() {
                         org.bukkit.event.server.TabCompleteEvent syncEvent = new org.bukkit.event.server.TabCompleteEvent(server.getConsoleSender(), buffer,
@@ -66,36 +64,20 @@ public class ConsoleCommandCompleter implements Completer {
                 }
             }
 
-            if (false && !completions.isEmpty()) {
-                for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion completion : completions) {
-                    if (completion.suggestion().isEmpty()) {
-                        continue;
-                    }
-                    candidates.add(new Candidate(
-                        completion.suggestion(),
-                        completion.suggestion(),
-                        null,
-                        io.papermc.paper.adventure.PaperAdventure.PLAIN.serializeOr(completion.tooltip(), null),
-                        null,
-                        null,
-                        false
-                    ));
-                }
-            }
             this.addCompletions(reader, line, candidates, completions);
             return;
         }
 
         // Paper end
-        Waitable<List<String>> waitable = new Waitable<List<String>>() {
+        Waitable<List<String>> waitable = new Waitable<>() {
             @Override
             protected List<String> evaluate() {
                 List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer); // Paper - Remove "this."
 
-                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers); // Paper - Remove "this."
+                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.emptyList() : offers); // Paper - Remove "this."
                 server.getPluginManager().callEvent(tabEvent); // Paper - Remove "this."
 
-                return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
+                return tabEvent.isCancelled() ? Collections.emptyList() : tabEvent.getCompletions();
             }
         };
         server.getServer().processQueue.add(waitable); // Paper - Remove "this."
@@ -106,29 +88,7 @@ public class ConsoleCommandCompleter implements Completer {
                 return; // Paper - Method returns void
             }
 
-            // Paper start - JLine update
-            /*
-            for (String completion : offers) {
-                if (completion.isEmpty()) {
-                    continue;
-                }
-
-                candidates.add(new Candidate(completion));
-            }
-             */
             this.addCompletions(reader, line, candidates, offers.stream().map(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion::completion).collect(java.util.stream.Collectors.toList()));
-            // Paper end
-
-            // Paper start - JLine handles cursor now
-            /*
-            final int lastSpace = buffer.lastIndexOf(' ');
-            if (lastSpace == -1) {
-                return cursor - buffer.length();
-            } else {
-                return cursor - (buffer.length() - lastSpace - 1);
-            }
-            */
-            // Paper end
         } catch (ExecutionException e) {
             server.getLogger().log(Level.WARNING, "Unhandled exception when tab completing", e); // Paper - Remove "this."
         } catch (InterruptedException e) {
@@ -136,7 +96,6 @@ public class ConsoleCommandCompleter implements Completer {
         }
     }
 
-    // Paper start
     private boolean notNewSuggestion(final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions, final String completion) {
         for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion it : completions) {
             if (it.suggestion().equals(completion)) {
@@ -149,5 +108,4 @@ public class ConsoleCommandCompleter implements Completer {
     private void addCompletions(final LineReader reader, final ParsedLine line, final List<Candidate> candidates, final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> existing) {
         this.brigadierCompleter.complete(reader, line, candidates, existing);
     }
-    // Paper end
 }

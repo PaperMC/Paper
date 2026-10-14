@@ -4,6 +4,7 @@ import org.bukkit.entity.AbstractVillager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,14 +12,21 @@ import org.jetbrains.annotations.NotNull;
  */
 public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    //
-    private MerchantRecipe recipe;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    public VillagerAcquireTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe) {
-        super(what);
+    private MerchantRecipe recipe;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public VillagerAcquireTradeEvent(@NotNull AbstractVillager villager, @NotNull MerchantRecipe recipe) {
+        super(villager);
         this.recipe = recipe;
+    }
+
+    @NotNull
+    @Override
+    public AbstractVillager getEntity() {
+        return (AbstractVillager) this.entity;
     }
 
     /**
@@ -28,7 +36,7 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
      */
     @NotNull
     public MerchantRecipe getRecipe() {
-        return recipe;
+        return this.recipe;
     }
 
     /**
@@ -42,7 +50,7 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -52,18 +60,12 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
 
     @NotNull
     @Override
-    public AbstractVillager getEntity() {
-        return (AbstractVillager) super.getEntity();
-    }
-
-    @NotNull
-    @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

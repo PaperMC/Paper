@@ -8,6 +8,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,19 +16,24 @@ import org.jetbrains.annotations.Nullable;
  * Triggered when a hanging entity is created in the world
  */
 public class HangingPlaceEvent extends HangingEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Player player;
     private final Block block;
     private final BlockFace blockFace;
     private final EquipmentSlot hand;
     private final ItemStack itemStack;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(since = "1.17.1")
     public HangingPlaceEvent(@NotNull final Hanging hanging, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @Nullable final EquipmentSlot hand) {
         this(hanging, player, block, blockFace, hand, null);
     }
 
+    @ApiStatus.Internal
     public HangingPlaceEvent(@NotNull final Hanging hanging, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @Nullable final EquipmentSlot hand, @Nullable ItemStack itemStack) {
         super(hanging);
         this.player = player;
@@ -44,7 +50,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      */
     @Nullable
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     /**
@@ -54,7 +60,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      */
     @NotNull
     public Block getBlock() {
-        return block;
+        return this.block;
     }
 
     /**
@@ -64,18 +70,18 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      */
     @NotNull
     public BlockFace getBlockFace() {
-        return blockFace;
+        return this.blockFace;
     }
 
     /**
-     * Returns the hand that was used to place the hanging entity, or null
+     * Returns the hand that was used to place the hanging entity, or {@code null}
      * if a player did not place the hanging entity.
      *
      * @return the hand
      */
     @Nullable
     public EquipmentSlot getHand() {
-        return hand;
+        return this.hand;
     }
 
     /**
@@ -85,12 +91,12 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      */
     @Nullable
     public ItemStack getItemStack() {
-        return itemStack;
+        return this.itemStack;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -101,11 +107,11 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

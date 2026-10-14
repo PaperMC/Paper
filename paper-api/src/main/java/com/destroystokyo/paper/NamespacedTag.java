@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,10 +32,10 @@ public final class NamespacedTag implements com.destroystokyo.paper.Namespaced {
      * compatibility measures.
      */
     public static final String BUKKIT = "bukkit";
-    //
+
     private static final Pattern VALID_NAMESPACE = Pattern.compile("[a-z0-9._-]+");
     private static final Pattern VALID_KEY = Pattern.compile("[a-z0-9/._-]+");
-    //
+
     private final String namespace;
     private final String key;
 
@@ -74,7 +75,7 @@ public final class NamespacedTag implements com.destroystokyo.paper.Namespaced {
         Preconditions.checkArgument(key != null, "Key cannot be null");
 
         this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
-        this.key = key.toLowerCase().toLowerCase(Locale.ROOT);
+        this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
         Preconditions.checkArgument(VALID_NAMESPACE.matcher(this.namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
@@ -126,6 +127,7 @@ public final class NamespacedTag implements com.destroystokyo.paper.Namespaced {
      * @deprecated should never be used by plugins, for internal use only!!
      */
     @Deprecated
+    @ApiStatus.Internal
     public static NamespacedTag randomKey() {
         return new NamespacedTag(BUKKIT, UUID.randomUUID().toString());
     }

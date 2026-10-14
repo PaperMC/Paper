@@ -27,7 +27,9 @@ public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @return The reason the enderman is trying to escape
+     * Gets the reason the enderman is trying to escape.
+     *
+     * @return The reason
      */
     public Reason getReason() {
         return this.reason;
@@ -42,7 +44,8 @@ public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
      * Cancels the escape.
      * <p>
      * If this escape normally had resulted in damage avoidance such as indirect,
-     * the enderman will now take damage.
+     * the enderman will now take damage. However, this does not change the Enderman's
+     * innate immunities or damage behavior like arrows where the damage never happens.
      */
     @Override
     public void setCancelled(final boolean cancel) {
@@ -76,7 +79,7 @@ public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
          */
         STARE,
         /**
-         * Specific case for {@link #CRITICAL_HIT} where the enderman is taking rain damage
+         * Specific case for {@link #CRITICAL_HIT} where the enderman is taking damage by drowning (ex: rain)
          */
         DROWN
     }

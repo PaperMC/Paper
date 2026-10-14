@@ -20,11 +20,11 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Sets whether the zombie is a baby
      *
-     * @param flag Whether the zombie is a baby
+     * @param baby Whether the zombie is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
     @Deprecated(since = "1.16.2")
-    public void setBaby(boolean flag);
+    public void setBaby(boolean baby);
 
     /**
      * Gets whether the zombie is a villager
@@ -32,14 +32,14 @@ public interface Zombie extends Monster, Ageable {
      * @return Whether the zombie is a villager
      * @deprecated check if instanceof {@link ZombieVillager}.
      */
-    @Deprecated(since = "1.10.2")
+    @Deprecated(since = "1.10.2", forRemoval = true)
     public boolean isVillager();
 
     /**
      * @param flag flag
      * @deprecated must spawn {@link ZombieVillager}.
      */
-    @Deprecated(since = "1.9")
+    @Deprecated(since = "1.9", forRemoval = true)
     @Contract("_ -> fail")
     public void setVillager(boolean flag);
 
@@ -47,7 +47,7 @@ public interface Zombie extends Monster, Ageable {
      * @param profession profession
      * @see ZombieVillager#getVillagerProfession()
      */
-    @Deprecated(since = "1.10.2")
+    @Deprecated(since = "1.10.2", forRemoval = true)
     @Contract("_ -> fail")
     public void setVillagerProfession(Villager.Profession profession);
 
@@ -55,7 +55,7 @@ public interface Zombie extends Monster, Ageable {
      * @return profession
      * @see ZombieVillager#getVillagerProfession()
      */
-    @Deprecated(since = "1.10.2")
+    @Deprecated(since = "1.10.2", forRemoval = true)
     @Nullable
     @Contract("-> null")
     public Villager.Profession getVillagerProfession();
@@ -71,7 +71,7 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Gets the amount of ticks until this entity will be converted to a Drowned
      * as a result of being underwater.
-     *
+     * <br>
      * When this reaches 0, the entity will be converted.
      *
      * @return conversion time
@@ -82,7 +82,7 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Sets the amount of ticks until this entity will be converted to a Drowned
      * as a result of being underwater.
-     *
+     * <br>
      * When this reaches 0, the entity will be converted. A value of less than 0
      * will stop the current conversion process without converting the current
      * entity.
@@ -110,7 +110,6 @@ public interface Zombie extends Monster, Ageable {
      */
     void setCanBreakDoors(boolean flag);
 
-    // Paper start
     /**
      * Check if zombie is drowning
      *
@@ -121,12 +120,11 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Make zombie start drowning
      *
-     * @param drownedConversionTime Amount of time until zombie converts from drowning
-     *
+     * @param time Amount of time until zombie converts from drowning
      * @deprecated See {@link #setConversionTime(int)}
      */
     @Deprecated
-    void startDrowning(int drownedConversionTime);
+    void startDrowning(int time);
 
     /**
      * Stop a zombie from starting the drowning conversion process
@@ -137,7 +135,7 @@ public interface Zombie extends Monster, Ageable {
      * Set if zombie has its arms raised
      *
      * @param raised True to raise arms
-     * @deprecated use {{@link #setAggressive(boolean)}}
+     * @deprecated use {@link #setAggressive(boolean)}
      */
     @Deprecated
     void setArmsRaised(boolean raised);
@@ -175,6 +173,7 @@ public interface Zombie extends Monster, Ageable {
      * @deprecated Since 1.21.2 all zombie types can break doors if instructed as MC-137053 was fixed.
      */
     @Deprecated(since = "1.21.2", forRemoval = true)
-    boolean supportsBreakingDoors();
-    // Paper end
+    default boolean supportsBreakingDoors() {
+        return true; // All zombies are now capable of breaking doors, see https://bugs.mojang.com/browse/MC-137053
+    }
 }

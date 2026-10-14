@@ -20,10 +20,10 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.VanillaPackResourcesBuilder;
 import net.minecraft.server.packs.repository.FolderRepositorySource;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackDetector;
+import net.minecraft.util.FileSystemUtil;
 import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.level.validation.DirectoryValidator;
 import net.minecraft.world.level.validation.ForbiddenSymlinkInfo;
@@ -92,7 +92,7 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
 
     @Override
     public @Nullable DiscoveredDatapack discoverPack(final PluginMeta pluginMeta, final URI uri, final String id, final Consumer<Configurer> configurer) throws IOException {
-        return this.discoverPack(pluginMeta, VanillaPackResourcesBuilder.safeGetPath(uri), id, configurer);
+        return this.discoverPack(pluginMeta, FileSystemUtil.safeGetPath(uri), id, configurer);
     }
 
     @Override

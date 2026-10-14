@@ -9,6 +9,7 @@ import io.github.classgraph.ScanResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import net.minecraft.world.level.block.Block;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,10 +24,10 @@ public class BlockPlayerDestroyOverrideTest {
         try (ScanResult scanResult = new ClassGraph()
             .enableClassInfo()
             .enableMethodInfo()
-            .whitelistPackages("net.minecraft")
+            .acceptPackages("net.minecraft")
             .scan()
         ) {
-            for (final ClassInfo subclass : scanResult.getSubclasses("net.minecraft.world.level.block.Block")) {
+            for (final ClassInfo subclass : scanResult.getSubclasses(Block.class.getName())) {
                 final MethodInfoList playerDestroy = subclass.getDeclaredMethodInfo("playerDestroy");
                 if (!playerDestroy.isEmpty()) {
                     classInfo.add(subclass);

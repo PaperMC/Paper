@@ -1,14 +1,13 @@
 package io.papermc.paper.tag;
 
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.EntityType;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
 

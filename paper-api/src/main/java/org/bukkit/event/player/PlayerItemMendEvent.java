@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,31 +18,102 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    //
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ItemStack item;
     private final EquipmentSlot slot;
     private final ExperienceOrb experienceOrb;
+    private final int consumedExperience;
     private int repairAmount;
-    private boolean cancelled;
-    private final int consumedExperience; // Paper
 
-    @Deprecated // Paper
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        // Paper start
-        this(who, item, slot, experienceOrb, repairAmount, repairAmount / 2);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        this(player, item, slot, experienceOrb, repairAmount, repairAmount / 2);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
-        // Paper end
-        super(who);
+    @ApiStatus.Internal
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
+        super(player);
         this.item = item;
         this.slot = slot;
         this.experienceOrb = experienceOrb;
         this.repairAmount = repairAmount;
-        // Paper start
         this.consumedExperience = consumedExperience;
+    }
+
+    @Deprecated(since = "1.19.2", forRemoval = true)
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        this(player, item, null, experienceOrb, repairAmount);
+    }
+
+    /**
+     * Get the {@link ItemStack} to be repaired.
+     * <br>
+     * This is not necessarily the item the player is holding.
+     *
+     * @return the item to be repaired
+     */
+    @NotNull
+    public ItemStack getItem() {
+        return this.item;
+    }
+
+    /**
+     * Get the {@link EquipmentSlot} in which the repaired {@link ItemStack}
+     * may be found.
+     *
+     * @return the repaired slot
+     */
+    @NotNull
+    public EquipmentSlot getSlot() {
+        return this.slot;
+    }
+
+    /**
+     * Get the experience orb triggering the event.
+     *
+     * @return the experience orb
+     */
+    @NotNull
+    public ExperienceOrb getExperienceOrb() {
+        return this.experienceOrb;
+    }
+
+    /**
+     * Get the amount the item is to be repaired.
+     * <p>
+     * The default value is twice the value of the consumed experience orb
+     * or the remaining damage left on the item, whichever is smaller.
+     *
+     * @return how much damage will be repaired by the experience orb
+     */
+    public int getRepairAmount() {
+        return this.repairAmount;
+    }
+
+    /**
+     * Set the amount the item will be repaired.
+     * <br>
+     * Half of this value will be subtracted from the experience orb which initiated this event.
+     *
+     * @param amount how much damage will be repaired on the item
+     */
+    public void setRepairAmount(int amount) {
+        this.repairAmount = amount;
+    }
+
+    /**
+     * Helper method to get the amount of experience that will be consumed.
+     * This method just returns the result of inputting {@link #getRepairAmount()}
+     * into the function {@link #getDurabilityToXpOperation()}.
+     *
+     * @return the amount of xp that will be consumed
+     */
+    public int getConsumedExperience() {
+        return this.consumedExperience;
     }
 
     /**
@@ -74,82 +146,9 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
         throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
     }
 
-    /**
-     * Helper method to get the amount of experience that will be consumed.
-     * This method just returns the result of inputting {@link #getRepairAmount()}
-     * into the function {@link #getDurabilityToXpOperation()}.
-     *
-     * @return the amount of xp that will be consumed
-     */
-    public int getConsumedExperience() {
-         return this.consumedExperience;
-    }
-    // Paper end
-
-    @Deprecated(since = "1.19.2")
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        this(who, item, null, experienceOrb, repairAmount);
-    }
-
-    /**
-     * Get the {@link ItemStack} to be repaired.
-     *
-     * This is not necessarily the item the player is holding.
-     *
-     * @return the item to be repaired
-     */
-    @NotNull
-    public ItemStack getItem() {
-        return item;
-    }
-
-    /**
-     * Get the {@link EquipmentSlot} in which the repaired {@link ItemStack}
-     * may be found.
-     *
-     * @return the repaired slot
-     */
-    @NotNull
-    public EquipmentSlot getSlot() {
-        return slot;
-    }
-
-    /**
-     * Get the experience orb triggering the event.
-     *
-     * @return the experience orb
-     */
-    @NotNull
-    public ExperienceOrb getExperienceOrb() {
-        return experienceOrb;
-    }
-
-    /**
-     * Get the amount the item is to be repaired.
-     *
-     * The default value is twice the value of the consumed experience orb
-     * or the remaining damage left on the item, whichever is smaller.
-     *
-     * @return how much damage will be repaired by the experience orb
-     */
-    public int getRepairAmount() {
-        return repairAmount;
-    }
-
-    /**
-     * Set the amount the item will be repaired.
-     *
-     * Half of this value will be subtracted from the experience orb which initiated this event.
-     *
-     * @param amount how much damage will be repaired on the item
-     */
-    public void setRepairAmount(int amount) {
-        this.repairAmount = amount;
-    }
-
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -160,11 +159,11 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

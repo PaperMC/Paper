@@ -13,9 +13,4 @@ public class CraftGiant extends CraftMonster implements Giant {
     public net.minecraft.world.entity.monster.Giant getHandle() {
         return (net.minecraft.world.entity.monster.Giant) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftGiant";
-    }
 }

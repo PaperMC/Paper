@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class FrogVariantKeys {
     /**
      * {@code minecraft:cold}
@@ -49,7 +49,13 @@ public final class FrogVariantKeys {
     private FrogVariantKeys() {
     }
 
-    private static TypedKey<Frog.Variant> create(final Key key) {
+    /**
+     * Creates a typed key for {@link Frog.Variant} in the registry {@code minecraft:frog_variant}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    public static TypedKey<Frog.Variant> create(final Key key) {
         return TypedKey.create(RegistryKey.FROG_VARIANT, key);
     }
 }

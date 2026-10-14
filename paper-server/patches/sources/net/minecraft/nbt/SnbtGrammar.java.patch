@@ -1,0 +1,23 @@
+--- a/net/minecraft/nbt/SnbtGrammar.java
++++ b/net/minecraft/nbt/SnbtGrammar.java
+@@ -619,7 +_,7 @@
+             mapEntries, Term.repeatedWithTrailingSeparator(mapEntryRule, mapEntries, StringReaderTerms.character(',')), scope -> scope.getOrThrow(mapEntries)
+         );
+         Atom<T> mapLiteral = Atom.of("map_literal");
+-        rules.put(mapLiteral, Term.sequence(StringReaderTerms.character('{'), rules.named(mapEntries), StringReaderTerms.character('}')), scope -> {
++        rules.put(mapLiteral, Term.sequence(StringReaderTerms.character('{'), Scope.increaseDepth(), rules.named(mapEntries), Scope.decreaseDepth(), StringReaderTerms.character('}')), scope -> { // Paper - track depth
+             List<Entry<String, T>> entries = scope.getOrThrow(mapEntries);
+             if (entries.isEmpty()) {
+                 return emptyMapValue;
+@@ -660,9 +_,11 @@
+             listLiteral,
+             Term.sequence(
+                 StringReaderTerms.character('['),
++                Scope.increaseDepth(), // Paper - track depth
+                 Term.alternative(
+                     Term.sequence(rules.named(arrayPrefix), StringReaderTerms.character(';'), rules.named(intArrayEntries)), rules.named(listEntries)
+                 ),
++                Scope.decreaseDepth(), // Paper - track depth
+                 StringReaderTerms.character(']')
+             ),
+             state -> {

@@ -39,11 +39,9 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.plugin.TimedRegisteredListener;
 import org.bukkit.plugin.UnknownDependencyException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spigotmc.CustomTimingsHandler; // Spigot
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -232,13 +230,12 @@ public final class JavaPluginLoader implements PluginLoader {
         Preconditions.checkArgument(plugin != null, "Plugin can not be null");
         Preconditions.checkArgument(listener != null, "Listener can not be null");
 
-        boolean useTimings = server.getPluginManager().useTimings();
-        Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<Class<? extends Event>, Set<RegisteredListener>>();
+        Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<>();
         Set<Method> methods;
         try {
             Method[] publicMethods = listener.getClass().getMethods();
             Method[] privateMethods = listener.getClass().getDeclaredMethods();
-            methods = new HashSet<Method>(publicMethods.length + privateMethods.length, 1.0f);
+            methods = new HashSet<>(publicMethods.length + privateMethods.length, 1.0f);
             for (Method method : publicMethods) {
                 methods.add(method);
             }
@@ -267,7 +264,7 @@ public final class JavaPluginLoader implements PluginLoader {
             method.setAccessible(true);
             Set<RegisteredListener> eventSet = ret.get(eventClass);
             if (eventSet == null) {
-                eventSet = new HashSet<RegisteredListener>();
+                eventSet = new HashSet<>();
                 ret.put(eventClass, eventSet);
             }
 
@@ -275,10 +272,15 @@ public final class JavaPluginLoader implements PluginLoader {
                 // This loop checks for extending deprecated events
                 if (clazz.getAnnotation(Deprecated.class) != null) {
                     Warning warning = clazz.getAnnotation(Warning.class);
+                    if (warning != null && !warning.propagate() && !clazz.equals(eventClass)) {
+                        break;
+                    }
+
                     WarningState warningState = server.getWarningState();
                     if (!warningState.printFor(warning)) {
                         break;
                     }
+
                     plugin.getLogger().log(
                             Level.WARNING,
                             String.format(
@@ -286,14 +288,14 @@ public final class JavaPluginLoader implements PluginLoader {
                                     plugin.getDescription().getFullName(),
                                     clazz.getName(),
                                     method.toGenericString(),
-                                    (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
+                                    (warning != null && !warning.reason().isEmpty()) ? warning.reason() : "Please see the deprecation notice on the event for more info",
                                     Arrays.toString(plugin.getDescription().getAuthors().toArray())),
                             warningState == WarningState.ON ? new AuthorNagException(null) : null);
                     break;
                 }
             }
 
-            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
+            EventExecutor executor = new EventExecutor() {
                 @Override
                 public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                     try {
@@ -307,12 +309,8 @@ public final class JavaPluginLoader implements PluginLoader {
                         throw new EventException(t);
                     }
                 }
-            }, plugin, method, eventClass); // Paper
-            if (false) { // Spigot - RL handles useTimings check now
-                eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
-            } else {
-                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
-            }
+            };
+            eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
         }
         return ret;
     }
@@ -376,8 +374,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
                 try {
                     loader.close();
-                } catch (IOException ex) {
-                    //
+                } catch (IOException ignored) {
                 }
             }
         }

@@ -1,11 +1,11 @@
 package org.bukkit.event.inventory;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockExpEvent;
-import org.bukkit.material.MaterialData;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,17 +14,16 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceExtractEvent extends BlockExpEvent {
+
     private final Player player;
-    private final Material itemType;
+    private final ItemStack itemStack;
     private final int itemAmount;
 
-    public FurnaceExtractEvent(@NotNull Player player, @NotNull Block block, @NotNull Material itemType, int itemAmount, int exp) {
+    @ApiStatus.Internal
+    public FurnaceExtractEvent(@NotNull Player player, @NotNull Block block, @NotNull ItemStack itemStack, int itemAmount, int exp) {
         super(block, exp);
         this.player = player;
-        if (itemType != null && itemType.isLegacy()) {
-            itemType = Bukkit.getUnsafe().fromLegacy(new MaterialData(itemType), true);
-        }
-        this.itemType = itemType;
+        this.itemStack = itemStack;
         this.itemAmount = itemAmount;
     }
 
@@ -35,7 +34,7 @@ public class FurnaceExtractEvent extends BlockExpEvent {
      */
     @NotNull
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     /**
@@ -45,7 +44,17 @@ public class FurnaceExtractEvent extends BlockExpEvent {
      */
     @NotNull
     public Material getItemType() {
-        return itemType;
+        return this.itemStack.getType();
+    }
+
+    /**
+     * Get the ItemStack of the item triggering the event
+     *
+     * @return the item stack
+     */
+    @NotNull
+    public ItemStack getItemStack() {
+        return this.itemStack.clone();
     }
 
     /**
@@ -54,6 +63,6 @@ public class FurnaceExtractEvent extends BlockExpEvent {
      * @return the amount of the item
      */
     public int getItemAmount() {
-        return itemAmount;
+        return this.itemAmount;
     }
 }

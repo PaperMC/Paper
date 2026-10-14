@@ -1,8 +1,6 @@
 package io.papermc.paper.plugin.lifecycle.event.handler;
 
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A handler for a specific event. Can be implemented
@@ -10,8 +8,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <E> the event
  */
-@ApiStatus.Experimental
-@NullMarked
 @FunctionalInterface
 public interface LifecycleEventHandler<E extends LifecycleEvent> {
 

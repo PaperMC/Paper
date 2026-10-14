@@ -1,6 +1,7 @@
 package org.bukkit.plugin.messaging;
 
 import java.util.Set;
+import io.papermc.paper.connection.PlayerConnection;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -228,6 +229,17 @@ public interface Messenger {
      * @param source Source of the message.
      * @param channel Channel that the message was sent by.
      * @param message Raw payload of the message.
+     * @deprecated only calls the {@link Player} version of onPluginMessageReceived, use {@link #dispatchIncomingMessage(PlayerConnection, String, byte[])} instead to call both.
      */
+    @Deprecated
     public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, byte @NotNull [] message);
+
+    /**
+     * Dispatches the specified incoming message to any registered listeners. By default, also calls {@link PluginMessageListener#onPluginMessageReceived(String, Player, byte[])}.
+     *
+     * @param source Source of the message.
+     * @param channel Channel that the message was sent by.
+     * @param message Raw payload of the message.
+     */
+    public void dispatchIncomingMessage(@NotNull PlayerConnection source, @NotNull String channel, byte @NotNull [] message);
 }

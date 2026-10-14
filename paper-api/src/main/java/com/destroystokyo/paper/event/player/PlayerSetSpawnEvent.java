@@ -109,7 +109,7 @@ public class PlayerSetSpawnEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Gets the notification message that will be sent to the player
-     * if {@link #willNotifyPlayer()} returns true.
+     * if {@link #willNotifyPlayer()} returns {@code true}.
      *
      * @return {@code null} if no notification
      */

@@ -1,18 +1,16 @@
 package io.papermc.paper.command.brigadier;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Implementing this interface allows for easily creating "Bukkit-style" {@code String[] args} commands.
  * The implementation handles converting the command to a representation compatible with Brigadier on registration, usually in the form of {@literal /commandlabel <greedy_string>}.
  */
-@ApiStatus.Experimental
-@NullMarked
 @FunctionalInterface
 public interface BasicCommand {
 
@@ -23,7 +21,7 @@ public interface BasicCommand {
      * @param args the arguments of the command ignoring repeated spaces
      */
     @ApiStatus.OverrideOnly
-    void execute(CommandSourceStack commandSourceStack, String[] args);
+    void execute(CommandSourceStack commandSourceStack, String[] args) throws CommandSyntaxException;
 
     /**
      * Suggests possible completions for the given command {@link CommandSourceStack} and arguments.

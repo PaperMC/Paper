@@ -14,19 +14,20 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * A chunk generator is responsible for the initial shaping of an entire
  * chunk. For example, the nether chunk generator should shape netherrack and
  * soulsand.
- *
+ * <p>
  * A chunk is generated in multiple steps, those steps are always in the same
  * order. Between those steps however an unlimited time may pass. This means, a
- * chunk may generated until the surface step and continue with the bedrock step
+ * chunk may generate until the surface step and continue with the bedrock step
  * after one or multiple server restarts or even after multiple Minecraft
  * versions.
- *
- * The order of generation is as follows
+ * <p>
+ * The order of generation is as follows:
  * <ol>
  * <li>{@link #generateNoise(WorldInfo, Random, int, int, ChunkData)}</li>
  * <li>{@link #generateSurface(WorldInfo, Random, int, int, ChunkData)}</li>
@@ -38,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link #getBaseHeight(WorldInfo, Random, int, int, HeightMap)}
  * <b>must</b> be completely thread safe and able to handle multiple concurrent
  * callers.
- *
+ * <p>
  * Some aspects of world generation can be delegated to the Vanilla generator.
  * The following methods can be overridden to enable this:
  * <ul>
@@ -166,7 +167,7 @@ public abstract class ChunkGenerator {
      * <p>
      * Notes:
      * <p>
-     * If <code>null</code> is returned, than Vanilla biomes are used.
+     * If <code>null</code> is returned, then Vanilla biomes are used.
      * <p>
      * This method only gets called once when the world is loaded. Returning
      * another {@link BiomeProvider} later one is not respected.
@@ -374,7 +375,7 @@ public abstract class ChunkGenerator {
      * The Vanilla noise is generated <b>before</b>
      * {@link #generateNoise(WorldInfo, Random, int, int, ChunkData)} is called.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateNoise(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla noise
@@ -411,7 +412,7 @@ public abstract class ChunkGenerator {
      * {@link #generateSurface(WorldInfo, Random, int, int, ChunkData)} is
      * called.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateSurface(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla surface
@@ -463,7 +464,7 @@ public abstract class ChunkGenerator {
      * The Vanilla caves are generated <b>before</b>
      * {@link #generateCaves(WorldInfo, Random, int, int, ChunkData)} is called.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateCaves(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla caves
@@ -500,7 +501,7 @@ public abstract class ChunkGenerator {
      * The Vanilla decoration are generated <b>before</b> any
      * {@link BlockPopulator} are called.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateDecorations(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla decorations
@@ -535,7 +536,7 @@ public abstract class ChunkGenerator {
      * Gets if the server should generate Vanilla mobs after this
      * ChunkGenerator.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateMobs(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla mobs
@@ -567,7 +568,7 @@ public abstract class ChunkGenerator {
      * Gets if the server should generate Vanilla structures after this
      * ChunkGenerator.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateStructures(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla structures
@@ -777,5 +778,18 @@ public abstract class ChunkGenerator {
          */
         @Deprecated(since = "1.8.8")
         public byte getData(int x, int y, int z);
+
+        /**
+         * Get the current height of a position in the chunk data.
+         * <p>This will differ based on which state generation of the chunk is currently at.
+         * If for example the chunk is in the generate surface stage,
+         * this will return what was already generated in the noise stage.</p>
+         *
+         * @param heightMap Heightmap to determine where to grab height
+         * @param x the x location in the chunk from 0-15 inclusive
+         * @param z the z location in the chunk from 0-15 inclusive
+         * @return Y coordinate at highest position
+         */
+        int getHeight(@NotNull HeightMap heightMap, @Range(from = 0L, to = 15L) int x, @Range(from = 0L, to = 15L) int z);
     }
 }

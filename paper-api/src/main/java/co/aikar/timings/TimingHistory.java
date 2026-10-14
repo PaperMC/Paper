@@ -51,8 +51,7 @@ import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
 import static co.aikar.util.JSONUtil.*;
 
 /**
- * Internal.
- *
+ * @hidden
  * @deprecated Timings will be removed in the future
  */
 @Deprecated(forRemoval = true)
@@ -135,7 +134,7 @@ public class TimingHistory {
                     }
                 }
                 return pair(
-                    worldMap.get(world.getName()),
+                    worldMap.get(world.key().asString()),
                     toArrayMapper(regions.values(),new Function<RegionData, Object>() {
                         @NotNull
                         @Override
@@ -289,7 +288,7 @@ public class TimingHistory {
         final TicksRecord ticksRecord = new TicksRecord();
         final PingRecord pingRecord = new PingRecord();
         final TimingData fst = TimingsManager.FULL_SERVER_TICK.minuteData.clone();
-        final double tps = 1E9 / ( System.nanoTime() - lastMinuteTime ) * ticksRecord.timed;
+        final double tps = 1E9 / (System.nanoTime() - lastMinuteTime) * ticksRecord.timed;
         final double usedMemory = TimingsManager.FULL_SERVER_TICK.avgUsedMemory;
         final double freeMemory = TimingsManager.FULL_SERVER_TICK.avgFreeMemory;
         final double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();

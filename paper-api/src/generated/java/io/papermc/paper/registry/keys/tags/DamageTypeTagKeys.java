@@ -2,16 +2,15 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Vanilla keys for {@link RegistryKey#DAMAGE_TYPE}.
+ * Vanilla tag keys for {@link RegistryKey#DAMAGE_TYPE}.
  *
  * @apiNote The fields provided here are a direct representation of
  * what is available from the vanilla game source. They may be
@@ -23,9 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
-@ApiStatus.Experimental
+@GeneratedClass
 public final class DamageTypeTagKeys {
     /**
      * {@code #minecraft:always_hurts_ender_dragons}
@@ -82,6 +80,13 @@ public final class DamageTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<DamageType> BYPASSES_ARMOR = create(key("bypasses_armor"));
+
+    /**
+     * {@code #minecraft:bypasses_cooldown}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> BYPASSES_COOLDOWN = create(key("bypasses_cooldown"));
 
     /**
      * {@code #minecraft:bypasses_effects}
@@ -231,6 +236,13 @@ public final class DamageTypeTagKeys {
     public static final TagKey<DamageType> NO_KNOCKBACK = create(key("no_knockback"));
 
     /**
+     * {@code #minecraft:no_wolf_retaliation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> NO_WOLF_RETALIATION = create(key("no_wolf_retaliation"));
+
+    /**
      * {@code #minecraft:panic_causes}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -243,6 +255,13 @@ public final class DamageTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<DamageType> PANIC_ENVIRONMENTAL_CAUSES = create(key("panic_environmental_causes"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_with_block_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = create(key("sulfur_cube_with_block_immune_to"));
 
     /**
      * {@code #minecraft:witch_resistant_to}
@@ -267,7 +286,6 @@ public final class DamageTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<DamageType> create(final Key key) {
         return TagKey.create(RegistryKey.DAMAGE_TYPE, key);
     }

@@ -1,9 +1,11 @@
 package org.bukkit.event.vehicle;
 
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,13 +15,28 @@ import org.jetbrains.annotations.Nullable;
  * 'removed' due to other means.
  */
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final DamageSource damageSource;
     private final Entity attacker;
     private boolean cancelled;
 
-    public VehicleDestroyEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker) {
+    @ApiStatus.Internal
+    public VehicleDestroyEvent(final @NotNull Vehicle vehicle, final @NotNull DamageSource damageSource, final @Nullable Entity attacker) {
         super(vehicle);
+        this.damageSource = damageSource;
         this.attacker = attacker;
+    }
+
+    /**
+     * Gets the DamageSource that has destroyed the vehicle.
+     *
+     * @return the DamageSource that has destroyed the vehicle
+     */
+    @NotNull
+    public DamageSource getDamageSource() {
+        return this.damageSource;
     }
 
     /**
@@ -29,12 +46,12 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
      */
     @Nullable
     public Entity getAttacker() {
-        return attacker;
+        return this.attacker;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -45,11 +62,11 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

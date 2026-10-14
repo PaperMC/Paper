@@ -1,6 +1,6 @@
 package ca.spottedleaf.moonrise.common.misc;
 
-import ca.spottedleaf.concurrentutil.util.IntPairUtil;
+import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -23,12 +23,16 @@ public final class PositionCountingAreaMap<T> {
         return this.positions.size();
     }
 
+    public boolean hasObjectsNear(final long pos) {
+        return this.positions.containsKey(pos);
+    }
+
     public boolean hasObjectsNear(final int toX, final int toZ) {
-        return this.positions.containsKey(IntPairUtil.key(toX, toZ));
+        return this.positions.containsKey(CoordinateUtils.getChunkKey(toX, toZ));
     }
 
     public int getObjectsNear(final int toX, final int toZ) {
-        return this.positions.get(IntPairUtil.key(toX, toZ));
+        return this.positions.get(CoordinateUtils.getChunkKey(toX, toZ));
     }
 
     public boolean add(final T parameter, final int toX, final int toZ, final int distance) {
@@ -85,12 +89,12 @@ public final class PositionCountingAreaMap<T> {
 
         @Override
         protected void addCallback(final T parameter, final int toX, final int toZ) {
-            PositionCountingAreaMap.this.positions.addTo(IntPairUtil.key(toX, toZ), 1);
+            PositionCountingAreaMap.this.positions.addTo(CoordinateUtils.getChunkKey(toX, toZ), 1);
         }
 
         @Override
         protected void removeCallback(final T parameter, final int toX, final int toZ) {
-            final long key = IntPairUtil.key(toX, toZ);
+            final long key = CoordinateUtils.getChunkKey(toX, toZ);
             if (PositionCountingAreaMap.this.positions.addTo(key, -1) == 1) {
                 PositionCountingAreaMap.this.positions.remove(key);
             }

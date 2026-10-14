@@ -13,19 +13,14 @@ public class CraftEvokerFangs extends CraftEntity implements EvokerFangs {
 
     @Override
     public net.minecraft.world.entity.projectile.EvokerFangs getHandle() {
-        return (net.minecraft.world.entity.projectile.EvokerFangs) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEvokerFangs";
+        return (net.minecraft.world.entity.projectile.EvokerFangs) this.entity;
     }
 
     @Override
     public LivingEntity getOwner() {
         net.minecraft.world.entity.LivingEntity owner = this.getHandle().getOwner();
 
-        return (owner == null) ? null : (LivingEntity) owner.getBukkitEntity();
+        return (owner == null) ? null : owner.getBukkitEntity();
     }
 
     @Override

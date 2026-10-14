@@ -5,6 +5,7 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,13 +13,38 @@ import org.jetbrains.annotations.NotNull;
  * once every 5 ticks
  */
 public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private final List<LivingEntity> affectedEntities;
-    private boolean cancelled = false;
 
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final List<LivingEntity> affectedEntities;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public AreaEffectCloudApplyEvent(@NotNull final AreaEffectCloud entity, @NotNull final List<LivingEntity> affectedEntities) {
         super(entity);
         this.affectedEntities = affectedEntities;
+    }
+
+    @Override
+    @NotNull
+    public AreaEffectCloud getEntity() {
+        return (AreaEffectCloud) this.entity;
+    }
+
+    /**
+     * Retrieves a mutable list of the affected entities
+     * <p>
+     * It is important to note that not every entity in this list
+     * is guaranteed to be affected. The cloud may die during the
+     * application of its effects due to the depletion of {@link AreaEffectCloud#getDurationOnUse()}
+     * or {@link AreaEffectCloud#getRadiusOnUse()}
+     *
+     * @return the affected entity list
+     */
+    @NotNull
+    public List<LivingEntity> getAffectedEntities() {
+        return this.affectedEntities;
     }
 
     @Override
@@ -31,35 +57,14 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
         this.cancelled = cancel;
     }
 
-    @Override
-    @NotNull
-    public AreaEffectCloud getEntity() {
-        return (AreaEffectCloud) entity;
-    }
-
-    /**
-     * Retrieves a mutable list of the effected entities
-     * <p>
-     * It is important to note that not every entity in this list
-     * is guaranteed to be effected.  The cloud may die during the
-     * application of its effects due to the depletion of {@link AreaEffectCloud#getDurationOnUse()}
-     * or {@link AreaEffectCloud#getRadiusOnUse()}
-     *
-     * @return the affected entity list
-     */
-    @NotNull
-    public List<LivingEntity> getAffectedEntities() {
-        return affectedEntities;
-    }
-
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

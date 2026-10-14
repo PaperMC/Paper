@@ -1,7 +1,7 @@
 package org.bukkit.plugin.java;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.io.File;
@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -53,8 +54,7 @@ public abstract class JavaPlugin extends PluginBase {
     private FileConfiguration newConfig = null;
     private File configFile = null;
     private Logger logger = null;
-    @SuppressWarnings("deprecation")
-    private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = org.bukkit.Bukkit.getUnsafe().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
+    private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = InternalAPIBridge.get().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
     private boolean allowsLifecycleRegistration = true;
     private boolean isBeingEnabled = false;
 
@@ -165,7 +165,7 @@ public abstract class JavaPlugin extends PluginBase {
     protected final @Nullable Reader getTextResource(String file) {
         final InputStream in = getResource(file);
 
-        return in == null ? null : new InputStreamReader(in, Charsets.UTF_8);
+        return in == null ? null : new InputStreamReader(in, StandardCharsets.UTF_8);
     }
 
     @Override
@@ -177,7 +177,7 @@ public abstract class JavaPlugin extends PluginBase {
             return;
         }
 
-        newConfig.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream, Charsets.UTF_8)));
+        newConfig.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream, StandardCharsets.UTF_8)));
     }
 
     @Override
@@ -289,7 +289,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     private static class DummyPluginLoaderImplHolder {
-        private static final PluginLoader INSTANCE =  net.kyori.adventure.util.Services.service(PluginLoader.class)
+        private static final PluginLoader INSTANCE = net.kyori.adventure.util.Services.service(PluginLoader.class)
             .orElseThrow();
     }
     public final void init(PluginLoader loader, Server server, PluginDescriptionFile description, File dataFolder, File file, ClassLoader classLoader) {
@@ -310,16 +310,26 @@ public abstract class JavaPlugin extends PluginBase {
 
     /**
      * {@inheritDoc}
+     *
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
+    @ApiStatus.Obsolete(since = "26.3")
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         return false;
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
+    @ApiStatus.Obsolete(since = "26.3")
     public @Nullable List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         return null;
     }
@@ -333,7 +343,11 @@ public abstract class JavaPlugin extends PluginBase {
      * @return the plugin command if found, otherwise null
      * @throws UnsupportedOperationException if this plugin is a paper plugin and the method is called in {@link #onEnable()}
      * @see #registerCommand(String, String, Collection, BasicCommand)
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     public @Nullable PluginCommand getCommand(String name) {
         if (this.isBeingEnabled && !(pluginMeta instanceof PluginDescriptionFile)) {
             throw new UnsupportedOperationException("""
@@ -372,7 +386,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final BasicCommand basicCommand) {
         this.registerCommand(label, null, Collections.emptyList(), basicCommand);
     }
@@ -392,7 +405,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final @Nullable String description, final BasicCommand basicCommand) {
         this.registerCommand(label, description, Collections.emptyList(), basicCommand);
     }
@@ -412,7 +424,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final Collection<String> aliases, final BasicCommand basicCommand) {
         this.registerCommand(label, null, aliases, basicCommand);
     }
@@ -433,7 +444,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(label, description, aliases, basicCommand);

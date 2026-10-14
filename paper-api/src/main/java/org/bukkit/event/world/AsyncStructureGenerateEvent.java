@@ -14,6 +14,7 @@ import org.bukkit.util.EntityTransformer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * This event will sometimes fire synchronously, depending on how it was
@@ -26,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * If a {@link Structure} is naturally placed in a chunk of the world, this
  * event will be asynchronous. If a player executes the '/place structure'
  * command, this event will be synchronous.
- *
+ * <br>
  * Allows to register transformers that can modify the blocks placed and
  * entities spawned by the structure.
  * <p>
@@ -37,13 +38,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public class AsyncStructureGenerateEvent extends WorldEvent {
 
-    public static enum Cause {
-        COMMAND,
-        WORLD_GENERATION,
-        CUSTOM;
-    }
-
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Cause cause;
 
@@ -55,13 +50,14 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
     private final Map<NamespacedKey, BlockTransformer> blockTransformers = new LinkedHashMap<>();
     private final Map<NamespacedKey, EntityTransformer> entityTransformers = new LinkedHashMap<>();
 
+    @ApiStatus.Internal
     public AsyncStructureGenerateEvent(@NotNull World world, boolean async, @NotNull Cause cause, @NotNull Structure structure, @NotNull BoundingBox boundingBox, int chunkX, int chunkZ) {
         super(world, async);
+        this.cause = cause;
         this.structure = structure;
         this.boundingBox = boundingBox;
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
-        this.cause = cause;
     }
 
     /**
@@ -71,111 +67,7 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
      */
     @NotNull
     public Cause getCause() {
-        return cause;
-    }
-
-    /**
-     * Gets a block transformer by key.
-     *
-     * @param key the key of the block transformer
-     *
-     * @return the block transformer or null
-     */
-    @Nullable
-    public BlockTransformer getBlockTransformer(@NotNull NamespacedKey key) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        return blockTransformers.get(key);
-    }
-
-    /**
-     * Sets a block transformer to a key.
-     *
-     * @param key the key
-     * @param transformer the block transformer
-     */
-    public void setBlockTransformer(@NotNull NamespacedKey key, @NotNull BlockTransformer transformer) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        Preconditions.checkNotNull(transformer, "BlockTransformer cannot be null");
-        blockTransformers.put(key, transformer);
-    }
-
-    /**
-     * Removes a block transformer.
-     *
-     * @param key the key of the block transformer
-     */
-    public void removeBlockTransformer(@NotNull NamespacedKey key) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        blockTransformers.remove(key);
-    }
-
-    /**
-     * Removes all block transformers.
-     */
-    public void clearBlockTransformers() {
-        blockTransformers.clear();
-    }
-
-    /**
-     * Gets all block transformers in a unmodifiable map.
-     *
-     * @return the block transformers in a map
-     */
-    @NotNull
-    public Map<NamespacedKey, BlockTransformer> getBlockTransformers() {
-        return Collections.unmodifiableMap(blockTransformers);
-    }
-
-    /**
-     * Gets a entity transformer by key.
-     *
-     * @param key the key of the entity transformer
-     *
-     * @return the entity transformer or null
-     */
-    @Nullable
-    public EntityTransformer getEntityTransformer(@NotNull NamespacedKey key) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        return entityTransformers.get(key);
-    }
-
-    /**
-     * Sets a entity transformer to a key.
-     *
-     * @param key the key
-     * @param transformer the entity transformer
-     */
-    public void setEntityTransformer(@NotNull NamespacedKey key, @NotNull EntityTransformer transformer) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        Preconditions.checkNotNull(transformer, "EntityTransformer cannot be null");
-        entityTransformers.put(key, transformer);
-    }
-
-    /**
-     * Removes a entity transformer.
-     *
-     * @param key the key of the entity transformer
-     */
-    public void removeEntityTransformer(@NotNull NamespacedKey key) {
-        Preconditions.checkNotNull(key, "NamespacedKey cannot be null");
-        entityTransformers.remove(key);
-    }
-
-    /**
-     * Removes all entity transformers.
-     */
-    public void clearEntityTransformers() {
-        entityTransformers.clear();
-    }
-
-    /**
-     * Gets all entity transformers in a unmodifiable map.
-     *
-     * @return the entity transformers in a map
-     */
-    @NotNull
-    public Map<NamespacedKey, EntityTransformer> getEntityTransformers() {
-        return Collections.unmodifiableMap(entityTransformers);
+        return this.cause;
     }
 
     /**
@@ -185,7 +77,7 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
      */
     @NotNull
     public Structure getStructure() {
-        return structure;
+        return this.structure;
     }
 
     /**
@@ -195,7 +87,7 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
      */
     @NotNull
     public BoundingBox getBoundingBox() {
-        return boundingBox.clone();
+        return this.boundingBox.clone();
     }
 
     /**
@@ -204,7 +96,7 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
      * @return the chunk x coordinate
      */
     public int getChunkX() {
-        return chunkX;
+        return this.chunkX;
     }
 
     /**
@@ -213,17 +105,127 @@ public class AsyncStructureGenerateEvent extends WorldEvent {
      * @return the chunk z coordinate
      */
     public int getChunkZ() {
-        return chunkZ;
+        return this.chunkZ;
+    }
+
+    /**
+     * Gets a block transformer by key.
+     *
+     * @param key the key of the block transformer
+     *
+     * @return the block transformer or {@code null}
+     */
+    @Nullable
+    public BlockTransformer getBlockTransformer(@NotNull NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        return this.blockTransformers.get(key);
+    }
+
+    /**
+     * Sets a block transformer to a key.
+     *
+     * @param key the key
+     * @param transformer the block transformer
+     */
+    public void setBlockTransformer(@NotNull NamespacedKey key, @NotNull BlockTransformer transformer) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        Preconditions.checkArgument(transformer != null, "BlockTransformer cannot be null");
+        this.blockTransformers.put(key, transformer);
+    }
+
+    /**
+     * Removes a block transformer.
+     *
+     * @param key the key of the block transformer
+     */
+    public void removeBlockTransformer(@NotNull NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        this.blockTransformers.remove(key);
+    }
+
+    /**
+     * Removes all block transformers.
+     */
+    public void clearBlockTransformers() {
+        this.blockTransformers.clear();
+    }
+
+    /**
+     * Gets all block transformers in an unmodifiable map.
+     *
+     * @return the block transformers in a map
+     */
+    @NotNull
+    public @Unmodifiable Map<NamespacedKey, BlockTransformer> getBlockTransformers() {
+        return Collections.unmodifiableMap(this.blockTransformers);
+    }
+
+    /**
+     * Gets an entity transformer by key.
+     *
+     * @param key the key of the entity transformer
+     *
+     * @return the entity transformer or {@code null}
+     */
+    @Nullable
+    public EntityTransformer getEntityTransformer(@NotNull NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        return this.entityTransformers.get(key);
+    }
+
+    /**
+     * Sets an entity transformer to a key.
+     *
+     * @param key the key
+     * @param transformer the entity transformer
+     */
+    public void setEntityTransformer(@NotNull NamespacedKey key, @NotNull EntityTransformer transformer) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        Preconditions.checkArgument(transformer != null, "EntityTransformer cannot be null");
+        this.entityTransformers.put(key, transformer);
+    }
+
+    /**
+     * Removes an entity transformer.
+     *
+     * @param key the key of the entity transformer
+     */
+    public void removeEntityTransformer(@NotNull NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "NamespacedKey cannot be null");
+        this.entityTransformers.remove(key);
+    }
+
+    /**
+     * Removes all entity transformers.
+     */
+    public void clearEntityTransformers() {
+        this.entityTransformers.clear();
+    }
+
+    /**
+     * Gets all entity transformers in an unmodifiable map.
+     *
+     * @return the entity transformers in a map
+     */
+    @NotNull
+    public @Unmodifiable Map<NamespacedKey, EntityTransformer> getEntityTransformers() {
+        return Collections.unmodifiableMap(this.entityTransformers);
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
+    }
+
+    public enum Cause {
+        COMMAND,
+        WORLD_GENERATION,
+        CUSTOM
     }
 }

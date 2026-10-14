@@ -13,9 +13,13 @@ public enum EquipmentSlot {
     CHEST(() -> EquipmentSlotGroup.CHEST),
     HEAD(() -> EquipmentSlotGroup.HEAD),
     /**
-     * Only for certain entities such as horses and wolves.
+     * Only for certain entities such as horses, wolves, happy ghasts, nautiluses and sulfur cubes.
      */
-    BODY(() -> EquipmentSlotGroup.BODY); // Paper - add missing slot type
+    BODY(() -> EquipmentSlotGroup.BODY),
+    /**
+     * Only for certain entities such as pigs, horses, striders, copper golems and nautiluses.
+     */
+    SADDLE(() -> EquipmentSlotGroup.SADDLE);
 
     private final Supplier<EquipmentSlotGroup> group; // Supplier because of class loading order, since EquipmentSlot and EquipmentSlotGroup reference each other on class init
 
@@ -33,7 +37,7 @@ public enum EquipmentSlot {
     public EquipmentSlotGroup getGroup() {
         return group.get();
     }
-    // Paper start
+
     /**
      * Checks whether this equipment slot is a hand:
      * either {@link #HAND} or {@link #OFF_HAND}
@@ -70,5 +74,4 @@ public enum EquipmentSlot {
     public boolean isArmor() {
         return this == HEAD || this == CHEST || this == LEGS || this == FEET || this == BODY;
     }
-    // Paper end
 }

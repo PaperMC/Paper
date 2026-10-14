@@ -18,7 +18,7 @@ public class ExplosionResultTest {
     @Test
     public void testToBukkit() {
         for (Explosion.BlockInteraction effect : Explosion.BlockInteraction.values()) {
-            assertNotNull(CraftExplosionResult.toBukkit(effect), "No Bukkit enum for NMS explosion effect " + effect);
+            assertNotNull(CraftExplosionResult.toExplosionResult(effect), "No Bukkit enum for NMS explosion effect " + effect);
         }
     }
 }

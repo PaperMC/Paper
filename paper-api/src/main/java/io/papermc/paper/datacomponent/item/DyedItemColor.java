@@ -4,20 +4,17 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.Color;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a color applied to a dyeable item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DYED_COLOR
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface DyedItemColor extends ShownInTooltip<DyedItemColor> {
+public interface DyedItemColor {
 
-    @Contract(value = "_, _ -> new", pure = true)
-    static DyedItemColor dyedItemColor(final Color color, final boolean showInTooltip) {
-        return dyedItemColor().color(color).showInTooltip(showInTooltip).build();
+    @Contract(value = "_ -> new", pure = true)
+    static DyedItemColor dyedItemColor(final Color color) {
+        return dyedItemColor().color(color).build();
     }
 
     @Contract(value = "-> new", pure = true)
@@ -36,9 +33,8 @@ public interface DyedItemColor extends ShownInTooltip<DyedItemColor> {
     /**
      * Builder for {@link DyedItemColor}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<DyedItemColor> {
+    interface Builder extends DataComponentBuilder<DyedItemColor> {
 
         /**
          * Sets the color of this builder.

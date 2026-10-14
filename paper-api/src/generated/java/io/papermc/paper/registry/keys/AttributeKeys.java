@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,9 +22,16 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class AttributeKeys {
+    /**
+     * {@code minecraft:air_drag_modifier}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> AIR_DRAG_MODIFIER = create(key("air_drag_modifier"));
+
     /**
      * {@code minecraft:armor}
      *
@@ -61,6 +68,13 @@ public final class AttributeKeys {
     public static final TypedKey<Attribute> ATTACK_SPEED = create(key("attack_speed"));
 
     /**
+     * {@code minecraft:below_name_distance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> BELOW_NAME_DISTANCE = create(key("below_name_distance"));
+
+    /**
      * {@code minecraft:block_break_speed}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -75,11 +89,25 @@ public final class AttributeKeys {
     public static final TypedKey<Attribute> BLOCK_INTERACTION_RANGE = create(key("block_interaction_range"));
 
     /**
+     * {@code minecraft:bounciness}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> BOUNCINESS = create(key("bounciness"));
+
+    /**
      * {@code minecraft:burning_time}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> BURNING_TIME = create(key("burning_time"));
+
+    /**
+     * {@code minecraft:camera_distance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> CAMERA_DISTANCE = create(key("camera_distance"));
 
     /**
      * {@code minecraft:entity_interaction_range}
@@ -115,6 +143,13 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> FOLLOW_RANGE = create(key("follow_range"));
+
+    /**
+     * {@code minecraft:friction_modifier}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> FRICTION_MODIFIER = create(key("friction_modifier"));
 
     /**
      * {@code minecraft:gravity}
@@ -178,6 +213,13 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> MOVEMENT_SPEED = create(key("movement_speed"));
+
+    /**
+     * {@code minecraft:name_tag_distance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> NAME_TAG_DISTANCE = create(key("name_tag_distance"));
 
     /**
      * {@code minecraft:oxygen_bonus}
@@ -248,6 +290,20 @@ public final class AttributeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Attribute> WATER_MOVEMENT_EFFICIENCY = create(key("water_movement_efficiency"));
+
+    /**
+     * {@code minecraft:waypoint_receive_range}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> WAYPOINT_RECEIVE_RANGE = create(key("waypoint_receive_range"));
+
+    /**
+     * {@code minecraft:waypoint_transmit_range}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Attribute> WAYPOINT_TRANSMIT_RANGE = create(key("waypoint_transmit_range"));
 
     private AttributeKeys() {
     }

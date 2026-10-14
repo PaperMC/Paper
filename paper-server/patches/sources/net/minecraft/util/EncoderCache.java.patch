@@ -1,0 +1,41 @@
+--- a/net/minecraft/util/EncoderCache.java
++++ b/net/minecraft/util/EncoderCache.java
+@@ -26,6 +_,7 @@
+     }
+ 
+     public <A> Codec<A> wrap(final Codec<A> codec) {
++        final boolean requiresObfLevel = codec instanceof io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer.ObfuscationDependantCodec; // Paper - include item obf level in encoder cache
+         return new Codec<A>() {
+             @Override
+             public <T> DataResult<Pair<A, T>> decode(final DynamicOps<T> ops, final T input) {
+@@ -35,13 +_,13 @@
+             @Override
+             public <T> DataResult<T> encode(final A input, final DynamicOps<T> ops, final T prefix) {
+                 return EncoderCache.this.cache
+-                    .getUnchecked(new EncoderCache.Key<>(codec, input, ops))
++                    .getUnchecked(new EncoderCache.Key<>(codec, input, ops, requiresObfLevel ? io.papermc.paper.util.sanitizer.ItemObfuscationSession.currentSession().obfuscationLevel() : io.papermc.paper.util.sanitizer.ItemObfuscationSession.ObfuscationLevel.NONE)) // Paper - include item obf level in encoder cache
+                     .map(value -> (T)(value instanceof Tag tag ? tag.copy() : value));
+             }
+         };
+     }
+ 
+-    private record Key<A, T>(Codec<A> codec, A value, DynamicOps<T> ops) {
++    private record Key<A, T>(Codec<A> codec, A value, DynamicOps<T> ops, io.papermc.paper.util.sanitizer.ItemObfuscationSession.ObfuscationLevel level) { // Paper - include item obf level in encoder cache
+         public DataResult<T> resolve() {
+             return this.codec.encodeStart(this.ops, this.value);
+         }
+@@ -49,12 +_,13 @@
+         @Override
+         public boolean equals(final Object obj) {
+             return this == obj
+-                || obj instanceof EncoderCache.Key<?, ?> key && this.codec == key.codec && this.value.equals(key.value) && this.ops.equals(key.ops);
++                || obj instanceof EncoderCache.Key<?, ?> key && this.codec == key.codec && this.value.equals(key.value) && this.ops.equals(key.ops) && this.level == key.level; // Paper - include item obf level in encoder cache
+         }
+ 
+         @Override
+         public int hashCode() {
+             int result = System.identityHashCode(this.codec);
++            result = 31 * result + this.level.hashCode(); // Paper - include item obf level in encoder cache
+             result = 31 * result + this.value.hashCode();
+             return 31 * result + this.ops.hashCode();
+         }

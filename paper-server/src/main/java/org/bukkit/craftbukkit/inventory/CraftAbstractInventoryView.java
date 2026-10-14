@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
-    public void setItem(final int slot, @Nullable final ItemStack item) {
+    public void setItem(final int slot, final @Nullable ItemStack item) {
         Inventory inventory = this.getInventory(slot);
         if (inventory != null) {
             inventory.setItem(this.convertSlot(slot), item);
@@ -52,7 +52,10 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
         Preconditions.checkArgument(rawSlot < this.countSlots(), "Slot %s greater than inventory slot count", rawSlot);
+        return this.mapValidSlotToInventory(rawSlot);
+    }
 
+    public Inventory mapValidSlotToInventory(final int rawSlot) {
         if (rawSlot < this.getTopInventory().getSize()) {
             return this.getTopInventory();
         } else {
@@ -201,11 +204,22 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
                 } else if (slot > 35) {
                     type = InventoryType.SlotType.QUICKBAR;
                 }
+            } else if (this.getType() == InventoryType.CRAFTER) {
+                if (slot == 45) {
+                    type = InventoryType.SlotType.RESULT;
+                } else if (slot > 35) {
+                    type = InventoryType.SlotType.QUICKBAR;
+                }
             } else if (slot >= (this.countSlots() - (9 + 4 + 1))) { // Quickbar, Armor, Offhand
                 type = InventoryType.SlotType.QUICKBAR;
             }
         }
         return type;
+    }
+
+    @Override
+    public void open() {
+        getPlayer().openInventory(this);
     }
 
     @Override

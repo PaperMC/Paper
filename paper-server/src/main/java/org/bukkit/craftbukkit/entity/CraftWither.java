@@ -11,24 +11,16 @@ import org.bukkit.entity.Wither;
 
 public class CraftWither extends CraftMonster implements Wither, com.destroystokyo.paper.entity.CraftRangedEntity<WitherBoss> { // Paper
 
-    private BossBar bossBar;
+    private final BossBar bossBar;
 
     public CraftWither(CraftServer server, WitherBoss entity) {
         super(server, entity);
-
-        if (entity.bossEvent != null) {
-            this.bossBar = new CraftBossBar(entity.bossEvent);
-        }
+        this.bossBar = new CraftBossBar(entity.bossEvent);
     }
 
     @Override
     public WitherBoss getHandle() {
         return (WitherBoss) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftWither";
     }
 
     @Override
@@ -52,8 +44,8 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
         if (entityId == 0) {
             return null;
         }
-        Entity target = this.getHandle().level().getEntity(entityId);
-        return (target != null) ? (LivingEntity) target.getBukkitEntity() : null;
+        net.minecraft.world.entity.LivingEntity target = (net.minecraft.world.entity.LivingEntity) this.getHandle().level().getEntity(entityId);
+        return (target != null) ? target.getBukkitEntity() : null;
     }
 
     @Override
@@ -68,7 +60,6 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
         this.getHandle().setInvulnerableTicks(ticks);
     }
 
-    // Paper start
     @Override
     public boolean isCharged() {
         return getHandle().isPowered();
@@ -98,5 +89,4 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
     public void enterInvulnerabilityPhase() {
         this.getHandle().makeInvulnerable();
     }
-    // Paper end
 }

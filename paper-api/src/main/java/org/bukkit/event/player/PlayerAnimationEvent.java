@@ -1,33 +1,36 @@
 package org.bukkit.event.player;
 
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player animation event
- * <br>Use {@link io.papermc.paper.event.player.PlayerArmSwingEvent} for determining which arm was swung.
+ *
+ * @deprecated use {@link io.papermc.paper.event.player.PlayerArmSwingEvent}
  */
+@Deprecated(since = "26.3")
+@Warning(propagate = false)
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private final PlayerAnimationType animationType;
-    private boolean isCancelled = false;
 
-    @Deprecated(since = "1.19")
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final PlayerAnimationType animationType;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.19", forRemoval = true)
     public PlayerAnimationEvent(@NotNull final Player player) {
         this(player, PlayerAnimationType.ARM_SWING);
     }
 
-    /**
-     * Construct a new PlayerAnimation event
-     *
-     * @param player The player instance
-     * @param playerAnimationType The animation type
-     */
+    @ApiStatus.Internal
     public PlayerAnimationEvent(@NotNull final Player player, @NotNull final PlayerAnimationType playerAnimationType) {
         super(player);
-        animationType = playerAnimationType;
+        this.animationType = playerAnimationType;
     }
 
     /**
@@ -37,27 +40,27 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public PlayerAnimationType getAnimationType() {
-        return animationType;
+        return this.animationType;
     }
 
     @Override
     public boolean isCancelled() {
-        return this.isCancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.isCancelled = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

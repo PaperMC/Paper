@@ -27,7 +27,7 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
     ADVENTURE(2),
 
     /**
-     * Spectator mode cannot interact with the world in anyway and is
+     * Spectator mode cannot interact with the world in any way and is
      * invisible to normal players. This grants the player the
      * ability to no-clip through the world.
      */

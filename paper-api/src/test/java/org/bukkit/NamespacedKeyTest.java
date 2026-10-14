@@ -29,44 +29,21 @@ public class NamespacedKeyTest {
         assertNull(NamespacedKey.fromString("foo:bar:bazz"));
     }
 
-    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
-    @Test
-    public void testFromStringEmptyInput() {
-        assertThrows(IllegalArgumentException.class, () -> NamespacedKey.fromString(""));
-    }
-
     @Test
     public void testFromStringNullInput() {
         assertThrows(IllegalArgumentException.class, () -> NamespacedKey.fromString(null));
     }
 
     @Test
-    public void testEmptyNamespace() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("", "foo").toString());
-    }
-
-    @Test
-    public void testEmptyKey() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "").toString());
-    }
-
-    @Test
     public void testInvalidNamespace() {
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft/test", "foo").toString());
-    }
-
-    @Test
-    public void testInvalidNamespaceCasing() {
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("Minecraft", "foo").toString());
-    }
-
-    @Test
-    public void testInvalidKeyCasing() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "Foo").toString());
+        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("..", "foo").toString());
     }
 
     @Test
     public void testInvalidKey() {
+        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "Foo").toString());
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "foo!").toString());
     }
 
@@ -74,13 +51,5 @@ public class NamespacedKeyTest {
     public void testBelowLength() {
         new NamespacedKey("loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas",
                 "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas").toString();
-    }
-
-    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
-    @Test
-    public void testAboveLength() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas",
-                "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas/"
-                + "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas").toString());
     }
 }

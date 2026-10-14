@@ -14,7 +14,7 @@ public interface Advancement extends Keyed {
     /**
      * Get all the criteria present in this advancement.
      *
-     * @return a unmodifiable copy of all criteria
+     * @return an unmodifiable copy of all criteria
      */
     @NotNull
     Collection<String> getCriteria();

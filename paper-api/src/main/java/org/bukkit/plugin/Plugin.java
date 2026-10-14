@@ -3,6 +3,7 @@ package org.bukkit.plugin;
 import java.io.File;
 import java.io.InputStream;
 import java.util.logging.Logger;
+import net.kyori.adventure.key.Namespaced;
 import org.bukkit.Server;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The use of {@link PluginBase} is recommended for actual Implementation
  */
-public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner { // Paper
+public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner, Namespaced { // Paper
     /**
      * Returns the folder that the plugin data files are located in. The
      * folder may not yet exist.

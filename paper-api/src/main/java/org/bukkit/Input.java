@@ -1,11 +1,8 @@
 package org.bukkit;
 
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * Represents a movement input applied to an entity.
  */
-@ApiStatus.Experimental
 public interface Input {
 
     /**

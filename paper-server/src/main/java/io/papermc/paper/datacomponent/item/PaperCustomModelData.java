@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import it.unimi.dsi.fastutil.booleans.BooleanList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -10,7 +11,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Collections;
 import java.util.List;
-import io.papermc.paper.util.MCUtil;
 import org.bukkit.Color;
 import org.bukkit.craftbukkit.util.Handleable;
 
@@ -40,7 +40,7 @@ public record PaperCustomModelData(
 
     @Override
     public List<Color> colors() {
-        return MCUtil.transformUnmodifiable(this.impl.colors(), Color::fromRGB);
+        return MCUtil.transformUnmodifiable(this.impl.colors(), color -> Color.fromRGB(color & 0x00FFFFFF)); // skip alpha channel
     }
 
     static final class BuilderImpl implements CustomModelData.Builder {

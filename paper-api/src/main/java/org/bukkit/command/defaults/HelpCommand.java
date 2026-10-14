@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.help.HelpMap;
@@ -78,31 +81,29 @@ public class HelpCommand extends BukkitCommand {
         }
 
         if (topic == null || !topic.canSee(sender)) {
-            sender.sendMessage(ChatColor.RED + "No help for " + command);
+            sender.sendMessage(Component.text("No help for " + command, NamedTextColor.RED));
             return true;
         }
 
         ChatPaginator.ChatPage page = ChatPaginator.paginate(topic.getFullText(sender), pageNumber, pageWidth, pageHeight);
 
-        StringBuilder header = new StringBuilder();
-        header.append(ChatColor.YELLOW);
-        header.append("--------- ");
-        header.append(ChatColor.WHITE);
-        header.append("Help: ");
-        header.append(topic.getName());
-        header.append(" ");
+        TextComponent.Builder header = Component.text()
+            .append(Component.text("--------- ", NamedTextColor.YELLOW))
+            .append(Component.text("Help: ", NamedTextColor.WHITE))
+            .append(Component.text(topic.getName()))
+            .append(Component.space());
         if (page.getTotalPages() > 1) {
-            header.append("(");
-            header.append(page.getPageNumber());
-            header.append("/");
-            header.append(page.getTotalPages());
-            header.append(") ");
+            header.append(Component.text("("))
+                .append(Component.text(page.getPageNumber()))
+                .append(Component.text("/"))
+                .append(Component.text(page.getTotalPages()))
+                .append(Component.text(") "));
         }
-        header.append(ChatColor.YELLOW);
-        for (int i = header.length(); i < ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH; i++) {
-            header.append("-");
-        }
-        sender.sendMessage(header.toString());
+        final TextComponent headerComponent = header.build();
+        final int headerSize = PlainTextComponentSerializer.plainText().serialize(headerComponent).length();
+        final int headerEndingCount = Math.max(0, ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH - headerSize);
+
+        sender.sendMessage(headerComponent.append(Component.text("-".repeat(headerEndingCount), NamedTextColor.YELLOW)));
 
         sender.sendMessage(page.getLines());
 

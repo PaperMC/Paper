@@ -5,19 +5,28 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Event that is fired when a player uses the pick item functionality (middle-clicking a block or entity to get the
- * appropriate item). After the handling of this event, the contents of the source and the target slot will be swapped
+ * Event that is fired when a player uses the pick item functionality
+ * (middle-clicking a {@link PlayerPickBlockEvent block}
+ * or {@link PlayerPickEntityEvent entity} to get the appropriate item).
+ * After the handling of this event, the contents of the source and the target slot will be swapped,
  * and the currently selected hotbar slot of the player will be set to the target slot.
+ *
+ * @see PlayerPickEntityEvent
+ * @see PlayerPickBlockEvent
  */
 @NullMarked
-public class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
+public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final ItemStack item;
+    private final boolean includeData;
 
     private int targetSlot;
     private int sourceSlot;
@@ -25,10 +34,30 @@ public class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerPickItemEvent(final Player player, final int targetSlot, final int sourceSlot) {
+    protected PlayerPickItemEvent(final Player player, final ItemStack item, final boolean includeData, final int targetSlot, final int sourceSlot) {
         super(player);
+        this.item = item;
+        this.includeData = includeData;
         this.targetSlot = targetSlot;
         this.sourceSlot = sourceSlot;
+    }
+
+    /**
+     * Returns the item that is being picked.
+     *
+     * @return picked item
+     */
+    public ItemStack getItem() {
+        return this.item.clone();
+    }
+
+    /**
+     * Checks whether the player wants block/entity data included.
+     *
+     * @return {@code true} if data is included, otherwise {@code false}.
+     */
+    public boolean isIncludeData() {
+        return includeData;
     }
 
     /**

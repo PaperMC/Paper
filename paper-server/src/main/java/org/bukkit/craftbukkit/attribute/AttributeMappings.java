@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.attribute;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
@@ -54,11 +55,7 @@ final class AttributeMappings {
 
     public static @NotNull NamespacedKey uuidToKey(final UUID uuid) {
         final NamespacedKey key = ATTRIBUTE_MODIFIER_IDS.get(uuid);
-        if (key != null) {
-            return key;
-        } else {
-            return NamespacedKey.minecraft(uuid.toString());
-        }
+        return Objects.requireNonNullElseGet(key, () -> NamespacedKey.minecraft(uuid.toString()));
     }
 
     private static void add(final long msb, final long lsb, final String id) {

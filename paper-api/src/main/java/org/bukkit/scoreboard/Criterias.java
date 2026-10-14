@@ -5,7 +5,7 @@ package org.bukkit.scoreboard;
  *
  * @deprecated use the constants declared in {@link Criteria} instead
  */
-@Deprecated(since = "1.19.2")
+@Deprecated(since = "1.19.2", forRemoval = true)
 public final class Criterias {
 
     public static final String HEALTH = "health";

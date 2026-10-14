@@ -146,7 +146,7 @@ public final class Color implements ConfigurationSerializable {
      * @param blue integer from 0-255
      * @param green integer from 0-255
      * @param red integer from 0-255
-     * @return a new Color object for the red, green, blue
+     * @return a new Color object for the blue, green, red
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     @NotNull
@@ -201,10 +201,10 @@ public final class Color implements ConfigurationSerializable {
     }
 
     private Color(int alpha, int red, int green, int blue) {
-        Preconditions.checkArgument(alpha >= 0 && alpha <= BIT_MASK, "Alpha[%s] is not between 0-255", alpha);
-        Preconditions.checkArgument(red >= 0 && red <= BIT_MASK, "Red[%s] is not between 0-255", red);
-        Preconditions.checkArgument(green >= 0 && green <= BIT_MASK, "Green[%s] is not between 0-255", green);
-        Preconditions.checkArgument(blue >= 0 && blue <= BIT_MASK, "Blue[%s] is not between 0-255", blue);
+        Preconditions.checkArgument(alpha >= 0 && alpha <= 0xff, "Alpha[%s] is not between 0-255", alpha);
+        Preconditions.checkArgument(red >= 0 && red <= 0xff, "Red[%s] is not between 0-255", red);
+        Preconditions.checkArgument(green >= 0 && green <= 0xff, "Green[%s] is not between 0-255", green);
+        Preconditions.checkArgument(blue >= 0 && blue <= 0xff, "Blue[%s] is not between 0-255", blue);
 
         this.alpha = (byte) alpha;
         this.red = (byte) red;
@@ -225,7 +225,7 @@ public final class Color implements ConfigurationSerializable {
      * Creates a new Color object with specified component
      *
      * @param alpha the alpha component, from 0 to 255
-     * @return a new color object with the red component
+     * @return a new color object with the alpha component
      */
     @NotNull
     public Color setAlpha(int alpha) {
@@ -264,8 +264,8 @@ public final class Color implements ConfigurationSerializable {
     /**
      * Creates a new Color object with specified component
      *
-     * @param green the red component, from 0 to 255
-     * @return a new color object with the red component
+     * @param green the green component, from 0 to 255
+     * @return a new color object with the green component
      */
     @NotNull
     public Color setGreen(int green) {
@@ -284,8 +284,8 @@ public final class Color implements ConfigurationSerializable {
     /**
      * Creates a new Color object with specified component
      *
-     * @param blue the red component, from 0 to 255
-     * @return a new color object with the red component
+     * @param blue the blue component, from 0 to 255
+     * @return a new color object with the blue component
      */
     @NotNull
     public Color setBlue(int blue) {
@@ -401,7 +401,6 @@ public final class Color implements ConfigurationSerializable {
         );
     }
 
-    @SuppressWarnings("javadoc")
     @NotNull
     public static Color deserialize(@NotNull Map<String, Object> map) {
         return fromARGB(

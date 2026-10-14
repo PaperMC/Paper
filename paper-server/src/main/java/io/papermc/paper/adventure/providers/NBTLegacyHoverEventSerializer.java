@@ -17,7 +17,7 @@ import org.intellij.lang.annotations.Subst;
 
 final class NBTLegacyHoverEventSerializer implements LegacyHoverEventSerializer {
     public static final NBTLegacyHoverEventSerializer INSTANCE = new NBTLegacyHoverEventSerializer();
-    private static final Codec<CompoundTag, String, CommandSyntaxException, RuntimeException> SNBT_CODEC = Codec.codec(TagParser::parseTag, Tag::toString);
+    private static final Codec<CompoundTag, String, CommandSyntaxException, RuntimeException> SNBT_CODEC = Codec.codec(TagParser::parseCompoundFully, Tag::toString);
 
     static final String ITEM_TYPE = "id";
     static final String ITEM_COUNT = "Count";
@@ -35,11 +35,11 @@ final class NBTLegacyHoverEventSerializer implements LegacyHoverEventSerializer 
         final String raw = PlainTextComponentSerializer.plainText().serialize(input);
         try {
             final CompoundTag contents = SNBT_CODEC.decode(raw);
-            final CompoundTag tag = contents.getCompound(ITEM_TAG);
-            @Subst("key") final String keyString = contents.getString(ITEM_TYPE);
+            final CompoundTag tag = contents.getCompoundOrEmpty(ITEM_TAG);
+            @Subst("key") final String keyString = contents.getStringOr(ITEM_TYPE, "");
             return HoverEvent.ShowItem.showItem(
                 Key.key(keyString),
-                contents.contains(ITEM_COUNT) ? contents.getByte(ITEM_COUNT) : 1,
+                contents.getByteOr(ITEM_COUNT, (byte) 1),
                 tag.isEmpty() ? null : BinaryTagHolder.encode(tag, SNBT_CODEC)
             );
         } catch (final CommandSyntaxException ex) {
@@ -52,11 +52,11 @@ final class NBTLegacyHoverEventSerializer implements LegacyHoverEventSerializer 
         final String raw = PlainTextComponentSerializer.plainText().serialize(input);
         try {
             final CompoundTag contents = SNBT_CODEC.decode(raw);
-            @Subst("key") final String keyString = contents.getString(ENTITY_TYPE);
+            @Subst("key") final String keyString = contents.getStringOr(ENTITY_TYPE, "");
             return HoverEvent.ShowEntity.showEntity(
                 Key.key(keyString),
-                UUID.fromString(contents.getString(ENTITY_ID)),
-                componentCodec.decode(contents.getString(ENTITY_NAME))
+                UUID.fromString(contents.getStringOr(ENTITY_ID, "")),
+                componentCodec.decode(contents.getStringOr(ENTITY_NAME, ""))
             );
         } catch (final CommandSyntaxException ex) {
             throw new IOException(ex);

@@ -91,7 +91,7 @@ public interface LightningStrike extends Entity {
     /**
      * @deprecated Unsupported api
      */
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public class Spigot extends Entity.Spigot {
 
         /**
@@ -100,7 +100,7 @@ public interface LightningStrike extends Entity {
          * @return whether the strike is silent.
          * @deprecated sound is now client side and cannot be removed
          */
-        @Deprecated(since = "1.20.4")
+        @Deprecated(since = "1.20.4", forRemoval = true)
         public boolean isSilent() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -111,7 +111,7 @@ public interface LightningStrike extends Entity {
      */
     @NotNull
     @Override
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     Spigot spigot();
     // Spigot end
 
@@ -146,7 +146,7 @@ public interface LightningStrike extends Entity {
      * lightning through {@link #setCausingPlayer(Player)}.
      * </p>
      *
-     * @return the entity that caused this lightning or null if the lightning was not caused by a entity (e.g. normal
+     * @return the entity that caused this lightning or null if the lightning was not caused by an entity (e.g. normal
      * weather)
      */
     @org.jetbrains.annotations.Nullable

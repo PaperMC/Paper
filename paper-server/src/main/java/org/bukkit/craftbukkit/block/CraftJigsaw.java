@@ -7,8 +7,8 @@ import org.bukkit.block.Jigsaw;
 
 public class CraftJigsaw extends CraftBlockEntityState<JigsawBlockEntity> implements Jigsaw {
 
-    public CraftJigsaw(World world, JigsawBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftJigsaw(World world, JigsawBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftJigsaw(CraftJigsaw state, Location location) {

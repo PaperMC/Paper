@@ -17,7 +17,15 @@ public abstract class OptionalNumSerializer<T, O> extends ScalarSerializer.Annot
     private final Function<O, T> factory;
     private final Class<?> number;
 
-    protected OptionalNumSerializer(final Class<T> classOfT, final String emptySerializedValue, final T emptyValue, final Supplier<O> empty, final Predicate<O> isEmpty, final Function<O, T> factory, final Class<?> number) {
+    protected OptionalNumSerializer(
+        final Class<T> classOfT,
+        final String emptySerializedValue,
+        final T emptyValue,
+        final Supplier<O> empty,
+        final Predicate<O> isEmpty,
+        final Function<O, T> factory,
+        final Class<?> number
+    ) {
         super(classOfT);
         this.emptySerializedValue = emptySerializedValue;
         this.emptyValue = emptyValue;
@@ -30,7 +38,7 @@ public abstract class OptionalNumSerializer<T, O> extends ScalarSerializer.Annot
     @Override
     public final T deserialize(final AnnotatedType type, final Object obj) throws SerializationException {
         final O value;
-        if (obj instanceof String string) {
+        if (obj instanceof final String string) {
             if (this.emptySerializedValue.equalsIgnoreCase(string)) {
                 value = this.empty.get();
             } else if (NumberUtils.isParsable(string)) {
@@ -38,7 +46,7 @@ public abstract class OptionalNumSerializer<T, O> extends ScalarSerializer.Annot
             } else {
                 throw new SerializationException("%s (%s) is not a(n) %s or '%s'".formatted(obj, type, this.number.getSimpleName(), this.emptySerializedValue));
             }
-        } else if (obj instanceof Number num) {
+        } else if (obj instanceof final Number num) {
             value = this.full(num);
         } else {
             throw new SerializationException("%s (%s) is not a(n) %s or '%s'".formatted(obj, type, this.number.getSimpleName(), this.emptySerializedValue));

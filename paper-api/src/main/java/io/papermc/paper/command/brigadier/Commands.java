@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -13,9 +14,9 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -58,8 +59,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Commands extends Registrar {
 
@@ -86,6 +85,38 @@ public interface Commands extends Registrar {
     }
 
     /**
+     * Creates a restricted {@link Predicate} that wraps the given predicate.
+     * <p>
+     * A restricted predicate prevents execution in unattended contexts, such as from
+     * chat click events. A warning is shown on the client before executing the command.
+     * <p>
+     * This is used by vanilla to prevent invocation of sensitive commands (like op) from
+     * players without their knowledge.
+     *
+     * @param predicate the original predicate to wrap
+     * @return a new predicate with restricted execution behavior
+     */
+    static Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
+        return InternalAPIBridge.get().restricted(predicate, true);
+    }
+
+    /**
+     * Creates an unrestricted {@link Predicate} that wraps the given predicate.
+     * <p>
+     * A restricted predicate prevents execution in unattended contexts, such as from chat click events.
+     * Unrestricting prevents the warning shown on the client before executing the command.
+     * <p>
+     * This is used by vanilla to prevent invocation of sensitive commands (like op) from
+     * players without their knowledge.
+     *
+     * @param predicate the original predicate to wrap
+     * @return a new predicate with unrestricted execution behavior
+     */
+    static Predicate<CommandSourceStack> unrestricted(final Predicate<CommandSourceStack> predicate) {
+        return InternalAPIBridge.get().restricted(predicate, false);
+    }
+
+    /**
      * Gets the underlying {@link CommandDispatcher}.
      *
      * <p><b>Note:</b> This is a delicate API that must be used with care to ensure a consistent user experience.</p>
@@ -104,7 +135,6 @@ public interface Commands extends Registrar {
      *
      * @return the dispatcher instance
      */
-    @ApiStatus.Experimental
     CommandDispatcher<CommandSourceStack> getDispatcher();
 
     /**

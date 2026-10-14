@@ -1,22 +1,22 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLlama;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Llama;
-import org.bukkit.entity.Llama.Color;
 import org.bukkit.inventory.LlamaInventory;
 
-public class CraftLlama extends CraftChestedHorse implements Llama, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.animal.horse.Llama> { // Paper
+public class CraftLlama extends CraftChestedHorse implements Llama, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.animal.equine.Llama> { // Paper
 
-    public CraftLlama(CraftServer server, net.minecraft.world.entity.animal.horse.Llama entity) {
+    public CraftLlama(CraftServer server, net.minecraft.world.entity.animal.equine.Llama entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.horse.Llama getHandle() {
-        return (net.minecraft.world.entity.animal.horse.Llama) super.getHandle();
+    public net.minecraft.world.entity.animal.equine.Llama getHandle() {
+        return (net.minecraft.world.entity.animal.equine.Llama) this.entity;
     }
 
     @Override
@@ -28,12 +28,15 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public void setColor(Color color) {
         Preconditions.checkArgument(color != null, "color");
 
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.horse.Llama.Variant.byId(color.ordinal()));
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.equine.Llama.Variant.byId(color.ordinal()));
     }
 
     @Override
     public LlamaInventory getInventory() {
-        return new CraftInventoryLlama(this.getHandle().inventory, this.getHandle().getBodyArmorAccess());
+        return new CraftInventoryLlama(this.getHandle().inventory,
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
+        );
     }
 
     @Override
@@ -45,7 +48,7 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public void setStrength(int strength) {
         Preconditions.checkArgument(1 <= strength && strength <= 5, "strength must be [1,5]");
         if (strength == this.getStrength()) return;
-        this.getHandle().setStrengthPublic(strength);
+        this.getHandle().setStrength(strength);
         this.getHandle().createInventory();
     }
 
@@ -54,12 +57,6 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
         return Horse.Variant.LLAMA;
     }
 
-    @Override
-    public String toString() {
-        return "CraftLlama";
-    }
-
-    // Paper start
     @Override
     public boolean inCaravan() {
         return this.getHandle().inCaravan();
@@ -89,5 +86,4 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public Llama getCaravanTail() {
         return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
     }
-    // Paper end
 }

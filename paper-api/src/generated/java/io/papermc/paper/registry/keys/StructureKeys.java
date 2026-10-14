@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,9 +22,135 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class StructureKeys {
+    /**
+     * {@code minecraft:abandoned_camp_bamboo_jungle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_BAMBOO_JUNGLE = create(key("abandoned_camp_bamboo_jungle"));
+
+    /**
+     * {@code minecraft:abandoned_camp_birch_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_BIRCH_FOREST = create(key("abandoned_camp_birch_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_cherry_grove}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_CHERRY_GROVE = create(key("abandoned_camp_cherry_grove"));
+
+    /**
+     * {@code minecraft:abandoned_camp_dappled_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_DAPPLED_FOREST = create(key("abandoned_camp_dappled_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_flower_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_FLOWER_FOREST = create(key("abandoned_camp_flower_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_FOREST = create(key("abandoned_camp_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_meadow}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_MEADOW = create(key("abandoned_camp_meadow"));
+
+    /**
+     * {@code minecraft:abandoned_camp_old_growth_birch_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_OLD_GROWTH_BIRCH_FOREST = create(key("abandoned_camp_old_growth_birch_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_old_growth_pine_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_OLD_GROWTH_PINE_TAIGA = create(key("abandoned_camp_old_growth_pine_taiga"));
+
+    /**
+     * {@code minecraft:abandoned_camp_old_growth_spruce_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_OLD_GROWTH_SPRUCE_TAIGA = create(key("abandoned_camp_old_growth_spruce_taiga"));
+
+    /**
+     * {@code minecraft:abandoned_camp_pale_garden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_PALE_GARDEN = create(key("abandoned_camp_pale_garden"));
+
+    /**
+     * {@code minecraft:abandoned_camp_savanna}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_SAVANNA = create(key("abandoned_camp_savanna"));
+
+    /**
+     * {@code minecraft:abandoned_camp_snowy_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_SNOWY_TAIGA = create(key("abandoned_camp_snowy_taiga"));
+
+    /**
+     * {@code minecraft:abandoned_camp_sparse_jungle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_SPARSE_JUNGLE = create(key("abandoned_camp_sparse_jungle"));
+
+    /**
+     * {@code minecraft:abandoned_camp_swamp}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_SWAMP = create(key("abandoned_camp_swamp"));
+
+    /**
+     * {@code minecraft:abandoned_camp_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_TAIGA = create(key("abandoned_camp_taiga"));
+
+    /**
+     * {@code minecraft:abandoned_camp_windswept_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_WINDSWEPT_FOREST = create(key("abandoned_camp_windswept_forest"));
+
+    /**
+     * {@code minecraft:abandoned_camp_wooded_badlands}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Structure> ABANDONED_CAMP_WOODED_BADLANDS = create(key("abandoned_camp_wooded_badlands"));
+
     /**
      * {@code minecraft:ancient_city}
      *
@@ -267,7 +393,7 @@ public final class StructureKeys {
     }
 
     /**
-     * Creates a key for {@link Structure} in the registry {@code minecraft:worldgen/structure}.
+     * Creates a typed key for {@link Structure} in the registry {@code minecraft:worldgen/structure}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

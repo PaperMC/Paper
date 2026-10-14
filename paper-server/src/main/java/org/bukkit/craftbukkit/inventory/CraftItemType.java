@@ -4,17 +4,31 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import io.papermc.paper.registry.HolderableBase;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.random.Weighted;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.NumberDispatcher;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
+import net.minecraft.world.level.storage.loot.providers.number.ints.WeightedListValue;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
@@ -27,27 +41,25 @@ import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
-public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Handleable<Item>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - feature flag API
+@NullMarked
+public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> implements ItemType.Typed<M>, io.papermc.paper.world.flag.PaperFeatureDependent<Item> {
 
-    private final NamespacedKey key;
-    private final Item item;
     private final Supplier<CraftItemMetas.ItemMetaData<M>> itemMetaData;
 
-    public static Material minecraftToBukkit(Item item) {
-        return CraftMagicNumbers.getMaterial(item);
+    public static Material minecraftToBukkit(Item minecraft) {
+        return CraftMagicNumbers.getMaterial(minecraft);
     }
 
-    public static Item bukkitToMinecraft(Material material) {
-        return CraftMagicNumbers.getItem(material);
+    public static Item bukkitToMinecraft(Material bukkit) {
+        return CraftMagicNumbers.getItem(bukkit);
     }
 
     public static ItemType minecraftToBukkitNew(Item minecraft) {
@@ -58,65 +70,59 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public CraftItemType(NamespacedKey key, Item item) {
-        this.key = key;
-        this.item = item;
+    public static ItemType minecraftHolderToBukkitNew(Holder<Item> minecraft) {
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ITEM);
+    }
+
+    public static Holder<Item> bukkitToMinecraftHolderNew(ItemType bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+    }
+
+    public CraftItemType(final Holder<Item> holder) {
+        super(holder);
         this.itemMetaData = Suppliers.memoize(() -> CraftItemMetas.getItemMetaData(this));
     }
 
-    @NotNull
     @Override
     public Typed<ItemMeta> typed() {
         return this.typed(ItemMeta.class);
     }
 
-    @NotNull
     @Override
     @SuppressWarnings("unchecked")
-    public <Other extends ItemMeta> Typed<Other> typed(@NotNull final Class<Other> itemMetaType) {
+    public <Other extends ItemMeta> Typed<Other> typed(final Class<Other> itemMetaType) {
         if (itemMetaType.isAssignableFrom(this.itemMetaData.get().metaClass())) return (Typed<Other>) this;
 
-        throw new IllegalArgumentException("Cannot type item type " + this.key.toString() + " to meta type " + itemMetaType.getSimpleName());
+        throw new IllegalArgumentException("Cannot type item type " + this + " to meta type " + itemMetaType.getSimpleName());
     }
 
-    @NotNull
     @Override
     public ItemStack createItemStack() {
         return this.createItemStack(1, null);
     }
 
-    @NotNull
     @Override
     public ItemStack createItemStack(final int amount) {
         return this.createItemStack(amount, null);
     }
 
-    @NotNull
     @Override
-    public ItemStack createItemStack(Consumer<? super M> metaConfigurator) {
+    public ItemStack createItemStack(final @Nullable Consumer<? super M> metaConfigurator) {
         return this.createItemStack(1, metaConfigurator);
     }
 
-    @NotNull
     @Override
-    public ItemStack createItemStack(final int amount, @Nullable final Consumer<? super M> metaConfigurator) {
-        // Paper start - re-implement to return CraftItemStack
-        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.item, amount);
-        final CraftItemStack mirror = CraftItemStack.asCraftMirror(stack);
+    public ItemStack createItemStack(final int amount, final @Nullable Consumer<? super M> metaConfigurator) {
+        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle(), amount);
+        final ItemStack mirror = CraftItemStack.asBukkitMirror(stack);
         if (metaConfigurator != null) {
             mirror.editMeta(this.getItemMetaClass(), metaConfigurator);
         }
         return mirror;
-        // Paper start - reimplement to return CraftItemStack
     }
 
-    @Override
-    public Item getHandle() {
-        return this.item;
-    }
-
-    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        return this.itemMetaData.get().fromItemStack().apply(itemStack, extraHandledDcts);
+    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        return this.itemMetaData.get().fromItemStack().apply(itemStack, extraHandledComponents);
     }
 
     public M getItemMeta(ItemMeta itemMeta) {
@@ -125,13 +131,12 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public boolean hasBlockType() {
-        return this.item instanceof BlockItem;
+        return this.getHandle() instanceof BlockItem;
     }
 
-    @NotNull
     @Override
     public BlockType getBlockType() {
-        if (!(this.item instanceof BlockItem block)) {
+        if (!(this.getHandle() instanceof BlockItem block)) {
             throw new IllegalStateException("The item type " + this.getKey() + " has no corresponding block type");
         }
 
@@ -148,83 +153,119 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public int getMaxStackSize() {
-        // Based of the material enum air is only 0, in PerMaterialTest it is also set as special case
-        // the item info itself would return 64
-        if (false && this == AIR) { // Paper - air stacks to 64
-            return 0;
-        }
-        return this.item.components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
+        return this.getHandle().components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
     }
 
     @Override
     public short getMaxDurability() {
-        return this.item.components().getOrDefault(DataComponents.MAX_DAMAGE, 0).shortValue();
+        return this.getHandle().components().getOrDefault(DataComponents.MAX_DAMAGE, 0).shortValue();
     }
 
     @Override
     public boolean isEdible() {
-        return this.item.components().has(DataComponents.FOOD);
+        return this.getHandle().components().has(DataComponents.FOOD) && this.getHandle().components().has(DataComponents.CONSUMABLE);
     }
 
     @Override
     public boolean isRecord() {
-        return this.item.components().has(DataComponents.JUKEBOX_PLAYABLE);
+        return this.getHandle().components().has(DataComponents.JUKEBOX_PLAYABLE);
     }
 
     @Override
     public boolean isFuel() {
-        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.item));
+        return this.getHandle().components().has(DataComponents.COOKING_FUEL);
+    }
+
+    @Override
+    public int getBurnDuration() {
+        CookingFuel cookingFuel = this.getHandle().components().get(DataComponents.COOKING_FUEL);
+        if (cookingFuel == null) {
+            return 0;
+        }
+
+        // this is cursed but given the future API require a ton of rework not ready it's the best compromise
+        if (cookingFuel.burnTime() instanceof ResolvableInt.Reference burnTime) {
+            if (MinecraftServer.getServer() == null) {
+                throw new IllegalArgumentException("Too early to call this method");
+            }
+
+            Holder.Reference<ContextIntProvider> provider = MinecraftServer.getServer().reloadableRegistries().lookup().getOrThrow(burnTime.key());
+            LootContext fakeContext = new LootContext.Builder(new LootParams.Builder(null).create(LootContextParamSets.EMPTY))
+                .withOptionalRandomSeed(42L)
+                .createWithoutLevel();
+            return provider.value().getInt(fakeContext);
+        }
+        return 0;
     }
 
     @Override
     public boolean isCompostable() {
-        return ComposterBlock.COMPOSTABLES.containsKey(this.item);
+        return this.getHandle().components().has(DataComponents.COMPOSTABLE);
     }
 
     @Override
     public float getCompostChance() {
-        Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
-        return ComposterBlock.COMPOSTABLES.getFloat(this.item);
+        Compostable compostable = this.getHandle().components().get(DataComponents.COMPOSTABLE);
+        Preconditions.checkArgument(compostable != null, "The item type " + this.getKey() + " is not compostable");
+
+        // this is cursed but given the future API require a ton of rework not ready it's the best compromise
+        if (compostable.layers() instanceof ResolvableInt.Reference reference) {
+            if (MinecraftServer.getServer() == null) {
+                throw new IllegalArgumentException("Too early to call this method");
+            }
+
+            Holder.Reference<ContextIntProvider> provider = MinecraftServer.getServer().reloadableRegistries().lookup().getOrThrow(reference.key());
+            ConstantValue oneLayerValue = new ConstantValue(1);
+            if (provider.value().equals(oneLayerValue)) {
+                return 1.0F;
+            }
+            if (provider.value() instanceof NumberDispatcher dispatcher) {
+                if (dispatcher.defaultValue().value() instanceof WeightedListValue(WeightedList<Holder<ContextIntProvider>> distribution)) {
+                    List<Weighted<Holder<ContextIntProvider>>> weightedList = distribution.unwrap();
+                    int total = 0;
+                    int current = 0;
+                    for (Weighted<Holder<ContextIntProvider>> weighted : weightedList) {
+                        total += weighted.weight();
+                        if (weighted.value().value().equals(oneLayerValue)) {
+                            current = weighted.weight();
+                        }
+                    }
+
+                    return (float) current / total;
+                }
+            }
+        }
+
+        return 0.0F;
     }
 
     @Override
-    public ItemType getCraftingRemainingItem() {
-        net.minecraft.world.item.ItemStack expectedItem = this.item.getCraftingRemainder();
-        return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
+    public @Nullable ItemType getCraftingRemainingItem() {
+        ItemStackTemplate craftingRemainder = this.getHandle().getCraftingRemainder();
+        return craftingRemainder == null ? null : CraftItemType.minecraftHolderToBukkitNew(craftingRemainder.item());
     }
 
-//    @Override
-//    public EquipmentSlot getEquipmentSlot() {
-//        return CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(ItemStack.of(this))));
-//    }
-
-    // Paper start - improve default attribute API
     @Override
-    public @NotNull Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
-        return this.getDefaultAttributeModifiers(sg -> true);
+    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
+        return this.getDefaultAttributeModifiers(_ -> true);
     }
-    // Paper end - improve default attribute API
 
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
-        // Paper start - improve/fix item default attribute API
         final net.minecraft.world.entity.EquipmentSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
         return this.getDefaultAttributeModifiers(sg -> sg.test(nmsSlot));
     }
 
     private Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(final java.util.function.Predicate<net.minecraft.world.entity.EquipmentSlotGroup> slotPredicate) {
-        // Paper end - improve/fix item default attribute API
         ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
 
-        ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-        // Paper start - improve/fix item default attribute API
+        ItemAttributeModifiers nmsDefaultAttributes = this.getHandle().components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
         for (final net.minecraft.world.item.component.ItemAttributeModifiers.Entry entry : nmsDefaultAttributes.modifiers()) {
             if (!slotPredicate.test(entry.slot())) continue;
             final Attribute attribute = CraftAttribute.minecraftHolderToBukkit(entry.attribute());
             final AttributeModifier modifier = CraftAttributeInstance.convert(entry.modifier(), entry.slot());
             defaultAttributes.put(attribute, modifier);
         }
-        // Paper end - improve/fix item default attribute API
 
         return defaultAttributes.build();
     }
@@ -235,55 +276,49 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     }
 
     @Override
-    public boolean isEnabledByFeature(@NotNull World world) {
-        Preconditions.checkNotNull(world, "World cannot be null");
+    public boolean isEnabledByFeature(final World world) {
+        Preconditions.checkArgument(world != null, "World cannot be null");
         return this.getHandle().isEnabled(((CraftWorld) world).getHandle().enabledFeatures());
     }
 
-    @NotNull
     @Override
     public String getTranslationKey() {
-        return this.item.getDescriptionId();
+        return this.getHandle().getDescriptionId();
     }
 
     @Override
-    public NamespacedKey getKey() {
-        return this.key;
-    }
-
-    @Override
-    public Material asMaterial() {
-        return Registry.MATERIAL.get(this.key);
+    public @Nullable Material asMaterial() {
+        return Registry.MATERIAL.get(this.getKey());
     }
 
     // Paper start - add Translatable
     @Override
     public String translationKey() {
-        return this.item.getDescriptionId();
+        return this.getHandle().getDescriptionId();
     }
     // Paper end - add Translatable
 
     // Paper start - expand ItemRarity API
     @Override
-    public org.bukkit.inventory.ItemRarity getItemRarity() {
-        final net.minecraft.world.item.Rarity rarity = this.item.components().get(DataComponents.RARITY);
+    public org.bukkit.inventory.@Nullable ItemRarity getItemRarity() {
+        final net.minecraft.world.item.Rarity rarity = this.getHandle().components().get(DataComponents.RARITY);
         return rarity == null ? null : org.bukkit.inventory.ItemRarity.valueOf(rarity.name());
     }
     // Paper end - expand ItemRarity API
     // Paper start - data component API
     @Override
-    public <T> T getDefaultData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) {
-        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.item.components(), ((io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type));
+    public <T> @Nullable T getDefaultData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) {
+        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.getHandle().components(), ((io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type));
     }
 
     @Override
     public boolean hasDefaultData(final io.papermc.paper.datacomponent.DataComponentType type) {
-        return this.item.components().has(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+        return this.getHandle().components().has(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
     }
 
     @Override
     public java.util.Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes() {
-        return io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(this.item.components().keySet());
+        return io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(this.getHandle().components().keySet());
     }
     // Paper end - data component API
 }

@@ -11,7 +11,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <T> resolved type
  * @see <a href="https://minecraft.wiki/w/Target_selectors">Target Selectors</a>
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SelectorArgumentResolver<T> extends ArgumentResolver<T> {
 }

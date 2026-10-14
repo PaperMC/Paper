@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class TrimMaterialKeys {
     /**
      * {@code minecraft:amethyst}
@@ -106,7 +106,7 @@ public final class TrimMaterialKeys {
     }
 
     /**
-     * Creates a key for {@link TrimMaterial} in the registry {@code minecraft:trim_material}.
+     * Creates a typed key for {@link TrimMaterial} in the registry {@code minecraft:trim_material}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

@@ -8,9 +8,10 @@ import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestion;
 import io.papermc.paper.adventure.PaperAdventure;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import net.minecraft.commands.CommandSourceStack;
@@ -45,7 +46,10 @@ public final class BrigadierCommandCompleter {
         final ParseResults<CommandSourceStack> results = dispatcher.parse(new StringReader(line.line()), this.commandSourceStack.get());
         this.addCandidates(
             candidates,
-            dispatcher.getCompletionSuggestions(results, line.cursor()).join().getList(),
+            CompletableFuture.supplyAsync(() -> dispatcher.getCompletionSuggestions(results, line.cursor()), this.server::scheduleOnMain)
+                .thenCompose(Function.identity())
+                .join()
+                .getList(),
             existing,
             new ParseContext(line.line(), results.getContext().findSuggestionContext(line.cursor()).startPos)
         );

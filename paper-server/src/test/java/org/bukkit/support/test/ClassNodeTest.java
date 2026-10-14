@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ArgumentsSource(ClassNodeArgumentProvider.class)
-@ParameterizedTest
+@ParameterizedTest(name = "[{index}] - {1}")
 public @interface ClassNodeTest {
 
     ClassType[] value() default {ClassType.BUKKIT, ClassType.CRAFT_BUKKIT};

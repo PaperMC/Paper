@@ -4,21 +4,13 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the trims applied to an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemArmorTrim extends ShownInTooltip<ItemArmorTrim> {
-
-    @Contract(value = "_, _ -> new", pure = true)
-    static ItemArmorTrim itemArmorTrim(final ArmorTrim armorTrim, final boolean showInTooltip) {
-        return itemArmorTrim(armorTrim).showInTooltip(showInTooltip).build();
-    }
+public interface ItemArmorTrim  {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemArmorTrim.Builder itemArmorTrim(final ArmorTrim armorTrim) {
@@ -36,9 +28,8 @@ public interface ItemArmorTrim extends ShownInTooltip<ItemArmorTrim> {
     /**
      * Builder for {@link ItemArmorTrim}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<ItemArmorTrim> {
+    interface Builder extends DataComponentBuilder<ItemArmorTrim> {
 
         /**
          * Sets the armor trim for this builder.

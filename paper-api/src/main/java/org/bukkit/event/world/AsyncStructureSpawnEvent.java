@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,14 +13,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled = false;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Structure structure;
     private final BoundingBox boundingBox;
 
     private final int chunkX, chunkZ;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public AsyncStructureSpawnEvent(@NotNull World world, @NotNull Structure structure, @NotNull BoundingBox boundingBox, int chunkX, int chunkZ) {
         super(world, true);
         this.structure = structure;
@@ -35,7 +38,7 @@ public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable 
      */
     @NotNull
     public Structure getStructure() {
-        return structure;
+        return this.structure;
     }
 
     /**
@@ -45,51 +48,51 @@ public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable 
      */
     @NotNull
     public BoundingBox getBoundingBox() {
-        return boundingBox.clone();
+        return this.boundingBox.clone();
     }
 
     /**
      * Get the x coordinate of the origin chunk of the structure.
-     *
+     * <p>
      * <b>Note, it is not safe to attempt to retrieve or interact with this
      * chunk. This event is informative only!</b>
      *
      * @return the chunk x coordinate
      */
     public int getChunkX() {
-        return chunkX;
+        return this.chunkX;
     }
 
     /**
      * Get the z coordinate of the origin chunk of the structure.
-     *
+     * <p>
      * <b>Note, it is not safe to attempt to retrieve or interact with this
      * chunk. This event is informative only!</b>
      *
      * @return the chunk z coordinate
      */
     public int getChunkZ() {
-        return chunkZ;
+        return this.chunkZ;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        cancelled = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

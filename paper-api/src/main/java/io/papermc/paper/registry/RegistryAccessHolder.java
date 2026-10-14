@@ -5,7 +5,7 @@ import java.util.ServiceLoader;
 
 final class RegistryAccessHolder {
 
-    static final Optional<RegistryAccess> INSTANCE = ServiceLoader.load(RegistryAccess.class).findFirst();
+    static final Optional<RegistryAccess> INSTANCE = ServiceLoader.load(RegistryAccess.class, RegistryAccess.class.getClassLoader()).findFirst();
 
     private RegistryAccessHolder() {
     }

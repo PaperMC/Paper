@@ -8,15 +8,12 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the equippable properties of an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#EQUIPPABLE
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Equippable extends BuildableDataComponent<Equippable, Equippable.Builder> {
 
@@ -97,9 +94,32 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     boolean damageOnHurt();
 
     /**
+     * Checks if the item should be equipped when interacting with an entity.
+     *
+     * @return true if it equips on interact, false otherwise
+     */
+    @Contract(pure = true)
+    boolean equipOnInteract();
+
+    /**
+     * Checks if the item can be sheared off an entity.
+     *
+     * @return true if can be sheared off an entity, false otherwise
+     */
+    @Contract(pure = true)
+    boolean canBeSheared();
+
+    /**
+     * Returns the sound that is played when shearing this equipment off an entity.
+     *
+     * @return shear sound
+     */
+    @Contract(pure = true)
+    Key shearSound();
+
+    /**
      * Builder for {@link Equippable}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Equippable> {
 
@@ -165,5 +185,32 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder damageOnHurt(boolean damageOnHurt);
+
+        /**
+         * Sets whether the item should be equipped when interacting with an entity.
+         *
+         * @param equipOnInteract true if it equips on interact
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder equipOnInteract(boolean equipOnInteract);
+
+        /**
+         * Sets whether the item can be sheared off an entity.
+         *
+         * @param canBeSheared true if can be sheared off an entity
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder canBeSheared(boolean canBeSheared);
+
+        /**
+         * Sets the sound that is played when shearing this equipment off an entity.
+         *
+         * @param shearSound the shear sound key
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder shearSound(Key shearSound);
     }
 }

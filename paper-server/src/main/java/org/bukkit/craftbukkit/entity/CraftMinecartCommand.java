@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
@@ -14,6 +15,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart, io.papermc.paper.commands.PaperCommandBlockHolder {
+
     private final PermissibleBase perm = new PermissibleBase(this);
 
     public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
@@ -42,11 +44,6 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     }
 
     @Override
-    public String toString() {
-        return "CraftMinecartCommand";
-    }
-
-    @Override
     public void sendMessage(String message) {
     }
 
@@ -59,7 +56,6 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
         return CraftChatMessage.fromComponent(this.getHandle().getCommandBlock().getName());
     }
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getHandle().getCommandBlock().getName());
@@ -67,15 +63,14 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public net.minecraft.world.level.BaseCommandBlock getCommandBlockHandle() {
-        return getHandle().getCommandBlock();
+        return this.getHandle().getCommandBlock();
     }
 
     @Override
     public void lastOutput(net.kyori.adventure.text.Component lastOutput) {
         io.papermc.paper.commands.PaperCommandBlockHolder.super.lastOutput(lastOutput);
-        getCommandBlockHandle().onUpdated();
+        this.getCommandBlockHandle().onUpdated((ServerLevel) this.getHandle().level());
     }
-    // Paper end
 
     @Override
     public boolean isOp() {

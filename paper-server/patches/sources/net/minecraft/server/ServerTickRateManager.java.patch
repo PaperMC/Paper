@@ -1,0 +1,38 @@
+--- a/net/minecraft/server/ServerTickRateManager.java
++++ b/net/minecraft/server/ServerTickRateManager.java
+@@ -15,6 +_,7 @@
+     private long scheduledCurrentSprintTicks = 0L;
+     private boolean previousIsFrozen = false;
+     private final MinecraftServer server;
++    private boolean silent; // Paper - silence feedback when API requests sprint
+ 
+     public ServerTickRateManager(final MinecraftServer server) {
+         this.server = server;
+@@ -68,6 +_,13 @@
+     }
+ 
+     public boolean requestGameToSprint(final int time) {
++        // Paper start - silence feedback when API requests sprint
++        return requestGameToSprint(time, false);
++    }
++
++    public boolean requestGameToSprint(final int time, final boolean silent) {
++        if (!isSprinting()) this.silent = silent;
++        // Paper end - silence feedback when API requests sprint
+         boolean interrupted = this.remainingSprintTicks > 0L;
+         this.sprintTimeSpend = 0L;
+         this.scheduledCurrentSprintTicks = time;
+@@ -86,9 +_,12 @@
+         );
+         this.scheduledCurrentSprintTicks = 0L;
+         this.sprintTimeSpend = 0L;
+-        this.server
++        // Paper start - silence feedback when API requests sprint
++        if (!this.silent) this.server
+             .createCommandSourceStack()
+             .sendSuccess(() -> Component.translatable("commands.tick.sprint.report", ticksPerSecond, millisecondsPerTick), true);
++        this.silent = false;
++        // Paper end - silence feedback when API requests sprint
+         this.remainingSprintTicks = 0L;
+         this.setFrozen(this.previousIsFrozen);
+         this.server.onTickRateChanged();

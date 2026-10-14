@@ -115,7 +115,6 @@ public class CraftScheduler implements BukkitScheduler {
         RECENT_TICKS = 30;
     }
 
-
     // Paper start
     private final CraftScheduler asyncScheduler;
     private final boolean isAsyncScheduler;
@@ -132,6 +131,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
     }
     // Paper end
+
     @Override
     public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task) {
         return this.scheduleSyncDelayedTask(plugin, task, 0L);

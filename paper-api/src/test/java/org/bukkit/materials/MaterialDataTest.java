@@ -22,7 +22,7 @@ import org.bukkit.material.WoodenStep;
 import org.bukkit.material.types.MushroomBlockTexture;
 import org.junit.jupiter.api.Test;
 
-@Deprecated // Paper
+@Deprecated(forRemoval = true)
 public class MaterialDataTest {
 
     @Test

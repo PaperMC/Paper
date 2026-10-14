@@ -1,7 +1,5 @@
 package org.bukkit.support.extension;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.RegistryAccess;
@@ -16,6 +14,12 @@ import org.bukkit.support.DummyServerHelper;
 import org.bukkit.support.RegistryHelper;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mockito.stubbing.Answer;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public class NormalExtension extends BaseExtension {
 
@@ -38,7 +42,6 @@ public class NormalExtension extends BaseExtension {
         RegistryHelper.setup(FeatureFlags.VANILLA_SET);
 
         Server server = DummyServerHelper.setup();
-
         Bukkit.setServer(server);
 
         when(server.getRegistry(any()))
@@ -46,7 +49,6 @@ public class NormalExtension extends BaseExtension {
                     Class<? extends Keyed> keyed = invocation.getArgument(0);
                     return registries.computeIfAbsent(keyed, k -> createMockBukkitRegistry(keyed));
                 });
-
 
         RegistryAccess registry = mock(withSettings().stubOnly().defaultAnswer(NormalExtension.DEFAULT_ANSWER));
         CraftRegistry.setMinecraftRegistry(registry);
@@ -61,8 +63,8 @@ public class NormalExtension extends BaseExtension {
         Registry<T> registry = mock(withSettings().stubOnly().defaultAnswer(NormalExtension.DEFAULT_ANSWER));
 
         doAnswer(invocation ->
-                mocks.computeIfAbsent(invocation.getArgument(0), k -> mock(RegistryHelper.updateClass(keyed, invocation.getArgument(0)), withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER)))
-        ).when(registry).get((NamespacedKey) any()); // Allow static classes to fill there fields, so that it does not error out, just by loading them // Paper - registry modification api - specifically call namespaced key overload
+                mocks.computeIfAbsent(invocation.getArgument(0), k -> mock(RegistryHelper.getFieldType(keyed, invocation.getArgument(0)), withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER)))
+        ).when(registry).get((NamespacedKey) any()); // Allow static classes to fill their fields, so that it does not error out, just by loading them // Paper - registry modification api - specifically call namespaced key overload
 
         return registry;
     }

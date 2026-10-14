@@ -11,8 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 interface RegistryEventTypeProvider {
 
-    Optional<RegistryEventTypeProvider> PROVIDER = ServiceLoader.load(RegistryEventTypeProvider.class)
-        .findFirst();
+    Optional<RegistryEventTypeProvider> PROVIDER = ServiceLoader.load(RegistryEventTypeProvider.class, RegistryEventTypeProvider.class.getClassLoader()).findFirst();
 
     static RegistryEventTypeProvider provider() {
         return PROVIDER.orElseThrow(() -> new IllegalStateException("Could not find a %s service implementation".formatted(RegistryEventTypeProvider.class.getSimpleName())));
@@ -20,5 +19,5 @@ interface RegistryEventTypeProvider {
 
     <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(RegistryEventProvider<T, B> type);
 
-    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(RegistryEventProvider<T, B> type);
+    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> registryCompose(RegistryEventProvider<T, B> type);
 }

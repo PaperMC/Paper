@@ -1,13 +1,14 @@
 package org.bukkit.craftbukkit.inventory.components;
 
-import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import net.minecraft.world.food.FoodProperties;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.inventory.meta.components.FoodComponent;
+import org.checkerframework.checker.index.qual.NonNegative;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 @SerializableAs("Food")
 public final class CraftFoodComponent implements FoodComponent {
@@ -50,9 +51,8 @@ public final class CraftFoodComponent implements FoodComponent {
     }
 
     @Override
-    public void setNutrition(int nutrition) {
-        Preconditions.checkArgument(nutrition >= 0, "Nutrition cannot be negative");
-        this.handle = new FoodProperties(nutrition, this.handle.saturation(), this.handle.canAlwaysEat());
+    public void setNutrition(@NonNegative int nutrition) {
+        this.handle = new FoodProperties(requireNonNegative(nutrition, "nutrition"), this.handle.saturation(), this.handle.canAlwaysEat());
     }
 
     @Override
@@ -78,7 +78,7 @@ public final class CraftFoodComponent implements FoodComponent {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 73 * hash + Objects.hashCode(this.handle);
+        hash = 73 * hash + this.handle.hashCode();
         return hash;
     }
 
@@ -87,18 +87,15 @@ public final class CraftFoodComponent implements FoodComponent {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (this.getClass() != obj.getClass()) {
+        if (obj == null || this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftFoodComponent other = (CraftFoodComponent) obj;
-        return Objects.equals(this.handle, other.handle);
+        return this.handle.equals(other.handle);
     }
 
     @Override
     public String toString() {
-        return "CraftFoodComponent{" + "handle=" + this.handle + '}';
+        return "CraftFoodComponent{component=" + this.handle + '}';
     }
 }

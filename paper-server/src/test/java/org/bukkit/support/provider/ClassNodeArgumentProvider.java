@@ -34,7 +34,7 @@ public class ClassNodeArgumentProvider implements ArgumentsProvider, AnnotationC
         ClassReaderArgumentProvider classReaderArgumentProvider = new ClassReaderArgumentProvider();
         classReaderArgumentProvider.accept(new ClassReaderArguments(this.classReaderClassType(), this.excludedClasses, this.excludedPackages));
 
-        return classReaderArgumentProvider.getClassReaders().map(this::toClassNode).map(Arguments::of);
+        return classReaderArgumentProvider.getClassReaders().map(this::toClassNode).map(cn -> Arguments.of(cn, cn.name));
     }
 
     private ClassReaderTest.ClassType[] classReaderClassType() {

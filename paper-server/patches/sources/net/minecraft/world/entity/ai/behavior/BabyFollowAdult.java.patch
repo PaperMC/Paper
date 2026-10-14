@@ -1,23 +1,20 @@
 --- a/net/minecraft/world/entity/ai/behavior/BabyFollowAdult.java
 +++ b/net/minecraft/world/entity/ai/behavior/BabyFollowAdult.java
-@@ -24,8 +_,19 @@
-                     if (!mob.isBaby()) {
-                         return false;
-                     } else {
--                        AgeableMob ageableMob = instance.get(nearestVisibleAdult);
-+                        LivingEntity ageableMob = instance.get(nearestVisibleAdult); // CraftBukkit - type
-                         if (mob.closerThan(ageableMob, followRange.getMaxValue() + 1) && !mob.closerThan(ageableMob, followRange.getMinValue())) {
-+                            // CraftBukkit start
-+                            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(mob, ageableMob, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER);
-+                            if (event.isCancelled()) {
-+                                return false;
-+                            }
-+                            if (event.getTarget() == null) {
-+                                nearestVisibleAdult.erase();
-+                                return true;
-+                            }
-+                            ageableMob = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
-+                            // CraftBukkit end
-                             WalkTarget walkTarget1 = new WalkTarget(
-                                 new EntityTracker(ageableMob, false), speedModifier.apply(mob), followRange.getMinValue() - 1
-                             );
+@@ -28,6 +_,17 @@
+                         } else {
+                             LivingEntity adult = i.get(nearestAdult);
+                             if (body.closerThan(adult, followRange.maxInclusive() + 1) && !body.closerThan(adult, followRange.minInclusive())) {
++                                // CraftBukkit start
++                                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(body, adult, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++                                if (event.isCancelled()) {
++                                    return false;
++                                }
++                                if (event.getTarget() == null) {
++                                    walkTarget.erase();
++                                    return true;
++                                }
++                                adult = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++                                // CraftBukkit end
+                                 WalkTarget target = new WalkTarget(
+                                     new EntityTracker(adult, targetEye, targetEye), speedModifier.apply(body), followRange.minInclusive() - 1
+                                 );
