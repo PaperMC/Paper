@@ -2434,7 +2434,6 @@ public class CraftEventFactory {
             return fallDistance; // No listeners, skip event creation
         }
         EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
-        event.callEvent();
-        return event.isCancelled() ? -1 : event.getFallDistance();
+        return event.callEvent() ? event.getFallDistance() : -1;
     }
 }
