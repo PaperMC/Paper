@@ -71,7 +71,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignTextSlot;
@@ -2434,7 +2433,6 @@ public class CraftEventFactory {
             return fallDistance; // No listeners, skip event creation
         }
         EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
-        event.callEvent();
-        return event.isCancelled() ? -1 : event.getFallDistance();
+        return event.callEvent() ? event.getFallDistance() : -1;
     }
 }

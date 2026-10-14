@@ -1,10 +1,13 @@
 package io.papermc.paper.event.entity;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -21,6 +24,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private double fallDistance;
 
+    @ApiStatus.Internal
     public EntityLandEvent(final Entity entity, final Block block, double fallDistance) {
         super(entity);
         this.block = block;
@@ -37,9 +41,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Returns the block that the entity landed on.
-     *
-     * @return the block that the entity landed on
+     * {@return the block that the entity landed on}
      */
     public Block getBlock() {
         return this.block;
@@ -77,8 +79,13 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
      * the type of falling sound when the entity lands on {@link org.bukkit.Material#POWDER_SNOW}.
      *
      * @param fallDistance the fall distance
+     * @throws IllegalArgumentException if the fall distance is negative or not finite
      */
-    public void setFallDistance(final double fallDistance) {
+    public void setFallDistance(final @Range(from = 0, to = Long.MAX_VALUE) double fallDistance) {
+        Preconditions.checkArgument(
+            Double.isFinite(fallDistance) && fallDistance >= 0.0,
+            "Fall distance must be finite and non-negative"
+        );
         this.fallDistance = fallDistance;
     }
 }
