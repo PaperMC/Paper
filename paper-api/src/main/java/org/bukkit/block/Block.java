@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import java.util.Collection;
+import io.papermc.paper.world.biome.BiomeClimate;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -17,6 +18,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.bukkit.util.VoxelShape;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -514,14 +516,20 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Gets the temperature of this block.
      *
      * @return Temperature of this block
+     * @apiNote Name may be misleading, get the temperature from the biome instead.
+     *      See {@link BiomeClimate#computeAdjustedTemperature(Location)} and {@link Biome#climate()}
      */
+    @ApiStatus.Obsolete(since = "26.3")
     double getTemperature();
 
     /**
      * Gets the humidity of the biome of this block
      *
      * @return Humidity of this block
+     * @apiNote Name may be misleading, get the temperature from the biome instead.
+     *      See {@link BiomeClimate#downfall()} and {@link Biome#climate()}
      */
+    @ApiStatus.Obsolete(since = "26.3")
     double getHumidity();
 
     /**
