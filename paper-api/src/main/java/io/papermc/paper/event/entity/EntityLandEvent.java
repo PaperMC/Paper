@@ -37,9 +37,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Returns the block that the entity landed on.
-     *
-     * @return the block that the entity landed on
+     * {@return the block that the entity landed on}
      */
     public Block getBlock() {
         return this.block;
