@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
@@ -81,7 +82,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
      * @param fallDistance the fall distance
      * @throws IllegalArgumentException if the fall distance is negative or not finite
      */
-    public void setFallDistance(final @Range(from = 0, to = Long.MAX_VALUE) double fallDistance) {
+    public void setFallDistance(final @NonNegative double fallDistance) {
         Preconditions.checkArgument(
             Double.isFinite(fallDistance) && fallDistance >= 0.0,
             "Fall distance must be finite and non-negative"
