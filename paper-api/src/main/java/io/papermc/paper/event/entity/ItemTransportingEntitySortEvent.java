@@ -77,10 +77,10 @@ public class ItemTransportingEntitySortEvent extends EntityEvent {
      * Gets the item stack held by the entity that is being compared
      * against the container.
      *
-     * @return the held item stack
+     * @return a clone of the held item stack
      */
     public ItemStack getItemStack() {
-        return this.itemStack;
+        return this.itemStack.clone();
     }
 
     @Override
