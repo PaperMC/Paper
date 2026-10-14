@@ -19,7 +19,7 @@ public interface LocaleAwareOps {
 
         @Override
         public Locale locale() {
-            return locale;
+            return this.locale;
         }
     }
 
@@ -33,7 +33,7 @@ public interface LocaleAwareOps {
 
         @Override
         public Locale locale() {
-            return locale;
+            return this.locale;
         }
     }
 }
