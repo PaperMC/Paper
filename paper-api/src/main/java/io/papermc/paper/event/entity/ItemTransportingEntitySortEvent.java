@@ -11,11 +11,16 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when an item-transporting entity (typically a {@link CopperGolem},
- * although other entities may be possible through non-API means)
+ * Called when an item-transporting entity (ex a {@link CopperGolem})
  * is inspecting a destination {@link Container} to decide if the item it is holding
- * belongs in said container. This gives plugin developers an opportunity to
+ * belongs in said container.
+ * <br>
+ * This gives plugin developers an opportunity to
  * override the {@link CopperGolem}'s sorting behavior.
+ * <br>
+ * <b>Note:</b> This event can be called twice during a single
+ * "interaction", once before the container is opened, and again before items are
+ * added and the container is closed.
  */
 @NullMarked
 public class ItemTransportingEntitySortEvent extends EntityEvent {
