@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Wed, 14 Oct 2026 19:51:58 +0100
+Subject: [PATCH] Mitigate jline shutdown race
+
+
+diff --git a/org/jline/utils/JLineShutdownHooks.java b/org/jline/utils/JLineShutdownHooks.java
+index a1305712002bf57b6953fdfc20831f1313946565..8c87a246c4054b3adf75a9f4df29bd5fe5e709e0 100644
+--- a/org/jline/utils/JLineShutdownHooks.java
++++ b/org/jline/utils/JLineShutdownHooks.java
+@@ -3,7 +3,7 @@ package org.jline.utils;
+ public class JLineShutdownHooks {
+ 
+     public static void runShutdownHooks() {
+-        // Implemented by feature patch importing the jline ShutdownHooks type.
++        ShutdownHooks.runTasks();
+     }
+ 
+ }
+diff --git a/org/jline/utils/ShutdownHooks.java b/org/jline/utils/ShutdownHooks.java
+index f39793d0eb375501c4fa1b760188ede6ae70f66b..9ffdf6a999111564e2f0e0bf10b2713eeda547d5 100644
+--- a/org/jline/utils/ShutdownHooks.java
++++ b/org/jline/utils/ShutdownHooks.java
+@@ -85,7 +85,7 @@ public final class ShutdownHooks {
+         Objects.requireNonNull(task);
+ 
+         // Install the hook thread if needed
+-        if (hook == null) {
++        if (false && hook == null) { // Paper - mitigate race condition with our logger shutdown hook & JLine's shutdown hook - prevent JLine's hook being added
+             hook = addHook(new Thread("JLine Shutdown Hook") {
+                 @Override
+                 public void run() {
+@@ -101,7 +101,7 @@ public final class ShutdownHooks {
+         return task;
+     }
+ 
+-    private static synchronized void runTasks() {
++    static synchronized void runTasks() { // Paper - mitigate race condition with our logger shutdown hook & JLine's shutdown hook - package-private
+         Log.debug("Running all shutdown-hook tasks");
+ 
+         // Iterate through copy of tasks list
+@@ -127,7 +127,7 @@ public final class ShutdownHooks {
+         Objects.requireNonNull(task);
+ 
+         // ignore if hook never installed
+-        if (hook == null) {
++        if (false && hook == null) { // Paper - mitigate race condition with our logger shutdown hook & JLine's shutdown hook - prevent JLine's hook being added
+             return;
+         }
+ 
