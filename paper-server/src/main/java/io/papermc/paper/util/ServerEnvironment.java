@@ -16,9 +16,10 @@ public class ServerEnvironment {
             boolean runningAsRoot = false;
             try {
                 runningAsRoot = new UnixSystem().getUid() == 0;
-            } catch (UnsatisfiedLinkError ignored) {
-                // Java 27 can throw when the UID has no passwd entry (https://github.com/PaperMC/Paper/issues/14391).
-                // This check only controls a warning, so don't prevent startup.
+            } catch (final UnsatisfiedLinkError ignored) {
+                // Java 27 regressed on JDK-8274721 as part of an FFM rewrite of the UnixSystem class.
+                // A bug is under review with the jdk team for this, the try-catch should be removed as soon as this
+                // is fixed.
             }
             RUNNING_AS_ROOT_OR_ADMIN = runningAsRoot;
         }
