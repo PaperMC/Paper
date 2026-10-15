@@ -2166,7 +2166,7 @@ public class CraftEventFactory {
         Location from = bukkitPlayer.getLocation();
         PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
         event.callEvent();
-        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
+        if (event.isCancelled() || event.getTo().getWorld() == null || !player.isAlive()) {
             return null;
         }
 
