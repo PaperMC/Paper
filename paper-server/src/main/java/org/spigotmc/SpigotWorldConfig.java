@@ -286,6 +286,9 @@ public class SpigotWorldConfig {
         this.hopperAmount = this.getInt("hopper-amount", 1);
         this.hopperCanLoadChunks = this.getBoolean("hopper-can-load-chunks", false);
         this.log("Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount + " Hopper Can Load Chunks: " + this.hopperCanLoadChunks);
+        if (this.hopperCheck >= this.hopperTransfer) {
+            Bukkit.getLogger().warning(String.format("Non recommended hopper-check value: %d. This may prevent hopper pulls from reliably occurring before push, breaking vanilla behavior. Set hopper-check to 1 (default) or %d unless you fully understand the consequences.", this.hopperCheck, (this.hopperTransfer - 1)));
+        }
     }
 
     public int arrowDespawnRate;
