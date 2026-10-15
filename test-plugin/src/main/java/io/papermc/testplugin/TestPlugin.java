@@ -10,5 +10,6 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         this.getServer().getPluginManager().registerEvents(this, this);
 
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
+        // io.papermc.testplugin.brigtests.DimensionSuggestionsTest.register(this);
     }
 }

@@ -191,6 +191,8 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
+        @Comment("Request dimension suggestions from the server to include worlds loaded after the player joined.")
+        public boolean serverSideDimensionSuggestions = false;
         @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
         public boolean rideCommandAllowPlayerAsVehicle = false;
     }
