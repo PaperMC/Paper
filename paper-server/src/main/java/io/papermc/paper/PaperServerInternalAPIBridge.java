@@ -13,6 +13,8 @@ import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.persistence.PaperPersistentDataKey;
+import io.papermc.paper.persistence.PersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager;
 import io.papermc.paper.util.MCUtil;
@@ -26,6 +28,7 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.minecraft.Optionull;
@@ -69,6 +72,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
@@ -125,15 +129,15 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate, final boolean restricted) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate, @Override boolean restricted) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
             @Override
             public boolean test(final CommandSourceStack commandSourceStack) {
                 return this.predicate.test(commandSourceStack);
             }
         }
 
-        return new RestrictedPredicate(predicate);
+        return new RestrictedPredicate(predicate, restricted);
     }
 
     @Override
@@ -256,5 +260,13 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ComponentFlattener componentFlattener() {
         return PaperAdventure.FLATTENER;
+    }
+
+    @Override
+    public <C> PersistentDataKey<C> createPersistentDataKey(final Key key, final PersistentDataType<?, C> type) {
+        final NamespacedKey namespacedKey = key instanceof NamespacedKey thisKey
+            ? thisKey
+            : new NamespacedKey(key.namespace(), key.value());
+        return new PaperPersistentDataKey<>(namespacedKey, type);
     }
 }

@@ -11,8 +11,8 @@ import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> implements Campfire {
 
-    public CraftCampfire(World world, CampfireBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftCampfire(World world, CampfireBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftCampfire(CraftCampfire state, Location location) {
