@@ -132,4 +132,12 @@ public class VectorTest {
         vector.zero();
         assertTrue(vector.isZero());
     }
+
+    @Test
+    public void testNonFiniteCoordinatesRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new Vector(Double.NaN, 0, 0).checkFinite());
+        assertThrows(IllegalArgumentException.class, () -> new Vector(Double.POSITIVE_INFINITY, 1, 1).checkFinite());
+        assertThrows(IllegalArgumentException.class, () -> new Vector(1, Double.NEGATIVE_INFINITY, 1).checkFinite());
+        System.out.println("non-finite coordinates rejected by Vector.checkFinite");
+    }
 }

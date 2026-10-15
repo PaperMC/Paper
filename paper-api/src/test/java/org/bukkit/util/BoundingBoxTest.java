@@ -2,6 +2,7 @@ package org.bukkit.util;
 
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Map;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -200,5 +201,26 @@ public class BoundingBoxTest {
         Map<String, Object> serialized = aabb.serialize();
         BoundingBox deserialized = BoundingBox.deserialize(serialized);
         assertThat(deserialized, is(aabb));
+    }
+
+    @Test
+    public void testNonFiniteCoordinatesRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new BoundingBox(Double.NaN, 0, 0, 1, 1, 1));
+        assertThrows(IllegalArgumentException.class, () -> new BoundingBox(0, Double.POSITIVE_INFINITY, 0, 1, 1, 1));
+        assertThrows(IllegalArgumentException.class, () -> new BoundingBox(0, 0, Double.NEGATIVE_INFINITY, 1, 1, 1));
+        System.out.println("non-finite coordinates rejected by BoundingBox");
+    }
+
+    @Test
+    public void testZeroVolumeBounds() {
+        assertThat(new BoundingBox(1, 2, 3, 1, 2, 3).getVolume(), is(0.0));
+        System.out.println("zero-volume bounds getVolume is 0");
+    }
+
+    @Test
+    public void testNegativeExpansionShrinksBounds() {
+        BoundingBox aabb = new BoundingBox(0, 0, 0, 2, 2, 2);
+        assertThat(aabb.clone().expand(-0.5D), is(new BoundingBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5)));
+        System.out.println("negative expansion shrinks bounds");
     }
 }
