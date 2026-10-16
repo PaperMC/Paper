@@ -82,6 +82,13 @@ public final class BiomeKeys {
     public static final TypedKey<Biome> CRIMSON_FOREST = create(key("crimson_forest"));
 
     /**
+     * {@code minecraft:dappled_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Biome> DAPPLED_FOREST = create(key("dappled_forest"));
+
+    /**
      * {@code minecraft:dark_forest}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -395,6 +402,13 @@ public final class BiomeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Biome> STONY_SHORE = create(key("stony_shore"));
+
+    /**
+     * {@code minecraft:sulfur_caves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Biome> SULFUR_CAVES = create(key("sulfur_caves"));
 
     /**
      * {@code minecraft:sunflower_plains}

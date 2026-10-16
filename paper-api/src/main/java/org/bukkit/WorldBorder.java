@@ -36,7 +36,7 @@ public interface WorldBorder {
      *
      * @param newSize The new size of the border.
      *
-     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @throws IllegalArgumentException if newSize is less than 1.0 or greater than {@link #getMaxSize()}
      * @see #changeSize(double, long)
      */
     void setSize(double newSize);
@@ -47,7 +47,7 @@ public interface WorldBorder {
      * @param newSize The new side length of the border.
      * @param ticks The time in ticks in which the border grows or shrinks from the previous size to that being set.
      *
-     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @throws IllegalArgumentException if newSize is less than 1.0 or greater than {@link #getMaxSize()}
      * @throws IllegalArgumentException if ticks is out of range
      * @see #setSize(double)
      */
@@ -64,7 +64,7 @@ public interface WorldBorder {
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
     default void setSize(double newSize, long seconds) {
-        this.changeSize(Math.clamp(newSize, 1.0D, this.getMaxSize()), Tick.tick().fromDuration(Duration.ofSeconds(seconds)));
+        this.changeSize(Math.clamp(newSize, 1.0, this.getMaxSize()), Tick.tick().fromDuration(Duration.ofSeconds(seconds)));
     }
 
     /**
@@ -74,7 +74,7 @@ public interface WorldBorder {
      * @param unit The time unit.
      * @param time The time in which the border grows or shrinks from the previous size to that being set.
      *
-     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @throws IllegalArgumentException if newSize is less than 1.0 or greater than {@link #getMaxSize()}
      * @throws IllegalArgumentException if time is out of range once converted in ticks
      * @deprecated Use {@link #changeSize(double, long)} instead
      */

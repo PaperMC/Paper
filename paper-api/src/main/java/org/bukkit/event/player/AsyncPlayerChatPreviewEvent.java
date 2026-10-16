@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated chat previews have been removed
  */
 @Deprecated(since = "1.19.1")
-@Warning
+@Warning(value = true, propagate = false)
 public class AsyncPlayerChatPreviewEvent extends AsyncPlayerChatEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

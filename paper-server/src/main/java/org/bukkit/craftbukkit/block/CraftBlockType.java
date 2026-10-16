@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -23,7 +24,9 @@ import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.phys.BlockHitResult;
+import org.bukkit.Instrument;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -99,7 +102,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     @SuppressWarnings("unchecked")
     public CraftBlockType(final Holder<Block> holder) {
         super(holder);
-        this.blockDataClass = Suppliers.memoize(() -> (Class<B>) CraftBlockData.fromData(this.getHandle().defaultBlockState()).getClass().getInterfaces()[0]);
+        this.blockDataClass = Suppliers.memoize(() -> (Class<B>) this.getHandle().defaultBlockState().asBlockData().getClass().getInterfaces()[0]);
         this.interactable = Suppliers.memoize(() -> CraftBlockType.isInteractable(this.getHandle()));
     }
 
@@ -150,7 +153,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         final ImmutableList<BlockState> possibleStates = this.getHandle().getStateDefinition().getPossibleStates();
         final ImmutableList.Builder<B> builder = ImmutableList.builderWithExpectedSize(possibleStates.size());
         for (final BlockState possibleState : possibleStates) {
-            builder.add(this.blockDataClass.get().cast(possibleState.createCraftBlockData()));
+            builder.add(this.blockDataClass.get().cast(possibleState.asBlockData()));
         }
         return builder.build();
     }
@@ -169,12 +172,12 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     @SuppressWarnings("unchecked")
     @Override
     public B createBlockData(final @Nullable String data) {
-        return (B) CraftBlockData.newData(this, data);
+        return (B) CraftBlockData.fromString(this, data);
     }
 
     @Override
     public boolean isSolid() {
-        return this.getHandle().defaultBlockState().blocksMotion();
+        return this.getHandle().defaultBlockState().is(BlockTags.BLOCKS_MOTION);
     }
 
     @Override
@@ -215,7 +218,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
     @Override
     public float getHardness() {
-        return this.getHandle().defaultBlockState().destroySpeed;
+        return this.getHandle().defaultBlockState().getDestroySpeed(null,  null);
     }
 
     @Override
@@ -251,4 +254,10 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         return this.getHandle().hasCollision;
     }
     // Paper end - hasCollision API
+
+    @Override
+    public Instrument getInstrument() {
+        NoteBlockInstrument instrument = this.getHandle().defaultBlockState().instrument();
+        return CraftBlockData.fromVanilla(instrument, Instrument.class);
+    }
 }

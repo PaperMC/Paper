@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
  * A data-centric version-specific representation of a client texture asset, composed of an identifier and a path.
  * Follows the same, version-specific, compatibility guarantees as the RegistryEntry types it is used in.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ClientTextureAsset {
 
@@ -60,7 +59,7 @@ public interface ClientTextureAsset {
      * @return a new {@code ClientAsset} instance.
      */
     @Contract("_ -> new")
-    static ClientTextureAsset clientTextureAsset(final @KeyPattern String identifier) {
+    static ClientTextureAsset clientTextureAsset(@KeyPattern final String identifier) {
         return clientTextureAsset(Key.key(identifier));
     }
 }

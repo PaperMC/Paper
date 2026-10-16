@@ -1,32 +1,46 @@
 --- a/net/minecraft/world/level/levelgen/WorldGenerationContext.java
 +++ b/net/minecraft/world/level/levelgen/WorldGenerationContext.java
-@@ -6,8 +_,15 @@
- public class WorldGenerationContext {
+@@ -9,6 +_,7 @@
      private final int minY;
      private final int height;
-+    // Paper start - Flat bedrock generator settings
-+    private final @javax.annotation.Nullable net.minecraft.world.level.Level serverLevel;
+     private final int seaLevel;
++    private final net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level; // Paper - Flat bedrock generator settings
  
-     public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor level) {
-+        this(generator, level, null);
-+    }
-+    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor level, @javax.annotation.Nullable net.minecraft.world.level.Level serverLevel) {
-+        this.serverLevel = serverLevel;
-+        // Paper end - Flat bedrock generator settings
-         this.minY = Math.max(level.getMinY(), generator.getMinY());
-         this.height = Math.min(level.getHeight(), generator.getGenDepth());
+     public static WorldGenerationContext of(final LevelAccessor level) {
+         return level instanceof WorldGenLevel worldGenLevel
+@@ -17,6 +_,13 @@
      }
-@@ -19,4 +_,13 @@
-     public int getGenDepth() {
-         return this.height;
+ 
+     public WorldGenerationContext(final ChunkGenerator generator, final LevelHeightAccessor heightAccessor) {
++        // Paper start - Flat bedrock generator settings
++        this(generator, heightAccessor, null);
++    }
++
++    public WorldGenerationContext(final ChunkGenerator generator, final LevelHeightAccessor heightAccessor, final net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level) {
++        this.level = level;
++        // Paper end - Flat bedrock generator settings
+         this.minY = Math.max(heightAccessor.getMinY(), generator.getMinY());
+         this.height = Math.min(heightAccessor.getHeight(), generator.getGenDepth());
+         this.seaLevel = generator.getSeaLevel();
+@@ -26,6 +_,7 @@
+         this.minY = level.getMinY();
+         this.height = level.getHeight();
+         this.seaLevel = level.getSeaLevel();
++        this.level = null; // Paper - Flat bedrock generator settings
+     }
+ 
+     public int getMinGenY() {
+@@ -39,4 +_,13 @@
+     public int seaLevel() {
+         return this.seaLevel;
      }
 +
 +    // Paper start - Flat bedrock generator settings
 +    public net.minecraft.world.level.Level level() {
-+        if (this.serverLevel == null) {
++        if (this.level == null) {
 +            throw new NullPointerException("WorldGenerationContext was initialized without a Level, but WorldGenerationContext#level was called");
 +        }
-+        return this.serverLevel;
++        return this.level;
 +    }
 +    // Paper end - Flat bedrock generator settings
  }

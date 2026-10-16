@@ -56,7 +56,12 @@ public class RegistryConstantsTest {
             DataComponents.BLOCK_ENTITY_DATA,
             DataComponents.BUCKET_ENTITY_DATA,
             DataComponents.LOCK,
-            DataComponents.CREATIVE_SLOT_LOCK
+            DataComponents.CREATIVE_SLOT_LOCK,
+            DataComponents.ADDITIONAL_TRADE_COST,
+            DataComponents.BLOCK_TRANSFORMER,
+            DataComponents.COMPOSTABLE,
+            DataComponents.COOKING_FUEL,
+            DataComponents.BREWING_FUEL
         ));
     }
 

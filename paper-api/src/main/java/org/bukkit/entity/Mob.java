@@ -19,7 +19,6 @@ public interface Mob extends LivingEntity, Lootable, Leashable {
 
     /**
      * Check if a mob should be despawned when the world is set to peaceful difficulty.
-     * This also takes the {@link Mob#getDespawnInPeacefulOverride()} into account.
      *
      * @return True if the entity should be removed in peaceful
      */

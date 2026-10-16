@@ -1,10 +1,12 @@
 package io.papermc.paper.registry.data.dialog;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.dialog.CommonButtonData;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record ActionButtonImpl(Component label, @Nullable Component tooltip, int width, @Nullable DialogAction action) implements ActionButton {
 
@@ -26,9 +28,8 @@ public record ActionButtonImpl(Component label, @Nullable Component tooltip, int
         }
 
         @Override
-        public Builder width(final int width) {
-            Preconditions.checkArgument(width >= 1 && width <= 1024, "Width must be between 1 and 1024");
-            this.width = width;
+        public Builder width(final @Range(from = 1, to = 1024) int width) {
+            this.width = requireRange(width, "width", 1, 1024);
             return this;
         }
 

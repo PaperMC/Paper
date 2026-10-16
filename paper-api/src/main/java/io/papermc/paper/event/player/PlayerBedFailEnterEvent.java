@@ -35,7 +35,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
     }
 
     /**
-     * @deprecated This enum has been replaced with a system that better
+     * @apiNote This enum has been replaced with a system that better
      * represents how beds work. See {@link #enterAction}
      */
     @ApiStatus.Obsolete(since = "1.21.11")
@@ -48,7 +48,6 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      *
      * @return the action representing the default outcome of this event
      */
-    @ApiStatus.Experimental
     public BedEnterAction enterAction() {
         return this.enterAction;
     }
@@ -99,7 +98,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
     }
 
     /**
-     * @deprecated Enums no longer represents reliably how beds work and fail. This has been
+     * @apiNote Enums no longer represents reliably how beds work and fail. This has been
      * replaced with {@link BedEnterAction} that better fits the new beds
      */
     @ApiStatus.Obsolete(since = "1.21.11")
