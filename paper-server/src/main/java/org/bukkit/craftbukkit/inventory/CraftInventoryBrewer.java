@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.world.Container;
+import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
@@ -8,6 +9,11 @@ import org.bukkit.inventory.ItemStack;
 public class CraftInventoryBrewer extends CraftInventory implements BrewerInventory {
     public CraftInventoryBrewer(Container inventory) {
         super(inventory);
+    }
+
+    @Override
+    public ItemStack[] getStorageContents() {
+        return this.asCraftMirror(this.getInventory().getContents().subList(BrewingStandBlockEntity.INGREDIENT_SLOT, this.getInventory().getContainerSize()));
     }
 
     @Override
