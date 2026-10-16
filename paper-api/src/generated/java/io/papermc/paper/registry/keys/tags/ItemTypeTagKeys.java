@@ -145,11 +145,11 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> BREAKS_DECORATED_POTS = create(key("breaks_decorated_pots"));
 
     /**
-     * {@code #minecraft:brewing_fuel}
+     * {@code #minecraft:brewing_potion_inputs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<ItemType> BREWING_FUEL = create(key("brewing_fuel"));
+    public static final TagKey<ItemType> BREWING_POTION_INPUTS = create(key("brewing_potion_inputs"));
 
     /**
      * {@code #minecraft:bundles}
@@ -187,11 +187,25 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CANDLES = create(key("candles"));
 
     /**
+     * {@code #minecraft:cat_collar_dyes}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CAT_COLLAR_DYES = create(key("cat_collar_dyes"));
+
+    /**
      * {@code #minecraft:cat_food}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> CAT_FOOD = create(key("cat_food"));
+
+    /**
+     * {@code #minecraft:cauldron_can_remove_dye}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CAULDRON_CAN_REMOVE_DYE = create(key("cauldron_can_remove_dye"));
 
     /**
      * {@code #minecraft:chains}
@@ -229,6 +243,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CHICKEN_FOOD = create(key("chicken_food"));
 
     /**
+     * {@code #minecraft:clonable_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CLONABLE_MAPS = create(key("clonable_maps"));
+
+    /**
      * {@code #minecraft:cluster_max_harvestables}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -262,6 +283,34 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> COMPLETES_FIND_TREE_TUTORIAL = create(key("completes_find_tree_tutorial"));
+
+    /**
+     * {@code #minecraft:concrete}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CONCRETE = create(key("concrete"));
+
+    /**
+     * {@code #minecraft:concrete_powders}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CONCRETE_POWDERS = create(key("concrete_powders"));
+
+    /**
+     * {@code #minecraft:concrete_slabs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CONCRETE_SLABS = create(key("concrete_slabs"));
+
+    /**
+     * {@code #minecraft:concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CONCRETE_STAIRS = create(key("concrete_stairs"));
 
     /**
      * {@code #minecraft:copper}
@@ -327,6 +376,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CRIMSON_STEMS = create(key("crimson_stems"));
 
     /**
+     * {@code #minecraft:cushions}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CUSHIONS = create(key("cushions"));
+
+    /**
      * {@code #minecraft:dampens_vibrations}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -383,6 +439,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> DOORS = create(key("doors"));
 
     /**
+     * {@code #minecraft:douses_campfires}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> DOUSES_CAMPFIRES = create(key("douses_campfires"));
+
+    /**
      * {@code #minecraft:drowned_preferred_weapons}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -397,11 +460,11 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> DUPLICATES_ALLAYS = create(key("duplicates_allays"));
 
     /**
-     * {@code #minecraft:dyeable}
+     * {@code #minecraft:dyes}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<ItemType> DYEABLE = create(key("dyeable"));
+    public static final TagKey<ItemType> DYES = create(key("dyes"));
 
     /**
      * {@code #minecraft:eggs}
@@ -565,6 +628,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> ENCHANTABLE_WEAPON = create(key("enchantable/weapon"));
 
     /**
+     * {@code #minecraft:extendable_maps}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> EXTENDABLE_MAPS = create(key("extendable_maps"));
+
+    /**
      * {@code #minecraft:fence_gates}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -621,6 +691,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> FROG_FOOD = create(key("frog_food"));
 
     /**
+     * {@code #minecraft:furnace_fuel_bottom_takeable}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> FURNACE_FUEL_BOTTOM_TAKEABLE = create(key("furnace_fuel_bottom_takeable"));
+
+    /**
      * {@code #minecraft:furnace_minecart_fuel}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -633,6 +710,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> GAZE_DISGUISE_EQUIPMENT = create(key("gaze_disguise_equipment"));
+
+    /**
+     * {@code #minecraft:glazed_terracotta}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> GLAZED_TERRACOTTA = create(key("glazed_terracotta"));
 
     /**
      * {@code #minecraft:goat_food}
@@ -654,6 +738,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> GOLD_TOOL_MATERIALS = create(key("gold_tool_materials"));
+
+    /**
+     * {@code #minecraft:grass_blocks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> GRASS_BLOCKS = create(key("grass_blocks"));
 
     /**
      * {@code #minecraft:hanging_signs}
@@ -817,6 +908,20 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> LOGS_THAT_BURN = create(key("logs_that_burn"));
 
     /**
+     * {@code #minecraft:loom_dyes}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> LOOM_DYES = create(key("loom_dyes"));
+
+    /**
+     * {@code #minecraft:loom_patterns}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> LOOM_PATTERNS = create(key("loom_patterns"));
+
+    /**
      * {@code #minecraft:mangrove_logs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -836,6 +941,34 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> MEAT = create(key("meat"));
+
+    /**
+     * {@code #minecraft:metal_nuggets}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> METAL_NUGGETS = create(key("metal_nuggets"));
+
+    /**
+     * {@code #minecraft:moss_blocks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> MOSS_BLOCKS = create(key("moss_blocks"));
+
+    /**
+     * {@code #minecraft:mud}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> MUD = create(key("mud"));
+
+    /**
+     * {@code #minecraft:mushrooms}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> MUSHROOMS = create(key("mushrooms"));
 
     /**
      * {@code #minecraft:nautilus_bucket_food}
@@ -892,6 +1025,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> OCELOT_FOOD = create(key("ocelot_food"));
+
+    /**
+     * {@code #minecraft:ores}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> ORES = create(key("ores"));
 
     /**
      * {@code #minecraft:pale_oak_logs}
@@ -990,6 +1130,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> PLANKS = create(key("planks"));
+
+    /**
+     * {@code #minecraft:poplar_logs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> POPLAR_LOGS = create(key("poplar_logs"));
 
     /**
      * {@code #minecraft:rabbit_food}
@@ -1237,6 +1384,104 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> STRIDER_TEMPT_ITEMS = create(key("strider_tempt_items"));
 
     /**
+     * {@code #minecraft:sulfur_cube_archetype/bouncy}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_BOUNCY = create(key("sulfur_cube_archetype/bouncy"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/explosive}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_EXPLOSIVE = create(key("sulfur_cube_archetype/explosive"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/fast_flat}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_FAST_FLAT = create(key("sulfur_cube_archetype/fast_flat"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/fast_sliding}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_FAST_SLIDING = create(key("sulfur_cube_archetype/fast_sliding"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/high_resistance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_HIGH_RESISTANCE = create(key("sulfur_cube_archetype/high_resistance"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/hot}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_HOT = create(key("sulfur_cube_archetype/hot"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/light}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_LIGHT = create(key("sulfur_cube_archetype/light"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/regular}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_REGULAR = create(key("sulfur_cube_archetype/regular"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/slow_bouncy}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_SLOW_BOUNCY = create(key("sulfur_cube_archetype/slow_bouncy"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/slow_flat}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_SLOW_FLAT = create(key("sulfur_cube_archetype/slow_flat"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/slow_sliding}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_SLOW_SLIDING = create(key("sulfur_cube_archetype/slow_sliding"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_archetype/sticky}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_ARCHETYPE_STICKY = create(key("sulfur_cube_archetype/sticky"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_FOOD = create(key("sulfur_cube_food"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_swallowable}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SULFUR_CUBE_SWALLOWABLE = create(key("sulfur_cube_swallowable"));
+
+    /**
      * {@code #minecraft:swords}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1321,6 +1566,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> WITHER_SKELETON_DISLIKED_WEAPONS = create(key("wither_skeleton_disliked_weapons"));
 
     /**
+     * {@code #minecraft:wolf_collar_dyes}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> WOLF_COLLAR_DYES = create(key("wolf_collar_dyes"));
+
+    /**
      * {@code #minecraft:wolf_food}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1403,6 +1655,20 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> WOOL_CARPETS = create(key("wool_carpets"));
+
+    /**
+     * {@code #minecraft:wool_slabs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> WOOL_SLABS = create(key("wool_slabs"));
+
+    /**
+     * {@code #minecraft:wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> WOOL_STAIRS = create(key("wool_stairs"));
 
     /**
      * {@code #minecraft:zombie_horse_food}

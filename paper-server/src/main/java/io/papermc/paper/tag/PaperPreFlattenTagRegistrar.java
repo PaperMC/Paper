@@ -3,15 +3,14 @@ package io.papermc.paper.tag;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.util.MCUtil;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ public class PaperPreFlattenTagRegistrar<T> implements PaperRegistrar<BootstrapC
     }
 
     private static <T> List<io.papermc.paper.tag.TagEntry<T>> convert(final List<TagLoader.EntryWithSource> nmsEntries) {
-        return Collections.unmodifiableList(Lists.transform(nmsEntries, PaperPreFlattenTagRegistrar::convert));
+        return MCUtil.transformUnmodifiable(nmsEntries, PaperPreFlattenTagRegistrar::convert);
     }
 
     private static <T> io.papermc.paper.tag.TagEntry<T> convert(final TagLoader.EntryWithSource nmsEntry) {

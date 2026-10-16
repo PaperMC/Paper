@@ -1,8 +1,10 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
  */
-public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
+public interface BookMeta extends WritableBookMeta {
 
     /**
      * Represents the generation (or level of copying) of a written book
@@ -174,7 +176,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the title of the book
      */
-    @Override
     net.kyori.adventure.text.@Nullable Component title();
 
     /**
@@ -185,8 +186,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param title the title to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
+    @org.jetbrains.annotations.Contract(value = "_ -> this")
     @NotNull BookMeta title(net.kyori.adventure.text.@Nullable Component title);
 
     /**
@@ -197,7 +197,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the author of the book
      */
-    @Override
     net.kyori.adventure.text.@Nullable Component author();
 
     /**
@@ -206,8 +205,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param author the author to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
+    @org.jetbrains.annotations.Contract(value = "_ -> this")
     @NotNull BookMeta author(net.kyori.adventure.text.@Nullable Component author);
 
 
@@ -243,29 +241,34 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      */
     void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
 
-    interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
+    /**
+    * Gets the list of pages.
+    *
+    * <p>The returned collection will be unmodifiable.</p>
+    *
+    * @return the list of pages
+    */
+    @NotNull List<Component> pages();
 
-        @Override
-        @NotNull BookMetaBuilder title(net.kyori.adventure.text.@Nullable Component title);
+    /**
+     * Sets the pages of the book.
+     *
+     * @param pages the pages to set
+     * @return this book instance
+     */
+    @Contract(value = "_ -> this")
+    @NotNull BookMeta pages(final @NotNull List<Component> pages);
 
-        @Override
-        @NotNull BookMetaBuilder author(net.kyori.adventure.text.@Nullable Component author);
-
-        @Override
-        @NotNull BookMetaBuilder addPage(net.kyori.adventure.text.@NotNull Component page);
-
-        @Override
-        @NotNull BookMetaBuilder pages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-
-        @Override
-        @NotNull BookMetaBuilder pages(java.util.@NotNull Collection<net.kyori.adventure.text.Component> pages);
-
-        @Override
-        @NotNull BookMeta build();
+    /**
+     * Sets the pages of the book.
+    *
+    * @param pages the pages to set
+    * @return this book instance
+    */
+    @Contract(value = "_ -> this")
+    default @NotNull BookMeta pages(final @NotNull Component @NotNull... pages) {
+        return this.pages(List.of(pages));
     }
-
-    @Override
-    @NotNull BookMetaBuilder toBuilder();
     // Paper end
 
     // Spigot start

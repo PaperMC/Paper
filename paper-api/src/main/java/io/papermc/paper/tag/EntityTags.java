@@ -52,7 +52,7 @@ public class EntityTags {
      * Covers mobs that split into smaller mobs
      */
     public static final EntitySetTag SPLITTING_MOBS = new EntitySetTag(keyFor("splitting_mobs"))
-        .add(EntityType.SLIME, EntityType.MAGMA_CUBE).lock();
+        .add(EntityType.SLIME, EntityType.MAGMA_CUBE, EntityType.SULFUR_CUBE).lock();
 
     /**
      * Covers all water based mobs

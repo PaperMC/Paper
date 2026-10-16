@@ -17,7 +17,7 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
 
     @Override
     public int getAnger() {
-        return (int) (this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime());
+        return (int) Math.max(this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime(), 0);
     }
 
     @Override

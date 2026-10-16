@@ -6,7 +6,7 @@
      private @Nullable PrepareSpawnTask prepareSpawnTask;
 +    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
-     public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+     public ServerConfigurationPacketListenerImpl(final MinecraftServer server, final Connection connection, final CommonListenerCookie cookie) {
          super(server, connection, cookie);
          this.gameProfile = cookie.gameProfile();
          this.clientInformation = cookie.clientInformation();
@@ -31,7 +31,7 @@
 @@ -66,6 +_,11 @@
  
      @Override
-     public void onDisconnect(DisconnectionDetails details) {
+     public void onDisconnect(final DisconnectionDetails details) {
 +        // Paper start - Debugging
 +        if (this.server.isDebugging()) {
 +            ServerConfigurationPacketListenerImpl.LOGGER.info("{} ({}) lost connection: {}, while in configuration phase {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
@@ -47,18 +47,19 @@
 +        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
-         if (!serverLinks.isEmpty()) {
+-        if (!serverLinks.isEmpty()) {
 -            this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
-+            // Paper start
-+            org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
-+            new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++        // Paper start
++        org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
++        new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++        if (!links.getServerLinks().isEmpty()) {
 +            this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
-+            // Paper end
++        // Paper end
          }
  
-         LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = this.server.registries();
+         LayeredRegistryAccess<RegistryLayer> registries = this.server.registries();
 @@ -97,11 +_,12 @@
-         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
+         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(knownPacks, registries);
          this.configurationTasks.add(this.synchronizeRegistriesTask);
          this.addOptionalTasks();
 +        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
@@ -71,15 +72,44 @@
          this.configurationTasks.add(this.prepareSpawnTask);
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
-@@ -132,12 +_,14 @@
+@@ -109,17 +_,26 @@
+ 
+     private void addOptionalTasks() {
+         Map<String, String> codeOfConducts = this.server.getCodeOfConducts();
+-        if (!codeOfConducts.isEmpty()) {
++        if (io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent.getHandlerList().getRegisteredListeners().length > 0 || !codeOfConducts.isEmpty()) { // Paper - Code of Conduct event - Fire even if empty, if there are event listeners to potentially send one
+             this.configurationTasks.add(new ServerCodeOfConductConfigurationTask(() -> {
+                 String codeOfConduct = codeOfConducts.get(this.clientInformation.language().toLowerCase(Locale.ROOT));
+                 if (codeOfConduct == null) {
+                     codeOfConduct = codeOfConducts.get("en_us");
+                 }
+ 
+-                if (codeOfConduct == null) {
++                if (codeOfConduct == null && !codeOfConducts.isEmpty()) { // Paper - Code of Conduct event - Only if there are any - needed because we make this lambda run even if it's empty
+                     codeOfConduct = codeOfConducts.values().iterator().next();
+                 }
+ 
++                // Paper start - Code of Conduct event
++                io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
++                event.callEvent();
++                codeOfConduct = event.getCodeOfConduct();
++                if (codeOfConduct == null) {
++                    // Immediately bail out of this task. On MC updates, double check it's still okay to finish task within startNextTask.
++                    this.finishCurrentTask(ServerCodeOfConductConfigurationTask.TYPE);
++                }
++                // Paper end - Code of Conduct event
+                 return codeOfConduct;
+             }));
+         }
+@@ -130,12 +_,14 @@
      @Override
-     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+     public void handleClientInformation(final ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
 +        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
      }
  
      @Override
-     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+     public void handleResourcePackResponse(final ServerboundResourcePackPacket packet) {
          super.handleResourcePackResponse(packet);
 -        if (packet.action().isTerminal()) {
 +        this.connection.resourcePackStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()]; // Paper
@@ -87,18 +117,18 @@
              this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
          }
      }
-@@ -171,7 +_,7 @@
+@@ -169,7 +_,7 @@
                  return;
              }
  
--            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
-+            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
-             if (component != null) {
-                 this.disconnect(component);
+-            Component loginError = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
++            Component loginError = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
+             if (loginError != null) {
+                 this.disconnect(loginError);
                  return;
 @@ -231,4 +_,29 @@
-             this.startNextTask();
-         }
+         this.currentTask = null;
+         this.startNextTask();
      }
 +
 +    // Paper start

@@ -26,12 +26,12 @@ public interface ChatRenderer {
     Component render(Player source, Component sourceDisplayName, Component message, Audience viewer);
 
     /**
-     * Create a new instance of the default {@link ChatRenderer}.
+     * Gets the default {@link ChatRenderer}.
      *
-     * @return a new {@link ChatRenderer}
+     * @return the default {@link ChatRenderer}
      */
     static ChatRenderer defaultRenderer() {
-        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
+        return ViewerUnawareImpl.Default.INSTANCE;
     }
 
     @ApiStatus.Internal

@@ -2,6 +2,7 @@ package io.papermc.paper.registry.set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -44,16 +45,14 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
 
     @Override
     public boolean contains(final TypedKey<T> valueKey) {
-        return Iterables.any(this.namedSet, h -> {
-            return PaperRegistries.fromNms(((Holder.Reference<?>) h).key()).equals(valueKey);
-        });
+        return this.namedSet.contains(valueKey);
     }
 
     @Override
     public @Unmodifiable Collection<T> resolve(final Registry<T> registry) {
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (final Holder<M> holder : this.namedSet) {
-            builder.add(registry.getOrThrow(CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().identifier())));
+            builder.add(registry.getOrThrow(PaperAdventure.asAdventure(((Holder.Reference<?>) holder).key().identifier())));
         }
         return builder.build();
     }

@@ -52,7 +52,7 @@ public class RestartCommand extends Command {
     private static void shutdownServer(boolean isRestarting) {
         if (MinecraftServer.getServer().isSameThread()) {
             // Kick all players
-            for (ServerPlayer p : com.google.common.collect.ImmutableList.copyOf(MinecraftServer.getServer().getPlayerList().players)) {
+            for (ServerPlayer p : com.google.common.collect.ImmutableList.copyOf(MinecraftServer.getServer().getPlayerList().getPlayers())) {
                 p.connection.disconnect(CraftChatMessage.fromStringOrEmpty(SpigotConfig.restartMessage, true), org.bukkit.event.player.PlayerKickEvent.Cause.RESTART_COMMAND); // Paper - kick event reason (cause is never used)
             }
             // Give the socket a chance to send the packets
@@ -73,7 +73,7 @@ public class RestartCommand extends Command {
             System.exit(0);
         } else {
             // Mark the server to shutdown at the end of the tick
-            MinecraftServer.getServer().safeShutdown(false, isRestarting);
+            MinecraftServer.getServer().halt(false, isRestarting);
 
             // wait 10 seconds to see if we're actually going to try shutdown
             try {

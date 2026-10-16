@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.AbstractSpreadingStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.support.RegistryHelper;
@@ -38,8 +39,12 @@ public class StructureSeedConfigTest {
         for (final ResourceKey<StructureSet> setKey : structureSets.registryKeySet()) {
             assertEquals(Identifier.DEFAULT_NAMESPACE, setKey.identifier().getNamespace());
             final StructureSet set = structureSets.getValueOrThrow(setKey);
+            final StructurePlacement placement = set.placement();
+            if (!(placement instanceof AbstractSpreadingStructurePlacement spreadingPlacement)) {
+                throw new AssertionError("Expected AbstractSpreadingStructurePlacement, got " + placement.getClass().getName());
+            }
             if (setKey == BuiltinStructureSets.STRONGHOLDS) { // special case due to seed matching world seed
-                assertEquals(0, set.placement().salt);
+                assertEquals(0, spreadingPlacement.salt);
                 continue;
             }
             int salt = switch (setKey.identifier().getPath()) {
@@ -62,16 +67,17 @@ public class StructureSeedConfigTest {
                 case "ancient_cities" -> config.ancientCitySeed;
                 case "trail_ruins" -> config.trailRuinsSeed;
                 case "trial_chambers" -> config.trialChambersSeed;
+                case "abandoned_camp" -> config.abandonedCampSeed;
                 default -> throw new AssertionError("Missing structure set seed in SpigotWorldConfig for " + setKey);
             };
             if (setKey == BuiltinStructureSets.BURIED_TREASURES) {
-                final Field field = StructurePlacement.class.getDeclaredField("HIGHLY_ARBITRARY_RANDOM_SALT");
+                final Field field = AbstractSpreadingStructurePlacement.class.getDeclaredField("HIGHLY_ARBITRARY_RANDOM_SALT");
                 field.trySetAccessible();
-                assertEquals(0, set.placement().salt);
+                assertEquals(0, spreadingPlacement.salt);
                 assertEquals(field.get(null), salt, "Mismatched default seed for " + setKey + ". Should be " + field.get(null));
                 continue;
             }
-            assertEquals(set.placement().salt, salt, "Mismatched default seed for " + setKey + ". Should be " + set.placement().salt);
+            assertEquals(spreadingPlacement.salt, salt, "Mismatched default seed for " + setKey + ". Should be " + spreadingPlacement.salt);
         }
     }
 }

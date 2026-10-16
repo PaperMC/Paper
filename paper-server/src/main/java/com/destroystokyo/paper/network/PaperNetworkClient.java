@@ -1,32 +1,40 @@
 package com.destroystokyo.paper.network;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.Nullable;
 import net.minecraft.network.Connection;
 
 public class PaperNetworkClient implements NetworkClient {
 
-    private final Connection networkManager;
+    private final Connection connection;
 
-    PaperNetworkClient(Connection networkManager) {
-        this.networkManager = networkManager;
+    PaperNetworkClient(Connection connection) {
+        this.connection = connection;
+    }
+
+    @Override
+    public SocketAddress getSocketAddress() {
+        return this.connection.getRemoteAddress();
     }
 
     @Override
     public InetSocketAddress getAddress() {
-        return (InetSocketAddress) this.networkManager.getRemoteAddress();
+        if (this.connection.getRemoteAddress() instanceof InetSocketAddress inet) return inet;
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     @Override
     public int getProtocolVersion() {
-        return this.networkManager.protocolVersion;
+        return this.connection.protocolVersion;
     }
 
     @Nullable
     @Override
     public InetSocketAddress getVirtualHost() {
-        return this.networkManager.virtualHost;
+        return this.connection.virtualHost;
     }
 
     public static InetSocketAddress prepareVirtualHost(String host, int port) {
