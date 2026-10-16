@@ -1407,14 +1407,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets if the entity is allied to the given entity.
      *
      * @param other the other entity
-     * @return true if the entity is allied to the given entity
+     * @return {@code true} if the entity is allied to the given entity
      */
     boolean isAlliedTo(@NotNull Entity other);
 
     /**
      * Gets the current additional rule of alliance with any entity.
      * <br>
-     * This is an additional rule from the vanilla behaviour for any entity, like share a team.
+     * This is an additional rule from the vanilla behavior for any entity, like share a team.
      * <br>
      * This rule is not (currently) persistent.
      *
