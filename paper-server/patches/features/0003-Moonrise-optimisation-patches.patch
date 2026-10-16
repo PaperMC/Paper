@@ -24477,7 +24477,7 @@ index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a
 +
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608206a685a 100644
+index b711c1fba85d866a2cae702e26942744da5d744e..7a04214fcb23ca8cbf9ef7d50cfb28584ac4dc5f 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -24666,7 +24666,7 @@ index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
-@@ -214,35 +162,31 @@ public final class FeatureHooks {
+@@ -214,44 +162,149 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel level, int distance) {
@@ -24708,7 +24708,127 @@ index fbad2fd2ea324fec44f27ac35024579b5436db25..82377ee76caac220f7565cb729b9e608
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
+     public static io.papermc.paper.world.chunk.ChunkGenerationState getChunkGenerationState(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        // Paper start - rewrite chunk system
++        final io.papermc.paper.world.chunk.ChunkGenerationState loaded = getLoadedChunkGenerationState(level, chunkX, chunkZ);
++        if (loaded != null) {
++            return loaded;
++        }
++
++        // only hand the data off on the I/O thread, and classify it on the waiting thread
++        final java.util.concurrent.CompletableFuture<net.minecraft.nbt.CompoundTag> data = new java.util.concurrent.CompletableFuture<>();
++        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadDataAsync(
++            level, chunkX, chunkZ,
++            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA,
++            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag tag, final Throwable throwable) -> {
++                if (throwable != null) {
++                    data.completeExceptionally(throwable);
++                } else {
++                    data.complete(tag);
++                }
++            },
++            true, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.getIOBlockingPriorityForCurrentThread()
++        );
++
++        final net.minecraft.nbt.CompoundTag tag;
++        try {
++            tag = data.join();
++        } catch (final java.util.concurrent.CompletionException ex) {
++            throw new RuntimeException("Failed to read chunk data at (" + chunkX + ", " + chunkZ + ")", ex.getCause());
++        }
++        return classifyChunkGenerationState(tag, chunkX, chunkZ);
++        // Paper end - rewrite chunk system
+     }
+ 
+     public static java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> getChunkGenerationStateAsync(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        // Paper start - rewrite chunk system
++        final io.papermc.paper.world.chunk.ChunkGenerationState loaded = getLoadedChunkGenerationState(level, chunkX, chunkZ);
++        if (loaded != null) {
++            return java.util.concurrent.CompletableFuture.completedFuture(loaded);
++        }
++
++        final java.util.concurrent.CompletableFuture<io.papermc.paper.world.chunk.ChunkGenerationState> ret = new java.util.concurrent.CompletableFuture<>();
++        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadDataAsync(
++            level, chunkX, chunkZ,
++            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA,
++            (java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag, Throwable> & ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.NoCopyNBTData) (final net.minecraft.nbt.CompoundTag tag, final Throwable throwable) -> {
++                // classify and complete off of the I/O thread so that neither the classification nor callbacks stall I/O
++                level.moonrise$getChunkTaskScheduler().loadExecutor.createTask(() -> {
++                    if (throwable != null) {
++                        ret.completeExceptionally(throwable);
++                        return;
++                    }
++                    try {
++                        ret.complete(classifyChunkGenerationState(tag, chunkX, chunkZ));
++                    } catch (final Throwable thr) {
++                        ret.completeExceptionally(thr);
++                    }
++                }, ca.spottedleaf.concurrentutil.util.Priority.NORMAL).queue();
++            },
++            false, ca.spottedleaf.concurrentutil.util.Priority.NORMAL
++        );
++
++        return ret;
++        // Paper end - rewrite chunk system
++    }
++
++    // Paper start - rewrite chunk system
++    private static io.papermc.paper.world.chunk.ChunkGenerationState getLoadedChunkGenerationState(final net.minecraft.server.level.ServerLevel level, final int chunkX, final int chunkZ) {
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = level.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkX, chunkZ);
++        if (holder == null) {
++            return null;
++        }
++        final net.minecraft.world.level.chunk.ChunkAccess chunk = holder.getChunkIfPresentUnchecked(net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
++        if (chunk == null) {
++            return null;
++        }
++        if (chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED;
++        }
++        return io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
++    }
++
++    private static io.papermc.paper.world.chunk.ChunkGenerationState classifyChunkGenerationState(final net.minecraft.nbt.CompoundTag data, final int chunkX, final int chunkZ) {
++        if (data == null) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.NOT_GENERATED;
++        }
++
++        final int dataVersion = net.minecraft.nbt.NbtUtils.getDataVersion(data, -1);
++        final int currentVersion = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
++        if (dataVersion > currentVersion) {
++            throw new IllegalStateException("Chunk (" + chunkX + ", " + chunkZ + ") was saved by a newer version (data version " + dataVersion + ", current " + currentVersion + ")");
++        }
++        if (dataVersion < currentVersion) {
++            // status may not be accurate before the data is upgraded, and loading will rewrite the chunk regardless
++            return io.papermc.paper.world.chunk.ChunkGenerationState.OUTDATED;
++        }
++
++        if (data.getIntOr(net.minecraft.world.level.chunk.storage.SerializableChunkData.X_POS_TAG, 0) != chunkX
++            || data.getIntOr(net.minecraft.world.level.chunk.storage.SerializableChunkData.Z_POS_TAG, 0) != chunkZ) {
++            // loading will relocate the chunk
++            return io.papermc.paper.world.chunk.ChunkGenerationState.OUTDATED;
++        }
++
++        final net.minecraft.world.level.chunk.status.ChunkStatus status = data.read("Status", net.minecraft.world.level.chunk.status.ChunkStatus.CODEC).orElse(net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
++        final net.minecraft.world.level.levelgen.BelowZeroRetrogen retrogen = data.read("below_zero_retrogen", net.minecraft.world.level.levelgen.BelowZeroRetrogen.CODEC).orElse(null);
++        if (retrogen == null) {
++            return status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)
++                ? io.papermc.paper.world.chunk.ChunkGenerationState.GENERATED
++                : io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
++        }
++        // upgraded pre-1.18 chunks are stored with an empty status, and their original status as the retrogen target;
++        // pre-1.18 full chunks get a target of heightmaps, later remapped to spawn
++        if (status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL) || retrogen.targetStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN)) {
++            return io.papermc.paper.world.chunk.ChunkGenerationState.OUTDATED;
++        }
++        return io.papermc.paper.world.chunk.ChunkGenerationState.PARTIAL;
+     }
++    // Paper end - rewrite chunk system
+ 
      public static void flushAsyncAppenders() {
+         // Paper start - add explicit flush method
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..d86bd11e0155f767c3bf66ac05fa4acf6d2bfccb
@@ -28557,7 +28677,7 @@ index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b
          List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 47a0e17e4fed94828e02c7f4159d32195158f6cc..46e7478bd96e42487cf0fc467b6b9b83f2887d10 100644
+index 9193fc073a6dbf0f7dcdd2b06ddf59a4e4355428..5090c9780ada3c8a7fd070bc6aec3ff1af034d73 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,7 +183,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -29345,7 +29465,7 @@ index 47a0e17e4fed94828e02c7f4159d32195158f6cc..46e7478bd96e42487cf0fc467b6b9b83
              "Server weather",
              () -> String.format(
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 0af1b7ab2bcb96d82a2059572b990fcb6bca8774..576619ccf1f67aca9e5fdaecc68435ef96bb4c84 100644
+index 60ee67ac745ea3e693c2ef6e8a94e74e3f6f0ed9..beb0135d0c292e5b879fac5d55e5889b761d5d0a 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -210,7 +210,7 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -30081,10 +30201,10 @@ index 3271c83bd103bea9b9ffcd6882b52896ea4da770..f6601bc30fa37a309923ea9883b04233
                  PrepareSpawnTask.this.loadListener.updateFocus(this.spawnLevel.dimension(), spawnChunk);
              }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index b1bf82288596b686dfb4e19d274a6a623fbe1667..010c6c7e9bf59408bdac22a01f05fe2e8fbafe41 100644
+index 3798b820166e8b3a8e09e94a8a339c212d6620e0..8957b3957d67ac2b1d2cfadc86ce729a485a68e2 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -986,8 +986,8 @@ public abstract class PlayerList {
+@@ -987,8 +987,8 @@ public abstract class PlayerList {
          player.connection.send(level.clockManager().createFullSyncPacket(player)); // Paper - per-world time; per-player time
          player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
          // Paper start - view distances
@@ -30095,7 +30215,7 @@ index b1bf82288596b686dfb4e19d274a6a623fbe1667..010c6c7e9bf59408bdac22a01f05fe2e
          // Paper end - view distances
          if (level.isRaining()) {
              // CraftBukkit start - handle player weather
-@@ -1203,7 +1203,7 @@ public abstract class PlayerList {
+@@ -1204,7 +1204,7 @@ public abstract class PlayerList {
  
      public void setViewDistance(final int viewDistance) {
          this.viewDistance = viewDistance;
@@ -30104,7 +30224,7 @@ index b1bf82288596b686dfb4e19d274a6a623fbe1667..010c6c7e9bf59408bdac22a01f05fe2e
  
          for (ServerLevel level : this.server.getAllLevels()) {
              level.getChunkSource().setViewDistance(viewDistance);
-@@ -1212,7 +1212,7 @@ public abstract class PlayerList {
+@@ -1213,7 +1213,7 @@ public abstract class PlayerList {
  
      public void setSimulationDistance(final int simulationDistance) {
          this.simulationDistance = simulationDistance;
@@ -30536,7 +30656,7 @@ index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc74
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0783cbf27 100644
+index ac3695b4550a4d438c264f6054192cd59490c556..bb61d4e4ecfe5bab6269fa3d4303dab95719d7bb 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
@@ -31009,7 +31129,7 @@ index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0
      }
  
      public InteractionResult interact(final Player player, final InteractionHand hand, final Vec3 location) {
-@@ -4577,15 +4819,17 @@ public abstract class Entity
+@@ -4573,15 +4815,17 @@ public abstract class Entity
      }
  
      public Iterable<Entity> getIndirectPassengers() {
@@ -31035,7 +31155,7 @@ index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0
      }
  
      public int countPlayerPassengers() {
-@@ -4896,6 +5140,15 @@ public abstract class Entity
+@@ -4892,6 +5136,15 @@ public abstract class Entity
      }
  
      public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
@@ -31051,7 +31171,7 @@ index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0
          if (!checkPosition(this, x, y, z)) {
              return;
          }
-@@ -5058,6 +5311,12 @@ public abstract class Entity
+@@ -5054,6 +5307,12 @@ public abstract class Entity
  
      @Override
      public final void setRemoved(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause cause) { // CraftBukkit - add Bukkit remove cause
@@ -31064,7 +31184,7 @@ index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0
          org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause); // CraftBukkit
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-@@ -5069,7 +5328,7 @@ public abstract class Entity
+@@ -5065,7 +5324,7 @@ public abstract class Entity
              this.stopRiding();
          }
  
@@ -31073,7 +31193,7 @@ index 5033a4d3b855bc5999ffbadb4221d8c4f8288c8c..a13d64459e93ad33ae23e5d39e06f4c0
          this.levelCallback.onRemove(reason);
          this.onRemoval(reason);
          // Paper start - Folia schedulers
-@@ -5107,7 +5366,7 @@ public abstract class Entity
+@@ -5103,7 +5362,7 @@ public abstract class Entity
      public boolean shouldBeSaved() {
          return (this.removalReason == null || this.removalReason.shouldSave())
              && !this.isPassenger()
