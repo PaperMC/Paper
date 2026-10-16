@@ -18,6 +18,15 @@
  public abstract class LivingEntity extends Entity implements Attackable, WaypointTransmitter {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
+@@ -263,6 +_,8 @@
+     private float absorptionAmount;
+     protected ItemStack useItem = ItemStack.EMPTY;
+     public int useItemRemaining;
++    protected boolean completingUsingItem; // Paper - defer death until item use is complete
++    protected @Nullable DamageSource deferredDeathSource; // Paper - defer death until item use is complete
+     protected int fallFlyTicks;
+     private long lastKineticHitFeedbackTime = -2147483648L;
+     private BlockPos lastPos;
 @@ -283,11 +_,24 @@
      protected final EntityEquipment equipment;
      private Waypoint.Icon locatorBarIcon = new Waypoint.Icon();
@@ -1673,49 +1682,69 @@
              }
          }
      }
-@@ -3574,9 +_,41 @@
+@@ -3574,12 +_,57 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
 -                    ItemStack result = this.useItem.finishUsingItem(this.level(), this);
+-                    if (result != this.useItem) {
+-                        this.setItemInHand(hand, result);
 +                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
-+                    // CraftBukkit start - fire PlayerItemConsumeEvent
-+                    ItemStack result;
-+                    org.bukkit.event.player.PlayerItemConsumeEvent event = null; // Paper
-+                    if (this instanceof ServerPlayer serverPlayer) {
-+                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
-+                        org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
-+                        event = new org.bukkit.event.player.PlayerItemConsumeEvent((org.bukkit.entity.Player)this.getBukkitEntity(), craftItem, handSlot); // Paper
-+                        this.level().getCraftServer().getPluginManager().callEvent(event);
++                    try { // Paper - defer death until item use is complete
++                        // CraftBukkit start - fire PlayerItemConsumeEvent
++                        ItemStack result;
++                        org.bukkit.event.player.PlayerItemConsumeEvent event = null; // Paper
++                        if (this instanceof ServerPlayer serverPlayer) {
++                            org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
++                            org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
++                            event = new org.bukkit.event.player.PlayerItemConsumeEvent((org.bukkit.entity.Player)this.getBukkitEntity(), craftItem, handSlot); // Paper
++                            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+                        if (event.isCancelled()) {
-+                            net.minecraft.world.item.component.Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
-+                            if (consumable != null) {
-+                                consumable.cancelUsingItem(serverPlayer, this.useItem);
++                            if (event.isCancelled()) {
++                                net.minecraft.world.item.component.Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
++                                if (consumable != null) {
++                                    consumable.cancelUsingItem(serverPlayer, this.useItem);
++                                }
++                                serverPlayer.containerMenu.forceHeldSlot(hand);
++                                serverPlayer.getBukkitEntity().updateScaledHealth();
++                                this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
++                                return;
 +                            }
-+                            serverPlayer.containerMenu.forceHeldSlot(hand);
-+                            serverPlayer.getBukkitEntity().updateScaledHealth();
-+                            this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
-+                            return;
++
++                            this.completingUsingItem = true; // Paper - defer death until item use is complete
++                            try {
++                                result = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
++                            } finally {
++                                this.completingUsingItem = false; // Paper - defer death until item use is complete
++                            }
++                        } else {
++                            result = this.useItem.finishUsingItem(this.level(), this);
++                        }
++                        // Paper start - save the default replacement item and change it if necessary
++                        final ItemStack defaultReplacement = result;
++                        if (event != null && event.getReplacement() != null) {
++                            result = CraftItemStack.asNMSCopy(event.getReplacement());
++                        }
++                        // Paper end
++                        // CraftBukkit end
++                        if (result != this.useItem) {
++                            this.setItemInHand(hand, result);
++                            if (event != null && event.getReplacement() != null && this instanceof final ServerPlayer player) player.containerMenu.forceHeldSlot(hand); // Paper - Fix inventory desync; Paper#13253
 +                        }
 +
-+                        result = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
-+                    } else {
-+                        result = this.useItem.finishUsingItem(this.level(), this);
-+                    }
-+                    // Paper start - save the default replacement item and change it if necessary
-+                    final ItemStack defaultReplacement = result;
-+                    if (event != null && event.getReplacement() != null) {
-+                        result = CraftItemStack.asNMSCopy(event.getReplacement());
-+                    }
-+                    // Paper end
-+                    // CraftBukkit end
-                     if (result != this.useItem) {
-                         this.setItemInHand(hand, result);
-+                        if (event != null && event.getReplacement() != null && this instanceof final ServerPlayer player) player.containerMenu.forceHeldSlot(hand); // Paper - Fix inventory desync; Paper#13253
++                        this.stopUsingItem();
++                    } finally { // Paper - defer death until item use is complete
++                        if (this.deferredDeathSource != null) {
++                            final DamageSource deferredDeathSource = this.deferredDeathSource;
++                            this.deferredDeathSource = null;
++                            this.die(deferredDeathSource);
++                        }
                      }
- 
-                     this.stopUsingItem();
+-
+-                    this.stopUsingItem();
+                 }
+             }
+         }
 @@ -3608,6 +_,7 @@
          ItemStack itemInUsedHand = this.getItemInHand(this.getUsedItemHand());
          if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInUsedHand, this.useItem)) {
