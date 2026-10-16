@@ -12,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * If the event is cancelled the time will not change.
  */
-@ApiStatus.Experimental
 @NullMarked
 public class ClockTimeSkipEvent extends Event implements Cancellable {
 

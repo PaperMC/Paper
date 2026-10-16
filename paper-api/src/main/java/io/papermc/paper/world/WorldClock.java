@@ -11,9 +11,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents a world clock that tracks time for worlds and drives timelines.
  */
-@ApiStatus.Experimental
-@ApiStatus.NonExtendable
 @NullMarked
+@ApiStatus.NonExtendable
 public interface WorldClock extends Keyed {
 
     // Start generate - WorldClock

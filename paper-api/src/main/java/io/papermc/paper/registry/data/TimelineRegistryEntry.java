@@ -50,7 +50,6 @@ public interface TimelineRegistryEntry {
      *     <li>{@link #clock(TypedKey)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends TimelineRegistryEntry, RegistryBuilder<Timeline> {
 
