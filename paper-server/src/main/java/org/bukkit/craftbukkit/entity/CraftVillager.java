@@ -130,14 +130,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     }
 
     @Override
-    public void wakeup() {
-        Preconditions.checkState(this.isSleeping(), "Cannot wakeup if not sleeping");
-        Preconditions.checkState(!this.getHandle().generation, "Cannot wakeup during world generation");
-
-        this.getHandle().stopSleeping();
-    }
-
-    @Override
     public void shakeHead() {
         this.getHandle().setUnhappy();
     }
