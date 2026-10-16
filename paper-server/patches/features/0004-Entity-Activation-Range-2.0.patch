@@ -355,7 +355,7 @@ index 0000000000000000000000000000000000000000..829f7685904fd741e00403647ae76d32
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 46e7478bd96e42487cf0fc467b6b9b83f2887d10..bc2bacabb588bd6a644ac5226720c7451ac0e475 100644
+index 5090c9780ada3c8a7fd070bc6aec3ff1af034d73..a4e6225add32df93b0d6009d98ee322941b69938 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -887,6 +887,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -463,7 +463,7 @@ index f74837dc0be560a1601132594587bcfc22dcf778..c5a212e73c2efeb1f440778cb3f1fa6e
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index c9e0b378db4ca7efa018d5e9150f1c1372373f29..9601774a31012da7ec852a39a058b41b064a282a 100644
+index bb61d4e4ecfe5bab6269fa3d4303dab95719d7bb..3d219969a55896b1495c54c0a12a25b49ba093f0 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -388,6 +388,15 @@ public abstract class Entity
@@ -522,7 +522,7 @@ index c9e0b378db4ca7efa018d5e9150f1c1372373f29..9601774a31012da7ec852a39a058b41b
              delta = this.maybeBackOffFromEdge(delta, moverType);
              Vec3 movement = this.collide(delta);
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index afbf91722c5f0d0d3d1d075d544feaf0aa187fe2..f332edbc4dad82cbdc02a58aa9ec21faf1f2db89 100644
+index 62ccee5c76303b679d591714e64ee93c1502f378..0ef6c4cefb457c87f4565701817d2f9034dfa0d8 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -3380,6 +3380,14 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -541,19 +541,22 @@ index afbf91722c5f0d0d3d1d075d544feaf0aa187fe2..f332edbc4dad82cbdc02a58aa9ec21fa
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index e1a0eab8bfdda1b68bcb2db0e5c21d6e94d1fd0c..078054c499e7b29d64543f92c1808b5623e3c8e5 100644
+index 554827d60aebf2a538cda9d6c96ed17aea2974b3..92ce15b22517bda5033e6377c76abaa6a9d68d03 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -217,6 +217,20 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -217,6 +217,23 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
          return this.lookControl;
      }
  
 +    // Paper start
++    private int inactiveTickDisableCounter;
++
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
 +        if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
-+        if (this.goalSelector.inactiveTick()) {
++        final boolean isThrottled = this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.enabled() && inactiveTickDisableCounter++ % this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.intValue() != 0; // Paper - Throttle inactive goal selector ticking
++        if (this.goalSelector.inactiveTick() && !isThrottled) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
@@ -641,7 +644,7 @@ index d46e0e3a4a7fc3bb3f1dd695d4cc563778b99db0..c6e9b155c2341c13d569f28f54f0c1d2
                          }
                      }
 diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
-index b944666fa615852f6e35caf1d0a57c709a29f396..8b10b2121b61892eb4f98533c7df1ba549cdc64f 100644
+index a8430d0b90acf205212b1e043e01cda8bd86e4de..a1fa75b4a02187686f1bd18f409abd2e6cbe31be 100644
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
 @@ -118,6 +118,29 @@ public class ItemEntity extends Entity implements TraceableEntity {

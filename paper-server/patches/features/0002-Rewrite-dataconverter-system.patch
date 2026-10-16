@@ -6001,6 +6001,56 @@ index 0000000000000000000000000000000000000000..bcc586cb68148fd960dd685eecce8531
 +        return ID_TO_STRING[id & 255];
 +    }
 +}
+diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperTooltipDisplay.java b/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperTooltipDisplay.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..18675aeb5740e3683ba5f9e234592ea1a2b9b201
+--- /dev/null
++++ b/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperTooltipDisplay.java
+@@ -0,0 +1,44 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
++
++import ca.spottedleaf.converter.types.ListType;
++import ca.spottedleaf.converter.types.MapType;
++import ca.spottedleaf.converter.types.ObjectType;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++
++public final class HelperTooltipDisplay {
++
++    public static void replaceHiddenComponent(final MapType components, final String from, final String... to) {
++        final MapType tooltipDisplay = components.getMap("minecraft:tooltip_display");
++        if (tooltipDisplay == null) {
++            return;
++        }
++
++        final ListType hiddenComponents = tooltipDisplay.getList("hidden_components", ObjectType.STRING);
++        if (hiddenComponents == null) {
++            return;
++        }
++
++        int index = -1;
++        for (int i = hiddenComponents.size() - 1; i >= 0; --i) {
++            if (from.equals(NamespaceUtil.correctNamespace(hiddenComponents.getString(i, "")))) {
++                hiddenComponents.remove(i);
++                index = i;
++            }
++        }
++        if (index == -1) {
++            return;
++        }
++
++        add_loop:
++        for (final String component : to) {
++            for (int i = 0, len = hiddenComponents.size(); i < len; ++i) {
++                if (component.equals(NamespaceUtil.correctNamespace(hiddenComponents.getString(i, "")))) {
++                    continue add_loop;
++                }
++            }
++            hiddenComponents.addString(index++, component);
++        }
++    }
++
++    private HelperTooltipDisplay() {}
++}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/itemname/ConverterAbstractItemRename.java b/ca/spottedleaf/dataconverter/minecraft/converters/itemname/ConverterAbstractItemRename.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..94569f0ccff0d3a09eafd4ba73572d9db0a0ac5b
@@ -18162,7 +18212,7 @@ index 0000000000000000000000000000000000000000..e6a2f29b20aa6d7cd431fc63c2d8ed70
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f72096b3c2
+index 0000000000000000000000000000000000000000..2c4cc929984e03ddd509bea4ad5643a9b9cbb0ec
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2701.java
 @@ -0,0 +1,205 @@
@@ -18216,12 +18266,12 @@ index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f7
 +                        continue;
 +                    }
 +
-+                    final String poolElement = child.getString("pool_element");
-+                    if (!"minecraft:feature_pool_element".equals(poolElement)) {
++                    final MapType poolElement = child.getMap("pool_element");
++                    if (poolElement == null || !"minecraft:feature_pool_element".equals(poolElement.getString("element_type"))) {
 +                        continue;
 +                    }
 +
-+                    final MapType feature = child.getMap("feature");
++                    final MapType feature = poolElement.getMap("feature");
 +                    if (feature == null) {
 +                        continue;
 +                    }
@@ -18229,7 +18279,7 @@ index 0000000000000000000000000000000000000000..f9111654dd0fba78c119c6c9ebc5c6f7
 +                    final String replacement = convertToString(feature);
 +
 +                    if (replacement != null) {
-+                        child.setString("feature", replacement);
++                        poolElement.setString("feature", replacement);
 +                    }
 +                }
 +
@@ -28087,17 +28137,22 @@ index 0000000000000000000000000000000000000000..eb2f1f913fbc02aa3e01f36d11ddf8fc
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3443c948c59bd1808667603642f9eb126e447be
+index 0000000000000000000000000000000000000000..2ee438b5b8bed4cf6d7bdaa110206f0d4f148fc2
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,148 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
++import ca.spottedleaf.converter.datatypes.DataWalker;
++import ca.spottedleaf.converter.types.ListType;
 +import ca.spottedleaf.converter.types.MapType;
++import ca.spottedleaf.converter.types.ObjectType;
 +import ca.spottedleaf.converter.util.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
 +import org.jspecify.annotations.NullMarked;
 +import org.jspecify.annotations.Nullable;
 +
@@ -28119,22 +28174,134 @@ index 0000000000000000000000000000000000000000..e3443c948c59bd1808667603642f9eb1
 +                return null;
 +            }
 +        });
++
++        // previous version: 1466
++        MCTypeRegistry.STRUCTURE_FEATURE.addStructureWalker(VERSION, new DataWalker<>() {
++            @Override
++            public @Nullable MapType walk(final MapType data, final long fromVersion, final long toVersion) {
++                final ListType list = data.getList("Children", ObjectType.MAP);
++                if (list != null) {
++                    for (int i = 0, len = list.size(); i < len; ++i) {
++                        final MapType child = list.getMap(i);
++
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CA", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CB", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CC", fromVersion, toVersion);
++                        WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, child, "CD", fromVersion, toVersion);
++
++                        walkPoolElement(child.getMap("pool_element"), fromVersion, toVersion);
++                    }
++                }
++
++                WalkerUtils.convert(MCTypeRegistry.BIOME, data, "biome", fromVersion, toVersion);
++
++                return null;
++            }
++        });
++    }
++
++    private static void walkPoolElement(final @Nullable MapType element, final long fromVersion, final long toVersion) {
++        if (element == null) {
++            return;
++        }
++
++        final ListType elements = element.getList("elements", ObjectType.MAP);
++        if (elements != null) {
++            for (int i = 0, len = elements.size(); i < len; ++i) {
++                walkPoolElement(elements.getMap(i), fromVersion, toVersion);
++            }
++        }
++
++        final Object processors = element.getGeneric("processors");
++        if (processors instanceof ListType list) {
++            walkProcessors(list, fromVersion, toVersion);
++        } else if (processors instanceof MapType map) {
++            walkProcessors(map.getList("processors", ObjectType.MAP), fromVersion, toVersion);
++        }
++    }
++
++    private static void walkProcessors(final @Nullable ListType processors, final long fromVersion, final long toVersion) {
++        if (processors == null) {
++            return;
++        }
++
++        for (int i = 0, len = processors.size(); i < len; ++i) {
++            walkProcessor(processors.getMap(i, null), fromVersion, toVersion);
++        }
++    }
++
++    private static void walkProcessor(final @Nullable MapType processor, final long fromVersion, final long toVersion) {
++        if (processor == null) {
++            return;
++        }
++
++        switch (NamespaceUtil.correctNamespace(processor.getString("processor_type", ""))) {
++            case "minecraft:rule": {
++                final ListType rules = processor.getList("rules", ObjectType.MAP);
++                if (rules == null) {
++                    break;
++                }
++
++                for (int i = 0, len = rules.size(); i < len; ++i) {
++                    final MapType rule = rules.getMap(i);
++
++                    walkRuleTest(rule.getMap("input_predicate"), fromVersion, toVersion);
++                    walkRuleTest(rule.getMap("location_predicate"), fromVersion, toVersion);
++                    WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, rule, "output_state", fromVersion, toVersion);
++                }
++                break;
++            }
++            case "minecraft:block_ignore": {
++                WalkerUtils.convertList(MCTypeRegistry.BLOCK_STATE, processor, "blocks", fromVersion, toVersion);
++                break;
++            }
++            case "minecraft:capped": {
++                walkProcessor(processor.getMap("delegate"), fromVersion, toVersion);
++                break;
++            }
++            default: {
++                break;
++            }
++        }
++    }
++
++    private static void walkRuleTest(final @Nullable MapType test, final long fromVersion, final long toVersion) {
++        if (test == null) {
++            return;
++        }
++
++        switch (NamespaceUtil.correctNamespace(test.getString("predicate_type", ""))) {
++            case "minecraft:block_match":
++            case "minecraft:random_block_match": {
++                WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, test, "block", fromVersion, toVersion);
++                break;
++            }
++            case "minecraft:blockstate_match":
++            case "minecraft:random_blockstate_match": {
++                WalkerUtils.convert(MCTypeRegistry.BLOCK_STATE, test, "block_state", fromVersion, toVersion);
++                break;
++            }
++            default: {
++                break;
++            }
++        }
 +    }
 +
 +    private V5006() {}
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5007.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5007.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..94eb076321058d12940ccc6bb31170ce475227c8
+index 0000000000000000000000000000000000000000..a89c8fb5cdb5e371d7762def0b450a169b1b0bfd
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5007.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,34 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
 +import ca.spottedleaf.converter.types.ListType;
 +import ca.spottedleaf.converter.types.MapType;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperTooltipDisplay;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import org.jspecify.annotations.NullMarked;
 +import org.jspecify.annotations.Nullable;
@@ -28154,6 +28321,7 @@ index 0000000000000000000000000000000000000000..94eb076321058d12940ccc6bb31170ce
 +                    data.setGeneric("minecraft:attack_animation", animation);
 +                    data.setGeneric("minecraft:interact_animation", animation instanceof MapType map ? map.copy() : animation instanceof ListType list ? list.copy() : animation);
 +                }
++                HelperTooltipDisplay.replaceHiddenComponent(data, "minecraft:swing_animation", "minecraft:attack_animation", "minecraft:interact_animation");
 +                return null;
 +            }
 +        });
@@ -28163,15 +28331,16 @@ index 0000000000000000000000000000000000000000..94eb076321058d12940ccc6bb31170ce
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5008.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5008.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f470dd94811baf54a41ab33d98ee4219a924e0b5
+index 0000000000000000000000000000000000000000..0b849cfda70d804b899afe4adac89deb59ce1d64
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5008.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,83 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
 +import ca.spottedleaf.converter.types.MapType;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperTooltipDisplay;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.util.NamespaceUtil;
 +import java.util.Map;
@@ -28241,6 +28410,7 @@ index 0000000000000000000000000000000000000000..f470dd94811baf54a41ab33d98ee4219
 +            @Override
 +            public @Nullable MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
 +                data.remove("minecraft:map_color");
++                HelperTooltipDisplay.replaceHiddenComponent(data, "minecraft:map_color");
 +                return null;
 +            }
 +        });
@@ -28436,15 +28606,16 @@ index 0000000000000000000000000000000000000000..3eec6b425a15bef57b5e7640bc1fd5e0
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5014.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5014.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..571eb563b65ec79f57c8e9af43fbe3e805ce8ac3
+index 0000000000000000000000000000000000000000..8bb7030f5c6e0ba7d248b52af6ff7c5489cb6ed1
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5014.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,28 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
 +import ca.spottedleaf.converter.types.MapType;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperTooltipDisplay;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import org.jspecify.annotations.NullMarked;
 +import org.jspecify.annotations.Nullable;
@@ -28459,6 +28630,7 @@ index 0000000000000000000000000000000000000000..571eb563b65ec79f57c8e9af43fbe3e8
 +            @Override
 +            public @Nullable MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
 +                data.remove("minecraft:block_transformer");
++                HelperTooltipDisplay.replaceHiddenComponent(data, "minecraft:block_transformer");
 +                return null;
 +            }
 +        });
@@ -33878,7 +34050,7 @@ index 0000000000000000000000000000000000000000..863a9785c84af6e0c961ae32f0102b5d
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 7bb2210f2fea91b3f611a58d39a57279200abeb0..4a62c50d0b4fe82c3aacaa56b303b9699120c778 100644
+index 7050fd6efb6fec16ba5657e254c54de1c671c9a0..aa14dd369d5d2c5c843839f289afdc39c200f0c3 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -216,6 +216,11 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
