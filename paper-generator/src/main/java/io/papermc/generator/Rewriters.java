@@ -29,7 +29,9 @@ import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.item.MapPostProcessing;
+import io.papermc.paper.world.Timeline;
 import io.papermc.paper.world.WeatheringCopperState;
+import io.papermc.paper.world.WorldClock;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -243,6 +245,8 @@ public final class Rewriters {
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("SulfurCubeArchetype", SulfurCube.Archetype.class, new RegistryFieldRewriter<>(Registries.SULFUR_CUBE_ARCHETYPE, "getArchetype"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("WorldClock", WorldClock.class, new RegistryFieldRewriter<>(Registries.WORLD_CLOCK, "getWorldClock"))
+            .register("Timeline", Timeline.class, new RegistryFieldRewriter<>(Registries.TIMELINE, "getTimeline"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
