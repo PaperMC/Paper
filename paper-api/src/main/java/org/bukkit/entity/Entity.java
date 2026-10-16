@@ -42,6 +42,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * Represents a base entity in the world
@@ -1423,6 +1424,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return an immutable map of the current additional rules of alliance with any entity
      * @see #addAdditionalAlliedRule(Key, Predicate)
      */
+    @UnmodifiableView
     @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
 
     /**
