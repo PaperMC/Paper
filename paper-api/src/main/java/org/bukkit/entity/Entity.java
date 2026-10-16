@@ -1414,12 +1414,13 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isAlliedTo(@NotNull Entity other);
 
     /**
-     * Gets the current additional rules of alliance with any entity.
+     * Gets an immutable map of the current additional rules of alliance with any entity.
      * <br>
      * These are additional rules from the vanilla behavior for any entity, like share a team.
      * <br>
      * These rules are not (currently) persistent.
-     * @return the current additional rules of alliance with any entity
+     *
+     * @return an immutable map of the current additional rules of alliance with any entity
      * @see #addAdditionalAlliedRule(Key, Predicate)
      */
     @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
