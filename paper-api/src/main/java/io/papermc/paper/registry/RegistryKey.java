@@ -5,6 +5,8 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -42,6 +44,7 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -269,6 +272,18 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for world clocks.
+     * @see io.papermc.paper.registry.keys.WorldClockKeys
+     */
+    @ApiStatus.Experimental
+    RegistryKey<WorldClock> WORLD_CLOCK = create("world_clock");
+    /**
+     * Data-driven registry for timelines.
+     * @see io.papermc.paper.registry.keys.TimelineKeys
+     */
+    @ApiStatus.Experimental
+    RegistryKey<Timeline> TIMELINE = create("timeline");
 
 
     /* ******************* *

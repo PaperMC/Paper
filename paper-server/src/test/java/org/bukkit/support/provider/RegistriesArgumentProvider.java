@@ -170,6 +170,8 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
         register(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype.class, SulfurCubeArchetype.class);
+        register(Registries.WORLD_CLOCK, io.papermc.paper.world.WorldClock.class, org.bukkit.craftbukkit.CraftWorldClock.class, net.minecraft.world.clock.WorldClock.class);
+        register(Registries.TIMELINE, io.papermc.paper.world.Timeline.class, org.bukkit.craftbukkit.CraftTimeline.class, net.minecraft.world.timeline.Timeline.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {
