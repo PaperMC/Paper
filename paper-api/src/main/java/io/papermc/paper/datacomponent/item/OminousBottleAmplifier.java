@@ -3,13 +3,11 @@ package io.papermc.paper.datacomponent.item;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the ominous bottle amplifier.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#OMINOUS_BOTTLE_AMPLIFIER
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface OminousBottleAmplifier {
 

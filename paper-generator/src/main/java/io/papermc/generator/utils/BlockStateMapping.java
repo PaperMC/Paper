@@ -127,7 +127,6 @@ public final class BlockStateMapping {
         .put("SnowLayer", "Snow")
         .put("StainedGlassPane", "GlassPane") // weird that this one implements glass pane but not the regular glass pane
         .put("CeilingHangingSign", "HangingSign")
-        .put("RedStoneWire", "RedstoneWire")
         .put("TripWire", "Tripwire")
         .put("TripWireHook", "TripwireHook")
         .put("Tnt", "TNT")
@@ -136,6 +135,7 @@ public final class BlockStateMapping {
         .put("UntintedParticleLeaves", "Leaves")
         .put("TintedParticleLeaves", "Leaves")
         .put("StandingSign", "Sign")
+        .put("StrawBed", "Bed")
         .put("FenceGate", "Gate")
         .buildOrThrow();
 
