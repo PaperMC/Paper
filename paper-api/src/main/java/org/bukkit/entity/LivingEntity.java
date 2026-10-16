@@ -849,18 +849,21 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * at the location. The bed will be marked as occupied. For players, the
      * vanilla sleeping checks apply, see
      * {@link HumanEntity#sleep(Location, boolean)}.
+     * <br>
+     * <b>Note:</b> a few entities can still try to move while sleeping, such as axolotls.
+     * This is a vanilla behavior, and you need to disable {@link #setAI(boolean) AI} or change the goal behavior.
      *
      * @param location the location to sleep at
      * @return whether the entity is now sleeping
      */
-    public boolean sleep(@NotNull Location location);
+    boolean sleep(@NotNull Location location);
 
     /**
      * Causes this entity to wake up if it is currently sleeping.
      *
      * @throws IllegalStateException if not sleeping
      */
-    public void wakeup();
+    void wakeup();
 
     /**
      * Gets if the entity is climbing.
