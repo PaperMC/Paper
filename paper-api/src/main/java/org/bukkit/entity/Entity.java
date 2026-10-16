@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
@@ -9,6 +10,7 @@ import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.math.Angle;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.Namespaced;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -1412,16 +1414,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isAlliedTo(@NotNull Entity other);
 
     /**
-     * Gets the current additional rule of alliance with any entity.
+     * Gets the current additional rules of alliance with any entity.
      * <br>
-     * This is an additional rule from the vanilla behavior for any entity, like share a team.
+     * These are additional rules from the vanilla behavior for any entity, like share a team.
      * <br>
-     * This rule is not (currently) persistent.
-     *
-     * @return additional rule of alliance
+     * These rules are not (currently) persistent.
+     * @return the current additional rules of alliance with any entity
      * @see #addAdditionalAlliedRule(Key, Predicate)
      */
-    @Nullable Predicate<Entity> getAdditionalAlliedRule(@NotNull Key key);
+    @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
 
     /**
      * Sets the current additional rule of alliance with any entity.
@@ -1437,4 +1438,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param key the key of the additional rule
      */
     void removeAdditionalAlliedRule(@NotNull Key key);
+
+    /**
+     * Remove the additional rules of alliance with any entity.
+     *
+     * @param namespaced the namespaced of the additional rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Namespaced namespaced);
 }

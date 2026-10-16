@@ -11,6 +11,7 @@ import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.TeleportFlag;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.math.Angle;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.Namespaced;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -1415,8 +1417,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public Predicate<org.bukkit.entity.Entity> getAdditionalAlliedRule(@NotNull Key key) {
-        return this.additionalAlliedRules.get(key);
+    public @NotNull Map<Key, Predicate<org.bukkit.entity.Entity>> getAdditionalAlliedRules() {
+        return Collections.unmodifiableMap(this.additionalAlliedRules);
     }
 
     @Override
@@ -1427,6 +1429,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void removeAdditionalAlliedRule(@NotNull Key key) {
         this.additionalAlliedRules.remove(key);
+    }
+
+    @Override
+    public void removeAdditionalAlliedRule(@NotNull Namespaced nameSpaced) {
+        this.additionalAlliedRules.entrySet()
+            .removeIf(entry -> entry.getKey().namespace().equals(nameSpaced.namespace()));
     }
 
 }
