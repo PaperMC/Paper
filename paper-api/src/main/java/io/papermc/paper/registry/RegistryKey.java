@@ -276,13 +276,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * Data-driven registry for world clocks.
      * @see io.papermc.paper.registry.keys.WorldClockKeys
      */
-    @ApiStatus.Experimental
     RegistryKey<WorldClock> WORLD_CLOCK = create("world_clock");
     /**
      * Data-driven registry for timelines.
      * @see io.papermc.paper.registry.keys.TimelineKeys
      */
-    @ApiStatus.Experimental
     RegistryKey<Timeline> TIMELINE = create("timeline");
 
 

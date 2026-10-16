@@ -2161,7 +2161,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return the default clock, or {@code null} if this world does not have one (e.g. the nether)
      */
-    @ApiStatus.Experimental
     @Nullable WorldClock getDefaultClock();
 
     /**
@@ -2172,7 +2171,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @return the total ticks of the clock
      */
-    @ApiStatus.Experimental
     long getFullTime(@NotNull WorldClock clock);
 
     /**
@@ -2184,7 +2182,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @param time the new total ticks of the clock, must not be negative
      */
-    @ApiStatus.Experimental
     void setFullTime(@NotNull WorldClock clock, long time);
 
     /**
@@ -2193,7 +2190,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @return whether the clock is paused
      */
-    @ApiStatus.Experimental
     boolean isClockPaused(@NotNull WorldClock clock);
 
     /**
@@ -2202,7 +2198,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @param paused whether the clock should be paused
      */
-    @ApiStatus.Experimental
     void setClockPaused(@NotNull WorldClock clock, boolean paused);
 
     /**
@@ -2211,7 +2206,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @return the clock rate
      */
-    @ApiStatus.Experimental
     float getClockRate(@NotNull WorldClock clock);
 
     /**
@@ -2220,7 +2214,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param clock the clock
      * @param rate the new clock rate, must be positive
      */
-    @ApiStatus.Experimental
     void setClockRate(@NotNull WorldClock clock, float rate);
 
     // Paper start

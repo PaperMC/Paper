@@ -11,9 +11,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents a timeline that can apply environment attributes or define time markers for a {@link WorldClock}.
  */
-@ApiStatus.Experimental
-@ApiStatus.NonExtendable
 @NullMarked
+@ApiStatus.NonExtendable
 public interface Timeline extends Keyed {
 
     // Start generate - Timeline
