@@ -16,8 +16,8 @@ import org.bukkit.util.BoundingBox;
 
 public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> implements Conduit {
 
-    public CraftConduit(World world, ConduitBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftConduit(World world, ConduitBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftConduit(CraftConduit state, Location location) {
@@ -119,7 +119,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
         }
 
         final net.minecraft.world.entity.LivingEntity nmsEntity = EntityReference.get(conduit.destroyTarget, this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class);
-        return nmsEntity == null ? null : nmsEntity.getBukkitLivingEntity();
+        return nmsEntity == null ? null : nmsEntity.getBukkitEntity();
     }
 
     @Override

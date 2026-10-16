@@ -4044,6 +4044,48 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> BLOCK_POLISHED_TUFF_STEP = create(key("block.polished_tuff.step"));
 
     /**
+     * {@code minecraft:block.poplar_leaves.ambient}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_AMBIENT = create(key("block.poplar_leaves.ambient"));
+
+    /**
+     * {@code minecraft:block.poplar_leaves.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_BREAK = create(key("block.poplar_leaves.break"));
+
+    /**
+     * {@code minecraft:block.poplar_leaves.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_FALL = create(key("block.poplar_leaves.fall"));
+
+    /**
+     * {@code minecraft:block.poplar_leaves.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_HIT = create(key("block.poplar_leaves.hit"));
+
+    /**
+     * {@code minecraft:block.poplar_leaves.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_PLACE = create(key("block.poplar_leaves.place"));
+
+    /**
+     * {@code minecraft:block.poplar_leaves.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POPLAR_LEAVES_STEP = create(key("block.poplar_leaves.step"));
+
+    /**
      * {@code minecraft:block.portal.ambient}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4175,6 +4217,20 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> BLOCK_PUMPKIN_CARVE = create(key("block.pumpkin.carve"));
+
+    /**
+     * {@code minecraft:block.red_shrub.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RED_SHRUB_BREAK = create(key("block.red_shrub.break"));
+
+    /**
+     * {@code minecraft:block.red_shrub.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RED_SHRUB_PLACE = create(key("block.red_shrub.place"));
 
     /**
      * {@code minecraft:block.redstone_torch.burnout}
@@ -4716,6 +4772,41 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> BLOCK_SHELF_TAKE_ITEM = create(key("block.shelf.take_item"));
 
     /**
+     * {@code minecraft:block.shelf_mushroom.bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SHELF_MUSHROOM_BOUNCE = create(key("block.shelf_mushroom.bounce"));
+
+    /**
+     * {@code minecraft:block.shelf_mushroom.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SHELF_MUSHROOM_BREAK = create(key("block.shelf_mushroom.break"));
+
+    /**
+     * {@code minecraft:block.shelf_mushroom.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SHELF_MUSHROOM_FALL = create(key("block.shelf_mushroom.fall"));
+
+    /**
+     * {@code minecraft:block.shelf_mushroom.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SHELF_MUSHROOM_PLACE = create(key("block.shelf_mushroom.place"));
+
+    /**
+     * {@code minecraft:block.shelf_mushroom.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SHELF_MUSHROOM_STEP = create(key("block.shelf_mushroom.step"));
+
+    /**
      * {@code minecraft:block.shroomlight.break}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5204,6 +5295,48 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> BLOCK_STONE_PRESSURE_PLATE_CLICK_ON = create(key("block.stone_pressure_plate.click_on"));
+
+    /**
+     * {@code minecraft:block.straw_bed.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_BREAK = create(key("block.straw_bed.break"));
+
+    /**
+     * {@code minecraft:block.straw_bed.break_leave}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_BREAK_LEAVE = create(key("block.straw_bed.break_leave"));
+
+    /**
+     * {@code minecraft:block.straw_bed.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_FALL = create(key("block.straw_bed.fall"));
+
+    /**
+     * {@code minecraft:block.straw_bed.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_HIT = create(key("block.straw_bed.hit"));
+
+    /**
+     * {@code minecraft:block.straw_bed.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_PLACE = create(key("block.straw_bed.place"));
+
+    /**
+     * {@code minecraft:block.straw_bed.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_STRAW_BED_STEP = create(key("block.straw_bed.step"));
 
     /**
      * {@code minecraft:block.sulfur.break}
@@ -7437,6 +7570,34 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_CREEPER_PRIMED = create(key("entity.creeper.primed"));
+
+    /**
+     * {@code minecraft:entity.cushion.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_CUSHION_BREAK = create(key("entity.cushion.break"));
+
+    /**
+     * {@code minecraft:entity.cushion.get_up}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_CUSHION_GET_UP = create(key("entity.cushion.get_up"));
+
+    /**
+     * {@code minecraft:entity.cushion.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_CUSHION_PLACE = create(key("entity.cushion.place"));
+
+    /**
+     * {@code minecraft:entity.cushion.sit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_CUSHION_SIT = create(key("entity.cushion.sit"));
 
     /**
      * {@code minecraft:entity.dolphin.ambient}
