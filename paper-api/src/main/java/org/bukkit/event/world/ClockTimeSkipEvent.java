@@ -1,5 +1,6 @@
 package org.bukkit.event.world;
 
+import io.papermc.paper.world.WorldClock;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -11,22 +12,32 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * If the event is cancelled the time will not change.
  */
-// TODO - snapshot - 26.1 clock
 @ApiStatus.Experimental
 @NullMarked
 public class ClockTimeSkipEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private final WorldClock clock;
     private final SkipReason skipReason;
     private long skipAmount;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ClockTimeSkipEvent(final SkipReason skipReason, final long skipAmount) {
+    public ClockTimeSkipEvent(final WorldClock clock, final SkipReason skipReason, final long skipAmount) {
+        this.clock = clock;
         this.skipReason = skipReason;
         this.skipAmount = skipAmount;
+    }
+
+    /**
+     * Gets the clock whose time is skipping.
+     *
+     * @return the clock
+     */
+    public WorldClock getClock() {
+        return this.clock;
     }
 
     /**

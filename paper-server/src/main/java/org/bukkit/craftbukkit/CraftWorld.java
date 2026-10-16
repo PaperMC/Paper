@@ -143,7 +143,6 @@ import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
@@ -823,19 +822,63 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setFullTime(long time) {
-        if (this.world.dimensionType().defaultClock().isEmpty()) {
-            throw new IllegalArgumentException("Cannot set time in world without world clock");
-        }
+        final Holder<net.minecraft.world.clock.WorldClock> clock = this.world.dimensionType().defaultClock()
+            .orElseThrow(() -> new IllegalArgumentException("Cannot set time in world without world clock"));
+        this.setFullTime(clock, time);
+    }
 
-        final long currentClockTime = this.world.getDefaultClockTime();
-        final ClockTimeSkipEvent event = new TimeSkipEvent(this, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
-        this.server.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
+    @Override
+    public io.papermc.paper.world.@Nullable WorldClock getDefaultClock() {
+        return this.world.dimensionType().defaultClock().map(CraftWorldClock::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public long getFullTime(final io.papermc.paper.world.WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).totalTicks();
+    }
+
+    @Override
+    public void setFullTime(final io.papermc.paper.world.WorldClock clock, final long time) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        this.setFullTime(CraftWorldClock.bukkitToMinecraftHolder(clock), time);
+    }
+
+    private void setFullTime(final Holder<net.minecraft.world.clock.WorldClock> clock, final long time) {
+        Preconditions.checkArgument(time >= 0, "time cannot be negative, was %s", time);
+        final long currentClockTime = this.world.clockManager().getInstance(clock).totalTicks();
+        final ClockTimeSkipEvent event = CraftEventFactory.createTimeSkipEvent(this.world, clock, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
+        if (!event.callEvent()) {
             return;
         }
 
         // Updates the clock for all players
-        this.world.clockManager().setTotalTicks(this.world.dimensionType().defaultClock().get(), currentClockTime + event.getSkipAmount());
+        this.world.clockManager().setTotalTicks(clock, Math.max(currentClockTime + event.getSkipAmount(), 0L));
+    }
+
+    @Override
+    public boolean isClockPaused(final io.papermc.paper.world.WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).isPaused();
+    }
+
+    @Override
+    public void setClockPaused(final io.papermc.paper.world.WorldClock clock, final boolean paused) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        this.world.clockManager().setPaused(CraftWorldClock.bukkitToMinecraftHolder(clock), paused);
+    }
+
+    @Override
+    public float getClockRate(final io.papermc.paper.world.WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).rate();
+    }
+
+    @Override
+    public void setClockRate(final io.papermc.paper.world.WorldClock clock, final float rate) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        Preconditions.checkArgument(Float.isFinite(rate) && rate > 0.0F, "rate must be positive and finite, was %s", rate);
+        this.world.clockManager().setRate(CraftWorldClock.bukkitToMinecraftHolder(clock), rate);
     }
 
     // Paper start
