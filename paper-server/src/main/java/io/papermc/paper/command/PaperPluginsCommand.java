@@ -36,7 +36,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PaperPluginsCommand {
     public static final String DESCRIPTION = "Gets a list of plugins running on the server";
-    
+
     private static final TextColor INFO_COLOR = TextColor.color(52, 159, 218);
 
     private static final Component SERVER_PLUGIN_INFO = Component.text("ℹ What is a server plugin?", INFO_COLOR)
@@ -169,7 +169,7 @@ public class PaperPluginsCommand {
             return NamedTextColor.RED;
         }
     }
-    
+
     private int execute(CommandContext<CommandSourceStack> context) {
         final CommandSender sender = context.getSource().getSender();
         final TreeMap<String, PluginProvider<JavaPlugin>> paperPlugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

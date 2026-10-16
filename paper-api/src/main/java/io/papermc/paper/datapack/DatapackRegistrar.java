@@ -168,7 +168,6 @@ public interface DatapackRegistrar extends Registrar {
      * Configures additional, optional, details about a datapack.
      */
     @ApiStatus.NonExtendable
-    @ApiStatus.Experimental
     interface Configurer {
 
         /**

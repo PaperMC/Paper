@@ -165,7 +165,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
 
         @Override
         public Iterator<Command> iterator() {
-            // AVOID CME since commands can modify multiple commands now through alises, which means it may appear in the iterator even if removed.
+            // AVOID CME since commands can modify multiple commands now through aliases, which means it may appear in the iterator even if removed.
             // Oh well!
             Iterator<CommandNode<CommandSourceStack>> iterator = new ArrayList<>(BukkitBrigForwardingMap.this.getDispatcher().getRoot().getChildren()).iterator();
 
@@ -227,7 +227,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
 
         @Override
         public Iterator<String> iterator() {
-            return Iterators.transform(BukkitBrigForwardingMap.this.values.iterator(), Command::getName); // Wrap around the values iterator for consistancy
+            return Iterators.transform(BukkitBrigForwardingMap.this.values.iterator(), Command::getName); // Wrap around the values iterator for consistency
         }
 
         @Override

@@ -28,10 +28,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class Registration {
-    
+
     private Registration() {
     }
-    
+
     public static void registerViaOnEnable(final JavaPlugin plugin) {
         registerLegacyCommands(plugin);
         registerViaLifecycleEvents(plugin);

@@ -9,15 +9,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a Campfire starts to cook.
  */
-@ApiStatus.Experimental // Paper
 public class CampfireStartEvent extends InventoryBlockStartEvent {
 
     private final CampfireRecipe campfireRecipe;
     private int cookingTime;
 
     @ApiStatus.Internal
-    public CampfireStartEvent(@NotNull final Block furnace, @NotNull ItemStack source, @NotNull CampfireRecipe recipe) {
-        super(furnace, source);
+    public CampfireStartEvent(@NotNull final Block campfire, @NotNull ItemStack source, @NotNull CampfireRecipe recipe) {
+        super(campfire, source);
         this.cookingTime = recipe.getCookingTime();
         this.campfireRecipe = recipe;
     }

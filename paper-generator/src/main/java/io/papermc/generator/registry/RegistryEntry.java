@@ -41,6 +41,7 @@ public final class RegistryEntry<T> {
     private boolean delayed;
     private String apiAccessName = ConstantDescs.INIT_NAME;
     private Optional<String> apiRegistryField = Optional.empty();
+    private int genericArgCount = 0;
 
     private @Nullable Map<ResourceKey<T>, String> fieldNames;
 
@@ -66,6 +67,10 @@ public final class RegistryEntry<T> {
         return this.registryKeyField.name();
     }
 
+    public Class<T> elementClass() {
+        return this.elementClass;
+    }
+
     public Class<? extends Keyed> apiClass() {
         return this.apiClass;
     }
@@ -86,6 +91,12 @@ public final class RegistryEntry<T> {
 
     public RegistryEntry<T> preload(Class<?> klass) {
         this.preloadClass = klass;
+        return this;
+    }
+
+    public RegistryEntry<T> genericArgCount(int count) {
+        Preconditions.checkArgument(count >= 0, "Generic argument count must be non-negative");
+        this.genericArgCount = count;
         return this;
     }
 
@@ -126,6 +137,10 @@ public final class RegistryEntry<T> {
 
     public @Nullable String apiRegistryBuilderImpl() {
         return this.apiRegistryBuilderImpl;
+    }
+
+    public int genericArgCount() {
+        return this.genericArgCount;
     }
 
     public @Nullable RegistryModificationApiSupport modificationApiSupport() {

@@ -74,7 +74,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
     }
 
     /**
-     * The list of completions which will be offered to the sender, in order.
+     * The list of completions which will be offered to the sender. Completions may be ordered alphanumerically later on in the tab completion process.
      * This list is mutable and reflects what will be offered.
      *
      * @return a list of offered completions

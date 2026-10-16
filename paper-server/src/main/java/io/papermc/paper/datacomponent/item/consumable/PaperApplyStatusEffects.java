@@ -8,21 +8,16 @@ import org.bukkit.potion.PotionEffect;
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
 public record PaperApplyStatusEffects(
-    ApplyStatusEffectsConsumeEffect impl
-) implements ConsumeEffect.ApplyStatusEffects, PaperConsumableEffect<ApplyStatusEffectsConsumeEffect> {
+    ApplyStatusEffectsConsumeEffect internal
+) implements ConsumeEffect.ApplyStatusEffects, PaperConsumableEffect {
 
     @Override
     public List<PotionEffect> effects() {
-        return transformUnmodifiable(this.impl().effects(), CraftPotionUtil::toBukkit);
+        return transformUnmodifiable(this.internal().effects(), CraftPotionUtil::toBukkit);
     }
 
     @Override
     public float probability() {
-        return this.impl.probability();
-    }
-
-    @Override
-    public ApplyStatusEffectsConsumeEffect getHandle() {
-        return this.impl;
+        return this.internal.probability();
     }
 }

@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -14,8 +14,10 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlowLichen;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
-@GeneratedFrom("1.21.8")
+@NullMarked
+@GeneratedClass
 public class CraftGlowLichen extends CraftBlockData implements GlowLichen {
     private static final BooleanProperty WATERLOGGED = GlowLichenBlock.WATERLOGGED;
 

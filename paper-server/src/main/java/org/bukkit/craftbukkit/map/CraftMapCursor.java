@@ -13,16 +13,8 @@ public final class CraftMapCursor {
 
         private static int count = 0;
 
-        public static MapCursor.Type minecraftToBukkit(MapDecorationType minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.MAP_DECORATION_TYPE);
-        }
-
         public static MapCursor.Type minecraftHolderToBukkit(Holder<MapDecorationType> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.MAP_DECORATION_TYPE);
-        }
-
-        public static MapDecorationType bukkitToMinecraft(MapCursor.Type bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<MapDecorationType> bukkitToMinecraftHolder(MapCursor.Type bukkit) {

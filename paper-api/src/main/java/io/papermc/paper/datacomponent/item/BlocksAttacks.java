@@ -3,13 +3,13 @@ package io.papermc.paper.datacomponent.item;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -17,8 +17,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlocksAttacks {
 
@@ -32,7 +30,8 @@ public interface BlocksAttacks {
      *
      * @return the delay in seconds
      */
-    float blockDelaySeconds();
+    @Contract(pure = true)
+    @NonNegative float blockDelaySeconds();
 
     /**
      * Gets the multiplier applied to the cooldown time for the item when attacked by a disabling attack (the multiplier for {@link Weapon#disableBlockingForSeconds()}).
@@ -41,13 +40,15 @@ public interface BlocksAttacks {
      *
      * @return the multiplier for the cooldown time
      */
-    float disableCooldownScale();
+    @Contract(pure = true)
+    @NonNegative float disableCooldownScale();
 
     /**
      * Gets a list of {@link DamageReduction} of how much damage should be blocked in a given attack.
      *
      * @return a list of damage reductions
      */
+    @Contract(pure = true)
     List<DamageReduction> damageReductions();
 
     /**
@@ -55,6 +56,7 @@ public interface BlocksAttacks {
      *
      * @return the damage function
      */
+    @Contract(pure = true)
     ItemDamageFunction itemDamage();
 
     /**
@@ -62,13 +64,15 @@ public interface BlocksAttacks {
      *
      * @return a damage type tag key, or null if there is no such tag key
      */
-    @Nullable TagKey<DamageType> bypassedBy();
+    @Contract(pure = true)
+    @Nullable RegistryKeySet<DamageType> bypassedBy();
 
     /**
      * Gets the key sound to play when an attack is successfully blocked.
      *
      * @return a key of the sound
      */
+    @Contract(pure = true)
     @Nullable Key blockSound();
 
     /**
@@ -76,20 +80,20 @@ public interface BlocksAttacks {
      *
      * @return a key of the sound
      */
+    @Contract(pure = true)
     @Nullable Key disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlocksAttacks> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder blockDelaySeconds(float delay);
+        Builder blockDelaySeconds(@NonNegative float delay);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder disableCooldownScale(float scale);
+        Builder disableCooldownScale(@NonNegative float scale);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder addDamageReduction(DamageReduction reduction);
@@ -101,7 +105,7 @@ public interface BlocksAttacks {
         Builder itemDamage(ItemDamageFunction function);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder bypassedBy(@Nullable TagKey<DamageType> bypassedBy);
+        Builder bypassedBy(@Nullable RegistryKeySet<DamageType> bypassedBy);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder blockSound(@Nullable Key sound);

@@ -1,6 +1,5 @@
 package org.bukkit.registry;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -9,12 +8,14 @@ import java.util.stream.Stream;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @AllFeatures
 public class PerRegistryTest {
@@ -26,22 +27,18 @@ public class PerRegistryTest {
         PerRegistryTest.random = new Random();
     }
 
-    public static Stream<Arguments> data() {
+    public static Stream<Arguments> data() throws IllegalAccessException {
         List<Arguments> data = Lists.newArrayList();
 
         Field[] registryFields = Registry.class.getFields();
         for (Field registryField : registryFields) {
-            try {
-                Object object = registryField.get(null);
-                // Ignore Bukkit's default SimpleRegistry. It cannot be tested correctly
-                if (object instanceof Registry.NotARegistry) {
-                    continue;
-                }
-
-                data.add(Arguments.of(object));
-            } catch (ReflectiveOperationException e) {
-                e.printStackTrace();
+            Object object = registryField.get(null);
+            // Ignore Bukkit's default NotARegistry. It cannot be tested correctly
+            if (object instanceof Registry.NotARegistry) {
+                continue;
             }
+
+            data.add(Arguments.of(object));
         }
 
         return data.stream();

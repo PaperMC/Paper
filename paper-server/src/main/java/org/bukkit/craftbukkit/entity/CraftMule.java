@@ -6,7 +6,7 @@ import org.bukkit.entity.Mule;
 
 public class CraftMule extends CraftChestedHorse implements Mule {
 
-    public CraftMule(CraftServer server, net.minecraft.world.entity.animal.horse.Mule entity) {
+    public CraftMule(CraftServer server, net.minecraft.world.entity.animal.equine.Mule entity) {
         super(server, entity);
     }
 

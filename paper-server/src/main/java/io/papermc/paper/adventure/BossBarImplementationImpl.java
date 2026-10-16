@@ -27,6 +27,7 @@ public final class BossBarImplementationImpl implements BossBar.Listener, BossBa
     public void playerShow(final CraftPlayer player) {
         if (this.vanilla == null) {
             this.vanilla = new ServerBossEvent(
+                net.minecraft.util.Mth.createInsecureUUID(net.minecraft.util.RandomSource.create()),
                 PaperAdventure.asVanilla(this.bar.name()),
                 PaperAdventure.asVanilla(this.bar.color()),
                 PaperAdventure.asVanilla(this.bar.overlay())

@@ -162,7 +162,7 @@ public final class Title {
     /**
      * Creates a new title.
      *
-     * <p>It is recommended to the {@link BaseComponent} constrctors.</p>
+     * <p>It is recommended to use the {@link BaseComponent} constructors.</p>
      *
      * @param title    the main text of the title
      * @param subtitle the secondary text of the title
@@ -234,7 +234,7 @@ public final class Title {
     }
 
     /**
-     * Sends the title directly to an player
+     * Sends the title directly to a player
      *
      * @param player the receiver of the title
      */
@@ -315,7 +315,7 @@ public final class Title {
         /**
          * Sets the title to the given text.
          *
-         * <p>It is recommended to the {@link BaseComponent} methods.</p>
+         * <p>It is recommended to use the {@link BaseComponent} methods.</p>
          *
          * @param title the title text
          * @return this builder instance
@@ -352,7 +352,7 @@ public final class Title {
         /**
          * Sets the subtitle to the given text.
          *
-         * <p>It is recommended to the {@link BaseComponent} methods.</p>
+         * <p>It is recommended to use the {@link BaseComponent} methods.</p>
          *
          * @param subtitle the title text
          * @return this builder instance

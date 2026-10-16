@@ -51,7 +51,7 @@ public interface CustomItemTagContainer {
      * even if it is not 16 bytes long.
      *
      * This method is only usable for custom object keys. Overwriting existing
-     * tags, like the the display name, will not work as the values are stored
+     * tags, like the display name, will not work as the values are stored
      * using your namespace.
      *
      * @param key the key the value is stored under
@@ -69,7 +69,7 @@ public interface CustomItemTagContainer {
      * Returns the custom tag's value that is stored on the item.
      *
      * @param key the key to look up in the custom tag map
-     * @param type the type the value must have and will be casted to
+     * @param type the type the value must have and will be cast to
      * @param <T> the generic type of the stored primitive
      * @param <Z> the generic type of the eventually created complex object
      * @return the value or {@code null} if no value was mapped under the given

@@ -19,7 +19,7 @@ public class SimpleEnumGenerator<T extends Enum<T>> extends SimpleGenerator {
     protected TypeSpec getTypeSpec() {
         TypeSpec.Builder typeBuilder = TypeSpec.enumBuilder(this.enumClass.getSimpleName())
             .addModifiers(Modifier.PUBLIC)
-            .addAnnotations(Annotations.CLASS_HEADER);
+            .addAnnotations(Annotations.CONSTANTS_HEADER);
 
         for (T enumValue : this.enumClass.getEnumConstants()) {
             typeBuilder.addEnumConstant(enumValue.name());

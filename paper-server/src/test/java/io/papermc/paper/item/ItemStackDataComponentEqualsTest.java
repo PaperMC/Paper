@@ -1,8 +1,8 @@
 package io.papermc.paper.item;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
-import java.util.Set;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

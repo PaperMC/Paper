@@ -1,6 +1,5 @@
 package io.papermc.paper.threadedregions;
 
-import ca.spottedleaf.concurrentutil.util.Validate;
 import ca.spottedleaf.moonrise.common.list.ReferenceList;
 import ca.spottedleaf.moonrise.common.util.TickThread;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -10,6 +9,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
@@ -52,7 +52,7 @@ public final class EntityScheduler {
     private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
 
     public EntityScheduler(final CraftEntity entity) {
-        this.entity = Validate.notNull(entity);
+        this.entity = Objects.requireNonNull(entity);
     }
 
     // must own state lock
@@ -146,6 +146,37 @@ public final class EntityScheduler {
     }
 
     /**
+     * Attempts to invoke the callback immediately if the current thread owns the Entity and the Entity is not retired,
+     * returning {@code null} when it happens. If the current thread neither owns the Entity nor the Entity is retired,
+     * then this function has the same effect as invoking {@link #schedule(Consumer, Consumer, long)} with no retired
+     * callback and a delay of {@code 1L}.
+     *
+     * @param run The callback to run, may not be null.
+     * @return {@code Boolean.TRUE} if the task was scheduled, which means that either the run function or the retired function
+     *         will be invoked (but never both), or {@code Boolean.FALSE} indicating neither the run nor retired function will be invoked
+     *         since the scheduler has been retired. Returns {@code null} if the callback was executed immediately.
+     */
+    public Boolean scheduleOrExecute(final Consumer<? extends Entity> run) {
+        Objects.requireNonNull(run, "Run task may not be null");
+
+        final Entity handle = this.entity.getHandleRaw();
+
+        if (!TickThread.isTickThreadFor(handle)) {
+            return Boolean.valueOf(this.schedule(run, null, 1L));
+        }
+
+        synchronized (this.stateLock) {
+            if (this.tickCount == RETIRED_TICK_COUNT) {
+                return Boolean.FALSE;
+            }
+        }
+
+        ((Consumer<Entity>)run).accept(handle);
+
+        return null;
+    }
+
+    /**
      * Schedules a task with the given delay. If the task failed to schedule because the scheduler is retired (entity
      * removed), then returns {@code false}. Otherwise, either the run callback will be invoked after the specified delay,
      * or the retired callback will be invoked if the scheduler is retired.
@@ -168,7 +199,7 @@ public final class EntityScheduler {
      *         since the scheduler has been retired.
      */
     public boolean schedule(final Consumer<? extends Entity> run, final Consumer<? extends Entity> retired, final long delay) {
-        Validate.notNull(run, "Run task may not be null");
+        Objects.requireNonNull(run, "Run task may not be null");
 
         final ScheduledTask task = new ScheduledTask(run, retired);
         synchronized (this.stateLock) {

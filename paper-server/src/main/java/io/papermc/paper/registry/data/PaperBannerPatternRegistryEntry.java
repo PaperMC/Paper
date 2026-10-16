@@ -4,16 +4,17 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import org.bukkit.block.banner.PatternType;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.*;
+import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperBannerPatternRegistryEntry implements BannerPatternRegistryEntry {
 
-    protected @Nullable ResourceLocation assetId;
+    protected @Nullable Identifier assetId;
     protected @Nullable String translationKey;
 
     public PaperBannerPatternRegistryEntry(

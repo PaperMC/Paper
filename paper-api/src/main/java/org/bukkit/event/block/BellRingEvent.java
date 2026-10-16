@@ -35,7 +35,7 @@ public class BellRingEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public BlockFace getDirection() {
-        return direction;
+        return this.direction;
     }
 
     /**
@@ -45,17 +45,17 @@ public class BellRingEvent extends BlockEvent implements Cancellable {
      */
     @Nullable
     public Entity getEntity() {
-        return entity;
+        return this.entity;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @NotNull

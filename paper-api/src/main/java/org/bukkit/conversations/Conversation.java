@@ -32,7 +32,13 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * You should not construct a conversation manually. Instead, use the {@link
  * ConversationFactory} for access to all available options.
+ *
+ * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+ * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+ * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
+ * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
  */
+@Deprecated(forRemoval = true)
 public class Conversation {
 
     private Prompt firstPrompt;
@@ -193,9 +199,7 @@ public class Conversation {
     }
 
     /**
-     * Returns the current state of the conversation.
-     *
-     * @return The current state of the conversation.
+     * {@return the current state of the conversation}
      */
     @NotNull
     public ConversationState getState() {

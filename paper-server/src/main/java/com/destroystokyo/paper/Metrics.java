@@ -621,7 +621,7 @@ public class Metrics {
 
                     // http://openjdk.java.net/jeps/223
                     // Java decided to change their versioning scheme and in doing so modified the java.version system
-                    // property to return $major[.$minor][.$secuity][-ea], as opposed to 1.$major.0_$identifier
+                    // property to return $major[.$minor][.$security][-ea], as opposed to 1.$major.0_$identifier
                     // we can handle pre-9 by checking if the "major" is equal to "1", otherwise, 9+
                     String majorVersion = javaVersion.split("\\.")[0];
                     String release;

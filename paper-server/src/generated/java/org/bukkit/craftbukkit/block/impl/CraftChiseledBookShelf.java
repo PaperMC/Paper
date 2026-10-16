@@ -2,22 +2,23 @@ package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.ChiseledBookshelf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
-@GeneratedFrom("1.21.8")
+@NullMarked
+@GeneratedClass
 public class CraftChiseledBookShelf extends CraftBlockData implements ChiseledBookshelf {
-    private static final EnumProperty<Direction> HORIZONTAL_FACING = BlockStateProperties.HORIZONTAL_FACING;
+    private static final EnumProperty<Direction> FACING = ChiseledBookShelfBlock.FACING;
 
     private static final List<BooleanProperty> SLOT_OCCUPIED_PROPERTIES = ChiseledBookShelfBlock.SLOT_OCCUPIED_PROPERTIES;
 
@@ -27,19 +28,19 @@ public class CraftChiseledBookShelf extends CraftBlockData implements ChiseledBo
 
     @Override
     public BlockFace getFacing() {
-        return this.get(HORIZONTAL_FACING, BlockFace.class);
+        return this.get(FACING, BlockFace.class);
     }
 
     @Override
     public void setFacing(final BlockFace blockFace) {
         Preconditions.checkArgument(blockFace != null, "blockFace cannot be null!");
         Preconditions.checkArgument(blockFace.isCartesian() && blockFace.getModY() == 0, "Invalid face, only cartesian horizontal face are allowed for this property!");
-        this.set(HORIZONTAL_FACING, blockFace);
+        this.set(FACING, blockFace);
     }
 
     @Override
     public Set<BlockFace> getFaces() {
-        return this.getValues(HORIZONTAL_FACING, BlockFace.class);
+        return this.getValues(FACING, BlockFace.class);
     }
 
     @Override

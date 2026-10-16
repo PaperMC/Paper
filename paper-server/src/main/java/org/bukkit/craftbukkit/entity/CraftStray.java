@@ -6,7 +6,7 @@ import org.bukkit.entity.Stray;
 
 public class CraftStray extends CraftAbstractSkeleton implements Stray {
 
-    public CraftStray(CraftServer server, net.minecraft.world.entity.monster.Stray entity) {
+    public CraftStray(CraftServer server, net.minecraft.world.entity.monster.skeleton.Stray entity) {
         super(server, entity);
     }
 

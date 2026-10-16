@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.FlowerBedBlock;
@@ -11,8 +11,10 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
-@GeneratedFrom("1.21.8")
+@NullMarked
+@GeneratedClass
 public class CraftFlowerBed extends CraftBlockData implements FlowerBed {
     private static final EnumProperty<Direction> FACING = FlowerBedBlock.FACING;
 

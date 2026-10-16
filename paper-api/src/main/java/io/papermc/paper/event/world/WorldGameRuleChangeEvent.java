@@ -11,7 +11,8 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Called when a world's gamerule is changed, either by command or by api.
+ * Called when a world's gamerule is changed, either by command, world options menu, or by api.
+ * @see <a href="https://minecraft.wiki/w/Game_rule#Modifying_game_rules">Modifying game rules - Minecraft wiki</a>
  */
 @NullMarked
 public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable {
@@ -19,7 +20,7 @@ public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final @Nullable CommandSender commandSender;
-    private final GameRule<?> gameRule;
+    protected final GameRule<?> gameRule;
     private String value;
     private boolean cancelled;
 

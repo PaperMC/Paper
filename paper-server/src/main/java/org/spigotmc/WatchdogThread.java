@@ -86,7 +86,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
 
                     if (net.minecraft.world.level.Level.lastPhysicsProblem != null) {
                         logger.log(Level.SEVERE, "------------------------------");
-                        logger.log(Level.SEVERE, "During the run of the server, a physics stackoverflow was supressed");
+                        logger.log(Level.SEVERE, "During the run of the server, a physics stackoverflow was suppressed");
                         logger.log(Level.SEVERE, "near " + net.minecraft.world.level.Level.lastPhysicsProblem);
                     }
 
@@ -109,7 +109,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                 logger.log(Level.SEVERE, "------------------------------");
                 logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):"); // Paper
                 FeatureHooks.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - log detailed tick information
-                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.threadId(), Integer.MAX_VALUE), logger);
+                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().getRunningThread().threadId(), Integer.MAX_VALUE), logger);
                 logger.log(Level.SEVERE, "------------------------------");
 
                 // Paper start - Only print full dump on long timeouts
@@ -133,7 +133,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                         }
                         // try one last chance to safe shutdown on main in case it 'comes back'
                         server.abnormalExit = true;
-                        server.safeShutdown(false, this.restart);
+                        server.halt(false, this.restart);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -172,7 +172,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
         }
         logger.log(Level.SEVERE, "\tStack:");
 
-        for (StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace())) { // Paper
+        for (StackTraceElement stack : thread.getStackTrace()) {
             logger.log(Level.SEVERE, "\t\t" + stack);
         }
     }

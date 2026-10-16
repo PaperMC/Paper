@@ -10,8 +10,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements Crafter {
 
-    public CraftCrafter(World world, CrafterBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftCrafter(World world, CrafterBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftCrafter(CraftCrafter state, Location location) {
@@ -63,7 +63,7 @@ public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements C
     public void setSlotDisabled(int slot, boolean disabled) {
         Preconditions.checkArgument(slot >= 0 && slot < 9, "Invalid slot index %s for Crafter", slot);
 
-        this.getSnapshot().setSlotState(slot, disabled);
+        this.getSnapshot().setSlotState(slot, !disabled);
     }
 
     @Override

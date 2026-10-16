@@ -28,7 +28,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.WritableRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.Keyed;
 import org.intellij.lang.annotations.Subst;
 import org.jspecify.annotations.Nullable;
@@ -47,13 +47,13 @@ public class PaperRegistryListenerManager {
      * For {@link Registry#register(Registry, String, Object)}
      */
     public <M> M registerWithListeners(final Registry<M> registry, final String id, final M nms) {
-        return this.registerWithListeners(registry, ResourceLocation.withDefaultNamespace(id), nms);
+        return this.registerWithListeners(registry, Identifier.withDefaultNamespace(id), nms);
     }
 
     /**
-     * For {@link Registry#register(Registry, ResourceLocation, Object)}
+     * For {@link Registry#register(Registry, Identifier, Object)}
      */
-    public <M> M registerWithListeners(final Registry<M> registry, final ResourceLocation loc, final M nms) {
+    public <M> M registerWithListeners(final Registry<M> registry, final Identifier loc, final M nms) {
         return this.registerWithListeners(registry, ResourceKey.create(registry.key(), loc), nms);
     }
 
@@ -65,9 +65,9 @@ public class PaperRegistryListenerManager {
     }
 
     /**
-     * For {@link Registry#registerForHolder(Registry, ResourceLocation, Object)}
+     * For {@link Registry#registerForHolder(Registry, Identifier, Object)}
      */
-    public <M> Holder.Reference<M> registerForHolderWithListeners(final Registry<M> registry, final ResourceLocation loc, final M nms) {
+    public <M> Holder.Reference<M> registerForHolderWithListeners(final Registry<M> registry, final Identifier loc, final M nms) {
         return this.registerForHolderWithListeners(registry, ResourceKey.create(registry.key(), loc), nms);
     }
 
@@ -131,7 +131,7 @@ public class PaperRegistryListenerManager {
         final RegisterMethod<M, R> registerMethod,
         final Conversions conversions
     ) {
-        @Subst("namespace:key") final ResourceLocation beingAdded = key.location();
+        @Subst("namespace:key") final Identifier beingAdded = key.identifier();
         @SuppressWarnings("PatternValidation") final TypedKey<T> typedKey = TypedKey.create(entry.apiKey(), Key.key(beingAdded.getNamespace(), beingAdded.getPath()));
         final RegistryEntryAddEventImpl<T, B> event = entry.createEntryAddEvent(typedKey, builder, conversions);
         LifecycleEventRunner.INSTANCE.callEvent(this.valueAddEventTypes.getEventType(entry.apiKey()), event);

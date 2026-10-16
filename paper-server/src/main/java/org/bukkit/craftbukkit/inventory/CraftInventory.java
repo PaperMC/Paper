@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.entity.DropperBlockEntity;
 import net.minecraft.world.level.block.entity.Hopper;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
+import net.minecraft.world.level.block.entity.ShelfBlockEntity;
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.entity.SmokerBlockEntity;
 import org.bukkit.Location;
@@ -50,7 +51,7 @@ public class CraftInventory implements Inventory {
     @Override
     public ItemStack getItem(int index) {
         net.minecraft.world.item.ItemStack item = this.getInventory().getItem(index);
-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
     }
 
     protected ItemStack[] asCraftMirror(List<net.minecraft.world.item.ItemStack> mcItems) {
@@ -59,7 +60,7 @@ public class CraftInventory implements Inventory {
 
         for (int i = 0; i < size; i++) {
             net.minecraft.world.item.ItemStack mcItem = mcItems.get(i);
-            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asCraftMirror(mcItem);
+            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asBukkitMirror(mcItem);
         }
 
         return items;
@@ -262,10 +263,7 @@ public class CraftInventory implements Inventory {
 
     private int firstPartial(ItemStack item) {
         ItemStack[] inventory = this.getStorageContents();
-        ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
-        if (item == null) {
-            return -1;
-        }
+        ItemStack filteredItem = item.clone();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
             if (cItem != null && cItem.getAmount() < this.getMaxItemStack(cItem) && cItem.isSimilar(filteredItem)) {
@@ -306,7 +304,7 @@ public class CraftInventory implements Inventory {
                         // More than a single stack!
                         int maxAmount = this.getMaxItemStack(item);
                         if (item.getAmount() > maxAmount) {
-                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
+                            ItemStack stack = item.clone();
                             stack.setAmount(maxAmount);
                             this.setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - maxAmount);
@@ -517,6 +515,8 @@ public class CraftInventory implements Inventory {
             return InventoryType.LECTERN;
         } else if (this.inventory instanceof ChiseledBookShelfBlockEntity) {
             return InventoryType.CHISELED_BOOKSHELF;
+        } else if (this.inventory instanceof ShelfBlockEntity) {
+            return InventoryType.SHELF;
         } else if (this instanceof CraftInventoryLoom) {
             return InventoryType.LOOM;
         } else if (this instanceof CraftInventoryCartography) {

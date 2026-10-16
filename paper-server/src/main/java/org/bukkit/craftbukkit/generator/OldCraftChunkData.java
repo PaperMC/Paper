@@ -4,10 +4,10 @@ import io.papermc.paper.FeatureHooks;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import org.bukkit.HeightMap;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -26,20 +26,20 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     private final int minHeight;
     private final int maxHeight;
     private final LevelChunkSection[] sections;
-    private final Registry<net.minecraft.world.level.biome.Biome> biomes;
+    private final PalettedContainerFactory palettedContainerFactory;
     private Set<BlockPos> tiles;
     private final Set<BlockPos> lights = new HashSet<>();
     private final org.bukkit.World world;
 
-    public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes) {
-        this(minHeight, maxHeight, biomes, null);
+    public OldCraftChunkData(int minHeight, int maxHeight, PalettedContainerFactory palettedContainerFactory) {
+        this(minHeight, maxHeight, palettedContainerFactory, null);
     }
 
-    public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes, org.bukkit.World world) {
-        this.world = world;
+    public OldCraftChunkData(int minHeight, int maxHeight, PalettedContainerFactory palettedContainerFactory, org.bukkit.World world) {
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
-        this.biomes = biomes;
+        this.palettedContainerFactory = palettedContainerFactory;
+        this.world = world;
         this.sections = new LevelChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
     }
 
@@ -90,17 +90,17 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Material getType(int x, int y, int z) {
-        return CraftBlockType.minecraftToBukkit(this.getTypeId(x, y, z).getBlock());
+        return CraftBlockType.minecraftToBukkit(this.getBlockState(x, y, z).getBlock());
     }
 
     @Override
     public MaterialData getTypeAndData(int x, int y, int z) {
-        return CraftMagicNumbers.getMaterial(this.getTypeId(x, y, z));
+        return CraftMagicNumbers.getMaterial(this.getBlockState(x, y, z));
     }
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        return CraftBlockData.fromData(this.getTypeId(x, y, z));
+        return this.getBlockState(x, y, z).asBlockData();
     }
 
     public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, BlockState type) {
@@ -140,7 +140,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         }
     }
 
-    public BlockState getTypeId(int x, int y, int z) {
+    public BlockState getBlockState(int x, int y, int z) {
         if (x != (x & 0xf) || y < this.minHeight || y >= this.maxHeight || z != (z & 0xf)) {
             return Blocks.AIR.defaultBlockState();
         }
@@ -154,7 +154,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public byte getData(int x, int y, int z) {
-        return CraftMagicNumbers.toLegacyData(this.getTypeId(x, y, z));
+        return CraftMagicNumbers.toLegacyData(this.getBlockState(x, y, z));
     }
 
     private void setBlock(int x, int y, int z, BlockState type) {
@@ -184,7 +184,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         int offset = (y - this.minHeight) >> 4;
         LevelChunkSection section = this.sections[offset];
         if (create && section == null) {
-            this.sections[offset] = section = FeatureHooks.createSection(this.biomes, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, null, offset + (this.minHeight >> 4)); // Paper - Anti-Xray - Add parameters
+            this.sections[offset] = section = FeatureHooks.createSection(this.palettedContainerFactory, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, null, offset + (this.minHeight >> 4)); // Paper - Anti-Xray - Add parameters
         }
         return section;
     }

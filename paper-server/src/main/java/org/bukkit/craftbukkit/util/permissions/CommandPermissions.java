@@ -30,7 +30,6 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "effect", "Allows the user to add/remove effects on players", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "selector", "Allows the use of selectors", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "trigger", "Allows the use of the trigger command", PermissionDefault.TRUE, commands);
-        // Paper start
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "advancement", "Allows the user to give, remove, or check player advancements", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "attribute", "Allows the user to query, add, remove or set an entity attribute", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "ban", "Allows the user to add players to the ban list", PermissionDefault.OP, commands);
@@ -48,6 +47,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "difficulty", "Allows the user to set the difficulty level", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "enchant", "Allows the user to enchant a player item", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "execute", "Allows the user to execute another command", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "fetchprofile", "Allows the user to fetch a player profile via name or id", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "fill", "Allows the user to fill a region with a specific block", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "fillbiome", "Allows the user to fill a region with a specific biome", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "forceload", "Allows the user to force chunks to be constantly loaded or not", PermissionDefault.OP, commands);
@@ -83,6 +83,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "spreadplayers", "Allows the user to teleport entities to random locations", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "stopsound", "Allows the user to stop a sound", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "summon", "Allows the user to summon an entity", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "swing", "Allows the user to swing arms of an entity", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "tag", "Allows the user to control entity tags", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "team", "Allows the user to control teams", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "teammsg", "Allows the user to specify the message to send to team", PermissionDefault.TRUE, commands); // defaults to all players
@@ -93,11 +94,13 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "title", "Allows the user to manage screen titles", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "transfer", "Allows the user to transfer to another server", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "version", "Shows info related to the server version", PermissionDefault.OP, commands);
-        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "waypoint", "Allows the managment of a waypoints on the server/locator bar", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "waypoint", "Allows the management of a waypoints on the server/locator bar", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "weather", "Allows the user to set the weather", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "whitelist", "Allows the user to manage the server whitelist", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "worldborder", "Allows the user to manage the world border", PermissionDefault.OP, commands);
-        // Paper end
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "stopwatch", "Allows the user to time an action tracking real time", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "compute", "Allows the user to compute a number from different context", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "posteffect", "Allows the user to manage post effect shaders", PermissionDefault.OP, commands);
 
         DefaultPermissions.registerPermission("minecraft.admin.command_feedback", "Receive command broadcasts when sendCommandFeedback is true", PermissionDefault.OP, commands);
 

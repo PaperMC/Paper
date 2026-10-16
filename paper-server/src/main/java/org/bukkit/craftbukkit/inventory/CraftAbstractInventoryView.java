@@ -52,7 +52,10 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
         Preconditions.checkArgument(rawSlot < this.countSlots(), "Slot %s greater than inventory slot count", rawSlot);
+        return this.mapValidSlotToInventory(rawSlot);
+    }
 
+    public Inventory mapValidSlotToInventory(final int rawSlot) {
         if (rawSlot < this.getTopInventory().getSize()) {
             return this.getTopInventory();
         } else {
@@ -198,6 +201,12 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
             } else if (this.getType() == InventoryType.CRAFTING) { // Also includes creative inventory
                 if (slot < 9) {
                     type = InventoryType.SlotType.ARMOR;
+                } else if (slot > 35) {
+                    type = InventoryType.SlotType.QUICKBAR;
+                }
+            } else if (this.getType() == InventoryType.CRAFTER) {
+                if (slot == 45) {
+                    type = InventoryType.SlotType.RESULT;
                 } else if (slot > 35) {
                     type = InventoryType.SlotType.QUICKBAR;
                 }

@@ -1,5 +1,6 @@
 package org.bukkit.tag;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -10,11 +11,10 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
  */
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags
-    // @GeneratedFrom 1.21.8
     public static final Tag<DamageType> ALWAYS_HURTS_ENDER_DRAGONS = getTag("always_hurts_ender_dragons");
 
     public static final Tag<DamageType> ALWAYS_KILLS_ARMOR_STANDS = getTag("always_kills_armor_stands");
@@ -30,6 +30,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> BURNS_ARMOR_STANDS = getTag("burns_armor_stands");
 
     public static final Tag<DamageType> BYPASSES_ARMOR = getTag("bypasses_armor");
+
+    public static final Tag<DamageType> BYPASSES_COOLDOWN = getTag("bypasses_cooldown");
 
     public static final Tag<DamageType> BYPASSES_EFFECTS = getTag("bypasses_effects");
 
@@ -73,9 +75,13 @@ public final class DamageTypeTags {
 
     public static final Tag<DamageType> NO_KNOCKBACK = getTag("no_knockback");
 
+    public static final Tag<DamageType> NO_WOLF_RETALIATION = getTag("no_wolf_retaliation");
+
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 
     public static final Tag<DamageType> PANIC_ENVIRONMENTAL_CAUSES = getTag("panic_environmental_causes");
+
+    public static final Tag<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = getTag("sulfur_cube_with_block_immune_to");
 
     public static final Tag<DamageType> WITCH_RESISTANT_TO = getTag("witch_resistant_to");
 

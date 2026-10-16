@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public interface EntityTransformer {
 
     /**
-     * Transforms a entity in a structure.
+     * Transforms an entity in a structure.
      *
      * @param region the accessible region
      * @param x the x position of the entity

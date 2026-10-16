@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.Pufferfish;
+import net.minecraft.world.entity.animal.fish.Pufferfish;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.PufferFish;
 

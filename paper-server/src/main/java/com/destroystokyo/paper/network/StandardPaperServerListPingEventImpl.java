@@ -1,7 +1,6 @@
 package com.destroystokyo.paper.network;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
-import com.mojang.authlib.GameProfile;
 import io.papermc.paper.adventure.AdventureComponent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,15 +12,16 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
 import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.players.NameAndId;
 import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.jetbrains.annotations.NotNull;
 
 public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
 
-    private List<GameProfile> originalSample;
+    private List<NameAndId> originalSample;
 
-    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection networkManager, ServerStatus ping) {
-        super(server, new PaperStatusClient(networkManager), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
+    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection connection, ServerStatus ping) {
+        super(server, new PaperStatusClient(connection), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
         this.originalSample = ping.players().map(ServerStatus.Players::sample).orElse(null); // GH-1473 - pre-tick race condition NPE
     }
 
@@ -31,8 +31,8 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         List<ListedPlayerInfo> sample = super.getListedPlayers();
 
         if (this.originalSample != null) {
-            for (GameProfile profile : this.originalSample) {
-                sample.add(new ListedPlayerInfo(profile.getName(), profile.getId()));
+            for (NameAndId profile : this.originalSample) {
+                sample.add(new ListedPlayerInfo(profile.name(), profile.id()));
             }
             this.originalSample = null;
         }
@@ -46,7 +46,7 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         return super.getPlayerSample();
     }
 
-    private List<GameProfile> getPlayerSampleHandle() {
+    private List<NameAndId> getPlayerSampleHandle() {
         if (this.originalSample != null) {
             return this.originalSample;
         }
@@ -56,20 +56,20 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
             return Collections.emptyList();
         }
 
-        final List<GameProfile> profiles = new ArrayList<>();
+        final List<NameAndId> profiles = new ArrayList<>();
         for (ListedPlayerInfo playerInfo : entries) {
-            profiles.add(new GameProfile(playerInfo.id(), playerInfo.name()));
+            profiles.add(new NameAndId(playerInfo.id(), playerInfo.name()));
         }
         return profiles;
     }
 
-    public static void processRequest(MinecraftServer server, Connection networkManager) {
-        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus());
+    public static void processRequest(MinecraftServer server, Connection connection) {
+        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, connection, server.getStatus());
         server.server.getPluginManager().callEvent(event);
 
         // Close connection immediately if event is cancelled
         if (event.isCancelled()) {
-            networkManager.disconnect((Component) null);
+            connection.disconnect((Component) null);
             return;
         }
 
@@ -99,7 +99,7 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
 
         // Send response
-        networkManager.send(new ClientboundStatusResponsePacket(ping));
+        connection.send(new ClientboundStatusResponsePacket(ping));
     }
 
 }

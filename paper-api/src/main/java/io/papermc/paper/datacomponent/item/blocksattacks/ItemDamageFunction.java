@@ -4,7 +4,6 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Hold how much damage should be applied to the item from a given attack.
@@ -12,8 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  * @see io.papermc.paper.datacomponent.item.BlocksAttacks#itemDamage()
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemDamageFunction {
 
@@ -27,8 +24,7 @@ public interface ItemDamageFunction {
      *
      * @return the threshold
      */
-    @NonNegative
-    float threshold();
+    @NonNegative float threshold();
 
     /**
      * Get the constant amount of damage applied to the item, if threshold is passed.
@@ -55,12 +51,11 @@ public interface ItemDamageFunction {
     /**
      * Builder for {@link ItemDamageFunction}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemDamageFunction> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        ItemDamageFunction.Builder threshold(@NonNegative final float threshold);
+        ItemDamageFunction.Builder threshold(final @NonNegative float threshold);
 
         @Contract(value = "_ -> this", mutates = "this")
         ItemDamageFunction.Builder base(final float base);

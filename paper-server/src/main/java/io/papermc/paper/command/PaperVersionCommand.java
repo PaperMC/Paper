@@ -1,6 +1,5 @@
 package io.papermc.paper.command;
 
-import com.destroystokyo.paper.PaperVersionFetcher;
 import com.destroystokyo.paper.util.VersionFetcher;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -8,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -45,7 +45,7 @@ public class PaperVersionCommand {
     private static final Component FAILED_TO_FETCH = Component.text("Could not fetch version information!", NamedTextColor.RED);
     private static final Component FETCHING = Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC);
 
-    private final VersionFetcher versionFetcher = new PaperVersionFetcher();
+    private final VersionFetcher versionFetcher = InternalAPIBridge.get().getVersionFetcher();
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {

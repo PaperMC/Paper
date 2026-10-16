@@ -51,8 +51,7 @@ import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
 import static co.aikar.util.JSONUtil.*;
 
 /**
- * Internal.
- *
+ * @hidden
  * @deprecated Timings will be removed in the future
  */
 @Deprecated(forRemoval = true)
@@ -135,7 +134,7 @@ public class TimingHistory {
                     }
                 }
                 return pair(
-                    worldMap.get(world.getName()),
+                    worldMap.get(world.key().asString()),
                     toArrayMapper(regions.values(),new Function<RegionData, Object>() {
                         @NotNull
                         @Override

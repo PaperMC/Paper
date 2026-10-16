@@ -35,30 +35,13 @@ public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
     RegistryEntryAddEventType<T, B> entryAdd();
 
     /**
-     * Gets the event type for {@link RegistryFreezeEvent} which is fired just before
-     * a registry is frozen. It allows for the registration of new objects.
-     * <p>
-     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
-     * to register a handler for {@link RegistryFreezeEvent}.
-     *
-     * @return the registry freeze event type
-     * @deprecated use {@link #compose()} instead.
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
-    @Deprecated(since = "1.21.6", forRemoval = true)
-    default LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze() {
-        return (LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T,B>>) (LifecycleEventType.Prioritizable) this.compose();
-    }
-
-    /**
      * Gets the event type for {@link RegistryComposeEvent} which is fired after
      * a registry is loaded of expected elements. It allows for the registration of new objects.
      * <p>
      * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
      * to register a handler for {@link RegistryComposeEvent}.
      *
-     * @return the registry freeze event type
+     * @return the registry compose event type
      */
     LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> compose();
 

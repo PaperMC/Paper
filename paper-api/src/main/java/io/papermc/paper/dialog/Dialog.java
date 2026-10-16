@@ -27,13 +27,11 @@ public interface Dialog extends Keyed, DialogLike {
      * @param value the builder to use for creating the dialog
      * @return a new dialog instance
      */
-    @ApiStatus.Experimental
     static Dialog create(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
         return InlinedRegistryBuilderProvider.instance().createDialog(value);
     }
 
     // Start generate - Dialog
-    // @GeneratedFrom 1.21.8
     Dialog CUSTOM_OPTIONS = getDialog("custom_options");
 
     Dialog QUICK_ACTIONS = getDialog("quick_actions");

@@ -23,7 +23,7 @@ public interface UseCooldownComponent extends ConfigurationSerializable {
      * Sets the time in seconds it will take for an item in this cooldown group
      * to be available to use again.
      *
-     * @param cooldown new eat time, must be greater than 0
+     * @param cooldown new cooldown time, must be greater than 0
      */
     void setCooldownSeconds(float cooldown);
 
