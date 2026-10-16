@@ -4,9 +4,14 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.damage.DamageCalculation;
+import io.papermc.paper.damage.DamageStage;
+import io.papermc.paper.damage.DamageStageKeys;
 import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Material;
 import org.bukkit.WorldBorder;
 import org.bukkit.damage.DamageSource;
@@ -27,9 +32,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     private static final DamageModifier[] MODIFIERS = DamageModifier.values();
     private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
-    private final Map<DamageModifier, Double> modifiers;
-    private final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions;
-    private final Map<DamageModifier, Double> originals;
+    private final DamageCalculation damageCalculation;
+    private final Map<DamageModifier, DamageStage> modifierStages;
     private final DamageCause cause;
     private final DamageSource damageSource;
 
@@ -55,17 +59,59 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     @ApiStatus.Internal
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+        this(damagee, cause, damageSource, fromLegacy(modifiers, modifierFunctions), false);
+    }
+
+    /**
+     * Creates an event with a calculation supplied by the server.
+     *
+     * @param damagee the damaged entity
+     * @param cause the Bukkit damage cause
+     * @param damageSource the damage source
+     * @param calculation the damage calculation
+     */
+    @ApiStatus.Internal
+    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final DamageCalculation calculation) {
+        this(damagee, cause, damageSource, calculation, true);
+    }
+
+    private EntityDamageEvent(final Entity damagee, final DamageCause cause, final DamageSource damageSource, final DamageCalculation calculation, final boolean vanillaApplicability) {
         super(damagee);
+        this.cause = cause;
+        this.damageCalculation = calculation;
+        this.modifierStages = new EnumMap<>(DamageModifier.class);
+        for (final DamageModifier modifier : MODIFIERS) {
+            if (modifier != DamageModifier.BASE && (!vanillaApplicability || modifier != DamageModifier.BLOCKING || damagee instanceof Player)) {
+                this.damageCalculation.stage(keyFor(modifier)).ifPresent(stage -> this.modifierStages.put(modifier, stage));
+            }
+        }
+        this.damageSource = damageSource;
+    }
+
+    private static DamageCalculation fromLegacy(final Map<DamageModifier, Double> modifiers, final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         Preconditions.checkArgument(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
         Preconditions.checkArgument(!modifiers.containsKey(null), "Cannot have null DamageModifier");
         Preconditions.checkArgument(modifiers.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier values");
         Preconditions.checkArgument(modifiers.keySet().equals(modifierFunctions.keySet()), "Must have a modifier function for each DamageModifier");
         Preconditions.checkArgument(modifierFunctions.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier function");
-        this.originals = new EnumMap<>(modifiers);
-        this.cause = cause;
-        this.modifiers = modifiers;
-        this.modifierFunctions = modifierFunctions;
-        this.damageSource = damageSource;
+        final DamageCalculation calculation = new DamageCalculation(modifiers.get(DamageModifier.BASE));
+        for (final DamageModifier modifier : MODIFIERS) {
+            if (modifier != DamageModifier.BASE && modifiers.containsKey(modifier)) {
+                calculation.addStage(keyFor(modifier), modifiers.get(modifier), modifierFunctions.get(modifier)::apply);
+            }
+        }
+        return calculation;
+    }
+
+    /**
+     * Gets the ordered damage calculation for this event. Changes made to it affect
+     * this event's final damage and the subsequent vanilla damage effects.
+     *
+     * @return the damage calculation
+     */
+    @NotNull
+    public DamageCalculation getDamageCalculation() {
+        return this.damageCalculation;
     }
 
     /**
@@ -74,11 +120,16 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @param type the modifier
      * @return the original damage
+     * @deprecated Use {@link #getDamageCalculation()} instead.
      */
+    @Deprecated(since = "26.3")
     public double getOriginalDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        final Double damage = this.originals.get(type);
-        return (damage != null) ? damage : 0;
+        if (type == DamageModifier.BASE) {
+            return this.damageCalculation.getOriginalBaseDamage();
+        }
+        final DamageStage stage = this.modifierStages.get(type);
+        return stage == null ? 0 : stage.getOriginalChange();
     }
 
     /**
@@ -90,13 +141,26 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *     the particular DamageModifier, or to rephrase, when {@link
      *     #isApplicable(DamageModifier)} returns false
      * @see #getFinalDamage()
+     * @see #getDamageCalculation()
+     * @deprecated Use {@link #getDamageCalculation()} instead.
      */
+    @Deprecated(since = "26.3")
     public void setDamage(@NotNull DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        if (!this.modifiers.containsKey(type)) {
+        if (!this.isApplicable(type)) {
             throw new UnsupportedOperationException(type + " is not applicable to " + getEntity());
         }
-        this.modifiers.put(type, damage);
+        for (final Map.Entry<DamageModifier, DamageStage> entry : this.modifierStages.entrySet()) {
+            if (entry.getKey() != type) {
+                final DamageStage stage = entry.getValue();
+                stage.setChange(stage.getChange());
+            }
+        }
+        if (type == DamageModifier.BASE) {
+            this.damageCalculation.setBaseDamage(damage);
+        } else {
+            this.modifierStages.get(type).setChange(damage);
+        }
     }
 
     /**
@@ -105,11 +169,16 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @param type the damage modifier
      * @return The raw amount of damage caused by the event
      * @see DamageModifier#BASE
+     * @deprecated Use {@link #getDamageCalculation()} instead.
      */
+    @Deprecated(since = "26.3")
     public double getDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        final Double damage = this.modifiers.get(type);
-        return damage == null ? 0 : damage;
+        if (type == DamageModifier.BASE) {
+            return this.damageCalculation.getBaseDamage();
+        }
+        final DamageStage stage = this.modifierStages.get(type);
+        return stage == null ? 0 : stage.getChange();
     }
 
     /**
@@ -121,10 +190,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @param type the modifier
      * @return {@code true} if the modifier is supported by the caller, {@code false} otherwise
+     * @deprecated Use {@link #getDamageCalculation()} instead.
      */
+    @Deprecated(since = "26.3")
     public boolean isApplicable(@NotNull DamageModifier type) throws IllegalArgumentException {
         Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        return this.modifiers.containsKey(type);
+        return type == DamageModifier.BASE || this.modifierStages.containsKey(type);
     }
 
     /**
@@ -144,11 +215,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @return the amount of damage caused by the event
      */
     public final double getFinalDamage() {
-        double damage = 0;
-        for (DamageModifier modifier : MODIFIERS) {
-            damage += this.getDamage(modifier);
-        }
-        return damage;
+        return this.damageCalculation.getFinalDamage();
     }
 
     /**
@@ -161,31 +228,37 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @param damage The raw amount of damage caused by the event
      */
     public void setDamage(double damage) {
-        // These have to happen in the same order as the server calculates them, keep the enum sorted
         double remaining = damage;
         double oldRemaining = this.getDamage(DamageModifier.BASE);
-        for (DamageModifier modifier : MODIFIERS) {
-            if (!this.isApplicable(modifier)) {
-                continue;
-            }
-
-            Function<? super Double, Double> modifierFunction = modifierFunctions.get(modifier);
-            double newVanilla = modifierFunction.apply(remaining);
-            double oldVanilla = modifierFunction.apply(oldRemaining);
-            double difference = oldVanilla - newVanilla;
-
-            // Don't allow value to cross zero, assume zero values should be negative
-            double old = this.getDamage(modifier);
-            if (old > 0) {
-                this.setDamage(modifier, Math.max(0, old - difference));
-            } else {
-                this.setDamage(modifier, Math.min(0, old - difference));
+        final Map<DamageStage, Double> replacements = new IdentityHashMap<>();
+        for (final DamageStage stage : this.damageCalculation.stages()) {
+            final double newVanilla = stage.calculateVanilla(remaining);
+            final double oldVanilla = stage.calculateVanilla(oldRemaining);
+            final double difference = oldVanilla - newVanilla;
+            if (this.modifierStages.containsValue(stage)) {
+                final double old = stage.getChange();
+                replacements.put(stage, old > 0 ? Math.max(0, old - difference) : Math.min(0, old - difference));
             }
             remaining += newVanilla;
             oldRemaining += oldVanilla;
         }
 
-        this.setDamage(DamageModifier.BASE, damage);
+        this.damageCalculation.setBaseDamage(damage);
+        replacements.forEach(DamageStage::setChange);
+    }
+
+    private static Key keyFor(final DamageModifier modifier) {
+        return switch (modifier) {
+            case INVULNERABILITY_REDUCTION -> DamageStageKeys.INVULNERABILITY_REDUCTION;
+            case FREEZING -> DamageStageKeys.FREEZING;
+            case HARD_HAT -> DamageStageKeys.HELMET;
+            case BLOCKING -> DamageStageKeys.BLOCKING;
+            case ARMOR -> DamageStageKeys.ARMOR;
+            case RESISTANCE -> DamageStageKeys.RESISTANCE;
+            case MAGIC -> DamageStageKeys.MAGIC_PROTECTION;
+            case ABSORPTION -> DamageStageKeys.ABSORPTION;
+            case BASE -> throw new IllegalArgumentException("BASE is not a stage");
+        };
     }
 
     /**
@@ -240,8 +313,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     /**
      * An enum to specify the types of modifier
      *
-     * @deprecated This API is responsible for a large number of implementation
-     * problems and is in general unsustainable to maintain.
+     * @deprecated Use {@link EntityDamageEvent#getDamageCalculation()} instead.
      */
     @Deprecated(since = "1.12")
     public enum DamageModifier {
@@ -250,7 +322,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * raw {@link EntityDamageEvent#getDamage()}.
          */
         BASE,
-        INVULNERABILITY_REDUCTION, // Paper - fix invulnerability reduction in EntityDamageEvent - needs to be right under BASE as it's the first reduction all others are based on
+        /** Represents damage reduced by the victim's damage cooldown. */
+        INVULNERABILITY_REDUCTION,
         /**
          * This represents the damage increased by freezing status.
          */

@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.event;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
@@ -9,6 +7,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.damage.DamageCalculation;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
@@ -19,7 +18,6 @@ import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +36,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Prediction;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
@@ -190,7 +187,6 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
@@ -1062,11 +1058,11 @@ public class CraftEventFactory {
     }
     // Paper end
 
-    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions) {
-        return handleEntityDamageEvent(entity, source, modifiers, modifierFunctions, false);
+    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, DamageCalculation calculation) {
+        return handleEntityDamageEvent(entity, source, calculation, false);
     }
 
-    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
+    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, DamageCalculation calculation, boolean cancelled) {
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
         final Entity damager = source.eventEntityDamager() != null ? source.eventEntityDamager() : source.getDirectEntity();
         if (damager != null) {
@@ -1096,11 +1092,11 @@ public class CraftEventFactory {
                 cause = DamageCause.MAGIC;
             }
 
-            return callEntityDamageEvent(damager, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+            return callEntityDamageEvent(damager, entity, cause, bukkitDamageSource, calculation, cancelled, source.isCritical()); // Paper - add critical damage API
         } else if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) { // why this is a block event, damager is always null and no snapshot either
-            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, DamageCause.VOID, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, DamageCause.VOID, bukkitDamageSource, calculation, cancelled);
         } else if (source.is(DamageTypes.LAVA)) { // todo move below once lastLavaContact is defined
-            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, DamageCause.LAVA, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, DamageCause.LAVA, bukkitDamageSource, calculation, cancelled);
         } else if (source.eventBlockDamager() != null || source.causingBlockSnapshot() != null) {
             DamageCause cause;
             if (source.knownCause() != null) {
@@ -1117,7 +1113,7 @@ public class CraftEventFactory {
             } else {
                 cause = DamageCause.CUSTOM;
             }
-            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+            return callEntityDamageEvent(source.eventBlockDamager(), source.causingBlockSnapshot(), entity, cause, bukkitDamageSource, calculation, cancelled);
         }
 
         DamageCause cause;
@@ -1155,21 +1151,21 @@ public class CraftEventFactory {
             cause = DamageCause.CUSTOM;
         }
 
-        return callEntityDamageEvent(null, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+        return callEntityDamageEvent(null, entity, cause, bukkitDamageSource, calculation, cancelled, source.isCritical()); // Paper - add critical damage API
     }
 
-    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled, boolean critical) { // Paper - add critical damage API
+    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, DamageCalculation calculation, boolean cancelled, boolean critical) { // Paper - add critical damage API
         EntityDamageEvent event;
         if (damager != null) {
-            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions, critical);
+            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, bukkitDamageSource, calculation, critical);
         } else {
-            event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
+            event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, bukkitDamageSource, calculation);
         }
         return callEntityDamageEvent(event, damagee, cancelled);
     }
 
-    private static EntityDamageEvent callEntityDamageEvent(Block damager, BlockState damagerState, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
-        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagerState, damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
+    private static EntityDamageEvent callEntityDamageEvent(Block damager, BlockState damagerState, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, DamageCalculation calculation, boolean cancelled) {
+        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagerState, damagee.getBukkitEntity(), cause, bukkitDamageSource, calculation);
         return callEntityDamageEvent(event, damagee, cancelled);
     }
 
@@ -1186,40 +1182,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
-
-    public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double freezingModifier, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> freezing, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption) {
-    // Paper start - fix invulnerability reduction in EntityDamageEvent
-        return handleLivingEntityDamageEvent(damagee, source, rawDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption, null);
-    }
-    public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double freezingModifier, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> freezing, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption, java.util.function.BiConsumer<Map<DamageModifier, Double>, Map<DamageModifier, Function<? super Double, Double>>> callback) {
-    // Paper end - fix invulnerability reduction in EntityDamageEvent
-        Map<DamageModifier, Double> modifiers = new EnumMap<>(DamageModifier.class);
-        Map<DamageModifier, Function<? super Double, Double>> modifierFunctions = new EnumMap<>(DamageModifier.class);
-        modifiers.put(DamageModifier.BASE, rawDamage);
-        modifierFunctions.put(DamageModifier.BASE, ZERO);
-        if (source.is(DamageTypeTags.IS_FREEZING)) { // Paper
-            modifiers.put(DamageModifier.FREEZING, freezingModifier);
-            modifierFunctions.put(DamageModifier.FREEZING, freezing);
-        }
-        if (source.is(DamageTypeTags.DAMAGES_HELMET)) { // Paper
-            modifiers.put(DamageModifier.HARD_HAT, hardHatModifier);
-            modifierFunctions.put(DamageModifier.HARD_HAT, hardHat);
-        }
-        if (damagee instanceof net.minecraft.world.entity.player.Player) {
-            modifiers.put(DamageModifier.BLOCKING, blockingModifier);
-            modifierFunctions.put(DamageModifier.BLOCKING, blocking);
-        }
-        modifiers.put(DamageModifier.ARMOR, armorModifier);
-        modifierFunctions.put(DamageModifier.ARMOR, armor);
-        modifiers.put(DamageModifier.RESISTANCE, resistanceModifier);
-        modifierFunctions.put(DamageModifier.RESISTANCE, resistance);
-        modifiers.put(DamageModifier.MAGIC, magicModifier);
-        modifierFunctions.put(DamageModifier.MAGIC, magic);
-        modifiers.put(DamageModifier.ABSORPTION, absorptionModifier);
-        modifierFunctions.put(DamageModifier.ABSORPTION, absorption);
-        if (callback != null) callback.accept(modifiers, modifierFunctions); // Paper - fix invulnerability reduction in EntityDamageEvent
-        return handleEntityDamageEvent(damagee, source, modifiers, modifierFunctions);
+    public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, DamageCalculation calculation) {
+        return handleEntityDamageEvent(damagee, source, calculation);
     }
 
     // Non-Living Entities such as EntityEnderCrystal and EntityFireball need to call this
@@ -1232,13 +1196,7 @@ public class CraftEventFactory {
     }
 
     public static EntityDamageEvent callNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelled) {
-        final EnumMap<DamageModifier, Double> modifiers = new EnumMap<>(DamageModifier.class);
-        final EnumMap<DamageModifier, Function<? super Double, Double>> functions = new EnumMap(DamageModifier.class);
-
-        modifiers.put(DamageModifier.BASE, damage);
-        functions.put(DamageModifier.BASE, ZERO);
-
-        return handleEntityDamageEvent(entity, source, modifiers, functions, cancelled);
+        return handleEntityDamageEvent(entity, source, new DamageCalculation(damage), cancelled);
     }
 
     public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage, boolean cancelled) {
