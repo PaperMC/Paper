@@ -7,26 +7,17 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Event when an Entity starts touching water or not. This includes even small amounts of flowing water.
+ * Fired when an {@link Entity} starts touching water. This includes even small amounts of flowing water.
+ *
+ * @see EntityExitWaterEvent for when an {@link Entity} exits the water.
  */
 @NullMarked
-public class EntityTouchWaterEvent extends EntityEvent{
-
+public class EntityTouchWaterEvent extends EntityEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private boolean inWater;
-
     @ApiStatus.Internal
-    public EntityTouchWaterEvent(final Entity entity, final boolean inWater) {
+    public EntityTouchWaterEvent(final Entity entity) {
         super(entity);
-        this.inWater = inWater;
-    }
-
-    /**
-     * @return If the entity is now touching water.
-     */
-    public boolean isInWater() {
-        return inWater;
     }
 
     @Override
