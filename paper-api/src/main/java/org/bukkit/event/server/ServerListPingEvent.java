@@ -2,6 +2,7 @@ package org.bukkit.event.server;
 
 import com.google.common.base.Preconditions;
 import java.net.InetAddress;
+import java.util.UUID;
 import java.util.Iterator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -32,28 +33,19 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     private final int numPlayers;
     private Component motd;
     private int maxPlayers;
+    private final UUID connectionId;
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
-        super(true);
+        this(UUID.randomUUID(), hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), numPlayers, maxPlayers);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = LegacyComponentSerializer.legacySection().deserialize(motd);
-        this.numPlayers = numPlayers;
-        this.maxPlayers = maxPlayers;
     }
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
-        super(true);
-        this.numPlayers = MAGIC_PLAYER_COUNT;
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = LegacyComponentSerializer.legacySection().deserialize(motd);
-        this.maxPlayers = maxPlayers;
+        this(UUID.randomUUID(), hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), maxPlayers);
     }
 
     @ApiStatus.Internal
@@ -63,8 +55,15 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     }
 
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
+        this(UUID.randomUUID(), hostname, address, motd, numPlayers, maxPlayers);
+    }
+
+    @ApiStatus.Internal
+    public ServerListPingEvent(@NotNull final UUID connectionId, @NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
         super(true);
+        this.connectionId = connectionId;
         this.hostname = hostname;
         this.address = address;
         this.motd = motd;
@@ -84,8 +83,15 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * count.
      */
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final @NotNull Component motd, final int maxPlayers) {
+        this(UUID.randomUUID(), hostname, address, motd, maxPlayers);
+    }
+
+    @ApiStatus.Internal
+    protected ServerListPingEvent(final @NotNull UUID connectionId, final @NotNull String hostname, final @NotNull InetAddress address, final @NotNull Component motd, final int maxPlayers) {
         this.numPlayers = MAGIC_PLAYER_COUNT;
+        this.connectionId = connectionId;
         this.hostname = hostname;
         this.address = address;
         this.motd = motd;
@@ -101,6 +107,20 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     @NotNull
     public String getHostname() {
         return this.hostname;
+    }
+
+    /**
+     * Gets the stable connection identifier associated with this ping.
+     *
+     * <p>This identifier remains the same throughout the entire connection
+     * lifecycle and can be used to correlate this ping with subsequent
+     * connection stages such as handshake, login and join.</p>
+     *
+     * @return the stable connection identifier
+     */
+    @NotNull
+    public UUID getConnectionId() {
+        return this.connectionId;
     }
 
     /**
