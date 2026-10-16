@@ -1,0 +1,32 @@
+--- a/net/minecraft/util/datafix/fixes/WorldGenSettingsFix.java
++++ b/net/minecraft/util/datafix/fixes/WorldGenSettingsFix.java
+@@ -46,15 +_,26 @@
+         .build();
+ 
+     public WorldGenSettingsFix(final Schema parent) {
+-        super(parent, true);
++        super(parent, false); // Paper - operate on LEVEL instead of WORLD_GEN_SETTINGS; see makeRule
+     }
+ 
+     @Override
+     protected TypeRewriteRule makeRule() {
+         return this.fixTypeEverywhereTyped(
+             "WorldGenSettings building",
+-            this.getInputSchema().getType(References.WORLD_GEN_SETTINGS),
+-            settings -> settings.update(DSL.remainderFinder(), WorldGenSettingsFix::fix)
++            // Paper start - run this as part of the LEVEL walk instead of the standalone WORLD_GEN_SETTINGS type;
++            // WORLD_GEN_SETTINGS is never reached while walking LEVEL (it is only wired in via
++            // SAVED_DATA_WORLD_GEN_SETTINGS), so this fix must complete here for LevelDatToSavedDataPreparationFix's
++            // later generate_features -> generate_structures rename (v4771) to see the correct field name
++            this.getInputSchema().getType(References.LEVEL),
++            level -> level.update(DSL.remainderFinder(), dataTag -> {
++                Dynamic<?> worldGenSettings = dataTag.get("WorldGenSettings").orElseEmptyMap();
++
++                worldGenSettings = fix(worldGenSettings);
++
++                return dataTag.set("WorldGenSettings", worldGenSettings);
++            })
++            // Paper end
+         );
+     }
+ 
