@@ -1,30 +1,32 @@
 --- a/net/minecraft/world/InteractionResult.java
 +++ b/net/minecraft/world/InteractionResult.java
-@@ -30,18 +_,34 @@
-     public record Pass() implements InteractionResult {
+@@ -30,7 +_,24 @@
+     record Pass() implements InteractionResult {
      }
  
--    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext) implements InteractionResult {
+-    record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext) implements InteractionResult {
 +    // Paper start - track more context in interaction result
-+    public record PaperSuccessContext(net.minecraft.core.@Nullable BlockPos placedPos) {
++    record PaperSuccessContext(net.minecraft.core.@Nullable BlockPos placedPos) {
 +        static PaperSuccessContext DEFAULT = new PaperSuccessContext(null);
 +
 +        public PaperSuccessContext placedBlockAt(final net.minecraft.core.BlockPos pos) {
 +            return new PaperSuccessContext(pos);
 +        }
 +    }
-+    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext, PaperSuccessContext paperSuccessContext) implements InteractionResult {
-+        public InteractionResult.Success configurePaper(final java.util.function.UnaryOperator<PaperSuccessContext> edit) {
-+            return new InteractionResult.Success(this.swingSource, this.itemContext, edit.apply(this.paperSuccessContext));
++    record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext, PaperSuccessContext paperSuccessContext) implements InteractionResult {
++        public InteractionResult.Success configurePaper(final java.util.function.UnaryOperator<PaperSuccessContext> context) {
++            return new InteractionResult.Success(this.swingSource, this.itemContext, context.apply(this.paperSuccessContext));
 +        }
 +
 +        public Success(final InteractionResult.SwingSource swingSource, final InteractionResult.ItemContext itemContext) {
 +            this(swingSource, itemContext, PaperSuccessContext.DEFAULT);
 +        }
-+    // Paper end - track more context in interaction result
-         @Override
-         public boolean consumesAction() {
-             return true;
++        // Paper end - track more context in interaction result
++
+         public boolean shouldSwing() {
+             return this.swingSource != InteractionResult.SwingSource.NONE;
+         }
+@@ -41,11 +_,11 @@
          }
  
          public InteractionResult.Success heldItemTransformedTo(final ItemStack itemStack) {

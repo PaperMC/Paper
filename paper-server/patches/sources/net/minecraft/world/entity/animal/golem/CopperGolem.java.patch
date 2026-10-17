@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/golem/CopperGolem.java
 +++ b/net/minecraft/world/entity/animal/golem/CopperGolem.java
-@@ -58,8 +_,8 @@
+@@ -57,8 +_,8 @@
  import org.jspecify.annotations.Nullable;
  
  public class CopperGolem extends AbstractGolem implements ContainerUser, Shearable {
@@ -11,7 +11,7 @@
      private static final int WEATHERING_TICK_FROM = 504000;
      private static final int WEATHERING_TICK_TO = 552000;
      private static final int SPIN_ANIMATION_MIN_COOLDOWN = 200;
-@@ -79,7 +_,7 @@
+@@ -78,7 +_,7 @@
      );
      private @Nullable BlockPos openedChestPos;
      private @Nullable UUID lastLightningBoltUUID;
@@ -20,48 +20,46 @@
      private int idleAnimationStartTick = 0;
      private final AnimationState idleAnimationState = new AnimationState();
      private final AnimationState interactionGetItemAnimationState = new AnimationState();
-@@ -218,7 +_,15 @@
+@@ -217,7 +_,13 @@
          Level level = this.level();
          if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
              if (level instanceof ServerLevel serverLevel) {
 -                this.shear(serverLevel, SoundSource.PLAYERS, itemStack);
-+                // Paper start
++                // Paper start - call PlayerShearEntityEvent
 +                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemStack);
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
-+                if (event != null) {
-+                    if (event.isCancelled()) return InteractionResult.PASS;
-+                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                }
++                if (event.isCancelled()) return InteractionResult.PASS;
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
 +                this.shear(serverLevel, SoundSource.PLAYERS, itemStack, drops);
-+                // Paper end
++                // Paper end - call PlayerShearEntityEvent
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand);
              }
-@@ -281,20 +_,27 @@
+@@ -288,8 +_,10 @@
  
      private void turnToStatue(final ServerLevel level) {
          BlockPos pos = this.blockPosition();
--        level.setBlock(
+-        level.setBlockAndUpdate(
 -            pos,
 +        // Paper start - call EntityChangeBlockEvent
-+        //level.setBlock(
-+        //    pos,
++        // level.setBlockAndUpdate(
++        //     pos,
 +        BlockState newState =
-             Blocks.OXIDIZED_COPPER_GOLEM_STATUE
-                 .defaultBlockState()
+             Blocks.COPPER_GOLEM_STATUE
+                 .weathering()
+                 .oxidized()
+@@ -297,12 +_,17 @@
                  .setValue(
                      CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
                  )
--                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot())),
--            Block.UPDATE_ALL
+-                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()))
 -        );
 +                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
-+        //    Block.UPDATE_ALL
-+        //);
++        // );
 +        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, pos, newState)) {
 +            return;
 +        }
-+        level.setBlock(pos, newState, Block.UPDATE_ALL);
++        level.setBlockAndUpdate(pos, newState);
 +        // Paper end - call EntityChangeBlockEvent
          if (level.getBlockEntity(pos) instanceof CopperGolemStatueBlockEntity copperGolemStatueBlockEntity) {
              copperGolemStatueBlockEntity.createStatue(this);
@@ -71,7 +69,7 @@
              this.playSound(SoundEvents.COPPER_GOLEM_BECOME_STATUE);
              if (this.isLeashed()) {
                  if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
-@@ -424,12 +_,32 @@
+@@ -432,12 +_,30 @@
      }
  
      @Override
@@ -84,9 +82,7 @@
 -        this.spawnAtLocation(level, itemStack, 1.5F);
 -    }
 +        for (ItemStack drop : drops) {
-+            this.forceDrops = true;
 +            this.spawnAtLocation(level, drop, 1.5F);
-+            this.forceDrops = false;
 +        }
 +    }
 +
@@ -108,7 +104,7 @@
  
      @Override
      public boolean readyForShearing() {
-@@ -443,9 +_,13 @@
+@@ -451,9 +_,13 @@
      }
  
      @Override

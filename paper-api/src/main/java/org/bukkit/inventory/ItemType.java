@@ -94,6 +94,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     //<editor-fold desc="ItemTypes" defaultstate="collapsed">
     // Start generate - ItemType
+    ItemType.Typed<MapMeta> ABANDONED_CAMP_MAP = getItemType("abandoned_camp_map");
+
     ItemType.Typed<ItemMeta> ACACIA_BOAT = getItemType("acacia_boat");
 
     ItemType.Typed<ItemMeta> ACACIA_BUTTON = getItemType("acacia_button");
@@ -290,7 +292,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> BLACK_BANNER = getItemType("black_banner");
 
-    ItemType.Typed<BlockStateMeta> BLACK_BED = getItemType("black_bed");
+    ItemType.Typed<ItemMeta> BLACK_BED = getItemType("black_bed");
 
     ItemType.Typed<BundleMeta> BLACK_BUNDLE = getItemType("black_bundle");
 
@@ -301,6 +303,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BLACK_CONCRETE = getItemType("black_concrete");
 
     ItemType.Typed<ItemMeta> BLACK_CONCRETE_POWDER = getItemType("black_concrete_powder");
+
+    ItemType.Typed<ItemMeta> BLACK_CONCRETE_SLAB = getItemType("black_concrete_slab");
+
+    ItemType.Typed<ItemMeta> BLACK_CONCRETE_STAIRS = getItemType("black_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> BLACK_CUSHION = getItemType("black_cushion");
 
     ItemType.Typed<ItemMeta> BLACK_DYE = getItemType("black_dye");
 
@@ -317,6 +325,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BLACK_TERRACOTTA = getItemType("black_terracotta");
 
     ItemType.Typed<ItemMeta> BLACK_WOOL = getItemType("black_wool");
+
+    ItemType.Typed<ItemMeta> BLACK_WOOL_SLAB = getItemType("black_wool_slab");
+
+    ItemType.Typed<ItemMeta> BLACK_WOOL_STAIRS = getItemType("black_wool_stairs");
 
     ItemType.Typed<ItemMeta> BLACKSTONE = getItemType("blackstone");
 
@@ -338,7 +350,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> BLUE_BANNER = getItemType("blue_banner");
 
-    ItemType.Typed<BlockStateMeta> BLUE_BED = getItemType("blue_bed");
+    ItemType.Typed<ItemMeta> BLUE_BED = getItemType("blue_bed");
 
     ItemType.Typed<BundleMeta> BLUE_BUNDLE = getItemType("blue_bundle");
 
@@ -349,6 +361,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BLUE_CONCRETE = getItemType("blue_concrete");
 
     ItemType.Typed<ItemMeta> BLUE_CONCRETE_POWDER = getItemType("blue_concrete_powder");
+
+    ItemType.Typed<ItemMeta> BLUE_CONCRETE_SLAB = getItemType("blue_concrete_slab");
+
+    ItemType.Typed<ItemMeta> BLUE_CONCRETE_STAIRS = getItemType("blue_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> BLUE_CUSHION = getItemType("blue_cushion");
 
     ItemType.Typed<ItemMeta> BLUE_DYE = getItemType("blue_dye");
 
@@ -371,6 +389,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BLUE_TERRACOTTA = getItemType("blue_terracotta");
 
     ItemType.Typed<ItemMeta> BLUE_WOOL = getItemType("blue_wool");
+
+    ItemType.Typed<ItemMeta> BLUE_WOOL_SLAB = getItemType("blue_wool_slab");
+
+    ItemType.Typed<ItemMeta> BLUE_WOOL_STAIRS = getItemType("blue_wool_stairs");
 
     ItemType.Typed<SpawnEggMeta> BOGGED_SPAWN_EGG = getItemType("bogged_spawn_egg");
 
@@ -420,7 +442,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> BROWN_BANNER = getItemType("brown_banner");
 
-    ItemType.Typed<BlockStateMeta> BROWN_BED = getItemType("brown_bed");
+    ItemType.Typed<ItemMeta> BROWN_BED = getItemType("brown_bed");
 
     ItemType.Typed<BundleMeta> BROWN_BUNDLE = getItemType("brown_bundle");
 
@@ -431,6 +453,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BROWN_CONCRETE = getItemType("brown_concrete");
 
     ItemType.Typed<ItemMeta> BROWN_CONCRETE_POWDER = getItemType("brown_concrete_powder");
+
+    ItemType.Typed<ItemMeta> BROWN_CONCRETE_SLAB = getItemType("brown_concrete_slab");
+
+    ItemType.Typed<ItemMeta> BROWN_CONCRETE_STAIRS = getItemType("brown_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> BROWN_CUSHION = getItemType("brown_cushion");
 
     ItemType.Typed<ItemMeta> BROWN_DYE = getItemType("brown_dye");
 
@@ -454,6 +482,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> BROWN_WOOL = getItemType("brown_wool");
 
+    ItemType.Typed<ItemMeta> BROWN_WOOL_SLAB = getItemType("brown_wool_slab");
+
+    ItemType.Typed<ItemMeta> BROWN_WOOL_STAIRS = getItemType("brown_wool_stairs");
+
     ItemType.Typed<ItemMeta> BRUSH = getItemType("brush");
 
     ItemType.Typed<ItemMeta> BUBBLE_CORAL = getItemType("bubble_coral");
@@ -467,6 +499,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BUDDING_AMETHYST = getItemType("budding_amethyst");
 
     ItemType.Typed<BundleMeta> BUNDLE = getItemType("bundle");
+
+    ItemType.Typed<MapMeta> BURIED_ANCIENT_CITY_MAP = getItemType("buried_ancient_city_map");
+
+    ItemType.Typed<MapMeta> BURIED_MINESHAFT_MAP = getItemType("buried_mineshaft_map");
+
+    ItemType.Typed<MapMeta> BURIED_TREASURE_MAP = getItemType("buried_treasure_map");
+
+    ItemType.Typed<MapMeta> BURIED_TRIAL_CHAMBERS_MAP = getItemType("buried_trial_chambers_map");
 
     ItemType.Typed<ItemMeta> BURN_POTTERY_SHERD = getItemType("burn_pottery_sherd");
 
@@ -564,6 +604,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BlockStateMeta> CHISELED_BOOKSHELF = getItemType("chiseled_bookshelf");
 
+    ItemType.Typed<ItemMeta> CHISELED_CINNABAR = getItemType("chiseled_cinnabar");
+
     ItemType.Typed<ItemMeta> CHISELED_COPPER = getItemType("chiseled_copper");
 
     ItemType.Typed<ItemMeta> CHISELED_DEEPSLATE = getItemType("chiseled_deepslate");
@@ -582,6 +624,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> CHISELED_STONE_BRICKS = getItemType("chiseled_stone_bricks");
 
+    ItemType.Typed<ItemMeta> CHISELED_SULFUR = getItemType("chiseled_sulfur");
+
     ItemType.Typed<ItemMeta> CHISELED_TUFF = getItemType("chiseled_tuff");
 
     ItemType.Typed<ItemMeta> CHISELED_TUFF_BRICKS = getItemType("chiseled_tuff_bricks");
@@ -591,6 +635,22 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CHORUS_FRUIT = getItemType("chorus_fruit");
 
     ItemType.Typed<ItemMeta> CHORUS_PLANT = getItemType("chorus_plant");
+
+    ItemType.Typed<ItemMeta> CINNABAR = getItemType("cinnabar");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_SLAB = getItemType("cinnabar_brick_slab");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_STAIRS = getItemType("cinnabar_brick_stairs");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_WALL = getItemType("cinnabar_brick_wall");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICKS = getItemType("cinnabar_bricks");
+
+    ItemType.Typed<ItemMeta> CINNABAR_SLAB = getItemType("cinnabar_slab");
+
+    ItemType.Typed<ItemMeta> CINNABAR_STAIRS = getItemType("cinnabar_stairs");
+
+    ItemType.Typed<ItemMeta> CINNABAR_WALL = getItemType("cinnabar_wall");
 
     ItemType.Typed<ItemMeta> CLAY = getItemType("clay");
 
@@ -800,7 +860,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> CYAN_BANNER = getItemType("cyan_banner");
 
-    ItemType.Typed<BlockStateMeta> CYAN_BED = getItemType("cyan_bed");
+    ItemType.Typed<ItemMeta> CYAN_BED = getItemType("cyan_bed");
 
     ItemType.Typed<BundleMeta> CYAN_BUNDLE = getItemType("cyan_bundle");
 
@@ -811,6 +871,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CYAN_CONCRETE = getItemType("cyan_concrete");
 
     ItemType.Typed<ItemMeta> CYAN_CONCRETE_POWDER = getItemType("cyan_concrete_powder");
+
+    ItemType.Typed<ItemMeta> CYAN_CONCRETE_SLAB = getItemType("cyan_concrete_slab");
+
+    ItemType.Typed<ItemMeta> CYAN_CONCRETE_STAIRS = getItemType("cyan_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> CYAN_CUSHION = getItemType("cyan_cushion");
 
     ItemType.Typed<ItemMeta> CYAN_DYE = getItemType("cyan_dye");
 
@@ -827,6 +893,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CYAN_TERRACOTTA = getItemType("cyan_terracotta");
 
     ItemType.Typed<ItemMeta> CYAN_WOOL = getItemType("cyan_wool");
+
+    ItemType.Typed<ItemMeta> CYAN_WOOL_SLAB = getItemType("cyan_wool_slab");
+
+    ItemType.Typed<ItemMeta> CYAN_WOOL_STAIRS = getItemType("cyan_wool_stairs");
 
     ItemType.Typed<ItemMeta> DAMAGED_ANVIL = getItemType("damaged_anvil");
 
@@ -947,6 +1017,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> DEEPSLATE_TILE_WALL = getItemType("deepslate_tile_wall");
 
     ItemType.Typed<ItemMeta> DEEPSLATE_TILES = getItemType("deepslate_tiles");
+
+    ItemType.Typed<MapMeta> DESERT_PYRAMID_MAP = getItemType("desert_pyramid_map");
+
+    ItemType.Typed<MapMeta> DESERT_VILLAGE_MAP = getItemType("desert_village_map");
 
     ItemType.Typed<ItemMeta> DETECTOR_RAIL = getItemType("detector_rail");
 
@@ -1252,7 +1326,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> GRAY_BANNER = getItemType("gray_banner");
 
-    ItemType.Typed<BlockStateMeta> GRAY_BED = getItemType("gray_bed");
+    ItemType.Typed<ItemMeta> GRAY_BED = getItemType("gray_bed");
 
     ItemType.Typed<BundleMeta> GRAY_BUNDLE = getItemType("gray_bundle");
 
@@ -1263,6 +1337,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> GRAY_CONCRETE = getItemType("gray_concrete");
 
     ItemType.Typed<ItemMeta> GRAY_CONCRETE_POWDER = getItemType("gray_concrete_powder");
+
+    ItemType.Typed<ItemMeta> GRAY_CONCRETE_SLAB = getItemType("gray_concrete_slab");
+
+    ItemType.Typed<ItemMeta> GRAY_CONCRETE_STAIRS = getItemType("gray_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> GRAY_CUSHION = getItemType("gray_cushion");
 
     ItemType.Typed<ItemMeta> GRAY_DYE = getItemType("gray_dye");
 
@@ -1280,9 +1360,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> GRAY_WOOL = getItemType("gray_wool");
 
+    ItemType.Typed<ItemMeta> GRAY_WOOL_SLAB = getItemType("gray_wool_slab");
+
+    ItemType.Typed<ItemMeta> GRAY_WOOL_STAIRS = getItemType("gray_wool_stairs");
+
     ItemType.Typed<BannerMeta> GREEN_BANNER = getItemType("green_banner");
 
-    ItemType.Typed<BlockStateMeta> GREEN_BED = getItemType("green_bed");
+    ItemType.Typed<ItemMeta> GREEN_BED = getItemType("green_bed");
 
     ItemType.Typed<BundleMeta> GREEN_BUNDLE = getItemType("green_bundle");
 
@@ -1293,6 +1377,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> GREEN_CONCRETE = getItemType("green_concrete");
 
     ItemType.Typed<ItemMeta> GREEN_CONCRETE_POWDER = getItemType("green_concrete_powder");
+
+    ItemType.Typed<ItemMeta> GREEN_CONCRETE_SLAB = getItemType("green_concrete_slab");
+
+    ItemType.Typed<ItemMeta> GREEN_CONCRETE_STAIRS = getItemType("green_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> GREEN_CUSHION = getItemType("green_cushion");
 
     ItemType.Typed<ItemMeta> GREEN_DYE = getItemType("green_dye");
 
@@ -1309,6 +1399,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> GREEN_TERRACOTTA = getItemType("green_terracotta");
 
     ItemType.Typed<ItemMeta> GREEN_WOOL = getItemType("green_wool");
+
+    ItemType.Typed<ItemMeta> GREEN_WOOL_SLAB = getItemType("green_wool_slab");
+
+    ItemType.Typed<ItemMeta> GREEN_WOOL_STAIRS = getItemType("green_wool_stairs");
 
     ItemType.Typed<ItemMeta> GRINDSTONE = getItemType("grindstone");
 
@@ -1454,6 +1548,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> JUNGLE_PRESSURE_PLATE = getItemType("jungle_pressure_plate");
 
+    ItemType.Typed<MapMeta> JUNGLE_PYRAMID_MAP = getItemType("jungle_pyramid_map");
+
     ItemType.Typed<ItemMeta> JUNGLE_SAPLING = getItemType("jungle_sapling");
 
     ItemType.Typed<BlockStateMeta> JUNGLE_SHELF = getItemType("jungle_shelf");
@@ -1512,7 +1608,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> LIGHT_BLUE_BANNER = getItemType("light_blue_banner");
 
-    ItemType.Typed<BlockStateMeta> LIGHT_BLUE_BED = getItemType("light_blue_bed");
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_BED = getItemType("light_blue_bed");
 
     ItemType.Typed<BundleMeta> LIGHT_BLUE_BUNDLE = getItemType("light_blue_bundle");
 
@@ -1523,6 +1619,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> LIGHT_BLUE_CONCRETE = getItemType("light_blue_concrete");
 
     ItemType.Typed<ItemMeta> LIGHT_BLUE_CONCRETE_POWDER = getItemType("light_blue_concrete_powder");
+
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_CONCRETE_SLAB = getItemType("light_blue_concrete_slab");
+
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_CONCRETE_STAIRS = getItemType("light_blue_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_CUSHION = getItemType("light_blue_cushion");
 
     ItemType.Typed<ItemMeta> LIGHT_BLUE_DYE = getItemType("light_blue_dye");
 
@@ -1540,9 +1642,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LIGHT_BLUE_WOOL = getItemType("light_blue_wool");
 
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_WOOL_SLAB = getItemType("light_blue_wool_slab");
+
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_WOOL_STAIRS = getItemType("light_blue_wool_stairs");
+
     ItemType.Typed<BannerMeta> LIGHT_GRAY_BANNER = getItemType("light_gray_banner");
 
-    ItemType.Typed<BlockStateMeta> LIGHT_GRAY_BED = getItemType("light_gray_bed");
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_BED = getItemType("light_gray_bed");
 
     ItemType.Typed<BundleMeta> LIGHT_GRAY_BUNDLE = getItemType("light_gray_bundle");
 
@@ -1553,6 +1659,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> LIGHT_GRAY_CONCRETE = getItemType("light_gray_concrete");
 
     ItemType.Typed<ItemMeta> LIGHT_GRAY_CONCRETE_POWDER = getItemType("light_gray_concrete_powder");
+
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_CONCRETE_SLAB = getItemType("light_gray_concrete_slab");
+
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_CONCRETE_STAIRS = getItemType("light_gray_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_CUSHION = getItemType("light_gray_cushion");
 
     ItemType.Typed<ItemMeta> LIGHT_GRAY_DYE = getItemType("light_gray_dye");
 
@@ -1570,6 +1682,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LIGHT_GRAY_WOOL = getItemType("light_gray_wool");
 
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_WOOL_SLAB = getItemType("light_gray_wool_slab");
+
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_WOOL_STAIRS = getItemType("light_gray_wool_stairs");
+
     ItemType.Typed<ItemMeta> LIGHT_WEIGHTED_PRESSURE_PLATE = getItemType("light_weighted_pressure_plate");
 
     ItemType.Typed<ItemMeta> LIGHTNING_ROD = getItemType("lightning_rod");
@@ -1582,7 +1698,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> LIME_BANNER = getItemType("lime_banner");
 
-    ItemType.Typed<BlockStateMeta> LIME_BED = getItemType("lime_bed");
+    ItemType.Typed<ItemMeta> LIME_BED = getItemType("lime_bed");
 
     ItemType.Typed<BundleMeta> LIME_BUNDLE = getItemType("lime_bundle");
 
@@ -1593,6 +1709,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> LIME_CONCRETE = getItemType("lime_concrete");
 
     ItemType.Typed<ItemMeta> LIME_CONCRETE_POWDER = getItemType("lime_concrete_powder");
+
+    ItemType.Typed<ItemMeta> LIME_CONCRETE_SLAB = getItemType("lime_concrete_slab");
+
+    ItemType.Typed<ItemMeta> LIME_CONCRETE_STAIRS = getItemType("lime_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> LIME_CUSHION = getItemType("lime_cushion");
 
     ItemType.Typed<ItemMeta> LIME_DYE = getItemType("lime_dye");
 
@@ -1610,6 +1732,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LIME_WOOL = getItemType("lime_wool");
 
+    ItemType.Typed<ItemMeta> LIME_WOOL_SLAB = getItemType("lime_wool_slab");
+
+    ItemType.Typed<ItemMeta> LIME_WOOL_STAIRS = getItemType("lime_wool_stairs");
+
     ItemType.Typed<PotionMeta> LINGERING_POTION = getItemType("lingering_potion");
 
     ItemType.Typed<SpawnEggMeta> LLAMA_SPAWN_EGG = getItemType("llama_spawn_egg");
@@ -1622,7 +1748,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> MAGENTA_BANNER = getItemType("magenta_banner");
 
-    ItemType.Typed<BlockStateMeta> MAGENTA_BED = getItemType("magenta_bed");
+    ItemType.Typed<ItemMeta> MAGENTA_BED = getItemType("magenta_bed");
 
     ItemType.Typed<BundleMeta> MAGENTA_BUNDLE = getItemType("magenta_bundle");
 
@@ -1633,6 +1759,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MAGENTA_CONCRETE = getItemType("magenta_concrete");
 
     ItemType.Typed<ItemMeta> MAGENTA_CONCRETE_POWDER = getItemType("magenta_concrete_powder");
+
+    ItemType.Typed<ItemMeta> MAGENTA_CONCRETE_SLAB = getItemType("magenta_concrete_slab");
+
+    ItemType.Typed<ItemMeta> MAGENTA_CONCRETE_STAIRS = getItemType("magenta_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> MAGENTA_CUSHION = getItemType("magenta_cushion");
 
     ItemType.Typed<ItemMeta> MAGENTA_DYE = getItemType("magenta_dye");
 
@@ -1649,6 +1781,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MAGENTA_TERRACOTTA = getItemType("magenta_terracotta");
 
     ItemType.Typed<ItemMeta> MAGENTA_WOOL = getItemType("magenta_wool");
+
+    ItemType.Typed<ItemMeta> MAGENTA_WOOL_SLAB = getItemType("magenta_wool_slab");
+
+    ItemType.Typed<ItemMeta> MAGENTA_WOOL_STAIRS = getItemType("magenta_wool_stairs");
 
     ItemType.Typed<ItemMeta> MAGMA_BLOCK = getItemType("magma_block");
 
@@ -1761,6 +1897,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MUSIC_DISC_13 = getItemType("music_disc_13");
 
     ItemType.Typed<ItemMeta> MUSIC_DISC_BLOCKS = getItemType("music_disc_blocks");
+
+    ItemType.Typed<ItemMeta> MUSIC_DISC_BOUNCE = getItemType("music_disc_bounce");
 
     ItemType.Typed<ItemMeta> MUSIC_DISC_CAT = getItemType("music_disc_cat");
 
@@ -1906,6 +2044,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> OBSIDIAN = getItemType("obsidian");
 
+    ItemType.Typed<MapMeta> OCEAN_MONUMENT_MAP = getItemType("ocean_monument_map");
+
     ItemType.Typed<SpawnEggMeta> OCELOT_SPAWN_EGG = getItemType("ocelot_spawn_egg");
 
     ItemType.Typed<ItemMeta> OCHRE_FROGLIGHT = getItemType("ochre_froglight");
@@ -1918,7 +2058,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> ORANGE_BANNER = getItemType("orange_banner");
 
-    ItemType.Typed<BlockStateMeta> ORANGE_BED = getItemType("orange_bed");
+    ItemType.Typed<ItemMeta> ORANGE_BED = getItemType("orange_bed");
 
     ItemType.Typed<BundleMeta> ORANGE_BUNDLE = getItemType("orange_bundle");
 
@@ -1930,11 +2070,19 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> ORANGE_CONCRETE_POWDER = getItemType("orange_concrete_powder");
 
+    ItemType.Typed<ItemMeta> ORANGE_CONCRETE_SLAB = getItemType("orange_concrete_slab");
+
+    ItemType.Typed<ItemMeta> ORANGE_CONCRETE_STAIRS = getItemType("orange_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> ORANGE_CUSHION = getItemType("orange_cushion");
+
     ItemType.Typed<ItemMeta> ORANGE_DYE = getItemType("orange_dye");
 
     ItemType.Typed<ItemMeta> ORANGE_GLAZED_TERRACOTTA = getItemType("orange_glazed_terracotta");
 
     ItemType.Typed<ItemMeta> ORANGE_HARNESS = getItemType("orange_harness");
+
+    ItemType.Typed<ItemMeta> ORANGE_POPLAR_LEAVES = getItemType("orange_poplar_leaves");
 
     ItemType.Typed<BlockStateMeta> ORANGE_SHULKER_BOX = getItemType("orange_shulker_box");
 
@@ -1947,6 +2095,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> ORANGE_TULIP = getItemType("orange_tulip");
 
     ItemType.Typed<ItemMeta> ORANGE_WOOL = getItemType("orange_wool");
+
+    ItemType.Typed<ItemMeta> ORANGE_WOOL_SLAB = getItemType("orange_wool_slab");
+
+    ItemType.Typed<ItemMeta> ORANGE_WOOL_STAIRS = getItemType("orange_wool_stairs");
 
     ItemType.Typed<ItemMeta> OXEYE_DAISY = getItemType("oxeye_daisy");
 
@@ -2060,7 +2212,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> PINK_BANNER = getItemType("pink_banner");
 
-    ItemType.Typed<BlockStateMeta> PINK_BED = getItemType("pink_bed");
+    ItemType.Typed<ItemMeta> PINK_BED = getItemType("pink_bed");
 
     ItemType.Typed<BundleMeta> PINK_BUNDLE = getItemType("pink_bundle");
 
@@ -2071,6 +2223,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> PINK_CONCRETE = getItemType("pink_concrete");
 
     ItemType.Typed<ItemMeta> PINK_CONCRETE_POWDER = getItemType("pink_concrete_powder");
+
+    ItemType.Typed<ItemMeta> PINK_CONCRETE_SLAB = getItemType("pink_concrete_slab");
+
+    ItemType.Typed<ItemMeta> PINK_CONCRETE_STAIRS = getItemType("pink_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> PINK_CUSHION = getItemType("pink_cushion");
 
     ItemType.Typed<ItemMeta> PINK_DYE = getItemType("pink_dye");
 
@@ -2092,11 +2250,17 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> PINK_WOOL = getItemType("pink_wool");
 
+    ItemType.Typed<ItemMeta> PINK_WOOL_SLAB = getItemType("pink_wool_slab");
+
+    ItemType.Typed<ItemMeta> PINK_WOOL_STAIRS = getItemType("pink_wool_stairs");
+
     ItemType.Typed<ItemMeta> PISTON = getItemType("piston");
 
     ItemType.Typed<ItemMeta> PITCHER_PLANT = getItemType("pitcher_plant");
 
     ItemType.Typed<ItemMeta> PITCHER_POD = getItemType("pitcher_pod");
+
+    ItemType.Typed<MapMeta> PLAINS_VILLAGE_MAP = getItemType("plains_village_map");
 
     ItemType.Typed<SkullMeta> PLAYER_HEAD = getItemType("player_head");
 
@@ -2138,6 +2302,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> POLISHED_BLACKSTONE_WALL = getItemType("polished_blackstone_wall");
 
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR = getItemType("polished_cinnabar");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_SLAB = getItemType("polished_cinnabar_slab");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_STAIRS = getItemType("polished_cinnabar_stairs");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_WALL = getItemType("polished_cinnabar_wall");
+
     ItemType.Typed<ItemMeta> POLISHED_DEEPSLATE = getItemType("polished_deepslate");
 
     ItemType.Typed<ItemMeta> POLISHED_DEEPSLATE_SLAB = getItemType("polished_deepslate_slab");
@@ -2158,6 +2330,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> POLISHED_GRANITE_STAIRS = getItemType("polished_granite_stairs");
 
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR = getItemType("polished_sulfur");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_SLAB = getItemType("polished_sulfur_slab");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_STAIRS = getItemType("polished_sulfur_stairs");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_WALL = getItemType("polished_sulfur_wall");
+
     ItemType.Typed<ItemMeta> POLISHED_TUFF = getItemType("polished_tuff");
 
     ItemType.Typed<ItemMeta> POLISHED_TUFF_SLAB = getItemType("polished_tuff_slab");
@@ -2166,6 +2346,40 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> POLISHED_TUFF_WALL = getItemType("polished_tuff_wall");
 
+    ItemType.Typed<ItemMeta> POPLAR_BOAT = getItemType("poplar_boat");
+
+    ItemType.Typed<ItemMeta> POPLAR_BUTTON = getItemType("poplar_button");
+
+    ItemType.Typed<ItemMeta> POPLAR_CHEST_BOAT = getItemType("poplar_chest_boat");
+
+    ItemType.Typed<ItemMeta> POPLAR_DOOR = getItemType("poplar_door");
+
+    ItemType.Typed<ItemMeta> POPLAR_FENCE = getItemType("poplar_fence");
+
+    ItemType.Typed<ItemMeta> POPLAR_FENCE_GATE = getItemType("poplar_fence_gate");
+
+    ItemType.Typed<BlockStateMeta> POPLAR_HANGING_SIGN = getItemType("poplar_hanging_sign");
+
+    ItemType.Typed<ItemMeta> POPLAR_LOG = getItemType("poplar_log");
+
+    ItemType.Typed<ItemMeta> POPLAR_PLANKS = getItemType("poplar_planks");
+
+    ItemType.Typed<ItemMeta> POPLAR_PRESSURE_PLATE = getItemType("poplar_pressure_plate");
+
+    ItemType.Typed<ItemMeta> POPLAR_SAPLING = getItemType("poplar_sapling");
+
+    ItemType.Typed<BlockStateMeta> POPLAR_SHELF = getItemType("poplar_shelf");
+
+    ItemType.Typed<BlockStateMeta> POPLAR_SIGN = getItemType("poplar_sign");
+
+    ItemType.Typed<ItemMeta> POPLAR_SLAB = getItemType("poplar_slab");
+
+    ItemType.Typed<ItemMeta> POPLAR_STAIRS = getItemType("poplar_stairs");
+
+    ItemType.Typed<ItemMeta> POPLAR_TRAPDOOR = getItemType("poplar_trapdoor");
+
+    ItemType.Typed<ItemMeta> POPLAR_WOOD = getItemType("poplar_wood");
+
     ItemType.Typed<ItemMeta> POPPED_CHORUS_FRUIT = getItemType("popped_chorus_fruit");
 
     ItemType.Typed<ItemMeta> POPPY = getItemType("poppy");
@@ -2173,6 +2387,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> PORKCHOP = getItemType("porkchop");
 
     ItemType.Typed<ItemMeta> POTATO = getItemType("potato");
+
+    ItemType.Typed<BlockStateMeta> POTENT_SULFUR = getItemType("potent_sulfur");
 
     ItemType.Typed<PotionMeta> POTION = getItemType("potion");
 
@@ -2214,7 +2430,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> PURPLE_BANNER = getItemType("purple_banner");
 
-    ItemType.Typed<BlockStateMeta> PURPLE_BED = getItemType("purple_bed");
+    ItemType.Typed<ItemMeta> PURPLE_BED = getItemType("purple_bed");
 
     ItemType.Typed<BundleMeta> PURPLE_BUNDLE = getItemType("purple_bundle");
 
@@ -2225,6 +2441,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> PURPLE_CONCRETE = getItemType("purple_concrete");
 
     ItemType.Typed<ItemMeta> PURPLE_CONCRETE_POWDER = getItemType("purple_concrete_powder");
+
+    ItemType.Typed<ItemMeta> PURPLE_CONCRETE_SLAB = getItemType("purple_concrete_slab");
+
+    ItemType.Typed<ItemMeta> PURPLE_CONCRETE_STAIRS = getItemType("purple_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> PURPLE_CUSHION = getItemType("purple_cushion");
 
     ItemType.Typed<ItemMeta> PURPLE_DYE = getItemType("purple_dye");
 
@@ -2241,6 +2463,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> PURPLE_TERRACOTTA = getItemType("purple_terracotta");
 
     ItemType.Typed<ItemMeta> PURPLE_WOOL = getItemType("purple_wool");
+
+    ItemType.Typed<ItemMeta> PURPLE_WOOL_SLAB = getItemType("purple_wool_slab");
+
+    ItemType.Typed<ItemMeta> PURPLE_WOOL_STAIRS = getItemType("purple_wool_stairs");
 
     ItemType.Typed<ItemMeta> PURPUR_BLOCK = getItemType("purpur_block");
 
@@ -2294,7 +2520,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> RED_BANNER = getItemType("red_banner");
 
-    ItemType.Typed<BlockStateMeta> RED_BED = getItemType("red_bed");
+    ItemType.Typed<ItemMeta> RED_BED = getItemType("red_bed");
 
     ItemType.Typed<BundleMeta> RED_BUNDLE = getItemType("red_bundle");
 
@@ -2305,6 +2531,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> RED_CONCRETE = getItemType("red_concrete");
 
     ItemType.Typed<ItemMeta> RED_CONCRETE_POWDER = getItemType("red_concrete_powder");
+
+    ItemType.Typed<ItemMeta> RED_CONCRETE_SLAB = getItemType("red_concrete_slab");
+
+    ItemType.Typed<ItemMeta> RED_CONCRETE_STAIRS = getItemType("red_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> RED_CUSHION = getItemType("red_cushion");
 
     ItemType.Typed<ItemMeta> RED_DYE = getItemType("red_dye");
 
@@ -2324,6 +2556,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> RED_NETHER_BRICKS = getItemType("red_nether_bricks");
 
+    ItemType.Typed<ItemMeta> RED_POPLAR_LEAVES = getItemType("red_poplar_leaves");
+
     ItemType.Typed<ItemMeta> RED_SAND = getItemType("red_sand");
 
     ItemType.Typed<ItemMeta> RED_SANDSTONE = getItemType("red_sandstone");
@@ -2333,6 +2567,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> RED_SANDSTONE_STAIRS = getItemType("red_sandstone_stairs");
 
     ItemType.Typed<ItemMeta> RED_SANDSTONE_WALL = getItemType("red_sandstone_wall");
+
+    ItemType.Typed<ItemMeta> RED_SHRUB = getItemType("red_shrub");
 
     ItemType.Typed<BlockStateMeta> RED_SHULKER_BOX = getItemType("red_shulker_box");
 
@@ -2345,6 +2581,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> RED_TULIP = getItemType("red_tulip");
 
     ItemType.Typed<ItemMeta> RED_WOOL = getItemType("red_wool");
+
+    ItemType.Typed<ItemMeta> RED_WOOL_SLAB = getItemType("red_wool_slab");
+
+    ItemType.Typed<ItemMeta> RED_WOOL_STAIRS = getItemType("red_wool_stairs");
 
     ItemType.Typed<ItemMeta> REDSTONE = getItemType("redstone");
 
@@ -2404,6 +2644,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> SANDSTONE_WALL = getItemType("sandstone_wall");
 
+    ItemType.Typed<MapMeta> SAVANNA_VILLAGE_MAP = getItemType("savanna_village_map");
+
     ItemType.Typed<ItemMeta> SCAFFOLDING = getItemType("scaffolding");
 
     ItemType.Typed<ItemMeta> SCRAPE_POTTERY_SHERD = getItemType("scrape_pottery_sherd");
@@ -2433,6 +2675,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> SHEARS = getItemType("shears");
 
     ItemType.Typed<SpawnEggMeta> SHEEP_SPAWN_EGG = getItemType("sheep_spawn_egg");
+
+    ItemType.Typed<ItemMeta> SHELF_MUSHROOM = getItemType("shelf_mushroom");
 
     ItemType.Typed<ItemMeta> SHELTER_POTTERY_SHERD = getItemType("shelter_pottery_sherd");
 
@@ -2517,6 +2761,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<SpawnEggMeta> SNOW_GOLEM_SPAWN_EGG = getItemType("snow_golem_spawn_egg");
 
     ItemType.Typed<ItemMeta> SNOWBALL = getItemType("snowball");
+
+    ItemType.Typed<MapMeta> SNOWY_VILLAGE_MAP = getItemType("snowy_village_map");
 
     ItemType.Typed<BlockStateMeta> SOUL_CAMPFIRE = getItemType("soul_campfire");
 
@@ -2620,6 +2866,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> STONECUTTER = getItemType("stonecutter");
 
+    ItemType.Typed<ItemMeta> STRAW_BED = getItemType("straw_bed");
+
     ItemType.Typed<SpawnEggMeta> STRAY_SPAWN_EGG = getItemType("stray_spawn_egg");
 
     ItemType.Typed<SpawnEggMeta> STRIDER_SPAWN_EGG = getItemType("strider_spawn_egg");
@@ -2664,6 +2912,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> STRIPPED_PALE_OAK_WOOD = getItemType("stripped_pale_oak_wood");
 
+    ItemType.Typed<ItemMeta> STRIPPED_POPLAR_LOG = getItemType("stripped_poplar_log");
+
+    ItemType.Typed<ItemMeta> STRIPPED_POPLAR_WOOD = getItemType("stripped_poplar_wood");
+
     ItemType.Typed<ItemMeta> STRIPPED_SPRUCE_LOG = getItemType("stripped_spruce_log");
 
     ItemType.Typed<ItemMeta> STRIPPED_SPRUCE_WOOD = getItemType("stripped_spruce_wood");
@@ -2680,6 +2932,28 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> SUGAR_CANE = getItemType("sugar_cane");
 
+    ItemType.Typed<ItemMeta> SULFUR = getItemType("sulfur");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_SLAB = getItemType("sulfur_brick_slab");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_STAIRS = getItemType("sulfur_brick_stairs");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_WALL = getItemType("sulfur_brick_wall");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICKS = getItemType("sulfur_bricks");
+
+    ItemType.Typed<ItemMeta> SULFUR_CUBE_BUCKET = getItemType("sulfur_cube_bucket");
+
+    ItemType.Typed<SpawnEggMeta> SULFUR_CUBE_SPAWN_EGG = getItemType("sulfur_cube_spawn_egg");
+
+    ItemType.Typed<ItemMeta> SULFUR_SLAB = getItemType("sulfur_slab");
+
+    ItemType.Typed<ItemMeta> SULFUR_SPIKE = getItemType("sulfur_spike");
+
+    ItemType.Typed<ItemMeta> SULFUR_STAIRS = getItemType("sulfur_stairs");
+
+    ItemType.Typed<ItemMeta> SULFUR_WALL = getItemType("sulfur_wall");
+
     ItemType.Typed<ItemMeta> SUNFLOWER = getItemType("sunflower");
 
     ItemType.Typed<BlockStateMeta> SUSPICIOUS_GRAVEL = getItemType("suspicious_gravel");
@@ -2688,11 +2962,15 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<SuspiciousStewMeta> SUSPICIOUS_STEW = getItemType("suspicious_stew");
 
+    ItemType.Typed<MapMeta> SWAMP_HUT_MAP = getItemType("swamp_hut_map");
+
     ItemType.Typed<ItemMeta> SWEET_BERRIES = getItemType("sweet_berries");
 
     ItemType.Typed<ItemMeta> TADPOLE_BUCKET = getItemType("tadpole_bucket");
 
     ItemType.Typed<SpawnEggMeta> TADPOLE_SPAWN_EGG = getItemType("tadpole_spawn_egg");
+
+    ItemType.Typed<MapMeta> TAIGA_VILLAGE_MAP = getItemType("taiga_village_map");
 
     ItemType.Typed<ItemMeta> TALL_DRY_GRASS = getItemType("tall_dry_grass");
 
@@ -2793,6 +3071,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> WARD_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("ward_armor_trim_smithing_template");
 
     ItemType.Typed<SpawnEggMeta> WARDEN_SPAWN_EGG = getItemType("warden_spawn_egg");
+
+    ItemType.Typed<MapMeta> WARM_OCEAN_RUINS_MAP = getItemType("warm_ocean_ruins_map");
 
     ItemType.Typed<ItemMeta> WARPED_BUTTON = getItemType("warped_button");
 
@@ -2996,7 +3276,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BannerMeta> WHITE_BANNER = getItemType("white_banner");
 
-    ItemType.Typed<BlockStateMeta> WHITE_BED = getItemType("white_bed");
+    ItemType.Typed<ItemMeta> WHITE_BED = getItemType("white_bed");
 
     ItemType.Typed<BundleMeta> WHITE_BUNDLE = getItemType("white_bundle");
 
@@ -3007,6 +3287,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> WHITE_CONCRETE = getItemType("white_concrete");
 
     ItemType.Typed<ItemMeta> WHITE_CONCRETE_POWDER = getItemType("white_concrete_powder");
+
+    ItemType.Typed<ItemMeta> WHITE_CONCRETE_SLAB = getItemType("white_concrete_slab");
+
+    ItemType.Typed<ItemMeta> WHITE_CONCRETE_STAIRS = getItemType("white_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> WHITE_CUSHION = getItemType("white_cushion");
 
     ItemType.Typed<ItemMeta> WHITE_DYE = getItemType("white_dye");
 
@@ -3025,6 +3311,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> WHITE_TULIP = getItemType("white_tulip");
 
     ItemType.Typed<ItemMeta> WHITE_WOOL = getItemType("white_wool");
+
+    ItemType.Typed<ItemMeta> WHITE_WOOL_SLAB = getItemType("white_wool_slab");
+
+    ItemType.Typed<ItemMeta> WHITE_WOOL_STAIRS = getItemType("white_wool_stairs");
 
     ItemType.Typed<ItemMeta> WILD_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("wild_armor_trim_smithing_template");
 
@@ -3058,13 +3348,15 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WOODEN_SWORD = getItemType("wooden_sword");
 
+    ItemType.Typed<MapMeta> WOODLAND_MANSION_MAP = getItemType("woodland_mansion_map");
+
     ItemType.Typed<BookMeta> WRITABLE_BOOK = getItemType("writable_book");
 
     ItemType.Typed<BookMeta> WRITTEN_BOOK = getItemType("written_book");
 
     ItemType.Typed<BannerMeta> YELLOW_BANNER = getItemType("yellow_banner");
 
-    ItemType.Typed<BlockStateMeta> YELLOW_BED = getItemType("yellow_bed");
+    ItemType.Typed<ItemMeta> YELLOW_BED = getItemType("yellow_bed");
 
     ItemType.Typed<BundleMeta> YELLOW_BUNDLE = getItemType("yellow_bundle");
 
@@ -3076,11 +3368,19 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> YELLOW_CONCRETE_POWDER = getItemType("yellow_concrete_powder");
 
+    ItemType.Typed<ItemMeta> YELLOW_CONCRETE_SLAB = getItemType("yellow_concrete_slab");
+
+    ItemType.Typed<ItemMeta> YELLOW_CONCRETE_STAIRS = getItemType("yellow_concrete_stairs");
+
+    ItemType.Typed<ItemMeta> YELLOW_CUSHION = getItemType("yellow_cushion");
+
     ItemType.Typed<ItemMeta> YELLOW_DYE = getItemType("yellow_dye");
 
     ItemType.Typed<ItemMeta> YELLOW_GLAZED_TERRACOTTA = getItemType("yellow_glazed_terracotta");
 
     ItemType.Typed<ItemMeta> YELLOW_HARNESS = getItemType("yellow_harness");
+
+    ItemType.Typed<ItemMeta> YELLOW_POPLAR_LEAVES = getItemType("yellow_poplar_leaves");
 
     ItemType.Typed<BlockStateMeta> YELLOW_SHULKER_BOX = getItemType("yellow_shulker_box");
 
@@ -3091,6 +3391,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> YELLOW_TERRACOTTA = getItemType("yellow_terracotta");
 
     ItemType.Typed<ItemMeta> YELLOW_WOOL = getItemType("yellow_wool");
+
+    ItemType.Typed<ItemMeta> YELLOW_WOOL_SLAB = getItemType("yellow_wool_slab");
+
+    ItemType.Typed<ItemMeta> YELLOW_WOOL_STAIRS = getItemType("yellow_wool_stairs");
 
     ItemType.Typed<SpawnEggMeta> ZOGLIN_SPAWN_EGG = getItemType("zoglin_spawn_egg");
 
@@ -3174,6 +3478,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @return the ItemMeta class of this ItemType
      */
+    @ApiStatus.Internal
     Class<? extends ItemMeta> getItemMetaClass();
 
     /**
@@ -3338,7 +3643,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @param type the data component type
      * @return {@code true} if there is a default value
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     boolean hasDefaultData(DataComponentType type);
 
     /**

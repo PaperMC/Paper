@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import ca.spottedleaf.moonrise.common.time.TickData;
-import com.google.common.base.Function;
+import ca.spottedleaf.common.time.TickData;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -10,12 +9,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.JsonOps;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
-import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -59,7 +59,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerRegistries;
-import net.minecraft.server.WorldLoader;
 import net.minecraft.server.bossevents.CustomBossEvent;
 import net.minecraft.server.commands.ReloadCommand;
 import net.minecraft.server.dedicated.DedicatedPlayerList;
@@ -77,6 +76,7 @@ import net.minecraft.server.players.UserBanListEntry;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.Util;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
@@ -93,6 +93,7 @@ import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
@@ -105,6 +106,7 @@ import net.minecraft.world.level.levelgen.PhantomSpawner;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -161,21 +163,11 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
-import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
-import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftItemCraftResult;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
-import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
-import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftStonecuttingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftTransmuteRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.inventory.util.CraftInventoryCreator;
 import org.bukkit.craftbukkit.map.CraftMapColorCache;
@@ -216,10 +208,6 @@ import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
-import org.bukkit.inventory.BlastingRecipe;
-import org.bukkit.inventory.CampfireRecipe;
-import org.bukkit.inventory.ComplexRecipe;
-import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -227,13 +215,6 @@ import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.inventory.SmithingTransformRecipe;
-import org.bukkit.inventory.SmithingTrimRecipe;
-import org.bukkit.inventory.SmokingRecipe;
-import org.bukkit.inventory.StonecuttingRecipe;
-import org.bukkit.inventory.TransmuteRecipe;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
@@ -253,6 +234,7 @@ import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -397,14 +379,9 @@ public final class CraftServer implements Server {
     public CraftServer(DedicatedServer console, PlayerList playerList) {
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
-        this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<ServerPlayer, CraftPlayer>() {
-            @Override
-            public CraftPlayer apply(ServerPlayer player) {
-                return player.getBukkitEntity();
-            }
-        }));
+        this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
-        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
 
@@ -614,7 +591,7 @@ public final class CraftServer implements Server {
         Commands dispatcher = this.getHandle().getServer().getCommands(); // Paper - We now register directly to the dispatcher.
 
         // Refresh commands
-        for (ServerPlayer player : this.getHandle().players) {
+        for (ServerPlayer player : this.getHandle().getPlayers()) {
             dispatcher.sendCommands(player);
         }
     }
@@ -692,7 +669,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public Player getPlayerExact(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
 
@@ -1116,19 +1092,18 @@ public final class CraftServer implements Server {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "finally" })
     private void loadCustomPermissions() {
         File file = new File(this.configuration.getString("settings.permissions-file"));
+        if (!file.isFile()) {
+            return;
+        }
+
         FileInputStream stream;
 
         try {
             stream = new FileInputStream(file);
         } catch (FileNotFoundException ex) {
-            try {
-                file.createNewFile();
-            } finally {
-                return;
-            }
+            return;
         }
 
         Map<String, Map<String, Object>> perms;
@@ -1202,18 +1177,17 @@ public final class CraftServer implements Server {
             default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
         };
 
-        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
-        WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
-        RegistryAccess.Frozen registryAccess = context.datapackDimensions();
-        net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
-        final LevelStem configuredStem = this.console.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).getValue(actualDimension);
+        RegistryAccess registryAccess = this.console.registryAccess();
+        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = CraftNamespacedKey.toResourceKey(Registries.DIMENSION, creator.key());
+        net.minecraft.core.Registry<LevelStem> levelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        final LevelStem configuredStem = levelStemRegistry.getValue(actualDimension);
         if (configuredStem == null) {
             throw new IllegalStateException("Missing configured level stem " + actualDimension);
         }
         try {
             WorldFolderMigration.migrateApiWorld(
                 this.console.storageSource,
-                this.console.registryAccess(),
+                registryAccess,
                 name,
                 actualDimension,
                 dimensionKey
@@ -1227,22 +1201,31 @@ public final class CraftServer implements Server {
             name
         );
         final PrimaryLevelData primaryLevelData = (PrimaryLevelData) this.console.getWorldData();
-        WorldGenSettings worldGenSettings = LevelStorageSource.readExistingSavedData(this.console.storageSource, dimensionKey, this.console.registryAccess(), WorldGenSettings.TYPE)
+        WorldGenSettings worldGenSettings = LevelStorageSource.readExistingSavedData(this.console.storageSource, dimensionKey, registryAccess, WorldGenSettings.TYPE)
             .result()
             .orElse(null);
+        RegistryAccess contextRegistryAccess = registryAccess;
         if (worldGenSettings == null) {
             WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), creator.bonusChest());
 
-            DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
-            WorldDimensions worldDimensions = properties.create(context.datapackWorldgen());
+            String flatGenSettings = creator.generatorSettings();
+            if (flatGenSettings.isEmpty()) {
+                flatGenSettings = FlatLevelGeneratorSettings.CODEC.encodeStart(registryAccess.createSerializationContext(JsonOps.INSTANCE), FlatLevelGeneratorSettings.getDefault(
+                    registryAccess.lookupOrThrow(Registries.BIOME),
+                    registryAccess.lookupOrThrow(Registries.STRUCTURE_SET),
+                    registryAccess.lookupOrThrow(Registries.PLACED_FEATURE)
+                )).getOrThrow().toString();
+            }
+            DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse(flatGenSettings), creator.type().name().toLowerCase(Locale.ROOT));
+            WorldDimensions worldDimensions = properties.create(registryAccess);
 
-            WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
+            WorldDimensions.Complete complete = worldDimensions.bake(levelStemRegistry);
             if (complete.dimensions().getValue(actualDimension) == null) {
                 throw new IllegalStateException("Missing generated level stem " + actualDimension + " for world " + name);
             }
 
             worldGenSettings = new WorldGenSettings(worldOptions, worldDimensions);
-            registryAccess = complete.dimensionsRegistryAccess();
+            contextRegistryAccess = complete.dimensionsRegistryAccess();
             loadedWorldData.levelOverrides().setHardcore(creator.hardcore());
             loadedWorldData = new PaperWorldLoader.LoadedWorldData(
                 loadedWorldData.bukkitName(),
@@ -1253,27 +1236,27 @@ public final class CraftServer implements Server {
         }
         final WorldGenSettings genSettingsFinal = worldGenSettings;
 
-        contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        levelStemRegistry = contextRegistryAccess.lookupOrThrow(Registries.LEVEL_STEM);
 
         if (this.console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(this.console.storageSource, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
+            net.minecraft.server.Main.forceUpgrade(this.console.storageSource, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, contextRegistryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
         long biomeZoomSeed = BiomeManager.obfuscateSeed(genSettingsFinal.options().seed());
         LevelStem customStem = genSettingsFinal.dimensions().get(actualDimension).orElse(null);
         if (customStem == null) {
-            customStem = contextLevelStemRegistry.getValue(actualDimension);
+            customStem = levelStemRegistry.getValue(actualDimension);
         }
         if (customStem == null) {
             throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
 
-        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
+        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), registryAccess, loadedWorldData.uuid());
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
 
-        final SavedDataStorage savedDataStorage = new SavedDataStorage(this.console.storageSource.getDimensionPath(dimensionKey).resolve(LevelResource.DATA.id()), this.console.getFixerUpper(), this.console.registryAccess());
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(this.console.storageSource.getDimensionPath(dimensionKey).resolve(LevelResource.DATA.id()), this.console.getFixerUpper(), registryAccess);
         savedDataStorage.set(WorldGenSettings.TYPE, new WorldGenSettings(genSettingsFinal.options(), genSettingsFinal.dimensions()));
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
@@ -1281,7 +1264,7 @@ public final class CraftServer implements Server {
 
         ServerLevel serverLevel = new ServerLevel(
             this.console,
-            this.console.executor,
+            Util.backgroundExecutor(),
             this.console.storageSource,
             genSettingsFinal,
             dimensionKey,
@@ -1422,6 +1405,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public PluginCommand getPluginCommand(String name) {
         Command command = this.commandMap.getCommand(name);
 
@@ -1439,44 +1423,34 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
-        CraftRecipe toAdd;
-        if (recipe instanceof CraftRecipe) {
-            toAdd = (CraftRecipe) recipe;
-        } else {
-            if (recipe instanceof ShapedRecipe) {
-                toAdd = CraftShapedRecipe.fromBukkitRecipe((ShapedRecipe) recipe);
-            } else if (recipe instanceof ShapelessRecipe) {
-                toAdd = CraftShapelessRecipe.fromBukkitRecipe((ShapelessRecipe) recipe);
-            } else if (recipe instanceof FurnaceRecipe) {
-                toAdd = CraftFurnaceRecipe.fromBukkitRecipe((FurnaceRecipe) recipe);
-            } else if (recipe instanceof BlastingRecipe) {
-                toAdd = CraftBlastingRecipe.fromBukkitRecipe((BlastingRecipe) recipe);
-            } else if (recipe instanceof CampfireRecipe) {
-                toAdd = CraftCampfireRecipe.fromBukkitRecipe((CampfireRecipe) recipe);
-            } else if (recipe instanceof SmokingRecipe) {
-                toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
-            } else if (recipe instanceof StonecuttingRecipe) {
-                toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
-            } else if (recipe instanceof SmithingTransformRecipe) {
-                toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
-            } else if (recipe instanceof SmithingTrimRecipe) {
-                toAdd = CraftSmithingTrimRecipe.fromBukkitRecipe((SmithingTrimRecipe) recipe);
-            } else if (recipe instanceof TransmuteRecipe) {
-                toAdd = CraftTransmuteRecipe.fromBukkitRecipe((TransmuteRecipe) recipe);
-            } else if (recipe instanceof ComplexRecipe) {
-                throw new UnsupportedOperationException("Cannot add custom complex recipe");
-            } else {
-                return false;
+    public boolean addRecipe(Recipe recipe) {
+        final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+        if (craftRecipe == null) {
+            return false;
+        }
+
+        craftRecipe.addToRecipeManager();
+        return true;
+    }
+
+    @Override
+    public boolean addRecipes(Iterable<Recipe> recipes) {
+        org.spigotmc.AsyncCatcher.catchOp("Recipes Add");
+        Preconditions.checkArgument(recipes != null, "recipes cannot be null");
+        boolean anyAdded = false;
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
+        for (Recipe recipe : recipes) {
+            final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+            if (craftRecipe != null) {
+                recipeManager.recipes.addRecipe(craftRecipe.toMinecraftRecipe());
+                anyAdded = true;
             }
         }
-        toAdd.addToRecipeManager();
-        // Paper start - API for updating recipes on clients
-        if (true || resendRecipes) { // Always needs to be resent now... TODO
-            this.playerList.reloadRecipes();
+
+        if (anyAdded) {
+            recipeManager.finalizeRecipeLoading();
         }
-        // Paper end - API for updating recipes on clients
-        return true;
+        return anyAdded;
     }
 
     @Override
@@ -1648,17 +1622,34 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
-
-        // Paper start - resend recipes on successful removal
+    public boolean hasRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
-        final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
-        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
-            this.playerList.reloadRecipes();
+        return getServer().getRecipeManager().byKey(id).isPresent();
+    }
+
+    @Override
+    public boolean removeRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
+        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+        return this.getServer().getRecipeManager().removeRecipe(id);
+    }
+
+    @Override
+    public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
+        Preconditions.checkArgument(recipeKeys != null, "recipeKeys cannot be null");
+        boolean anyRemoved = false;
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
+        for (NamespacedKey recipeKey : recipeKeys) {
+            final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+            if (recipeManager.recipes.removeRecipe(id)) {
+                anyRemoved = true;
+            }
         }
-        return removed;
-        // Paper end - resend recipes on successful removal
+        if (anyRemoved) {
+            recipeManager.finalizeRecipeLoading();
+        }
+        return anyRemoved;
     }
 
     @Override
@@ -1928,7 +1919,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
         Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
@@ -2181,7 +2171,7 @@ public final class CraftServer implements Server {
 
     @Override
     public OfflinePlayer[] getOfflinePlayers() {
-        PlayerDataStorage storage = this.console.playerDataStorage;
+        PlayerDataStorage storage = this.console.getPlayerList().playerIo;
         String[] files = storage.getPlayerDir().list((dir, name) -> name.endsWith(".dat"));
         Set<OfflinePlayer> players = new HashSet<>();
 
@@ -2289,6 +2279,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
     }
@@ -2438,17 +2429,17 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
 
         CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(net.minecraft.util.RandomSource.create(), CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
-        CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
-        craftKeyedBossbar.setColor(barColor);
-        craftKeyedBossbar.setStyle(barStyle);
+        KeyedBossBar keyedBossbar = bossBattleCustom.getBukkitEntity();
+        keyedBossbar.setColor(barColor);
+        keyedBossbar.setStyle(barStyle);
         for (BarFlag flag : barFlags) {
             if (flag == null) {
                 continue;
             }
-            craftKeyedBossbar.addFlag(flag);
+            keyedBossbar.addFlag(flag);
         }
 
-        return craftKeyedBossbar;
+        return keyedBossbar;
     }
 
     @Override

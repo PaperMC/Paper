@@ -17,7 +17,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
-import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -138,7 +138,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
         BlockPos position = CraftLocation.toBlockPos(location);
         BlockState state = this.getHandle().level().getBlockState(position);
-        if (!(state.getBlock() instanceof BedBlock)) {
+        if (!(state.getBlock() instanceof AbstractBedBlock)) {
             return false;
         }
 
@@ -176,7 +176,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
-        public CraftType(final Holder<VillagerType> holder){
+        public CraftType(final Holder<VillagerType> holder) {
             super(holder, count++);
         }
     }
@@ -231,7 +231,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public void clearReputations() {
-        this.getHandle().getGossips().gossips.clear();
+        this.getHandle().getGossips().clear();
     }
 
     @Override

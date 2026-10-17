@@ -35,10 +35,10 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().timeInOverworld = -1;
+            this.getHandle().setTimeInOverworld(-1);
             this.getHandle().setImmuneToZombification(false);
         } else {
-            this.getHandle().timeInOverworld = time;
+            this.getHandle().setTimeInOverworld(time);
         }
     }
 
@@ -97,6 +97,6 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
-    public void setBreed(boolean b) {
+    public void setBreed(boolean breed) {
     }
 }

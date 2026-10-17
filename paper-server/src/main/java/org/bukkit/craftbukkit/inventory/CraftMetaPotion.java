@@ -29,7 +29,7 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+public class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<PotionContents> POTION_CONTENTS = new ItemMetaKeyType<>(DataComponents.POTION_CONTENTS);

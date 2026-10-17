@@ -20,7 +20,7 @@ public record PaperCombatTrackerWrapper(
 
     @Override
     public LivingEntity getEntity() {
-        return this.handle.mob.getBukkitLivingEntity();
+        return this.handle.mob.getBukkitEntity();
     }
 
     @Override
@@ -77,6 +77,11 @@ public record PaperCombatTrackerWrapper(
     public FallLocationType calculateFallLocationType() {
         final FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.handle().mob);
         return Optionull.map(fallLocation, PaperCombatTrackerWrapper::minecraftToPaper);
+    }
+
+    @Override
+    public int getLastDamageTime() {
+        return this.handle.mob.tickCount - this.handle.lastDamageTime;
     }
 
     private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {

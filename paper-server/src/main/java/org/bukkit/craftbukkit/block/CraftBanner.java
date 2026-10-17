@@ -19,8 +19,8 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
     private DyeColor base;
     private List<Pattern> patterns;
 
-    public CraftBanner(World world, BannerBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftBanner(World world, BannerBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftBanner(CraftBanner state, Location location) {
@@ -118,7 +118,7 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
 
     @Override
     public net.kyori.adventure.text.Component customName() {
-        return this.getSnapshot().name == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getSnapshot().name);
+        return this.getSnapshot().getCustomName() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getSnapshot().getCustomName());
     }
 
     @Override

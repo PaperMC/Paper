@@ -20,7 +20,7 @@
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 +    protected static final net.minecraft.resources.Identifier MINECRAFT_BRAND = net.minecraft.resources.Identifier.withDefaultNamespace("brand"); // Paper - Brand support
 +    // Paper start - retain certain values
-+    public @Nullable String playerBrand;
++    public @Nullable String clientBrand;
 +    public final java.util.Set<String> pluginMessagerChannels;
 +    // Paper end - retain certain values
  
@@ -31,7 +31,7 @@
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
 +        // Paper start
-+        this.playerBrand = cookie.brandName();
++        this.clientBrand = cookie.clientBrand();
 +        this.cserver = server.server;
 +        this.pluginMessagerChannels = cookie.channels();
 +        // Paper end
@@ -95,13 +95,13 @@
 +            }
 +
 +            if (identifier.equals(MINECRAFT_BRAND)) {
-+                this.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++                this.clientBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
 +            }
 +
 +            this.cserver.getMessenger().dispatchIncomingMessage(paperConnection(), identifier.toString(), data);
 +        } catch (final Exception e) {
 +            LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
-+            this.disconnect(net.minecraft.network.chat.Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
++            this.disconnect(Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
 +        }
 +    }
 +
@@ -138,7 +138,7 @@
 +        final io.papermc.paper.event.player.PaperPlayerCustomClickEvent event = new io.papermc.paper.event.player.PaperPlayerCustomClickEvent(io.papermc.paper.adventure.PaperAdventure.asAdventure(packet.id()), this.getApiConnection(), packet.payload().orElse(null));
 +        event.callEvent();
 +        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
-+        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(),  packet.payload());
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
 +        // Paper end - Implement click callbacks with custom click action
      }
  
@@ -188,7 +188,7 @@
 +        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
              if (this.keepAlivePending) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
-+                if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
++                if (elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                    this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - kick event cause
 +                }
 +                // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
@@ -222,7 +222,7 @@
          }
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - kick event causes
++    @Deprecated // Paper - kick event causes TODO check on update: ensure all call to this are from the configuration phase
      public void disconnect(final Component reason) {
 -        this.disconnect(new DisconnectionDetails(reason));
 +        // Paper start - kick event causes
@@ -335,6 +335,6 @@
  
      protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred);
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.clientBrand, this.pluginMessagerChannels); // Paper
      }
  }

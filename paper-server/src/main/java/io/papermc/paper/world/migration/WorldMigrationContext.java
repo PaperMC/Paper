@@ -18,7 +18,7 @@ record WorldMigrationContext(
     ResourceKey<Level> dimensionKey
 ) {
     Path baseRoot() {
-        return this.rootAccess.levelDirectory.path();
+        return this.rootAccess.getLevelDirectory().path();
     }
 
     Path targetDimensionPath() {

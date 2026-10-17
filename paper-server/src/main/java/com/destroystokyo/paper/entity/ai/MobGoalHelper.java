@@ -43,7 +43,7 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.dolphin.Dolphin.class, Dolphin.class);
         map.put(net.minecraft.world.entity.monster.zombie.Drowned.class, Drowned.class);
         map.put(net.minecraft.world.entity.boss.enderdragon.EnderDragon.class, EnderDragon.class);
-        map.put(net.minecraft.world.entity.monster.EnderMan.class, Enderman.class);
+        map.put(net.minecraft.world.entity.monster.Enderman.class, Enderman.class);
         map.put(net.minecraft.world.entity.monster.Endermite.class, Endermite.class);
         map.put(net.minecraft.world.entity.monster.illager.Evoker.class, Evoker.class);
         map.put(net.minecraft.world.entity.animal.fish.AbstractFish.class, Fish.class);
@@ -68,7 +68,7 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.golem.IronGolem.class, IronGolem.class);
         map.put(net.minecraft.world.entity.animal.equine.Llama.class, Llama.class);
         map.put(net.minecraft.world.entity.animal.equine.TraderLlama.class, TraderLlama.class);
-        map.put(net.minecraft.world.entity.monster.MagmaCube.class, MagmaCube.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.MagmaCube.class, MagmaCube.class);
         map.put(net.minecraft.world.entity.monster.Monster.class, Monster.class);
         map.put(net.minecraft.world.entity.monster.PatrollingMonster.class, Raider.class);
         map.put(net.minecraft.world.entity.animal.cow.MushroomCow.class, MushroomCow.class);
@@ -93,7 +93,7 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.monster.skeleton.AbstractSkeleton.class, AbstractSkeleton.class);
         map.put(net.minecraft.world.entity.monster.skeleton.Stray.class, Stray.class);
         map.put(net.minecraft.world.entity.monster.skeleton.WitherSkeleton.class, WitherSkeleton.class);
-        map.put(net.minecraft.world.entity.monster.Slime.class, Slime.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.Slime.class, Slime.class);
         map.put(net.minecraft.world.entity.animal.golem.SnowGolem.class, Snowman.class);
         map.put(net.minecraft.world.entity.monster.spider.Spider.class, Spider.class);
         map.put(net.minecraft.world.entity.animal.squid.Squid.class, Squid.class);
@@ -139,6 +139,8 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.nautilus.ZombieNautilus.class, ZombieNautilus.class);
         map.put(net.minecraft.world.entity.animal.camel.CamelHusk.class, CamelHusk.class);
         map.put(net.minecraft.world.entity.monster.skeleton.Parched.class, Parched.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.SulfurCube.class, SulfurCube.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.AbstractCubeMob.class, AbstractCubeMob.class);
         // End generate - MobGoalHelper#BUKKIT_BRIDGE
         //</editor-fold>
     });
@@ -159,7 +161,8 @@ public class MobGoalHelper {
         RangedEntity.class,
         Tameable.class,
         Monster.class,
-        PufferFish.class // weird case
+        PufferFish.class, // weird case
+        AbstractCubeMob.class
     );
 
     private static String getPathName(Class<? extends Mob> type, Class<?> holderClass, String name) {

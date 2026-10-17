@@ -94,15 +94,15 @@ public final class DummyServerHelper {
 
         // Paper start - testing additions
         final Thread currentThread = Thread.currentThread();
-        when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
-        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
+        when(instance.isPrimaryThread()).thenAnswer(_ -> Thread.currentThread().equals(currentThread));
+        final org.bukkit.plugin.PluginManager pluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
         when(instance.getPluginManager()).thenReturn(pluginManager);
         // Paper end - testing additions
 
         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(RegistryHelper.registryAccess()); // Paper - configuration files - setup global configuration test base
 
         // Paper start - add test for recipe conversion
-        when(instance.recipeIterator()).thenAnswer(ignored ->
+        when(instance.recipeIterator()).thenAnswer(_ ->
             com.google.common.collect.Iterators.transform(
                 RegistryHelper.context().datapack().getRecipeManager().recipes.byType.entries().iterator(),
                 input -> input.getValue().toBukkitRecipe()

@@ -7,6 +7,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -163,10 +164,10 @@ public final class CraftItemMetas {
         if (itemType == ItemType.AIR) {
             return CraftItemMetas.asType(CraftItemMetas.EMPTY_META_DATA);
         }
-        if (itemType == ItemType.WRITTEN_BOOK) {
+        if (itemType == ItemType.WRITTEN_BOOK) { // sync with CraftMetaBookSigned#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.SIGNED_BOOK_META_DATA);
         }
-        if (itemType == ItemType.WRITABLE_BOOK) {
+        if (itemType == ItemType.WRITABLE_BOOK) { // sync with CraftMetaBook#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.WRITABLE_BOOK_META_DATA);
         }
         if (itemType == ItemType.CREEPER_HEAD || itemType == ItemType.DRAGON_HEAD
@@ -202,7 +203,7 @@ public final class CraftItemMetas {
                 || itemType == ItemType.LINGERING_POTION || itemType == ItemType.TIPPED_ARROW) {
             return CraftItemMetas.asType(CraftItemMetas.POTION_META_DATA);
         }
-        if (itemType == ItemType.FILLED_MAP) {
+        if (itemHandle instanceof MapItem) {
             return CraftItemMetas.asType(CraftItemMetas.MAP_META_DATA);
         }
         if (itemType == ItemType.FIREWORK_ROCKET) {
@@ -245,8 +246,8 @@ public final class CraftItemMetas {
             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
         }
         if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET
-                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
-                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
+                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.SULFUR_CUBE_BUCKET || itemType == ItemType.ITEM_FRAME
+                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) { // sync with CraftMetaEntityTag#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);
         }
         if (itemType == ItemType.COMPASS) {

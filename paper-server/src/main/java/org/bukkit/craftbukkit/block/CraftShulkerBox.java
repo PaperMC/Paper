@@ -13,8 +13,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox {
 
-    public CraftShulkerBox(World world, ShulkerBoxBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftShulkerBox(World world, ShulkerBoxBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftShulkerBox(CraftShulkerBox state, Location location) {
@@ -37,7 +37,7 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
 
     @Override
     public DyeColor getColor() {
-        net.minecraft.world.item.DyeColor color = ((ShulkerBoxBlock) CraftBlockType.bukkitToMinecraft(this.getType())).color;
+        net.minecraft.world.item.DyeColor color = ((ShulkerBoxBlock) CraftBlockType.bukkitToMinecraft(this.getType())).getColor();
 
         return (color == null) ? null : DyeColor.getByWoolData((byte) color.getId());
     }

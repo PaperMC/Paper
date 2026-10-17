@@ -1,14 +1,10 @@
 --- a/net/minecraft/world/inventory/LoomMenu.java
 +++ b/net/minecraft/world/inventory/LoomMenu.java
-@@ -39,29 +_,23 @@
+@@ -38,21 +_,23 @@
      private final Slot patternSlot;
      private final Slot resultSlot;
      private long lastSoundTime;
 -    private final Container inputContainer = new SimpleContainer(3) {
--        {
--            Objects.requireNonNull(LoomMenu.this);
--        }
--
 -        @Override
 -        public void setChanged() {
 -            super.setChanged();
@@ -17,10 +13,6 @@
 -        }
 -    };
 -    private final Container outputContainer = new SimpleContainer(1) {
--        {
--            Objects.requireNonNull(LoomMenu.this);
--        }
--
 -        @Override
 -        public void setChanged() {
 -            super.setChanged();
@@ -47,11 +39,10 @@
  
      public LoomMenu(final int containerId, final Inventory inventory) {
          this(containerId, inventory, ContainerLevelAccess.NULL);
-@@ -70,6 +_,28 @@
+@@ -61,6 +_,35 @@
      public LoomMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
          super(MenuType.LOOM, containerId);
          this.access = access;
-+        // CraftBukkit start
 +        this.inputContainer = new SimpleContainer(this.createBlockHolder(access), 3) { // Paper - Add missing InventoryHolders
 +            @Override
 +            public void setChanged() {
@@ -59,24 +50,32 @@
 +                LoomMenu.this.slotsChanged(this);
 +                LoomMenu.this.slotUpdateListener.run();
 +            }
++
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return access.getLocation();
++            }
++            // CraftBukkit end
 +        };
-+        this.outputContainer =  new SimpleContainer(this.createBlockHolder(access), 1) { // Paper - Add missing InventoryHolders
++        this.outputContainer = new SimpleContainer(this.createBlockHolder(access), 1) { // Paper - Add missing InventoryHolders
 +            @Override
 +            public void setChanged() {
 +                super.setChanged();
 +                LoomMenu.this.slotUpdateListener.run();
 +            }
 +
++            // CraftBukkit start
 +            @Override
 +            public org.bukkit.Location getLocation() {
 +                return access.getLocation();
 +            }
++            // CraftBukkit end
 +        };
-+        // CraftBukkit end
          this.bannerSlot = this.addSlot(new Slot(this.inputContainer, 0, 13, 26) {
-             {
-                 Objects.requireNonNull(LoomMenu.this);
-@@ -131,6 +_,7 @@
+             @Override
+             public boolean mayPlace(final ItemStack itemStack) {
+@@ -106,6 +_,7 @@
          this.addStandardInventorySlots(inventory, 8, 84);
          this.addDataSlot(this.selectedBannerPatternIndex);
          this.patternGetter = inventory.player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
@@ -84,7 +83,7 @@
      }
  
      private static boolean isPatternItem(final ItemStack itemStack) {
-@@ -143,14 +_,39 @@
+@@ -118,14 +_,39 @@
  
      @Override
      public boolean stillValid(final Player player) {
@@ -126,7 +125,7 @@
              return true;
          } else {
              return false;
-@@ -212,7 +_,8 @@
+@@ -187,7 +_,8 @@
                  this.resultSlot.set(ItemStack.EMPTY);
              }
  
@@ -136,7 +135,7 @@
          } else {
              this.resultSlot.set(ItemStack.EMPTY);
              this.selectablePatterns = List.of();
-@@ -302,7 +_,14 @@
+@@ -277,7 +_,14 @@
                  result.update(
                      DataComponents.BANNER_PATTERNS,
                      BannerPatternLayers.EMPTY,

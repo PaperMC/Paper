@@ -27,7 +27,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -42,6 +42,7 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnder
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.WaypointStyleAsset;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
@@ -75,7 +76,6 @@ import org.bukkit.entity.EntityCategory;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.FishHook;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.LlamaSpit;
@@ -335,7 +335,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public ItemStack getItemInUse() {
         net.minecraft.world.item.ItemStack item = this.getHandle().getUseItem();
-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
     }
 
     @Override
@@ -375,8 +375,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean isInvulnerable() {
-        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
+    public boolean isInvulnerableTo(final org.bukkit.damage.@NonNull DamageSource source) {
+        Preconditions.checkArgument(source != null, "DamageSource cannot be null");
+        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), ((CraftDamageSource) source).getHandle());
     }
 
     @Override
@@ -417,12 +418,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void damage(double amount, org.bukkit.entity.Entity source) {
-        DamageSource reason = this.getHandle().damageSources().generic();
-
-        if (source instanceof HumanEntity) {
-            reason = this.getHandle().damageSources().playerAttack(((CraftHumanEntity) source).getHandle());
-        } else if (source instanceof LivingEntity) {
-            reason = this.getHandle().damageSources().mobAttack(((CraftLivingEntity) source).getHandle());
+        final DamageSource reason;
+        if (source instanceof LivingEntity) {
+            reason = ((CraftLivingEntity) source).getHandle().createDamageSource();
+        } else {
+            reason = this.getHandle().damageSources().generic();
         }
 
         this.damage(amount, reason);
@@ -436,10 +436,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     private void damage(double amount, DamageSource damageSource) {
-        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
         Preconditions.checkState(!this.getHandle().generation, "Cannot damage entity during world generation");
 
-        this.entity.hurt(damageSource, (float) amount);
+        this.entity.hurtServer((ServerLevel) this.getHandle().level(), damageSource, (float) amount);
     }
 
     @Override
@@ -471,12 +470,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public int getNoDamageTicks() {
-        return this.getHandle().invulnerableTime;
+        return this.getHandle().damageCooldownTime;
     }
 
     @Override
     public void setNoDamageTicks(int ticks) {
-        this.getHandle().invulnerableTime = ticks;
+        this.getHandle().damageCooldownTime = ticks;
     }
 
     @Override
@@ -508,10 +507,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean addPotionEffect(PotionEffect effect, boolean force) {
+    public boolean addPotionEffect(PotionEffect effect) {
         org.spigotmc.AsyncCatcher.catchOp("effect add"); // Paper
-        this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
-        return true;
+        return this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
     }
 
     @Override
@@ -542,7 +540,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public Collection<PotionEffect> getActivePotionEffects() {
         List<PotionEffect> effects = new ArrayList<>();
-        for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
+        for (MobEffectInstance handle : this.getHandle().getActiveEffects()) {
             effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
         }
         return effects;
@@ -607,9 +605,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball(world, this.getHandle(), vec);
             } else if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
                 if (BreezeWindCharge.class.isAssignableFrom(projectile)) {
-                    launch = EntityType.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                    launch = EntityTypes.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
                 } else {
-                    launch = EntityType.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                    launch = EntityTypes.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
                 }
 
                 ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).setOwner(this.getHandle());
@@ -624,7 +622,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             Location location = this.getEyeLocation();
             Vector direction = location.getDirection();
 
-            launch = EntityType.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
+            launch = EntityTypes.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
 
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).setOwner(this.getHandle());
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
@@ -825,14 +823,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void swingMainHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
 
-        this.getHandle().swing(InteractionHand.MAIN_HAND, true);
+        this.getHandle().swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
     }
 
     @Override
     public void swingOffHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
 
-        this.getHandle().swing(InteractionHand.OFF_HAND, true);
+        this.getHandle().swing(InteractionHand.OFF_HAND, SwingAnimation.DEFAULT, true);
     }
 
     @Override
@@ -876,8 +874,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public float getSoundVolume() {
+        return this.getHandle().getSoundVolume();
+    }
+
+    @Override
+    public float getSoundPitch() {
+        return this.getHandle().getVoicePitch();
+    }
+
+    @Override
     public Sound getHurtSound() {
         SoundEvent sound = this.getHandle().getHurtSound(this.getHandle().damageSources().generic());
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
+    }
+
+    @Override
+    public Sound getHurtSound(org.bukkit.damage.DamageSource damageSource) {
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+
+        SoundEvent sound = this.getHandle().getHurtSound(((CraftDamageSource) damageSource).getHandle());
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
@@ -964,7 +980,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public ItemStack getActiveItem() {
-        return this.getHandle().getUseItem().asBukkitMirror();
+        return CraftItemStack.asBukkitMirror(this.getHandle().getUseItem());
     }
 
     @Override
@@ -1001,7 +1017,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isJumping() {
-        return this.getHandle().jumping;
+        return this.getHandle().isJumping();
     }
 
     @Override
@@ -1031,7 +1047,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void knockback(final double strength, final double directionX, final double directionZ) {
         Preconditions.checkArgument(strength > 0, "Knockback strength must be > 0");
-        this.getHandle().knockback(strength, directionX, directionZ);
+        this.getHandle().knockback(strength, directionX, directionZ, this.getHandle().damageSources().generic(), 0.0F); // todo - snapshot - api - expose damage source and/or damage
     }
 
     public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {
@@ -1060,7 +1076,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             nmsStack = craftItemStack.handle;
         } else {
             nmsStack = CraftItemStack.asNMSCopy(stack);
-            stack = CraftItemStack.asCraftMirror(nmsStack); // mirror to capture changes in hurt logic & events
+            stack = CraftItemStack.asBukkitMirror(nmsStack); // mirror to capture changes in hurt logic & events
         }
         this.damageItemStack0(nmsStack, amount, null);
         return stack;

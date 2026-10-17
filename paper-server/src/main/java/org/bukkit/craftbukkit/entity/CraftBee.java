@@ -27,7 +27,7 @@ public class CraftBee extends CraftAnimals implements Bee {
     @Override
     public void setHive(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Hive must be in same world");
-        this.getHandle().hivePos = (location == null) ? null : CraftLocation.toBlockPos(location);
+        this.getHandle().setHivePos((location == null) ? null : CraftLocation.toBlockPos(location));
     }
 
     @Override

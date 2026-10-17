@@ -410,6 +410,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_CHORUS_FLOWER_GROW = getSound("block.chorus_flower.grow");
 
+    Sound BLOCK_CINNABAR_BREAK = getSound("block.cinnabar.break");
+
+    Sound BLOCK_CINNABAR_FALL = getSound("block.cinnabar.fall");
+
+    Sound BLOCK_CINNABAR_HIT = getSound("block.cinnabar.hit");
+
+    Sound BLOCK_CINNABAR_PLACE = getSound("block.cinnabar.place");
+
+    Sound BLOCK_CINNABAR_STEP = getSound("block.cinnabar.step");
+
     Sound BLOCK_COBWEB_BREAK = getSound("block.cobweb.break");
 
     Sound BLOCK_COBWEB_FALL = getSound("block.cobweb.fall");
@@ -1162,11 +1172,43 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_POLISHED_TUFF_STEP = getSound("block.polished_tuff.step");
 
+    Sound BLOCK_POPLAR_LEAVES_AMBIENT = getSound("block.poplar_leaves.ambient");
+
+    Sound BLOCK_POPLAR_LEAVES_BREAK = getSound("block.poplar_leaves.break");
+
+    Sound BLOCK_POPLAR_LEAVES_FALL = getSound("block.poplar_leaves.fall");
+
+    Sound BLOCK_POPLAR_LEAVES_HIT = getSound("block.poplar_leaves.hit");
+
+    Sound BLOCK_POPLAR_LEAVES_PLACE = getSound("block.poplar_leaves.place");
+
+    Sound BLOCK_POPLAR_LEAVES_STEP = getSound("block.poplar_leaves.step");
+
     Sound BLOCK_PORTAL_AMBIENT = getSound("block.portal.ambient");
 
     Sound BLOCK_PORTAL_TRAVEL = getSound("block.portal.travel");
 
     Sound BLOCK_PORTAL_TRIGGER = getSound("block.portal.trigger");
+
+    Sound BLOCK_POTENT_SULFUR_BREAK = getSound("block.potent_sulfur.break");
+
+    Sound BLOCK_POTENT_SULFUR_FALL = getSound("block.potent_sulfur.fall");
+
+    Sound BLOCK_POTENT_SULFUR_GEYSER_CONTINUOUS_ERUPTION = getSound("block.potent_sulfur.geyser_continuous_eruption");
+
+    Sound BLOCK_POTENT_SULFUR_GEYSER_CONTINUOUS_ERUPTION_ACTIVE = getSound("block.potent_sulfur.geyser_continuous_eruption_active");
+
+    Sound BLOCK_POTENT_SULFUR_GEYSER_ERUPTION = getSound("block.potent_sulfur.geyser_eruption");
+
+    Sound BLOCK_POTENT_SULFUR_GEYSER_ERUPTION_ACTIVE = getSound("block.potent_sulfur.geyser_eruption_active");
+
+    Sound BLOCK_POTENT_SULFUR_HIT = getSound("block.potent_sulfur.hit");
+
+    Sound BLOCK_POTENT_SULFUR_NOXIOUS_GAS = getSound("block.potent_sulfur.noxious_gas");
+
+    Sound BLOCK_POTENT_SULFUR_PLACE = getSound("block.potent_sulfur.place");
+
+    Sound BLOCK_POTENT_SULFUR_STEP = getSound("block.potent_sulfur.step");
 
     Sound BLOCK_POWDER_SNOW_BREAK = getSound("block.powder_snow.break");
 
@@ -1179,6 +1221,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound BLOCK_POWDER_SNOW_STEP = getSound("block.powder_snow.step");
 
     Sound BLOCK_PUMPKIN_CARVE = getSound("block.pumpkin.carve");
+
+    Sound BLOCK_RED_SHRUB_BREAK = getSound("block.red_shrub.break");
+
+    Sound BLOCK_RED_SHRUB_PLACE = getSound("block.red_shrub.place");
 
     Sound BLOCK_REDSTONE_TORCH_BURNOUT = getSound("block.redstone_torch.burnout");
 
@@ -1334,6 +1380,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_SHELF_TAKE_ITEM = getSound("block.shelf.take_item");
 
+    Sound BLOCK_SHELF_MUSHROOM_BOUNCE = getSound("block.shelf_mushroom.bounce");
+
+    Sound BLOCK_SHELF_MUSHROOM_BREAK = getSound("block.shelf_mushroom.break");
+
+    Sound BLOCK_SHELF_MUSHROOM_FALL = getSound("block.shelf_mushroom.fall");
+
+    Sound BLOCK_SHELF_MUSHROOM_PLACE = getSound("block.shelf_mushroom.place");
+
+    Sound BLOCK_SHELF_MUSHROOM_STEP = getSound("block.shelf_mushroom.step");
+
     Sound BLOCK_SHROOMLIGHT_BREAK = getSound("block.shroomlight.break");
 
     Sound BLOCK_SHROOMLIGHT_FALL = getSound("block.shroomlight.fall");
@@ -1473,6 +1529,40 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound BLOCK_STONE_PRESSURE_PLATE_CLICK_OFF = getSound("block.stone_pressure_plate.click_off");
 
     Sound BLOCK_STONE_PRESSURE_PLATE_CLICK_ON = getSound("block.stone_pressure_plate.click_on");
+
+    Sound BLOCK_STRAW_BED_BREAK = getSound("block.straw_bed.break");
+
+    Sound BLOCK_STRAW_BED_BREAK_LEAVE = getSound("block.straw_bed.break_leave");
+
+    Sound BLOCK_STRAW_BED_FALL = getSound("block.straw_bed.fall");
+
+    Sound BLOCK_STRAW_BED_HIT = getSound("block.straw_bed.hit");
+
+    Sound BLOCK_STRAW_BED_PLACE = getSound("block.straw_bed.place");
+
+    Sound BLOCK_STRAW_BED_STEP = getSound("block.straw_bed.step");
+
+    Sound BLOCK_SULFUR_BREAK = getSound("block.sulfur.break");
+
+    Sound BLOCK_SULFUR_FALL = getSound("block.sulfur.fall");
+
+    Sound BLOCK_SULFUR_HIT = getSound("block.sulfur.hit");
+
+    Sound BLOCK_SULFUR_PLACE = getSound("block.sulfur.place");
+
+    Sound BLOCK_SULFUR_STEP = getSound("block.sulfur.step");
+
+    Sound BLOCK_SULFUR_SPIKE_BREAK = getSound("block.sulfur_spike.break");
+
+    Sound BLOCK_SULFUR_SPIKE_FALL = getSound("block.sulfur_spike.fall");
+
+    Sound BLOCK_SULFUR_SPIKE_HIT = getSound("block.sulfur_spike.hit");
+
+    Sound BLOCK_SULFUR_SPIKE_LAND = getSound("block.sulfur_spike.land");
+
+    Sound BLOCK_SULFUR_SPIKE_PLACE = getSound("block.sulfur_spike.place");
+
+    Sound BLOCK_SULFUR_SPIKE_STEP = getSound("block.sulfur_spike.step");
 
     Sound BLOCK_SUSPICIOUS_GRAVEL_BREAK = getSound("block.suspicious_gravel.break");
 
@@ -2089,6 +2179,14 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_CREEPER_HURT = getSound("entity.creeper.hurt");
 
     Sound ENTITY_CREEPER_PRIMED = getSound("entity.creeper.primed");
+
+    Sound ENTITY_CUSHION_BREAK = getSound("entity.cushion.break");
+
+    Sound ENTITY_CUSHION_GET_UP = getSound("entity.cushion.get_up");
+
+    Sound ENTITY_CUSHION_PLACE = getSound("entity.cushion.place");
+
+    Sound ENTITY_CUSHION_SIT = getSound("entity.cushion.sit");
 
     Sound ENTITY_DOLPHIN_AMBIENT = getSound("entity.dolphin.ambient");
 
@@ -3006,6 +3104,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_SLIME_SQUISH_SMALL = getSound("entity.slime.squish_small");
 
+    Sound ENTITY_SMALL_SULFUR_CUBE_DEATH = getSound("entity.small_sulfur_cube.death");
+
+    Sound ENTITY_SMALL_SULFUR_CUBE_EAT = getSound("entity.small_sulfur_cube.eat");
+
+    Sound ENTITY_SMALL_SULFUR_CUBE_HURT = getSound("entity.small_sulfur_cube.hurt");
+
+    Sound ENTITY_SMALL_SULFUR_CUBE_JUMP = getSound("entity.small_sulfur_cube.jump");
+
+    Sound ENTITY_SMALL_SULFUR_CUBE_SQUISH = getSound("entity.small_sulfur_cube.squish");
+
     Sound ENTITY_SNIFFER_DEATH = getSound("entity.sniffer.death");
 
     Sound ENTITY_SNIFFER_DIGGING = getSound("entity.sniffer.digging");
@@ -3087,6 +3195,68 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_STRIDER_STEP = getSound("entity.strider.step");
 
     Sound ENTITY_STRIDER_STEP_LAVA = getSound("entity.strider.step_lava");
+
+    Sound ENTITY_SULFUR_CUBE_ABSORB = getSound("entity.sulfur_cube.absorb");
+
+    Sound ENTITY_SULFUR_CUBE_BOUNCE = getSound("entity.sulfur_cube.bounce");
+
+    Sound ENTITY_SULFUR_CUBE_BOUNCY_HIT = getSound("entity.sulfur_cube.bouncy.hit");
+
+    Sound ENTITY_SULFUR_CUBE_BOUNCY_PUSH = getSound("entity.sulfur_cube.bouncy.push");
+
+    Sound ENTITY_SULFUR_CUBE_DEATH = getSound("entity.sulfur_cube.death");
+
+    Sound ENTITY_SULFUR_CUBE_EJECT = getSound("entity.sulfur_cube.eject");
+
+    Sound ENTITY_SULFUR_CUBE_EXPLOSIVE_HIT = getSound("entity.sulfur_cube.explosive.hit");
+
+    Sound ENTITY_SULFUR_CUBE_EXPLOSIVE_PUSH = getSound("entity.sulfur_cube.explosive.push");
+
+    Sound ENTITY_SULFUR_CUBE_FAST_FLAT_HIT = getSound("entity.sulfur_cube.fast_flat.hit");
+
+    Sound ENTITY_SULFUR_CUBE_FAST_FLAT_PUSH = getSound("entity.sulfur_cube.fast_flat.push");
+
+    Sound ENTITY_SULFUR_CUBE_FAST_SLIDING_HIT = getSound("entity.sulfur_cube.fast_sliding.hit");
+
+    Sound ENTITY_SULFUR_CUBE_FAST_SLIDING_PUSH = getSound("entity.sulfur_cube.fast_sliding.push");
+
+    Sound ENTITY_SULFUR_CUBE_HIGH_RESISTANCE_HIT = getSound("entity.sulfur_cube.high_resistance.hit");
+
+    Sound ENTITY_SULFUR_CUBE_HIGH_RESISTANCE_PUSH = getSound("entity.sulfur_cube.high_resistance.push");
+
+    Sound ENTITY_SULFUR_CUBE_HOT_HIT = getSound("entity.sulfur_cube.hot.hit");
+
+    Sound ENTITY_SULFUR_CUBE_HOT_PUSH = getSound("entity.sulfur_cube.hot.push");
+
+    Sound ENTITY_SULFUR_CUBE_HURT = getSound("entity.sulfur_cube.hurt");
+
+    Sound ENTITY_SULFUR_CUBE_JUMP = getSound("entity.sulfur_cube.jump");
+
+    Sound ENTITY_SULFUR_CUBE_LIGHT_HIT = getSound("entity.sulfur_cube.light.hit");
+
+    Sound ENTITY_SULFUR_CUBE_LIGHT_PUSH = getSound("entity.sulfur_cube.light.push");
+
+    Sound ENTITY_SULFUR_CUBE_REGULAR_HIT = getSound("entity.sulfur_cube.regular.hit");
+
+    Sound ENTITY_SULFUR_CUBE_REGULAR_PUSH = getSound("entity.sulfur_cube.regular.push");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_BOUNCY_HIT = getSound("entity.sulfur_cube.slow_bouncy.hit");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_BOUNCY_PUSH = getSound("entity.sulfur_cube.slow_bouncy.push");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_FLAT_HIT = getSound("entity.sulfur_cube.slow_flat.hit");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_FLAT_PUSH = getSound("entity.sulfur_cube.slow_flat.push");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_SLIDING_HIT = getSound("entity.sulfur_cube.slow_sliding.hit");
+
+    Sound ENTITY_SULFUR_CUBE_SLOW_SLIDING_PUSH = getSound("entity.sulfur_cube.slow_sliding.push");
+
+    Sound ENTITY_SULFUR_CUBE_SQUISH = getSound("entity.sulfur_cube.squish");
+
+    Sound ENTITY_SULFUR_CUBE_STICKY_HIT = getSound("entity.sulfur_cube.sticky.hit");
+
+    Sound ENTITY_SULFUR_CUBE_STICKY_PUSH = getSound("entity.sulfur_cube.sticky.push");
 
     Sound ENTITY_TADPOLE_DEATH = getSound("entity.tadpole.death");
 
@@ -3532,6 +3702,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_BUCKET_EMPTY_POWDER_SNOW = getSound("item.bucket.empty_powder_snow");
 
+    Sound ITEM_BUCKET_EMPTY_SULFUR_CUBE = getSound("item.bucket.empty_sulfur_cube");
+
     Sound ITEM_BUCKET_EMPTY_TADPOLE = getSound("item.bucket.empty_tadpole");
 
     Sound ITEM_BUCKET_FILL = getSound("item.bucket.fill");
@@ -3543,6 +3715,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ITEM_BUCKET_FILL_LAVA = getSound("item.bucket.fill_lava");
 
     Sound ITEM_BUCKET_FILL_POWDER_SNOW = getSound("item.bucket.fill_powder_snow");
+
+    Sound ITEM_BUCKET_FILL_SULFUR_CUBE = getSound("item.bucket.fill_sulfur_cube");
 
     Sound ITEM_BUCKET_FILL_TADPOLE = getSound("item.bucket.fill_tadpole");
 
@@ -3754,6 +3928,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound MUSIC_OVERWORLD_STONY_PEAKS = getSound("music.overworld.stony_peaks");
 
+    Sound MUSIC_OVERWORLD_SULFUR_CAVES = getSound("music.overworld.sulfur_caves");
+
     Sound MUSIC_OVERWORLD_SWAMP = getSound("music.overworld.swamp");
 
     Sound MUSIC_UNDER_WATER = getSound("music.under_water");
@@ -3765,6 +3941,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound MUSIC_DISC_5 = getSound("music_disc.5");
 
     Sound MUSIC_DISC_BLOCKS = getSound("music_disc.blocks");
+
+    Sound MUSIC_DISC_BOUNCE = getSound("music_disc.bounce");
 
     Sound MUSIC_DISC_CAT = getSound("music_disc.cat");
 

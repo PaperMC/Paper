@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
@@ -27,6 +28,7 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -193,6 +195,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
     /**
+     * Data-driven registry for decorated pot patterns.
+     * @see io.papermc.paper.registry.keys.DecoratedPotPatternKeys
+     */
+    RegistryKey<PotPatternType> DECORATED_POT_PATTERN = create("decorated_pot_pattern");
+    /**
      * Data-driven registry for painting variants.
      * @see io.papermc.paper.registry.keys.PaintingVariantKeys
      */
@@ -252,6 +259,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
      */
     RegistryKey<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = create("zombie_nautilus_variant");
+    /**
+     * Data-driven registry for sulfur cube archetypes.
+     * @see io.papermc.paper.registry.keys.SulfurCubeArchetypeKeys
+     */
+    RegistryKey<SulfurCube.Archetype> SULFUR_CUBE_ARCHETYPE = create("sulfur_cube_archetype");
     /**
      * Data-driven registry for dialogs.
      * @see io.papermc.paper.registry.keys.DialogKeys

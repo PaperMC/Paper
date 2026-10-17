@@ -1,6 +1,9 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.block.pot.PaperPotPatternType;
+import io.papermc.paper.block.pot.PotPatternType;
+import io.papermc.paper.block.pot.PotPatternTypes;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
@@ -16,6 +19,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.SulfurCubeArchetype;
 import net.minecraft.world.entity.animal.chicken.ChickenSoundVariant;
 import net.minecraft.world.entity.animal.chicken.ChickenVariant;
 import net.minecraft.world.entity.animal.cow.CowSoundVariant;
@@ -33,6 +37,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.Instrument;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.DecoratedPotPattern;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
@@ -65,6 +70,7 @@ import org.bukkit.craftbukkit.entity.CraftChicken;
 import org.bukkit.craftbukkit.entity.CraftCow;
 import org.bukkit.craftbukkit.entity.CraftFrog;
 import org.bukkit.craftbukkit.entity.CraftPig;
+import org.bukkit.craftbukkit.entity.CraftSulfurCube;
 import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.craftbukkit.entity.CraftWolf;
 import org.bukkit.craftbukkit.entity.CraftZombieNautilus;
@@ -83,6 +89,7 @@ import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -149,6 +156,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.CAT_SOUND_VARIANT, Cat.SoundVariant.class, CraftCat.CraftSoundVariant.class, CatSoundVariant.class);
         register(Registries.MAP_DECORATION_TYPE, MapCursor.Type.class, CraftMapCursor.CraftType.class, MapDecorationType.class);
         register(Registries.BANNER_PATTERN, PatternType.class, CraftPatternType.class, BannerPattern.class);
+        register(Registries.DECORATED_POT_PATTERN, PotPatternType.class, PotPatternTypes.class, PaperPotPatternType.class, DecoratedPotPattern.class);
         register(Registries.MENU, MenuType.class, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
         register(Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, DataComponentTypes.class, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
         register(Registries.CHICKEN_VARIANT, Chicken.Variant.class, CraftChicken.CraftVariant.class, ChickenVariant.class);
@@ -161,6 +169,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
+        register(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype.class, SulfurCubeArchetype.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

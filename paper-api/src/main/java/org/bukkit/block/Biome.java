@@ -42,6 +42,8 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
 
     Biome CRIMSON_FOREST = getBiome("crimson_forest");
 
+    Biome DAPPLED_FOREST = getBiome("dappled_forest");
+
     Biome DARK_FOREST = getBiome("dark_forest");
 
     Biome DEEP_COLD_OCEAN = getBiome("deep_cold_ocean");
@@ -131,6 +133,8 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     Biome STONY_PEAKS = getBiome("stony_peaks");
 
     Biome STONY_SHORE = getBiome("stony_shore");
+
+    Biome SULFUR_CAVES = getBiome("sulfur_caves");
 
     Biome SUNFLOWER_PLAINS = getBiome("sunflower_plains");
 

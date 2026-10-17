@@ -1,11 +1,11 @@
 package org.bukkit;
 
+import io.papermc.paper.world.MoonPhase;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import io.papermc.paper.world.MoonPhase;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -13,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,6 +101,17 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     }
 
     /**
+     * Gets the {@link BlockState} at the given {@link Location}.
+     *
+     * @param location The location of the block state
+     * @return Block state at the given location
+     */
+    @NotNull
+    default BlockState getBlockState(@NotNull Vector location) {
+        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    /**
      * Gets the {@link BlockState} at the given coordinates.
      *
      * @param x X-coordinate of the block state
@@ -130,7 +142,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      */
     @NotNull
     default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull io.papermc.paper.math.Position position) {
-        return getFluidData(position.blockX(), position.blockY(), position.blockZ());
+        return this.getFluidData(position.blockX(), position.blockY(), position.blockZ());
     }
 
     /**
@@ -141,7 +153,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      */
     @NotNull
     default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull Location location) {
-        return getFluidData(location.blockX(), location.blockY(), location.blockZ());
+        return this.getFluidData(location.blockX(), location.blockY(), location.blockZ());
     }
     // Paper end
 
@@ -153,6 +165,17 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      */
     @NotNull
     default BlockData getBlockData(@NotNull Location location) {
+        return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    /**
+     * Gets the {@link BlockData} at the given {@link Location}.
+     *
+     * @param location The location of the block data
+     * @return Block data at the given location
+     */
+    @NotNull
+    default BlockData getBlockData(@NotNull Vector location) {
         return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
@@ -196,6 +219,16 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param blockData The block data to set the block to
      */
     default void setBlockData(@NotNull Location location, @NotNull BlockData blockData) {
+        this.setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
+    }
+
+    /**
+     * Sets the {@link BlockData} at the given {@link Location}.
+     *
+     * @param location The location of the block
+     * @param blockData The block data to set the block to
+     */
+    default void setBlockData(@NotNull Vector location, @NotNull BlockData blockData) {
         this.setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
     }
 

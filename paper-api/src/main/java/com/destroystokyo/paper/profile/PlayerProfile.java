@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.profile.PlayerTextures;
 import org.jspecify.annotations.NullMarked;
@@ -15,7 +17,7 @@ import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
  * Represents a players profile for the game, such as UUID, Name, and textures.
  */
 @NullMarked
-public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerHeadObjectContents.SkinSource {
+public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerHeadObjectContents.SkinSource, ObjectContentsLike {
 
     /**
      * @return The players name, if set
@@ -254,6 +256,11 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
      */
     @Override
     PlayerProfile clone();
+
+    @Override
+    default ObjectContents asObjectContents() {
+        return ObjectContents.playerHead(this);
+    }
 
     @Override
     default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {

@@ -32,7 +32,7 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public EnderDragon getEnderDragon() {
-        Entity entity = this.handle.level.getEntity(this.handle.dragonUUID);
+        Entity entity = this.handle.level.getEntity(this.handle.dragonUUID());
         return (entity != null) ? (EnderDragon) entity.getBukkitEntity() : null;
     }
 
@@ -76,7 +76,7 @@ public class CraftDragonBattle implements DragonBattle {
     }
 
     @Override
-    public boolean initiateRespawn(Collection<EnderCrystal> crystals) { // todo doesn't seems to work without crystals
+    public boolean initiateRespawn(Collection<EnderCrystal> crystals) {
         if (this.hasBeenPreviouslyKilled() && this.getRespawnPhase() == RespawnPhase.NONE) {
             // Copy from EnderDragonFight#tryRespawn for generate exit portal if not exists
             if (this.handle.exitPortalLocation == null) {
@@ -94,9 +94,15 @@ public class CraftDragonBattle implements DragonBattle {
                 return !((CraftWorld) crystal.getWorld()).getHandle().equals(this.handle.level);
             });
 
-            return this.handle.respawnDragon(
+            boolean started = this.handle.respawnDragon(
                 Lists.transform(filteredCrystals, crystal -> ((CraftEnderCrystal) crystal).getHandle())
             );
+
+            if (started) {
+                this.handle.emptyCrystalRespawnAllowed = filteredCrystals.isEmpty();
+            }
+
+            return started;
         }
         return false;
     }

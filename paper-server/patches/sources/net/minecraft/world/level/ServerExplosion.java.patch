@@ -23,19 +23,21 @@
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(final @Nullable Entity source) {
-@@ -141,7 +_,8 @@
-                         for (float stepSize = 0.3F; remainingPower > 0.0F; remainingPower -= 0.22500001F) {
+@@ -142,7 +_,7 @@
+                         while (remainingPower > 0.0F) {
                              BlockPos pos = BlockPos.containing(xp, yp, zp);
                              BlockState block = this.level.getBlockState(pos);
 -                            FluidState fluid = this.level.getFluidState(pos);
-+                            if (!block.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 +                            FluidState fluid = block.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
                              if (!this.level.isInWorldBounds(pos)) {
                                  break;
                              }
-@@ -153,6 +_,15 @@
+@@ -152,8 +_,17 @@
+                                 remainingPower -= (resistance.get() + 0.3F) * 0.3F;
+                             }
  
-                             if (remainingPower > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) {
+-                            if (remainingPower > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) {
++                            if (remainingPower > 0.0F && block.isDestroyable() && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
                                  toBlowSet.add(pos);
 +                                // Paper start - prevent headless pistons from forming
 +                                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && block.is(net.minecraft.world.level.block.Blocks.MOVING_PISTON)) {
@@ -49,7 +51,7 @@
                              }
  
                              xp += xd * 0.3F;
-@@ -176,8 +_,9 @@
+@@ -178,8 +_,9 @@
              int y1 = Mth.floor(this.center.y + doubleRadius + 1.0);
              int z0 = Mth.floor(this.center.z - doubleRadius - 1.0);
              int z1 = Mth.floor(this.center.z + doubleRadius + 1.0);
@@ -60,13 +62,13 @@
                  if (!entity.ignoreExplosion(this)) {
                      double dist = Math.sqrt(entity.distanceToSqr(this.center)) / doubleRadius;
                      if (!(dist > 1.0)) {
-@@ -185,20 +_,56 @@
+@@ -187,20 +_,56 @@
                          Vec3 direction = entityOrigin.subtract(this.center).normalize();
                          boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
                          float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
 -                        float exposure = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : getSeenPercent(this.center, entity);
 +                        float exposure = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
-                         if (shouldDamageEntity) {
+                         if (shouldDamageEntity && (this.source == null || this.source.doTeamsAllowDamage(entity))) {
 -                            entity.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, exposure));
 +                            // CraftBukkit start
 +
@@ -106,14 +108,14 @@
 +                        double knockbackPower = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - dist) * exposure * knockbackMultiplier * (1.0 - knockbackResistance); // Paper
                          Vec3 knockback = direction.scale(knockbackPower);
 +                        // CraftBukkit start - Call EntityKnockbackEvent
-+                        if (entity instanceof LivingEntity) {
++                        if (entity instanceof LivingEntity livingEntity) {
 +                            // Paper start - knockback events
-+                            io.papermc.paper.event.entity.EntityKnockbackEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, knockbackPower, knockback);
++                            io.papermc.paper.event.entity.EntityKnockbackEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityKnockbackEvent(livingEntity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, knockbackPower, knockback);
 +                            knockback = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
 +                            // Paper end - knockback events
 +                        }
 +                        // CraftBukkit end
-                         entity.push(knockback);
+                         entity.pushFromExplosion(knockback);
                          if (entity.is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && entity instanceof Projectile projectile) {
                              projectile.setOwner(this.damageSource.getEntity());
 -                        } else if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying)) {
@@ -121,7 +123,7 @@
                              this.hitPlayers.put(player, knockback);
                          }
  
-@@ -213,7 +_,56 @@
+@@ -215,7 +_,56 @@
          List<ServerExplosion.StackCollector> stacks = new ArrayList<>();
          Util.shuffle(targetBlocks, this.level.random);
  
@@ -178,7 +180,7 @@
              this.level.getBlockState(pos).onExplosionHit(this.level, pos, this, (stackx, position) -> addOrAppendStack(stacks, stackx, position));
          }
  
-@@ -225,7 +_,11 @@
+@@ -227,7 +_,11 @@
      private void createFire(final List<BlockPos> targetBlocks) {
          for (BlockPos pos : targetBlocks) {
              if (this.level.random.nextInt(3) == 0 && this.level.getBlockState(pos).isAir() && this.level.getBlockState(pos.below()).isSolidRender()) {
@@ -191,20 +193,20 @@
              }
          }
      }
-@@ -323,4 +_,85 @@
+@@ -325,4 +_,85 @@
              }
          }
      }
 +
 +    // Paper start - Optimize explosions
-+    private float getBlockDensity(Vec3 vec3d, Entity entity) {
++    private float getBlockDensity(Vec3 center, Entity entity) {
 +        if (!this.level.paperConfig().environment.optimizeExplosions) {
-+            return getSeenPercent(vec3d, entity);
++            return getSeenPercent(center, entity);
 +        }
 +        CacheKey key = new CacheKey(this, entity.getBoundingBox());
 +        Float blockDensity = this.level.explosionDensityCache.get(key);
 +        if (blockDensity == null) {
-+            blockDensity = getSeenPercent(vec3d, entity);
++            blockDensity = getSeenPercent(center, entity);
 +            this.level.explosionDensityCache.put(key, blockDensity);
 +        }
 +

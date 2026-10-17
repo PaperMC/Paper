@@ -11,7 +11,7 @@
  
      public CachedUserNameToIdResolver(final GameProfileRepository profileRepository, final File file) {
          this.profileRepository = profileRepository;
-@@ -54,23 +_,27 @@
+@@ -54,10 +_,12 @@
      }
  
      private void safeAdd(final CachedUserNameToIdResolver.GameProfileInfo profileInfo) {
@@ -24,15 +24,15 @@
      }
  
      private Optional<NameAndId> lookupGameProfile(final GameProfileRepository profileRepository, final String name) {
-         if (!StringUtil.isValidPlayerName(name)) {
+@@ -65,12 +_,14 @@
              return this.createUnknownProfile(name);
-         } else {
--            Optional<NameAndId> profile = profileRepository.findProfileByName(name).map(NameAndId::new);
-+            final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
-+                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
-+            Optional<NameAndId> profile = shouldLookup ? profileRepository.findProfileByName(name).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
-             return profile.isEmpty() ? this.createUnknownProfile(name) : profile;
          }
+ 
+-        Optional<NameAndId> profile = profileRepository.findProfileByName(name).map(NameAndId::new);
++        final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
++            && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
++        Optional<NameAndId> profile = shouldLookup ? profileRepository.findProfileByName(name).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
+         return profile.isEmpty() ? this.createUnknownProfile(name) : profile;
      }
  
      private Optional<NameAndId> createUnknownProfile(final String name) {
@@ -111,26 +111,26 @@
          if (profileInfo == null) {
              return Optional.empty();
 @@ -140,6 +_,7 @@
-             profileInfo.setLastAccess(this.getNextOperation());
-             return Optional.of(profileInfo.nameAndId());
-         }
+ 
+         profileInfo.setLastAccess(this.getNextOperation());
+         return Optional.of(profileInfo.nameAndId());
 +        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
      }
  
      private static DateFormat createDateFormat() {
-@@ -164,6 +_,11 @@
- 
-             return (List<CachedUserNameToIdResolver.GameProfileInfo>)var9;
+@@ -158,6 +_,11 @@
+             DateFormat dateFormat = createDateFormat();
+             entryList.forEach(element -> readGameProfile(element, dateFormat).ifPresent(result::add));
          } catch (FileNotFoundException var7) {
 +            // Spigot start
-+        } catch (com.google.gson.JsonSyntaxException | NullPointerException ex) {
++        } catch (com.google.gson.JsonSyntaxException | NullPointerException _) {
 +            LOGGER.warn("Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues.");
 +            this.file.delete();
 +            // Spigot end
-         } catch (JsonParseException | IOException var8) {
-             LOGGER.warn("Failed to load profile cache {}", this.file, var8);
+         } catch (IOException | JsonParseException e) {
+             LOGGER.warn("Failed to load profile cache {}", this.file, e);
          }
-@@ -173,23 +_,51 @@
+@@ -167,23 +_,51 @@
  
      @Override
      public void save() {
@@ -145,7 +145,7 @@
          DateFormat dateFormat = createDateFormat();
 -        this.getTopMRUProfiles(1000).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat)));
 +        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
-         String toSave = this.gson.toJson((JsonElement)entryList);
+         String toSave = this.gson.toJson(entryList);
  
 +        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
          try (Writer writer = Files.newWriter(this.file, StandardCharsets.UTF_8)) {

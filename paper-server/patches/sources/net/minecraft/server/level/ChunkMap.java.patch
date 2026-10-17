@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -152,6 +_,33 @@
+@@ -151,6 +_,33 @@
      public int serverViewDistance;
      private final WorldGenContext worldGenContext;
  
@@ -34,7 +34,7 @@
      public ChunkMap(
          final ServerLevel level,
          final LevelStorageSource.LevelStorageAccess levelStorage,
-@@ -179,13 +_,19 @@
+@@ -176,7 +_,13 @@
          this.level = level;
          RegistryAccess registryAccess = level.registryAccess();
          long levelSeed = level.getSeed();
@@ -46,9 +46,11 @@
 +        }
 +        if (randomGenerator instanceof NoiseBasedChunkGenerator noiseGenerator) {
 +            // CraftBukkit end
-             this.randomState = RandomState.create(noiseGenerator.generatorSettings().value(), registryAccess.lookupOrThrow(Registries.NOISE), levelSeed);
+             this.randomState = RandomState.create(registryAccess.lookupOrThrow(Registries.NOISE), levelSeed, noiseGenerator.generatorSettings().value());
          } else {
-             this.randomState = RandomState.create(NoiseGeneratorSettings.dummy(), registryAccess.lookupOrThrow(Registries.NOISE), levelSeed);
+             this.randomState = RandomState.create(
+@@ -184,7 +_,7 @@
+             );
          }
  
 -        this.chunkGeneratorState = generator.createState(registryAccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, levelSeed);
@@ -56,7 +58,7 @@
          this.mainThreadExecutor = mainThreadExecutor;
          ConsecutiveExecutor worldgen = new ConsecutiveExecutor(executor, "worldgen");
          this.chunkStatusListener = chunkStatusListener;
-@@ -212,6 +_,12 @@
+@@ -211,6 +_,12 @@
          this.chunksToEagerlySave.add(chunkPos.pack());
      }
  
@@ -69,7 +71,7 @@
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
      }
-@@ -348,9 +_,9 @@
+@@ -347,9 +_,9 @@
              }
          });
          sb.append("Updating:").append(System.lineSeparator());
@@ -82,14 +84,14 @@
          CrashReportCategory category = report.addCategory("Chunk loading");
          category.setDetail("Details", details);
 @@ -385,6 +_,7 @@
-                     chunk.setTicketLevel(level);
-                 } else {
-                     chunk = new ChunkHolder(ChunkPos.unpack(node), level, this.level, this.lightEngine, this::onLevelChange, this);
-+                    ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkHolderCreate(this.level, chunk); // Paper
-                 }
+                 chunk.setTicketLevel(level);
+             } else {
+                 chunk = new ChunkHolder(ChunkPos.unpack(node), level, this.level, this.lightEngine, this::onLevelChange, this);
++                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkHolderCreate(this.level, chunk); // Paper
+             }
  
-                 this.updatingChunkMap.put(node, chunk);
-@@ -413,8 +_,8 @@
+             this.updatingChunkMap.put(node, chunk);
+@@ -412,8 +_,8 @@
  
      protected void saveAllChunks(final boolean flushStorage) {
          if (flushStorage) {
@@ -100,7 +102,7 @@
                  .stream()
                  .filter(ChunkHolder::wasAccessibleSinceLastSave)
                  .peek(ChunkHolder::refreshAccessibility)
-@@ -440,7 +_,7 @@
+@@ -439,7 +_,7 @@
              this.nextChunkSaveTime.clear();
              long now = Util.getMillis();
  
@@ -109,7 +111,7 @@
                  this.saveChunkIfNeeded(chunk, now);
              }
          }
-@@ -461,6 +_,7 @@
+@@ -460,6 +_,7 @@
      public boolean hasWork() {
          return this.lightEngine.hasLightWork()
              || !this.pendingUnloads.isEmpty()
@@ -117,7 +119,7 @@
              || !this.updatingChunkMap.isEmpty()
              || this.poiManager.hasWork()
              || !this.toDrop.isEmpty()
-@@ -519,7 +_,11 @@
+@@ -518,7 +_,11 @@
                  this.scheduleUnload(pos, chunkHolder);
              } else {
                  ChunkAccess chunk = chunkHolder.getLatestChunk();
@@ -130,7 +132,7 @@
                      if (chunk instanceof LevelChunk levelChunk) {
                          levelChunk.setLoaded(false);
                      }
-@@ -532,7 +_,9 @@
+@@ -531,7 +_,9 @@
                      this.lightEngine.updateChunkStatus(chunk.getPos());
                      this.lightEngine.tryScheduleUpdate();
                      this.nextChunkSaveTime.remove(chunk.getPos().pack());
@@ -141,7 +143,7 @@
              }
          }, this.unloadQueue::add).whenComplete((ignored, throwable) -> {
              if (throwable != null) {
-@@ -841,7 +_,7 @@
+@@ -842,7 +_,7 @@
      }
  
      public int size() {
@@ -150,7 +152,7 @@
      }
  
      public net.minecraft.server.level.DistanceManager getDistanceManager() {
-@@ -868,10 +_,10 @@
+@@ -869,10 +_,10 @@
              .addColumn("fluid_ticks")
              .build(output);
  
@@ -164,26 +166,27 @@
 +            ChunkHolder holder = entry; // Paper - Moonrise
              Optional<ChunkAccess> chunk = Optional.ofNullable(holder.getLatestChunk());
              Optional<LevelChunk> fullChunk = chunk.flatMap(
-                 chunkAccess -> chunkAccess instanceof LevelChunk ? Optional.of((LevelChunk)chunkAccess) : Optional.empty()
-@@ -920,14 +_,14 @@
+                 chunkAccess -> chunkAccess instanceof LevelChunk levelChunk ? Optional.of(levelChunk) : Optional.empty()
+@@ -921,14 +_,15 @@
          return this.upgradeChunkTag(
              tag,
              -1,
 -            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()),
-+            getChunkDataFixContextTag(this.level.getTypeKey(), this.generator().getTypeNameForDataFixer()), // CraftBukkit
++            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer(), this.level.getTypeKey()), // Paper - pass level stem
              SharedConstants.getCurrentVersion().dataVersion().version()
          );
      }
  
 -    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier) {
-+    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey, final Optional<Identifier> generatorIdentifier) { // CraftBukkit
++    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier, final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey) { // Paper - pass level stem
          CompoundTag contextTag = new CompoundTag();
 -        contextTag.putString("dimension", dimension.identifier().toString());
-+        contextTag.putString("dimension", stemKey.identifier().toString()); // CraftBukkit
++        contextTag.putString("dimension", stemKey.identifier().toString()); // Paper - pass level stem as dimension instead of passed dimension to run datafixers for non minecraft worlds.
++        contextTag.putString("level_identifier", dimension.identifier().toString()); // Paper - store dimension key for later lookup if needed.
          generatorIdentifier.ifPresent(identifier -> contextTag.putString("generator", identifier.toString()));
          return contextTag;
      }
-@@ -939,7 +_,7 @@
+@@ -940,7 +_,7 @@
              ChunkHolder holder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
              if (holder != null) {
                  LevelChunk chunk = holder.getTickingChunk();
@@ -192,7 +195,7 @@
                      output.add(chunk);
                  }
              }
-@@ -959,8 +_,14 @@
+@@ -960,8 +_,14 @@
      }
  
      public boolean anyPlayerCloseEnoughForSpawning(final ChunkPos pos) {
@@ -207,8 +210,8 @@
 +        // Spigot end
      }
  
-     boolean anyPlayerCloseEnoughTo(final BlockPos pos, final int maxDistance) {
-@@ -976,8 +_,24 @@
+     public boolean anyPlayerCloseEnoughTo(final BlockPos pos, final int maxDistance) {
+@@ -977,8 +_,24 @@
      }
  
      private boolean anyPlayerCloseEnoughForSpawningInternal(final ChunkPos pos) {
@@ -234,34 +237,35 @@
                  return true;
              }
          }
-@@ -993,7 +_,7 @@
-             Builder<ServerPlayer> builder = ImmutableList.builder();
+@@ -995,7 +_,7 @@
+         Builder<ServerPlayer> builder = ImmutableList.builder();
  
-             for (ServerPlayer player : this.playerMap.getAllPlayers()) {
--                if (this.playerIsCloseEnoughForSpawning(player, pos)) {
-+                if (this.playerIsCloseEnoughForSpawning(player, pos, 16384.0)) { // Spigot
-                     builder.add(player);
-                 }
+         for (ServerPlayer player : this.playerMap.getAllPlayers()) {
+-            if (this.playerIsCloseEnoughForSpawning(player, pos)) {
++            if (this.playerIsCloseEnoughForSpawning(player, pos, 16384.0)) { // Spigot
+                 builder.add(player);
              }
-@@ -1002,12 +_,12 @@
          }
+@@ -1003,13 +_,13 @@
+         return builder.build();
      }
  
 -    private boolean playerIsCloseEnoughForSpawning(final ServerPlayer player, final ChunkPos pos) {
 +    private boolean playerIsCloseEnoughForSpawning(final ServerPlayer player, final ChunkPos pos, final double range) { // Spigot
          if (player.isSpectator()) {
              return false;
-         } else {
-             double distanceToChunk = euclideanDistanceSquared(pos, player.position());
--            return distanceToChunk < 16384.0;
-+            return distanceToChunk < range; // Spigot
          }
+ 
+         double distanceToChunk = euclideanDistanceSquared(pos, player.position());
+-        return distanceToChunk < 16384.0;
++        return distanceToChunk < range; // Spigot
      }
  
-@@ -1136,9 +_,19 @@
+     private boolean playerIsCloseEnoughTo(final ServerPlayer player, final Vec3 pos, final int maxDistance) {
+@@ -1141,9 +_,19 @@
      }
  
-     public void addEntity(final Entity entity) {
+     protected void addEntity(final Entity entity) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
 +        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
 +        if (!entity.valid || entity.level() != this.level || this.entityMap.containsKey(entity.getId())) {
@@ -276,9 +280,9 @@
              int range = type.clientTrackingRange() * 16;
 +            range = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, range); // Spigot
              if (range != 0) {
-                 int updateInterval = type.updateInterval();
                  if (this.entityMap.containsKey(entity.getId())) {
-@@ -1162,6 +_,7 @@
+                     throw (IllegalStateException)Util.pauseInIde(new IllegalStateException("Entity is already tracked!"));
+@@ -1167,6 +_,7 @@
      }
  
      protected void removeEntity(final Entity entity) {
@@ -286,18 +290,20 @@
          if (entity instanceof ServerPlayer player) {
              this.updatePlayerStatus(player, false);
  
-@@ -1329,8 +_,8 @@
-         public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
-             Objects.requireNonNull(ChunkMap.this);
-             super();
--            this.seenBy = Sets.newIdentityHashSet();
+@@ -1323,10 +_,10 @@
+         private final Entity entity;
+         private final int range;
+         private SectionPos lastSectionPos;
+-        public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
++        public final Set<ServerPlayerConnection> seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
+ 
+         public TrackedEntity(final Entity entity, final int range, final UpdateInterval updateInterval, final boolean trackDelta) {
 -            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this);
-+            this.seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
 +            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this, this.seenBy); // Paper
              this.entity = entity;
              this.range = range;
              this.lastSectionPos = SectionPos.of(entity);
-@@ -1377,6 +_,7 @@
+@@ -1373,6 +_,7 @@
          }
  
          public void removePlayer(final ServerPlayer player) {
@@ -305,18 +311,18 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
                  if (this.seenBy.isEmpty()) {
-@@ -1386,23 +_,47 @@
+@@ -1382,23 +_,47 @@
          }
  
          public void updatePlayer(final ServerPlayer player) {
 +            org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
 -                Vec3 deltaToPlayer = player.position().subtract(this.entity.position());
-+                // Paper start - remove allocation of Vec3D here
++                // Paper start - remove allocation of Vec3 here
 +                // Vec3 deltaToPlayer = player.position().subtract(this.entity.position());
 +                double deltaToPlayerX = player.getX() - this.entity.getX();
 +                double deltaToPlayerZ = player.getZ() - this.entity.getZ();
-+                // Paper end - remove allocation of Vec3D here
++                // Paper end - remove allocation of Vec3 here
                  int playerViewDistance = ChunkMap.this.getPlayerViewDistance(player);
                  double visibleRange = Math.min(this.getEffectiveRange(), playerViewDistance * 16);
 -                double distanceSquared = deltaToPlayer.x * deltaToPlayer.x + deltaToPlayer.z * deltaToPlayer.z;
@@ -356,11 +362,11 @@
                      }
                  } else {
                      this.removePlayer(player);
-@@ -1419,6 +_,7 @@
+@@ -1415,6 +_,7 @@
  
              for (Entity passenger : this.entity.getIndirectPassengers()) {
                  int passengerRange = passenger.getType().clientTrackingRange() * 16;
-+                passengerRange = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, passengerRange); // Paper
++                passengerRange = org.spigotmc.TrackingRange.getEntityTrackingRange(passenger, passengerRange); // Paper
                  if (passengerRange > effectiveRange) {
                      effectiveRange = passengerRange;
                  }

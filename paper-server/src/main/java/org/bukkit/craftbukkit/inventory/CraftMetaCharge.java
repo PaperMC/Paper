@@ -11,7 +11,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
+public class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     static final ItemMetaKeyType<FireworkExplosion> EXPLOSION = new ItemMetaKeyType<>(DataComponents.FIREWORK_EXPLOSION, "firework-effect");
 
     private FireworkEffect effect;
