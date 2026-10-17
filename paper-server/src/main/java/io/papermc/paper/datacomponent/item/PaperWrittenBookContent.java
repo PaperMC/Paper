@@ -61,13 +61,12 @@ public record PaperWrittenBookContent(
 
     @Override
     public Builder toBuilder() {
+        final List<Filtered<? extends ComponentLike>> pages = new ObjectArrayList<>(this.pages().size());
+        this.pages().forEach(page -> pages.add(Filtered.of(page.raw(), page.filtered())));
         return new BuilderImpl(this.title(), this.author())
             .generation(this.generation())
             .resolved(this.resolved())
-            .pages(this.pages().stream() // todo check seems wrong
-                .map(Filtered::filtered)
-                .filter(Objects::nonNull)
-                .toList());
+            .filteredPages(pages);
     }
 
     @Override
