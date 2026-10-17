@@ -1428,24 +1428,26 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
 
     /**
-     * Add an additional rule of alliance with any entity.
+     * Add a rule of alliance with any entity.
+     * <br>
+     * If a rule with the specified {@link Key} already exists, it will be overwritten.
      *
-     * @param key the key of the additional rule
-     * @param predicate the additional rule of alliance with any entity
+     * @param key the key of the rule
+     * @param predicate the rule of alliance with any entity
      */
     void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<Entity> predicate);
 
     /**
-     * Remove the additional rule of alliance with any entity.
+     * Remove the rule of alliance with any entity.
      *
-     * @param key the key of the additional rule
+     * @param key the key of the rule
      */
     void removeAdditionalAlliedRule(@NotNull Key key);
 
     /**
-     * Remove the additional rules of alliance with any entity.
+     * Remove the rules of alliance with any entity.
      *
-     * @param namespaced the namespaced of the additional rule
+     * @param namespaced the namespaced of the rule
      */
     void removeAdditionalAlliedRule(@NotNull Namespaced namespaced);
 }
