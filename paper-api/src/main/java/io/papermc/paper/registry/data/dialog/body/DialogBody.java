@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import io.papermc.paper.item.ItemStackTemplate;
 import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.ItemStack;
@@ -41,6 +42,24 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
             .build();
     }
 
+    @Contract(pure = true, value = "_, _, _, _, _, _ -> new")
+    static ItemDialogBody item(
+        final ItemStackTemplate item,
+        final @Nullable PlainMessageDialogBody description,
+        final boolean showDecorations,
+        final boolean showTooltip,
+        final @Range(from = 1, to = 256) int width,
+        final @Range(from = 1, to = 256) int height
+    ) {
+        return item(item)
+            .description(description)
+            .showDecorations(showDecorations)
+            .showTooltip(showTooltip)
+            .width(width)
+            .height(height)
+            .build();
+    }
+
     /**
      * Creates a new item dialog body builder.
      *
@@ -49,6 +68,17 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      */
     @Contract(pure = true, value = "_ -> new")
     static ItemDialogBody.Builder item(final ItemStack item) {
+        return DialogInstancesProvider.instance().itemDialogBodyBuilder(item.getAsTemplate());
+    }
+
+    /**
+     * Creates a new item dialog body builder.
+     *
+     * @param item the item to display in the dialog
+     * @return a new item dialog body builder instance
+     */
+    @Contract(pure = true, value = "_ -> new")
+    static ItemDialogBody.Builder item(final ItemStackTemplate item) {
         return DialogInstancesProvider.instance().itemDialogBodyBuilder(item);
     }
 

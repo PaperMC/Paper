@@ -13,6 +13,7 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
@@ -394,6 +395,7 @@ public final class CraftServer implements Server {
          // Paper end
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
+        Conversions.initGlobalConversions();
 
         if (!Main.useConsole) {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
