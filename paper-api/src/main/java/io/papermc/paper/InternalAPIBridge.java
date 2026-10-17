@@ -9,11 +9,11 @@ import io.papermc.paper.persistence.PersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
-import java.util.function.Predicate;
 import java.io.IOException;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
@@ -26,14 +26,14 @@ import org.bukkit.block.Biome;
 import org.bukkit.command.CommandSender;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
-import org.bukkit.enchantments.EnchantmentOffer;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.damage.DamageType;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -129,15 +129,5 @@ public interface InternalAPIBridge {
 
     <C> PersistentDataKey<C> createPersistentDataKey(Key key, PersistentDataType<?, C> type);
 
-    /**
-     * Rolls a new set of enchantment offers based on a target item stack, a seed and a bookshelf count.
-     *
-     * @param targetStack    the itemstack for which the enchantment offers are rolled.
-     * @param seed           the seed used for random selection of enchantments.
-     *                       Mirrors {@link org.bukkit.inventory.view.EnchantmentView#getEnchantmentSeed()}.
-     * @param bookshelfCount the number of virtual bookshelves to consider when rolling the enchantments.
-     * @param offerAmount    the amount of enchantment offers to roll.
-     * @return an array of enchantment offers with size {@code offerAmount}.
-     */
-    @Nullable EnchantmentOffer[] rollEnchantmentOffers(final ItemStack targetStack, final int seed, final int bookshelfCount, final int offerAmount);
+    @Nullable EnchantmentOffer[] rollEnchantmentOffers(ItemStack targetStack, int seed, int bookshelfCount, int offerAmount);
 }
