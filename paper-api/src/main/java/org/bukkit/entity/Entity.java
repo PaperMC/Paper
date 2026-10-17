@@ -1428,7 +1428,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
 
     /**
-     * Sets the current additional rule of alliance with any entity.
+     * Add an additional rule of alliance with any entity.
      *
      * @param key the key of the additional rule
      * @param predicate the additional rule of alliance with any entity
