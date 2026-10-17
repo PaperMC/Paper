@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,14 +33,14 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @return The size of the inventory
      */
-    public int getSize();
+    int getSize();
 
     /**
      * Returns the maximum stack size for an ItemStack in this inventory.
      *
      * @return The maximum size for an ItemStack in this inventory.
      */
-    public int getMaxStackSize();
+    int getMaxStackSize();
 
     /**
      * This method allows you to change the maximum stack size for an
@@ -58,8 +59,9 @@ public interface Inventory extends Iterable<ItemStack> {
      * </ul>
      *
      * @param size The new maximum stack size for items in this inventory.
+     * @throws IllegalArgumentException if size is negative
      */
-    public void setMaxStackSize(int size);
+    void setMaxStackSize(@NonNegative int size);
 
     /**
      * Returns the ItemStack found in the slot at the given index
