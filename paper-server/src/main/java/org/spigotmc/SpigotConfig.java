@@ -243,23 +243,11 @@ public class SpigotConfig {
         SpigotConfig.playerShuffle = SpigotConfig.getInt("settings.player-shuffle", 0);
     }
 
-    public static boolean enableSpamExclusions = false;
+    public static boolean enableSpamExclusions = true;
     public static List<String> spamExclusions;
     private static void spamExclusions() {
         SpigotConfig.spamExclusions = SpigotConfig.getList("commands.spam-exclusions", List.of("/skill"));
-        Object enabled = SpigotConfig.config.get("commands.enable-spam-exclusions");
-        if (enabled instanceof Boolean value) {
-            SpigotConfig.enableSpamExclusions = value;
-        } else {
-            if (spamExclusions.size() == 1 && Objects.equals(spamExclusions.getFirst(), "/skill")) {
-                SpigotConfig.enableSpamExclusions = false;
-                SpigotConfig.set("commands.enable-spam-exclusions", false);
-            } else {
-                SpigotConfig.enableSpamExclusions = true;
-                SpigotConfig.set("commands.enable-spam-exclusions", true);
-            }
-        }
-
+        SpigotConfig.enableSpamExclusions = SpigotConfig.getBoolean("commands.enable-spam-exclusions", true);
     }
 
     public static boolean silentCommandBlocks;
