@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Mon, 16 Feb 2026 23:35:37 +0200
+Subject: [PATCH] Speculative portal chunk loading
+
+Nether portals loading chunks on the main thread is a big cause of lag, freezing the server upwards of 1-2 seconds.
+Since there isn't an easy way to load these chunks async, we can instead preload them, as it takes some time for survival players to travel through a portal.
+This shouldn't break any vanilla behaviour as the chunk ticket does not simulate.
+
+diff --git a/net/minecraft/server/level/TicketType.java b/net/minecraft/server/level/TicketType.java
+index 6d5bfc6..fc772bf 100644
+--- a/net/minecraft/server/level/TicketType.java
++++ b/net/minecraft/server/level/TicketType.java
+@@ -68,6 +68,7 @@ public final class TicketType<T> implements ca.spottedleaf.moonrise.patches.chun
+     public static final TicketType PLUGIN_TICKET = register("plugin_ticket", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); static { ((TicketType<org.bukkit.plugin.Plugin>)PLUGIN_TICKET).moonrise$setIdentifierComparator((org.bukkit.plugin.Plugin p1, org.bukkit.plugin.Plugin p2) -> p1.getName().compareTo(p2.getName())); } // Paper // Paper - rewrite chunk system
+     public static final TicketType FUTURE_AWAIT = register("future_await", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // Paper
+     public static final TicketType CHUNK_LOAD = register("chunk_load", NO_TIMEOUT, FLAG_LOADING); // Paper - moonrise
++    public static final TicketType SPECULATIVE_PORTAL = Registry.register(BuiltInRegistries.TICKET_TYPE, "speculative_portal", new TicketType<>(300L, FLAG_LOADING | FLAG_KEEP_DIMENSION_ACTIVE)); // Paper - Speculative portal loading
+ 
+     private static TicketType register(String name, long timeout, @TicketType.Flags int flags) {
+         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, flags));
+
+
+diff --git a/net/minecraft/world/entity/PortalProcessor.java b/net/minecraft/world/entity/PortalProcessor.java
+index 4e69e32..5b41a8a 100644
+--- a/net/minecraft/world/entity/PortalProcessor.java
++++ b/net/minecraft/world/entity/PortalProcessor.java
+@@ -6,6 +6,8 @@ import net.minecraft.world.level.block.Portal;
+ import net.minecraft.world.level.portal.TeleportTransition;
+ import org.jspecify.annotations.Nullable;
+ 
++import static net.minecraft.server.level.TicketType.SPECULATIVE_PORTAL;
++
+ public class PortalProcessor {
+     private final Portal portal;
+     private BlockPos entryPosition;
+@@ -24,9 +26,50 @@ public class PortalProcessor {
+             return false;
+         } else {
+             this.insidePortalThisTick = false;
+-            return canChangeDimensions && this.portalTime++ >= this.portal.getPortalTransitionTime(level, entity);
++
++            // Paper start - Portal speculator
++            int transitionTime = this.portal.getPortalTransitionTime(level, entity);
++
++            if (level.paperConfig().environment.netherPortalPreloadingTicksBefore.enabled()) {
++                int ticksBefore = level.paperConfig().environment.netherPortalPreloadingTicksBefore.intValue();
++                if (canChangeDimensions && this.portalTime == transitionTime - ticksBefore && portal instanceof net.minecraft.world.level.block.NetherPortalBlock) {
++                    preloadPortalDestinationChunks(level, entity);
++                }
++            }
++
++            return canChangeDimensions && this.portalTime++ >= transitionTime;
++            // Paper end
++        }
++    }
++
++    // Paper start - Portal speculator, copying from NetherPortalBlock.getPortalDestination()
++    private void preloadPortalDestinationChunks(ServerLevel sourceLevel, Entity entity) {
++        net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> resourceKey = sourceLevel.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER ? net.minecraft.world.level.Level.OVERWORLD : net.minecraft.world.level.Level.NETHER;
++        ServerLevel destinationLevel = sourceLevel.getServer().getLevel(resourceKey);
++
++        boolean flag = destinationLevel.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER;
++        net.minecraft.world.level.border.WorldBorder worldBorder = destinationLevel.getWorldBorder();
++        double teleportationScale = net.minecraft.world.level.dimension.DimensionType.getTeleportationScale(sourceLevel.dimensionType(), destinationLevel.dimensionType());
++        BlockPos blockPos = worldBorder.clampToBounds(entity.getX() * teleportationScale, entity.getY(), entity.getZ() * teleportationScale);
++
++        int portalSearchRadius = destinationLevel.paperConfig().environment.portalSearchRadius;
++        if (entity.level().paperConfig().environment.portalSearchVanillaDimensionScaling && flag) { // flag = is going to nether
++            portalSearchRadius = (int) (portalSearchRadius / destinationLevel.dimensionType().coordinateScale());
+         }
++
++        addLoadingTicketToChunks(destinationLevel, blockPos, portalSearchRadius);
++    }
++
++    private void addLoadingTicketToChunks(ServerLevel level, BlockPos center, int portalSearchRadius) {
++        net.minecraft.server.level.ServerChunkCache chunkSource = level.getChunkSource();
++
++        int chunkRadius = (portalSearchRadius + 15) >> 4;
++
++        chunkSource.addTicketAndLoadWithRadius(SPECULATIVE_PORTAL, new net.minecraft.world.level.ChunkPos(center), chunkRadius,
++            ca.spottedleaf.concurrentutil.util.Priority.HIGHEST
++        );
+     }
++    // Paper end
+ 
+     public @Nullable TeleportTransition getPortalDestination(ServerLevel level, Entity entity) {
+         return this.portal.getPortalDestination(level, entity, this.entryPosition);
+
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index af67b07..c1f2f63 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -679,9 +679,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     }
+ 
+     public CompletableFuture<?> addTicketAndLoadWithRadius(TicketType ticketType, ChunkPos chunkPos, int radius) {
++        return addTicketAndLoadWithRadius(ticketType, chunkPos, radius, ca.spottedleaf.concurrentutil.util.Priority.NORMAL);
++    }
++
++    public CompletableFuture<?> addTicketAndLoadWithRadius(TicketType ticketType, ChunkPos chunkPos, int radius, ca.spottedleaf.concurrentutil.util.Priority priority) {
+         // Paper start - rewrite chunk system
+-        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAndLoadWithRadius(
+-            ticketType, chunkPos, radius, ChunkStatus.FULL, ca.spottedleaf.concurrentutil.util.Priority.NORMAL
++        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAndLoadWithRadius(
++            ticketType, chunkPos, radius, ChunkStatus.FULL, priority
+         );
+         // Paper end - rewrite chunk system
+     }
