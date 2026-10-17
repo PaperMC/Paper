@@ -1403,13 +1403,16 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     // Paper start - swing hand API
     /**
-     * Makes this entity swing their hand.
+     * Makes this entity swing their hand, using the {@link io.papermc.paper.datacomponent.DataComponentTypes#ATTACK_ANIMATION}
+     * component on the item held in that hand to determine the animation type and duration.
+     * If the held item does not have the component, the default {@link io.papermc.paper.datacomponent.item.SwingAnimation.Animation#WHACK}
+     * animation with a duration of {@code 6} ticks is used.
      *
      * <p>This method does nothing if this entity does not
      * have an animation for swinging their hand.
      *
      * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
-     * @throws IllegalArgumentException if invalid hand is passed
+     * @throws IllegalArgumentException if an invalid hand is passed
      */
     default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
         com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
@@ -1419,6 +1422,19 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
             this.swingOffHand();
         }
     }
+
+    /**
+     * Makes this entity swing their hand using the provided {@link io.papermc.paper.datacomponent.item.SwingAnimation},
+     * instead of the swing animation component the held item may have.
+     *
+     * <p>This method does nothing if this entity does not
+     * have an animation for swinging their hand.
+     *
+     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
+     * @param swingAnimation the swing animation to use
+     * @throws IllegalArgumentException if an invalid hand is passed
+     */
+    void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand, @NotNull io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation);
     // Paper end - swing hand API
 
     // Paper start - knockback API
