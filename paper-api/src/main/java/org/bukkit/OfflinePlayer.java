@@ -12,7 +12,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.profile.PlayerProfile;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -589,7 +588,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     // Paper end - add pdc to offline player
 
     @Override
-    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.@NonNull Builder builder) {
-        builder.id(this.getUniqueId());
+    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
+        builder.skin(this.getPlayerProfile());
     }
 }

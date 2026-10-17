@@ -2,6 +2,8 @@ package org.bukkit.generator.structure;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represent a Structure from the world.
- *
+ * <p>
  * Listed structures are present in the default server. Depending on the server
  * there might be additional structures present (for example structures added by
  * data packs), which can be received via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}.
@@ -17,6 +19,42 @@ import org.jetbrains.annotations.NotNull;
 public abstract class Structure implements Keyed {
 
     // Start generate - Structure
+    public static final Structure ABANDONED_CAMP_BAMBOO_JUNGLE = getStructure("abandoned_camp_bamboo_jungle");
+
+    public static final Structure ABANDONED_CAMP_BIRCH_FOREST = getStructure("abandoned_camp_birch_forest");
+
+    public static final Structure ABANDONED_CAMP_CHERRY_GROVE = getStructure("abandoned_camp_cherry_grove");
+
+    public static final Structure ABANDONED_CAMP_DAPPLED_FOREST = getStructure("abandoned_camp_dappled_forest");
+
+    public static final Structure ABANDONED_CAMP_FLOWER_FOREST = getStructure("abandoned_camp_flower_forest");
+
+    public static final Structure ABANDONED_CAMP_FOREST = getStructure("abandoned_camp_forest");
+
+    public static final Structure ABANDONED_CAMP_MEADOW = getStructure("abandoned_camp_meadow");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_BIRCH_FOREST = getStructure("abandoned_camp_old_growth_birch_forest");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_PINE_TAIGA = getStructure("abandoned_camp_old_growth_pine_taiga");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_SPRUCE_TAIGA = getStructure("abandoned_camp_old_growth_spruce_taiga");
+
+    public static final Structure ABANDONED_CAMP_PALE_GARDEN = getStructure("abandoned_camp_pale_garden");
+
+    public static final Structure ABANDONED_CAMP_SAVANNA = getStructure("abandoned_camp_savanna");
+
+    public static final Structure ABANDONED_CAMP_SNOWY_TAIGA = getStructure("abandoned_camp_snowy_taiga");
+
+    public static final Structure ABANDONED_CAMP_SPARSE_JUNGLE = getStructure("abandoned_camp_sparse_jungle");
+
+    public static final Structure ABANDONED_CAMP_SWAMP = getStructure("abandoned_camp_swamp");
+
+    public static final Structure ABANDONED_CAMP_TAIGA = getStructure("abandoned_camp_taiga");
+
+    public static final Structure ABANDONED_CAMP_WINDSWEPT_FOREST = getStructure("abandoned_camp_windswept_forest");
+
+    public static final Structure ABANDONED_CAMP_WOODED_BADLANDS = getStructure("abandoned_camp_wooded_badlands");
+
     public static final Structure ANCIENT_CITY = getStructure("ancient_city");
 
     public static final Structure BASTION_REMNANT = getStructure("bastion_remnant");
@@ -87,8 +125,8 @@ public abstract class Structure implements Keyed {
     // End generate - Structure
 
     @NotNull
-    private static Structure getStructure(@NotNull String name) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).getOrThrow(NamespacedKey.minecraft(name));
+    private static Structure getStructure(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**

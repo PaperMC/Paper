@@ -173,6 +173,13 @@ public final class EnchantmentKeys {
     public static final TypedKey<Enchantment> LUCK_OF_THE_SEA = create(key("luck_of_the_sea"));
 
     /**
+     * {@code minecraft:lunge}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Enchantment> LUNGE = create(key("lunge"));
+
+    /**
      * {@code minecraft:lure}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

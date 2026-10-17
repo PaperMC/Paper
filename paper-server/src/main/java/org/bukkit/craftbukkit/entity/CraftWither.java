@@ -11,14 +11,11 @@ import org.bukkit.entity.Wither;
 
 public class CraftWither extends CraftMonster implements Wither, com.destroystokyo.paper.entity.CraftRangedEntity<WitherBoss> { // Paper
 
-    private BossBar bossBar;
+    private final BossBar bossBar;
 
     public CraftWither(CraftServer server, WitherBoss entity) {
         super(server, entity);
-
-        if (entity.bossEvent != null) {
-            this.bossBar = new CraftBossBar(entity.bossEvent);
-        }
+        this.bossBar = new CraftBossBar(entity.bossEvent);
     }
 
     @Override
@@ -47,8 +44,8 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
         if (entityId == 0) {
             return null;
         }
-        Entity target = this.getHandle().level().getEntity(entityId);
-        return (target != null) ? (LivingEntity) target.getBukkitEntity() : null;
+        net.minecraft.world.entity.LivingEntity target = (net.minecraft.world.entity.LivingEntity) this.getHandle().level().getEntity(entityId);
+        return (target != null) ? target.getBukkitEntity() : null;
     }
 
     @Override

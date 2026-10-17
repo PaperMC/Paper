@@ -50,7 +50,7 @@ public class GeneratedTagKeyType extends SimpleGenerator {
             .addCode("return $T.create($T.$L, $N);", TagKey.class, RegistryKey.class, this.entry.registryKeyField(), keyParam)
             .returns(returnType);
         if (publicCreateKeyMethod) {
-            create.addJavadoc(Javadocs.CREATED_TAG_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().location().toString());
+            create.addJavadoc(Javadocs.CREATED_TAG_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().identifier().toString());
         }
         return create;
     }

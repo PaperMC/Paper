@@ -8,15 +8,15 @@ import org.bukkit.entity.Horse;
 import org.bukkit.entity.Llama;
 import org.bukkit.inventory.LlamaInventory;
 
-public class CraftLlama extends CraftChestedHorse implements Llama, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.animal.horse.Llama> { // Paper
+public class CraftLlama extends CraftChestedHorse implements Llama, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.animal.equine.Llama> { // Paper
 
-    public CraftLlama(CraftServer server, net.minecraft.world.entity.animal.horse.Llama entity) {
+    public CraftLlama(CraftServer server, net.minecraft.world.entity.animal.equine.Llama entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.horse.Llama getHandle() {
-        return (net.minecraft.world.entity.animal.horse.Llama) this.entity;
+    public net.minecraft.world.entity.animal.equine.Llama getHandle() {
+        return (net.minecraft.world.entity.animal.equine.Llama) this.entity;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public void setColor(Color color) {
         Preconditions.checkArgument(color != null, "color");
 
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.horse.Llama.Variant.byId(color.ordinal()));
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.equine.Llama.Variant.byId(color.ordinal()));
     }
 
     @Override

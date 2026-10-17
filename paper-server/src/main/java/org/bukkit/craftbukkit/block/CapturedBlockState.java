@@ -5,7 +5,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -15,7 +15,7 @@ public final class CapturedBlockState extends CraftBlockState {
 
     private final boolean treeBlock;
 
-    public CapturedBlockState(Block block, int capturedFlags, boolean treeBlock) {
+    public CapturedBlockState(Block block, @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags, boolean treeBlock) {
         super(block, capturedFlags);
 
         this.treeBlock = treeBlock;
@@ -38,7 +38,7 @@ public final class CapturedBlockState extends CraftBlockState {
     }
 
     @Override
-    public boolean place(int flags) {
+    public boolean place(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         boolean result = super.place(flags);
         this.addBees();
 
@@ -48,19 +48,18 @@ public final class CapturedBlockState extends CraftBlockState {
     private void addBees() {
         // SPIGOT-5537: Horrible hack to manually add bees given Level#captureTreeGeneration does not support block entities
         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
-            WorldGenLevel worldGenLevel = this.world.getHandle();
+            WorldGenLevel level = this.world.getHandle();
             BlockPos pos = this.getPosition();
-            RandomSource randomSource = worldGenLevel.getRandom();
+            RandomSource random = level.getRandom();
 
-            // Begin copied block from BeehiveDecorator
-            worldGenLevel.getBlockEntity(pos, BlockEntityType.BEEHIVE).ifPresent(beehiveBlockEntity -> {
-                int i1 = 2 + randomSource.nextInt(2);
+            // copied from BeehiveDecorator
+            level.getBlockEntity(pos, BlockEntityTypes.BEEHIVE).ifPresent(beehive -> {
+                int numBees = 2 + random.nextInt(2);
 
-                for (int i2 = 0; i2 < i1; i2++) {
-                    beehiveBlockEntity.storeBee(BeehiveBlockEntity.Occupant.create(randomSource.nextInt(599)));
+                for (int count = 0; count < numBees; count++) {
+                    beehive.storeBee(BeehiveBlockEntity.Occupant.create(random.nextInt(599)));
                 }
             });
-            // End copied block
         }
     }
 
@@ -74,7 +73,7 @@ public final class CapturedBlockState extends CraftBlockState {
         return new CapturedBlockState(this, location);
     }
 
-    public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, int flag) {
-        return new CapturedBlockState(CraftBlock.at(world, pos), flag, true);
+    public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
+        return new CapturedBlockState(CraftBlock.at(world, pos), flags, true);
     }
 }

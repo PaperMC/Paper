@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite(failIfNoTests = false)
 @SuiteDisplayName("Test suite for standalone tests, which don't need any registry values present")
 @IncludeTags("Normal")
-@SelectPackages({"org.bukkit", "io.papermc"})
+@SelectPackages({"org.bukkit", "io.papermc.paper", "com.destroystokyo.paper"})
 @ConfigurationParameter(key = "TestSuite", value = "Normal")
 public class NormalTestSuite {
 }

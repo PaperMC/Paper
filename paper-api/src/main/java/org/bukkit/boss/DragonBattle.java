@@ -76,14 +76,14 @@ public interface DragonBattle {
     /**
      * Try to initiate a respawn sequence to summon the dragon.
      *
-     * @param enderCrystals the {@link EnderCrystal EnderCrystals} to use in the
+     * @param crystals the {@link EnderCrystal EnderCrystals} to use in the
      * respawn, or a null or empty list to render the respawn sequence
      * uncancellable. null entries or crystals that do not reside in the same
      * world as this dragon battle will be ignored.
      *
      * @return true if the respawn was initiated, false otherwise.
      */
-    public boolean initiateRespawn(@Nullable Collection<EnderCrystal> enderCrystals);
+    public boolean initiateRespawn(@Nullable Collection<EnderCrystal> crystals);
 
     /**
      * Get this battle's current respawn phase.

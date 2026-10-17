@@ -6,7 +6,7 @@ import org.bukkit.entity.ZombieHorse;
 
 public class CraftZombieHorse extends CraftAbstractHorse implements ZombieHorse {
 
-    public CraftZombieHorse(CraftServer server, net.minecraft.world.entity.animal.horse.ZombieHorse entity) {
+    public CraftZombieHorse(CraftServer server, net.minecraft.world.entity.animal.equine.ZombieHorse entity) {
         super(server, entity);
     }
 

@@ -1,19 +1,19 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.animal.sheep.Sheep;
-import net.minecraft.world.entity.monster.SpellcasterIllager;
+import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Evoker;
 
 public class CraftEvoker extends CraftSpellcaster implements Evoker {
 
-    public CraftEvoker(CraftServer server, net.minecraft.world.entity.monster.Evoker entity) {
+    public CraftEvoker(CraftServer server, net.minecraft.world.entity.monster.illager.Evoker entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.monster.Evoker getHandle() {
-        return (net.minecraft.world.entity.monster.Evoker) this.entity;
+    public net.minecraft.world.entity.monster.illager.Evoker getHandle() {
+        return (net.minecraft.world.entity.monster.illager.Evoker) this.entity;
     }
 
     @Override

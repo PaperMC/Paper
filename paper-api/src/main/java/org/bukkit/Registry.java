@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -196,7 +197,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MenuType
      */
-    @ApiStatus.Experimental
     Registry<MenuType> MENU = registryFor(RegistryKey.MENU);
     /**
      * Server mob effects.
@@ -281,6 +281,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
     /**
+     * Point of interest types.
+     *
+     * @see PoiType
+     */
+    Registry<PoiType> POINT_OF_INTEREST_TYPE = registryFor(RegistryKey.POINT_OF_INTEREST_TYPE);
+    /**
      * Villager type.
      *
      * @see Villager.Type
@@ -348,7 +354,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see DataComponentType
      */
-    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
+    /**
+     * Game rules.
+     *
+     * @see GameRule
+     */
+    Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
@@ -490,7 +502,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see #hasTag(TagKey)
      * @see #getTagValues(TagKey)
      */
-    @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
 
     /**
@@ -503,7 +514,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see #getTag(TagKey)
      * @see Tag#resolve(Registry)
      */
-    @ApiStatus.Experimental
     default Collection<T> getTagValues(final TagKey<T> key) {
         Tag<T> tag = this.getTag(key);
         return tag.resolve(this);
@@ -515,7 +525,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @return a stream of all tags in this registry
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      */
-    @ApiStatus.Experimental
     Collection<Tag<T>> getTags();
     // Paper end - RegistrySet API
 
@@ -557,7 +566,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
-    // Paper
     @Deprecated(forRemoval = true)
     default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");

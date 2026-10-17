@@ -5,13 +5,13 @@ import org.bukkit.entity.Rabbit;
 
 public class CraftRabbit extends CraftAnimals implements Rabbit {
 
-    public CraftRabbit(CraftServer server, net.minecraft.world.entity.animal.Rabbit entity) {
+    public CraftRabbit(CraftServer server, net.minecraft.world.entity.animal.rabbit.Rabbit entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Rabbit getHandle() {
-        return (net.minecraft.world.entity.animal.Rabbit) this.entity;
+    public net.minecraft.world.entity.animal.rabbit.Rabbit getHandle() {
+        return (net.minecraft.world.entity.animal.rabbit.Rabbit) this.entity;
     }
 
     @Override
@@ -21,7 +21,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
 
     @Override
     public void setRabbitType(Type type) {
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.Rabbit.Variant.values()[type.ordinal()]);
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.values()[type.ordinal()]);
     }
 
     @Override

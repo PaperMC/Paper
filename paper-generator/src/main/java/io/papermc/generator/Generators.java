@@ -7,7 +7,7 @@ import io.papermc.generator.types.goal.MobGoalGenerator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

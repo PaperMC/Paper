@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 public final class ShortList {
 
-    private final Short2ShortOpenHashMap map = new Short2ShortOpenHashMap();
+    private final Short2ShortOpenHashMap map = new Short2ShortOpenHashMap(0);
     {
         this.map.defaultReturnValue(Short.MIN_VALUE);
     }
@@ -24,10 +24,14 @@ public final class ShortList {
     }
 
     public void setMinCapacity(final int len) {
+        if (len <= 0) {
+            return;
+        }
         final short[] byIndex = this.byIndex;
         if (byIndex.length < len) {
             this.byIndex = Arrays.copyOf(byIndex, len);
         }
+        this.map.ensureCapacity(len);
     }
 
     public boolean add(final short value) {

@@ -10,8 +10,8 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class CraftEndGateway extends CraftBlockEntityState<TheEndGatewayBlockEntity> implements EndGateway {
 
-    public CraftEndGateway(World world, TheEndGatewayBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftEndGateway(World world, TheEndGatewayBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftEndGateway(CraftEndGateway state, Location location) {
@@ -31,7 +31,7 @@ public class CraftEndGateway extends CraftBlockEntityState<TheEndGatewayBlockEnt
         } else if (!Objects.equals(location.getWorld(), this.isPlaced() ? this.getWorld() : null)) {
             throw new IllegalArgumentException("Cannot set exit location to different world");
         } else {
-            this.getSnapshot().exitPortal = CraftLocation.toBlockPosition(location);
+            this.getSnapshot().exitPortal = CraftLocation.toBlockPos(location);
         }
     }
 

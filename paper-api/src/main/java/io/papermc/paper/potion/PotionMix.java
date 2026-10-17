@@ -5,14 +5,18 @@ import java.util.function.Predicate;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.RecipeChoice;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potion mix made in a Brewing Stand.
+ *
+ * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
  */
 @NullMarked
+@Deprecated(since = "26.3", forRemoval = true)
 public final class PotionMix implements Keyed {
 
     private final NamespacedKey key;
@@ -41,10 +45,12 @@ public final class PotionMix implements Keyed {
      *
      * @param stackPredicate a predicate for an itemstack.
      * @return a new RecipeChoice
+     * @deprecated use {@link RecipeChoice#predicateChoice(Predicate, ItemStack)}
      */
     @Contract(value = "_ -> new", pure = true)
+    @Deprecated(since = "26.2")
     public static RecipeChoice createPredicateChoice(final Predicate<? super ItemStack> stackPredicate) {
-        return new PredicateRecipeChoice(stackPredicate);
+        return RecipeChoice.predicateChoice(stackPredicate, ItemType.STONE.createItemStack());
     }
 
     @Override

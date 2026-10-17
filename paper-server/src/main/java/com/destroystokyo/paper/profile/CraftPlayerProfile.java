@@ -1,20 +1,33 @@
 package com.destroystokyo.paper.profile;
 
 import com.google.common.base.Preconditions;
-import com.mojang.authlib.yggdrasil.ProfileResult;
-import com.mojang.datafixers.util.Either;
+import com.mojang.authlib.services.ProfileResult;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.papermc.paper.profile.MutablePropertyMap;
-import net.minecraft.Util;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.StringUtil;
-import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -24,12 +37,6 @@ import org.bukkit.craftbukkit.profile.CraftPlayerTextures;
 import org.bukkit.craftbukkit.profile.CraftProfileProperty;
 import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @SerializableAs("PlayerProfile")
 public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
@@ -77,7 +84,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
         PropertyMap properties = profile.properties();
         properties.removeAll(name);
 
-        Preconditions.checkArgument(properties.size() < 16, "Cannot add more than 16 properties to a profile");
+        Preconditions.checkArgument(properties.size() < ExtraCodecs.MAX_PROPERTIES, "Cannot add more than %s properties to a profile", ExtraCodecs.MAX_PROPERTIES);
         properties.put(name, new Property(name, property.getValue(), property.getSignature()));
     }
 
@@ -187,8 +194,12 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 
     @Override
     public @NotNull ResolvableProfile buildResolvableProfile() {
-        if (emptyName != emptyUUID && this.properties.isEmpty()) {
-            return new ResolvableProfile.Dynamic(emptyName ? Either.right(this.profile.id()) : Either.left(this.profile.name()), PlayerSkin.Patch.EMPTY);
+        if (this.emptyName != this.emptyUUID && this.properties.isEmpty()) {
+            if (this.emptyName) {
+                return ResolvableProfile.createUnresolved(this.profile.id());
+            } else {
+                return ResolvableProfile.createUnresolved(this.profile.name());
+            }
         }
         return ResolvableProfile.createResolved(this.buildGameProfile());
     }
@@ -406,7 +417,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     public String toString() {
         return "CraftPlayerProfile [uniqueId=" + getId() +
             ", name=" + getName() +
-            ", properties=" + org.bukkit.craftbukkit.profile.CraftPlayerProfile.toString(this.profile.properties()) +
+            ", properties=" + this.profile.properties() +
             "]";
     }
 

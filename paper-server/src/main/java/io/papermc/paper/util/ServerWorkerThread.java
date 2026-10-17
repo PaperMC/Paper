@@ -1,7 +1,7 @@
 package io.papermc.paper.util;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 
 public class ServerWorkerThread extends Thread {
     private static final AtomicInteger threadId = new AtomicInteger(1);

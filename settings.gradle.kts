@@ -11,17 +11,17 @@ plugins {
 
 if (!file(".git").exists()) {
     val errorText = """
-        
+
         =====================[ ERROR ]=====================
          The Paper project directory is not a properly cloned Git repository.
-         
+
          In order to build Paper from source you must clone
          the Paper repository using Git, not download a code
          zip from GitHub.
-         
+
          Built Paper jars are available for download at
          https://papermc.io/downloads/paper
-         
+
          See https://github.com/PaperMC/Paper/blob/main/CONTRIBUTING.md
          for further information on building and modifying Paper.
         ===================================================
@@ -35,6 +35,8 @@ for (name in listOf("paper-api", "paper-server")) {
     include(name)
     file(name).mkdirs()
 }
+
+include("paper-checkstyle")
 
 optionalInclude("test-plugin")
 optionalInclude("paper-generator")
@@ -53,6 +55,18 @@ fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
             """.trimIndent()
         )
     }
+}
+
+gradle.lifecycle.beforeProject {
+    val mcVersion = providers.gradleProperty("mcVersion").get().trim()
+    val paperVersionChannel = providers.gradleProperty("channel").get().trim()
+    val paperBuildNumber = providers.environmentVariable("BUILD_NUMBER").orNull?.trim()?.toInt()
+    val versionString = if (paperBuildNumber == null) {
+        "$mcVersion.local-SNAPSHOT"
+    } else {
+        "$mcVersion.build.$paperBuildNumber-${paperVersionChannel.lowercase()}"
+    }
+    version = versionString
 }
 
 if (providers.gradleProperty("paperBuildCacheEnabled").orNull.toBoolean()) {

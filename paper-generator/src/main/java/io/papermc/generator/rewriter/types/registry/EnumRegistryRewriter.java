@@ -48,9 +48,9 @@ public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
 
     @Override
     protected EnumValue.Builder rewriteEnumValue(Holder.Reference<T> reference) {
-        EnumValue.Builder value = EnumValue.builder(Formatting.formatKeyAsField(reference.key().location().getPath()));
+        EnumValue.Builder value = EnumValue.builder(Formatting.formatKeyAsField(reference.key().identifier().getPath()));
         if (this.hasKeyArgument) {
-            value.argument(quoted(reference.key().location().getPath()));
+            value.argument(quoted(reference.key().identifier().getPath()));
         }
         return value;
     }

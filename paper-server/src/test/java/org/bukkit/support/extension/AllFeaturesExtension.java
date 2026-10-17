@@ -33,12 +33,11 @@ public class AllFeaturesExtension extends BaseExtension {
         RegistryHelper.setup(FeatureFlags.REGISTRY.allFlags());
 
         Server server = DummyServerHelper.setup();
-
         Bukkit.setServer(server);
 
         // Paper - Add RegistryAccess for managing registries - replaced with registry access
 
-        CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+        CraftRegistry.setMinecraftRegistry(RegistryHelper.registryAccess());
     }
 
     @Override
