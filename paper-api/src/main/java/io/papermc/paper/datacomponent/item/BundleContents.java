@@ -7,14 +7,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds all items stored inside of a Bundle.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BUNDLE_CONTENTS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BundleContents extends BuildableDataComponent<BundleContents, BundleContents.Builder> {
 
@@ -39,7 +36,6 @@ public interface BundleContents extends BuildableDataComponent<BundleContents, B
     /**
      * Builder for {@link BundleContents}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BundleContents> {
 

@@ -7,15 +7,12 @@ import org.bukkit.map.MapCursor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps).
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MAP_DECORATIONS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface MapDecorations extends BuildableDataComponent<MapDecorations, MapDecorations.Builder> {
 
@@ -31,7 +28,7 @@ public interface MapDecorations extends BuildableDataComponent<MapDecorations, M
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static DecorationEntry decorationEntry(final MapCursor.Type type, final double x, final double z, final float rotation) {
-        return ItemComponentTypesBridge.bridge().decorationEntry(type, x, z, rotation);
+        return ItemComponentTypesBridge.bridge().mapDecorationEntry(type, x, z, rotation);
     }
 
     /**
@@ -54,7 +51,6 @@ public interface MapDecorations extends BuildableDataComponent<MapDecorations, M
     /**
      * Decoration present on the map.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface DecorationEntry {
 
@@ -95,7 +91,6 @@ public interface MapDecorations extends BuildableDataComponent<MapDecorations, M
      * Builder for {@link MapDecorations}.
      */
     @ApiStatus.NonExtendable
-    @ApiStatus.Experimental
     interface Builder extends DataComponentBuilder<MapDecorations> {
 
         /**

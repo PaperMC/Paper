@@ -1,9 +1,11 @@
+import io.papermc.paperweight.checkstyle.JavadocTag
 import paper.libs.com.google.gson.Gson
 
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 java {
@@ -11,17 +13,26 @@ java {
     withJavadocJar()
 }
 
-val annotationsVersion = "26.0.2"
+val projectCustomJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+paperCheckstyle {
+    customJavadocTags = projectCustomJavadocTags
+    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
+}
+
+val annotationsVersion = "26.1.0"
 val adventureVersion = "5.2.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
 val log4jVersion = "2.26.0"
 
-val apiAndDocs: Configuration by configurations.creating
+val apiAndDocs: Configuration = configurations.create("apiAndDocs")
 configurations.api {
     extendsFrom(apiAndDocs)
 }
-val javadocSourcepath: Configuration by configurations.creating {
+val javadocSourcepath: Configuration = configurations.create("javadocSourcepath") {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
@@ -46,13 +57,11 @@ dependencies {
     api("com.google.guava:guava:33.6.0-jre")
     api("com.google.code.gson:gson:2.14.0")
     api("org.yaml:snakeyaml:2.2")
-    api("org.joml:joml:1.10.8") {
-        isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
-    }
+    api("org.joml:joml:1.10.9")
     api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
-    api("com.mojang:brigadier:1.3.10")
+    api("com.mojang:brigadier:1.3.11")
 
     // Deprecate bungeecord-chat in favor of adventure
     api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {
@@ -78,7 +87,7 @@ dependencies {
     testCompileOnly(annotations)
     javadocSourcepath(annotations) // For adventure-api module requirements
 
-    val checkerQual = "org.checkerframework:checker-qual:3.49.2"
+    val checkerQual = "org.checkerframework:checker-qual:4.2.3"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
@@ -92,6 +101,9 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.9.1")
     mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
+
+    // checkstyle
+    checkstyle(project(":paper-checkstyle"))
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
@@ -193,7 +205,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://guava.dev/releases/33.6.0-jre/api/docs/",
         "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
         "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
-        "https://www.javadocs.dev/org.joml/joml/1.10.8/",
+        "https://www.javadocs.dev/org.joml/joml/1.10.9/",
         "https://www.javadocs.dev/com.google.code.gson/gson/2.14.0",
         "https://jspecify.dev/docs/api/",
         "https://jd.papermc.io/adventure/$adventureVersion/",
@@ -201,7 +213,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
     inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
     val javadocSourcepathElements = javadocSourcepath.elements
@@ -239,7 +251,7 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
-val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)

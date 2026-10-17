@@ -6,10 +6,7 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface TooltipDisplay extends BuildableDataComponent<TooltipDisplay, TooltipDisplay.Builder> {
 
@@ -30,7 +27,6 @@ public interface TooltipDisplay extends BuildableDataComponent<TooltipDisplay, T
     /**
      * Builder for {@link TooltipDisplay}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<TooltipDisplay> {
 

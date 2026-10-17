@@ -5,11 +5,8 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PiercingWeapon extends BuildableDataComponent<PiercingWeapon, PiercingWeapon.Builder> {
 
@@ -33,7 +30,6 @@ public interface PiercingWeapon extends BuildableDataComponent<PiercingWeapon, P
     /**
      * Builder for {@link PiercingWeapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
 

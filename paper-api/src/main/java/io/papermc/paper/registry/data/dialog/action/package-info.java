@@ -2,8 +2,8 @@
  * This package contains classes related to dialog actions in the Paper API.
  */
 @NullMarked
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 package io.papermc.paper.registry.data.dialog.action;
 
-import org.jetbrains.annotations.ApiStatus;
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.jspecify.annotations.NullMarked;

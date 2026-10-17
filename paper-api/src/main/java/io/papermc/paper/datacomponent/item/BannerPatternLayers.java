@@ -7,14 +7,11 @@ import org.bukkit.block.banner.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the layers of patterns on a banner.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BannerPatternLayers extends BuildableDataComponent<BannerPatternLayers, BannerPatternLayers.Builder> {
 
@@ -39,7 +36,6 @@ public interface BannerPatternLayers extends BuildableDataComponent<BannerPatter
     /**
      * Builder for {@link BannerPatternLayers}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BannerPatternLayers> {
 

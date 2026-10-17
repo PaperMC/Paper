@@ -6,11 +6,8 @@ import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface KineticWeapon extends BuildableDataComponent<KineticWeapon, KineticWeapon.Builder> {
 
@@ -72,7 +69,6 @@ public interface KineticWeapon extends BuildableDataComponent<KineticWeapon, Kin
     /**
      * Builder for {@link KineticWeapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<KineticWeapon> {
 

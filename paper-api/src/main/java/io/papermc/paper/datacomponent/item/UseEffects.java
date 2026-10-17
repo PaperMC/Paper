@@ -4,10 +4,7 @@ import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface UseEffects extends BuildableDataComponent<UseEffects, UseEffects.Builder> {
 
@@ -32,7 +29,6 @@ public interface UseEffects extends BuildableDataComponent<UseEffects, UseEffect
     /**
      * Builder for {@link UseEffects}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<UseEffects> {
 

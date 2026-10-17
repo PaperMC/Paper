@@ -12,15 +12,12 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Controls the behavior of the item as a tool.
  * @see DataComponentTypes#TOOL
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
 
@@ -46,7 +43,7 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
      * @return A new {@link Rule} instance representing the mining rule.
      */
     static Rule rule(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-        return ItemComponentTypesBridge.bridge().rule(blocks, speed, correctForDrops);
+        return ItemComponentTypesBridge.bridge().toolRule(blocks, speed, correctForDrops);
     }
 
     /**
@@ -81,7 +78,6 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
     @Contract(pure = true)
     boolean canDestroyBlocksInCreative();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Rule {
 
@@ -112,7 +108,6 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
     /**
      * Builder for {@link Tool}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Tool> {
 

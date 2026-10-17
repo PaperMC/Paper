@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -60,6 +_,7 @@
+@@ -69,6 +_,7 @@
          }
  
          BlockState placementState = this.getPlacementState(updatedPlaceContext);
@@ -8,19 +8,18 @@
          if (placementState == null) {
              return InteractionResult.FAIL;
          }
-@@ -73,21 +_,47 @@
+@@ -82,21 +_,46 @@
          Player player = updatedPlaceContext.getPlayer();
          ItemStack itemStack = updatedPlaceContext.getItemInHand();
          BlockState placedState = level.getBlockState(pos);
 +        java.util.function.UnaryOperator<InteractionResult.PaperSuccessContext> context = c -> c.placedBlockAt(pos.immutable()); // Paper - track placed block position from block item
          if (placedState.is(placementState.getBlock())) {
-             placedState = this.updateBlockStateFromTag(pos, level, itemStack, placedState);
--            this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
+             placedState = updateBlockStateFromTag(pos, level, itemStack, placedState);
+-            updateCustomBlockEntityTag(level, player, pos, itemStack);
 -            updateBlockEntityComponents(level, pos, itemStack);
 +            // Paper start - Reset placed block on exception
 +            try {
-+                boolean updatedBlockEntity = this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
-+                context = context.andThen(c -> c.updatedBlockEntity(updatedBlockEntity))::apply; // track whether the block entity got updated or not
++                updateCustomBlockEntityTag(level, player, pos, itemStack);
 +                updateBlockEntityComponents(level, pos, itemStack);
 +            } catch (Exception ex) {
 +                ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace(false);
@@ -59,7 +58,7 @@
      }
  
      protected SoundEvent getPlaceSound(final BlockState blockState) {
-@@ -133,8 +_,20 @@
+@@ -136,8 +_,20 @@
  
      protected boolean canPlace(final BlockPlaceContext context, final BlockState stateForPlacement) {
          Player player = context.getPlayer();
@@ -82,7 +81,7 @@
      }
  
      protected boolean mustSurvive() {
-@@ -159,7 +_,7 @@
+@@ -162,7 +_,7 @@
                      return false;
                  }
  

@@ -6,20 +6,40 @@ import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import org.bukkit.inventory.BlastingRecipe;
+import org.bukkit.inventory.BrewingRecipe;
+import org.bukkit.inventory.CampfireRecipe;
+import org.bukkit.inventory.ComplexRecipe;
+import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.SmithingTransformRecipe;
+import org.bukkit.inventory.SmithingTrimRecipe;
+import org.bukkit.inventory.SmokingRecipe;
+import org.bukkit.inventory.StonecuttingRecipe;
+import org.bukkit.inventory.TransmuteRecipe;
 import org.bukkit.inventory.recipe.CookingBookCategory;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 import org.jspecify.annotations.Nullable;
 
 public interface CraftRecipe extends Recipe {
 
-    void addToRecipeManager();
+    RecipeHolder<?> toMinecraftRecipe();
+
+    default void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(this.toMinecraftRecipe());
+    }
 
     static Optional<Ingredient> toPossibleIngredient(@Nullable RecipeChoice bukkit, boolean requireNotEmpty) {
         return (bukkit == null || bukkit == RecipeChoice.empty()) ? Optional.empty() : Optional.of(toIngredient(bukkit, requireNotEmpty)); // Paper - support "empty" choices
@@ -32,6 +52,9 @@ public interface CraftRecipe extends Recipe {
             stack = Ingredient.of();
         } else if (bukkit instanceof final RecipeChoice.ItemTypeChoice itemTypeChoice) {
             stack = Ingredient.of(PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), itemTypeChoice.itemTypes()));
+        } else if (bukkit instanceof final RecipeChoice.PredicateChoice predicateChoice) {
+            stack = Ingredient.ofStacks(Collections.singletonList(CraftItemStack.asNMSCopy(predicateChoice.getItemStack())));
+            stack.stackPredicate = nmsStack -> predicateChoice.test(CraftItemStack.asBukkitCopy(nmsStack));
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map(CraftItemType::bukkitToMinecraft));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
@@ -63,13 +86,19 @@ public interface CraftRecipe extends Recipe {
             return RecipeChoice.empty(); // Paper - null breaks API contracts
         }
 
+        if (ingredient.stackPredicate != null) {
+            net.minecraft.world.item.ItemStack stack = ingredient.itemStacks().iterator().next();
+            Predicate<org.bukkit.inventory.ItemStack> predicate = bukkitStack -> ingredient.stackPredicate.test(CraftItemStack.asNMSCopy(bukkitStack));
+            return RecipeChoice.predicateChoice(predicate, CraftItemStack.asBukkitCopy(stack));
+        }
+
         if (ingredient.isExact()) {
             List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(ingredient.itemStacks().size());
             for (net.minecraft.world.item.ItemStack i : ingredient.itemStacks()) {
                 choices.add(CraftItemStack.asBukkitCopy(i));
             }
 
-            return new RecipeChoice.ExactChoice(choices);
+            return RecipeChoice.exactChoice(choices);
         } else {
             final RegistryKeySet<ItemType> itemTypes = PaperRegistrySets.convertToApi(RegistryKey.ITEM, ingredient.values);
             return RecipeChoice.itemType(itemTypes);
@@ -90,5 +119,24 @@ public interface CraftRecipe extends Recipe {
 
     static CookingBookCategory getCategory(net.minecraft.world.item.crafting.CookingBookCategory internal) {
         return CookingBookCategory.valueOf(internal.name());
+    }
+
+    static CraftRecipe fromBukkitRecipe(Recipe recipe) {
+        return switch (recipe) {
+            case CraftRecipe craftRecipe -> craftRecipe;
+            case ShapedRecipe shapedRecipe -> CraftShapedRecipe.fromBukkitRecipe(shapedRecipe);
+            case ShapelessRecipe shapelessRecipe -> CraftShapelessRecipe.fromBukkitRecipe(shapelessRecipe);
+            case FurnaceRecipe furnaceRecipe -> CraftFurnaceRecipe.fromBukkitRecipe(furnaceRecipe);
+            case BlastingRecipe blastingRecipe -> CraftBlastingRecipe.fromBukkitRecipe(blastingRecipe);
+            case CampfireRecipe campfireRecipe -> CraftCampfireRecipe.fromBukkitRecipe(campfireRecipe);
+            case SmokingRecipe smokingRecipe -> CraftSmokingRecipe.fromBukkitRecipe(smokingRecipe);
+            case StonecuttingRecipe stonecuttingRecipe -> CraftStonecuttingRecipe.fromBukkitRecipe(stonecuttingRecipe);
+            case SmithingTransformRecipe smithingTransformRecipe -> CraftSmithingTransformRecipe.fromBukkitRecipe(smithingTransformRecipe);
+            case SmithingTrimRecipe smithingTrimRecipe -> CraftSmithingTrimRecipe.fromBukkitRecipe(smithingTrimRecipe);
+            case TransmuteRecipe transmuteRecipe -> CraftTransmuteRecipe.fromBukkitRecipe(transmuteRecipe);
+            case BrewingRecipe brewingRecipe -> CraftBrewingRecipe.fromBukkitRecipe(brewingRecipe);
+            case ComplexRecipe ignored -> throw new UnsupportedOperationException("Cannot convert custom complex recipe");
+            default -> null;
+        };
     }
 }

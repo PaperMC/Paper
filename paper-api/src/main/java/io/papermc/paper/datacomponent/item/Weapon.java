@@ -4,10 +4,7 @@ import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Weapon extends BuildableDataComponent<Weapon, Weapon.Builder> {
 
@@ -37,7 +34,6 @@ public interface Weapon extends BuildableDataComponent<Weapon, Weapon.Builder> {
     /**
      * Builder for {@link Weapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Weapon> {
 
