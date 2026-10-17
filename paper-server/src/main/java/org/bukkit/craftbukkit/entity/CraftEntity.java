@@ -1403,7 +1403,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
-    public boolean considersEntityAsAlly0(org.bukkit.entity.Entity entity) {
+    public boolean considersEntityAsAlly0(final @NotNull org.bukkit.entity.Entity entity) {
         if (this.additionalAlliedRules.isEmpty()) {
             return false;
         }
@@ -1411,7 +1411,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public boolean isAlliedTo(@NotNull org.bukkit.entity.Entity other) {
+    public boolean isAlliedTo(final @NotNull org.bukkit.entity.Entity other) {
         Preconditions.checkArgument(other != null, "other cannot be null");
         return this.getHandle().isAlliedTo(((CraftEntity)other).getHandle());
     }
@@ -1422,17 +1422,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<org.bukkit.entity.Entity> predicate) {
+    public void addAdditionalAlliedRule(final @NotNull Key key, final @NotNull Predicate<org.bukkit.entity.Entity> predicate) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        Preconditions.checkArgument(predicate != null, "predicate cannot be null");
         this.additionalAlliedRules.put(key, predicate);
     }
 
     @Override
-    public void removeAdditionalAlliedRule(@NotNull Key key) {
+    public void removeAdditionalAlliedRule(final @NotNull Key key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
         this.additionalAlliedRules.remove(key);
     }
 
     @Override
-    public void removeAdditionalAlliedRule(@NotNull Namespaced nameSpaced) {
+    public void removeAdditionalAlliedRule(final @NotNull Namespaced nameSpaced) {
+        Preconditions.checkArgument(nameSpaced != null, "nameSpaced cannot be null");
         this.additionalAlliedRules.entrySet()
             .removeIf(entry -> entry.getKey().namespace().equals(nameSpaced.namespace()));
     }
