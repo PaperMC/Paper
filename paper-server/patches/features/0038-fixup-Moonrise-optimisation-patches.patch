@@ -1,0 +1,1367 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sat, 17 Oct 2026 10:02:15 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
+index 328784ba08236553e49d62320b79f7222292412f..99b5026d8dfa9668caf15e9ae27619d9d433b441 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
+@@ -1,7 +1,7 @@
+ package ca.spottedleaf.moonrise.patches.chunk_system.level.entity;
+ 
+ import ca.spottedleaf.concurrentutil.map.SWMRLong2ObjectHashTable;
+-import ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable;
++import ca.spottedleaf.concurrentutil.map.concurrent.ints.ConcurrentChainedInt2ReferenceHashTable;
+ import ca.spottedleaf.moonrise.common.list.EntityList;
+ import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
+ import ca.spottedleaf.moonrise.common.util.WorldUtil;
+@@ -48,7 +48,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+ 
+     protected final LevelCallback<Entity> worldCallback;
+ 
+-    protected final ConcurrentChainedLong2ReferenceHashTable<Entity> entityById = new ConcurrentChainedLong2ReferenceHashTable<>();
++    protected final ConcurrentChainedInt2ReferenceHashTable<Entity> entityById = ConcurrentChainedInt2ReferenceHashTable.createWithCapacity(ConcurrentChainedInt2ReferenceHashTable.defaultCapacity(), 0.5f);
+     protected final ConcurrentHashMap<UUID, Entity> entityByUUID = new ConcurrentHashMap<>();
+     protected final EntityList accessibleEntities = new EntityList();
+ 
+@@ -99,7 +99,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+ 
+     @Override
+     public Entity get(final int id) {
+-        return maskNonAccessible(this.entityById.get((long)id));
++        return maskNonAccessible(this.entityById.get(id));
+     }
+ 
+     @Override
+@@ -108,7 +108,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+     }
+ 
+     public boolean hasEntity(final int id) {
+-        return this.entityById.containsKey((long)id);
++        return this.entityById.containsKey(id);
+     }
+ 
+     public boolean hasEntity(final UUID uuid) {
+@@ -426,7 +426,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+             return false;
+         }
+ 
+-        Entity currentlyMapped = this.entityById.putIfAbsent((long)entity.getId(), entity);
++        Entity currentlyMapped = this.entityById.putIfAbsent(entity.getId(), entity);
+         if (currentlyMapped != null) {
+             LOGGER.warn("Entity id already exists: " + entity.getId() + ", mapped to " + currentlyMapped + ", can't add " + entity);
+             return false;
+@@ -435,7 +435,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+         currentlyMapped = this.entityByUUID.putIfAbsent(entity.getUUID(), entity);
+         if (currentlyMapped != null) {
+             // need to remove mapping for id
+-            this.entityById.remove((long)entity.getId(), entity);
++            this.entityById.remove(entity.getId(), entity);
+             LOGGER.warn("Entity uuid already exists: " + entity.getUUID() + ", mapped to " + currentlyMapped + ", can't add " + entity);
+             return false;
+         }
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+index ef990079fe5214a2817f55249163548f601523de..e984597384eba6b8ac877f2803bdbed754ac7ba8 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+@@ -76,11 +76,11 @@ public final class ChunkHolderManager {
+     private static final long NO_TIMEOUT_MARKER = Long.MIN_VALUE;
+     public final ReentrantAreaLock ticketLockArea;
+ 
+-    private final ConcurrentChainedLong2ReferenceHashTable<TicketSet> tickets = new ConcurrentChainedLong2ReferenceHashTable<>();
++    private final ConcurrentChainedLong2ReferenceHashTable<TicketSet> tickets = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+     private final ConcurrentChainedLong2ReferenceHashTable<Long2IntOpenHashMap> sectionToChunkToExpireCount = new ConcurrentChainedLong2ReferenceHashTable<>();
+     final ChunkUnloadQueue unloadQueue;
+ 
+-    private final ConcurrentChainedLong2ReferenceHashTable<NewChunkHolder> chunkHolders = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(16384, 0.25f);
++    private final ConcurrentChainedLong2ReferenceHashTable<NewChunkHolder> chunkHolders = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+     private final ServerLevel world;
+     private final ChunkTaskScheduler taskScheduler;
+     private long currentTick;
+@@ -109,7 +109,7 @@ public final class ChunkHolderManager {
+     });
+ 
+     // mapping of counter id -> (mapping of pos->count)
+-    private final ConcurrentChainedLong2ReferenceHashTable<ConcurrentChainedLong2LongHashTable> ticketCounters = new ConcurrentChainedLong2ReferenceHashTable<>();
++    private final ConcurrentChainedLong2ReferenceHashTable<ConcurrentChainedLong2LongHashTable> ticketCounters = ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.5f);
+ 
+     public ChunkHolderManager(final ServerLevel world, final ChunkTaskScheduler taskScheduler) {
+         this.world = world;
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingInputStream.java b/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingInputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1855ba9619b5432d5e7c196a94a99789a8b1bac7
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingInputStream.java
+@@ -0,0 +1,52 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import ca.spottedleaf.ioutil.buffer.Buffer;
++import ca.spottedleaf.ioutil.buffer.MemoryAllocator;
++import java.io.IOException;
++import java.io.InputStream;
++
++public final class CopyingInputStream extends InputStream {
++
++    public final InputStream reference;
++    public final Buffer copy;
++
++    public CopyingInputStream(final InputStream reference) {
++        this.reference = reference;
++        this.copy = new Buffer(false, "", MemoryAllocator.UnPooledHeap.INSTANCE, 4096L, (long)Integer.MAX_VALUE);
++    }
++
++    @Override
++    public int read() throws IOException {
++        final int ret = this.reference.read();
++        if (ret < 0) {
++            return ret;
++        }
++        this.copy.writeByte((byte)ret);
++        return ret;
++    }
++
++    @Override
++    public int read(final byte[] b) throws IOException {
++        return this.read(b, 0, b.length);
++    }
++
++    @Override
++    public int read(final byte[] b, final int off, final int len) throws IOException {
++        final int ret = this.reference.read(b, off, len);
++        if (ret < 0) {
++            return ret;
++        }
++        this.copy.writeBytes(b, off, ret);
++        return ret;
++    }
++
++    @Override
++    public int available() throws IOException {
++        return this.reference.available();
++    }
++
++    @Override
++    public void close() throws IOException {
++        this.reference.close();
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingOutputStream.java b/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingOutputStream.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8ca90fd726fe4292491ae238d3bba79aed978b0
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/CopyingOutputStream.java
+@@ -0,0 +1,55 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import ca.spottedleaf.ioutil.buffer.Buffer;
++import ca.spottedleaf.ioutil.buffer.MemoryAllocator;
++import ca.spottedleaf.ioutil.stream.wrapped.SimpleBufferOutputStream;
++import java.io.IOException;
++import java.io.OutputStream;
++
++public final class CopyingOutputStream extends OutputStream {
++
++    public final OutputStream reference;
++    public final Buffer copy;
++    public final SimpleBufferOutputStream copyStream;
++
++    public CopyingOutputStream(final OutputStream reference) {
++        this.reference = reference;
++        this.copy = new Buffer(false, "", MemoryAllocator.UnPooledHeap.INSTANCE, 4096L, (long)Integer.MAX_VALUE);
++        this.copyStream = new SimpleBufferOutputStream(this.copy);
++    }
++
++    @Override
++    public void write(final int b) throws IOException {
++        this.reference.write(b);
++        this.copyStream.write(b);
++    }
++
++    @Override
++    public void write(final byte[] b) throws IOException {
++        this.write(b, 0, b.length);
++    }
++
++    @Override
++    public void write(final byte[] b, final int off, final int len) throws IOException {
++        this.reference.write(b, off, len);
++        this.copyStream.write(b, off, len);
++    }
++
++    @Override
++    public void flush() throws IOException {
++        try {
++            this.copyStream.flush();
++        } finally {
++            this.reference.flush();
++        }
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            this.copyStream.close();
++        } finally {
++            this.reference.close();
++        }
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d8893dc404efd485542b2c56395975dd61ce15e
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java
+@@ -0,0 +1,290 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import ca.spottedleaf.ioutil.stream.AbstractBufferInputStream;
++import ca.spottedleaf.ioutil.stream.wrapped.BufferedBufferInputStream;
++import net.minecraft.nbt.ByteArrayTag;
++import net.minecraft.nbt.ByteTag;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.DoubleTag;
++import net.minecraft.nbt.EndTag;
++import net.minecraft.nbt.FloatTag;
++import net.minecraft.nbt.IntArrayTag;
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.LongArrayTag;
++import net.minecraft.nbt.LongTag;
++import net.minecraft.nbt.NbtAccounter;
++import net.minecraft.nbt.NbtFormatException;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.ShortTag;
++import net.minecraft.nbt.StringTag;
++import net.minecraft.nbt.Tag;
++import java.io.ByteArrayInputStream;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.util.ArrayList;
++import java.util.Map;
++import java.util.Objects;
++
++import static ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.*;
++
++public final class FastNBTParser {
++
++    private static void skipUTF(final AbstractBufferInputStream in) throws IOException {
++        in.skipNBytes((long)in.readUnsignedShort());
++    }
++
++    private static String readUTF(final AbstractBufferInputStream in) throws IOException {
++        return in.readUTF();
++    }
++
++    public static CompoundTag nbtIoRead(final DataInput dataIn) throws IOException {
++        if (!(dataIn instanceof InputStream stream)) {
++            // Fall back to vanilla.
++            return NbtIo.read(dataIn);
++        }
++        final NbtAccounter ctx = NbtAccounter.unlimitedHeap();
++        final Tag tag;
++
++        final AbstractBufferInputStream toRead;
++        final CopyingInputStream copy;
++        if (stream instanceof AbstractBufferInputStream in) {
++            if (DEBUG_READ_WRITE) {
++                // No recursion, so we do not need to handle possible buffer reuse.
++                toRead = new BufferedBufferInputStream(BUFFER.get(), copy = new CopyingInputStream(stream));
++            } else {
++                toRead = in;
++            }
++        } else {
++            // No recursion, so we do not need to handle possible buffer reuse.
++            if (DEBUG_READ_WRITE) {
++                toRead = new BufferedBufferInputStream(BUFFER.get(), copy = new CopyingInputStream(stream));
++            } else {
++                toRead = new BufferedBufferInputStream(BUFFER.get(), stream);
++            }
++        }
++
++        tag = FastNBTParser.parseNamedTagVanilla(toRead, ctx);
++
++        if (DEBUG_READ_WRITE) {
++            final byte[] vanillaSrc = new byte[Math.toIntExact(copy.copy.getReadableBytes())];
++            copy.copy.readBytes(0L, vanillaSrc, 0, vanillaSrc.length);
++            final Tag vanilla = NbtIo.read(new DataInputStream(new ByteArrayInputStream(vanillaSrc)));
++
++            if (!Objects.equals(tag, vanilla)) {
++                throw new IllegalStateException();
++            }
++        }
++
++        if (tag instanceof CompoundTag ret) {
++            return ret;
++        }
++
++        throw new IOException("Root tag must be a named compound tag");
++    }
++
++    public static Tag parseNamedTagVanilla(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        final byte id = in.readByte();
++        if (id == NBT_TAG_END) {
++            return EndTag.INSTANCE;
++        }
++        skipUTF(in);
++        return parseVanilla(id, in, ctx);
++    }
++
++    public static Tag parseTagNoNameVanilla(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        final byte id = in.readByte();
++        if (id == NBT_TAG_END) {
++            return EndTag.INSTANCE;
++        }
++        return parseVanilla(id, in, ctx);
++    }
++
++    private static ByteTag parseByteTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(ByteTag.SELF_SIZE_IN_BYTES);
++        return ByteTag.valueOf(in.readByte());
++    }
++
++    private static ShortTag parseShortTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(ShortTag.SELF_SIZE_IN_BYTES);
++        return ShortTag.valueOf(in.readShort());
++    }
++
++    private static IntTag parseIntTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(IntTag.SELF_SIZE_IN_BYTES);
++        return IntTag.valueOf(in.readInt());
++    }
++
++    private static LongTag parseLongTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(LongTag.SELF_SIZE_IN_BYTES);
++        return LongTag.valueOf(in.readLong());
++    }
++
++    private static FloatTag parseFloatTagTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(FloatTag.SELF_SIZE_IN_BYTES);
++        return FloatTag.valueOf(in.readFloat());
++    }
++
++    private static DoubleTag parseDoubleTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(DoubleTag.SELF_SIZE_IN_BYTES);
++        return DoubleTag.valueOf(in.readDouble());
++    }
++
++    private static ByteArrayTag parseByteArrayTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(ByteArrayTag.SELF_SIZE_IN_BYTES);
++        final int len = in.readInt();
++        com.google.common.base.Preconditions.checkArgument(len < 1 << 24); // Spigot
++        ctx.accountBytes(Byte.BYTES, (long)len);
++        final byte[] ret = new byte[len];
++        in.readFully(ret);
++        return new ByteArrayTag(ret);
++    }
++
++    private static IntArrayTag parseIntArrayTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(IntArrayTag.SELF_SIZE_IN_BYTES);
++        final int len = in.readInt();
++        com.google.common.base.Preconditions.checkArgument(len < 1 << 24); // Spigot
++        ctx.accountBytes(Integer.BYTES, (long)len);
++        final int[] ret = new int[len];
++        in.readFully(ret);
++        return new IntArrayTag(ret);
++    }
++
++    private static LongArrayTag parseLongArrayTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(LongArrayTag.SELF_SIZE_IN_BYTES);
++        final int len = in.readInt();
++        com.google.common.base.Preconditions.checkArgument(len < 1 << 24); // Spigot
++        ctx.accountBytes(Long.BYTES, (long)len);
++        final long[] ret = new long[len];
++        in.readFully(ret);
++        return new LongArrayTag(ret);
++    }
++
++    private static StringTag parseStringTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.accountBytes(StringTag.SELF_SIZE_IN_BYTES);
++        final String ret = readUTF(in);
++        ctx.accountBytes(2L, (long)ret.length());
++        return StringTag.valueOf(ret);
++    }
++
++    private static ListTag parseListTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.pushDepth();
++        try {
++            ctx.accountBytes(ListTag.SELF_SIZE_IN_BYTES);
++            final byte listType = in.readByte();
++            final int listLen = in.readInt();
++            if (listLen < 0) {
++                throw new NbtFormatException("Negative ListTag count: " + listLen);
++            }
++            if (listType == 0 && listLen != 0) {
++                throw new NbtFormatException("Type cannot be END on list with non-zero count");
++            }
++            ctx.accountBytes(Integer.SIZE, (long)listLen);
++
++            final ArrayList<Tag> ret = new ArrayList<>(listLen);
++
++            if (listType == NBT_TAG_MAP) {
++                for (int i = 0; i < listLen; ++i) {
++                    final CompoundTag tag = parseMapTag(in, ctx);
++                    final Tag unwrapped;
++                    if (tag.size() == 1 && (unwrapped = tag.get("")) != null) {
++                        ret.add(unwrapped);
++                    } else {
++                        ret.add(tag);
++                    }
++                }
++            } else {
++                for (int i = 0; i < listLen; ++i) {
++                    ret.add(parseVanilla(listType, in, ctx));
++                }
++            }
++
++            return new ListTag(ret);
++        } finally {
++            ctx.popDepth();
++        }
++    }
++
++    // Why is this different from StringTag...?
++    private static final int MAP_STRING_SELF_SIZE = 28;
++
++    private static final int MAP_ENTRY_SIZE = 36;
++
++    private static CompoundTag parseMapTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        ctx.pushDepth();
++
++        try {
++            ctx.accountBytes(CompoundTag.SELF_SIZE_IN_BYTES);
++
++            final Map<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f);
++
++            byte type;
++            while ((type = in.readByte()) != NBT_TAG_END) {
++                final String key = readUTF(in);
++                ctx.accountBytes(MAP_STRING_SELF_SIZE);
++                ctx.accountBytes(2L, (long)key.length());
++
++                final Tag value = parseVanilla(type, in, ctx);
++                if (null == ret.put(key, value)) {
++                    ctx.accountBytes(MAP_ENTRY_SIZE);
++                }
++            }
++
++            return new CompoundTag(ret);
++        } finally {
++            ctx.popDepth();
++        }
++    }
++
++    public static Tag parseVanilla(final byte type, final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
++        switch (type) {
++            case NBT_TAG_END: {
++                return EndTag.INSTANCE;
++            }
++            case NBT_TAG_BYTE: {
++                return parseByteTag(in, ctx);
++            }
++            case NBT_TAG_SHORT: {
++                return parseShortTag(in, ctx);
++            }
++            case NBT_TAG_INT: {
++                return parseIntTag(in, ctx);
++            }
++            case NBT_TAG_LONG: {
++                return parseLongTag(in, ctx);
++            }
++            case NBT_TAG_FLOAT: {
++                return parseFloatTagTag(in, ctx);
++            }
++            case NBT_TAG_DOUBLE: {
++                return parseDoubleTag(in, ctx);
++            }
++            case NBT_TAG_BYTE_ARRAY: {
++                return parseByteArrayTag(in, ctx);
++            }
++            case NBT_TAG_STRING: {
++                return parseStringTag(in, ctx);
++            }
++            case NBT_TAG_LIST: {
++                return parseListTag(in, ctx);
++            }
++            case NBT_TAG_MAP: {
++                return parseMapTag(in, ctx);
++            }
++            case NBT_TAG_INT_ARRAY: {
++                return parseIntArrayTag(in, ctx);
++            }
++            case NBT_TAG_LONG_ARRAY: {
++                return parseLongArrayTag(in, ctx);
++            }
++
++            default: {
++                throw new UnsupportedOperationException();
++            }
++        }
++    }
++
++    private FastNBTParser() {}
++}
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTSerialiser.java b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTSerialiser.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c574b0fdd34f915e6adf4f28eb6a4e9aa07af2b6
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTSerialiser.java
+@@ -0,0 +1,36 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream;
++import net.minecraft.nbt.Tag;
++import net.minecraft.util.Util;
++import java.io.IOException;
++import java.io.UTFDataFormatException;
++
++public final class FastNBTSerialiser {
++
++    public static void writeUTF(final String value, final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        try {
++            out.writeUTF(value);
++        } catch (final UTFDataFormatException ex) {
++            if (!stringFallback) {
++                throw ex;
++            }
++            Util.logAndPauseIfInIde("Failed to write NBT String", ex);
++            out.writeUTF("");
++        }
++    }
++
++    public static void writeTag(final Tag tag, final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        tag.moonrise$writeWithId(out, stringFallback);
++    }
++
++    public static void writeUnnamedTag(final Tag tag, final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        writeNamedTag(tag, "", out, stringFallback);
++    }
++
++    public static void writeNamedTag(final Tag tag, final String name, final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        tag.moonrise$writeWithIdAndName(out, name, stringFallback);
++    }
++
++    private FastNBTSerialiser() {}
++}
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTWrite.java b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTWrite.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2d6adff99f31078a247c3b6ffa98ccb3ff4a1516
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTWrite.java
+@@ -0,0 +1,13 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream;
++import java.io.IOException;
++
++public interface FastNBTWrite {
++
++    public void moonrise$writeWithId(final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException;
++
++    public void moonrise$writeWithoutId(final AbstractBufferOutputStream out, final boolean stringFallback) throws IOException;
++
++    public void moonrise$writeWithIdAndName(final AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException;
++}
+diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/NBTConstants.java b/ca/spottedleaf/moonrise/patches/nbt_rw/NBTConstants.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9ee1901e1ba5402d6c42c30829e061a236450829
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/nbt_rw/NBTConstants.java
+@@ -0,0 +1,28 @@
++package ca.spottedleaf.moonrise.patches.nbt_rw;
++
++import net.minecraft.nbt.Tag;
++
++public final class NBTConstants {
++
++    public static final boolean DEBUG_READ_WRITE = false;
++
++    public static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> {
++        return new byte[1024 * 32];
++    });
++
++    public static final byte NBT_TAG_END = Tag.TAG_END;
++    public static final byte NBT_TAG_BYTE = Tag.TAG_BYTE;
++    public static final byte NBT_TAG_SHORT = Tag.TAG_SHORT;
++    public static final byte NBT_TAG_INT = Tag.TAG_INT;
++    public static final byte NBT_TAG_LONG = Tag.TAG_LONG;
++    public static final byte NBT_TAG_FLOAT = Tag.TAG_FLOAT;
++    public static final byte NBT_TAG_DOUBLE = Tag.TAG_DOUBLE;
++    public static final byte NBT_TAG_BYTE_ARRAY = Tag.TAG_BYTE_ARRAY;
++    public static final byte NBT_TAG_STRING = Tag.TAG_STRING;
++    public static final byte NBT_TAG_LIST = Tag.TAG_LIST;
++    public static final byte NBT_TAG_MAP = Tag.TAG_COMPOUND;
++    public static final byte NBT_TAG_INT_ARRAY = Tag.TAG_INT_ARRAY;
++    public static final byte NBT_TAG_LONG_ARRAY = Tag.TAG_LONG_ARRAY;
++
++    private NBTConstants() {}
++}
+diff --git a/net/minecraft/nbt/ByteArrayTag.java b/net/minecraft/nbt/ByteArrayTag.java
+index 4fc0cfeabf60d4bd0dcfd9814d13858454bc39da..47fb1762fa95cce3e2024bba6485ff91990e26c8 100644
+--- a/net/minecraft/nbt/ByteArrayTag.java
++++ b/net/minecraft/nbt/ByteArrayTag.java
+@@ -8,7 +8,29 @@ import java.util.Optional;
+ import org.apache.commons.lang3.ArrayUtils;
+ 
+ public final class ByteArrayTag implements CollectionTag {
+-    private static final int SELF_SIZE_IN_BYTES = 24;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_BYTE_ARRAY);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_BYTE_ARRAY);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        final byte[] data = this.data;
++        out.writeInt(data.length);
++        out.write(data);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 24; // Paper - Optimize NBT reading/writing
+     public static final TagType<ByteArrayTag> TYPE = new TagType.VariableSize<ByteArrayTag>() {
+         @Override
+         public ByteArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/ByteTag.java b/net/minecraft/nbt/ByteTag.java
+index 265ebcb4727e6d27eeb6f0cb3fe454427df10348..86f87b2965da082b2c1f286db83d0d480ca74b16 100644
+--- a/net/minecraft/nbt/ByteTag.java
++++ b/net/minecraft/nbt/ByteTag.java
+@@ -5,7 +5,27 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ 
+ public record ByteTag(byte value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 9;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_BYTE);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_BYTE);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte((int)this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 9; // Paper - Optimize NBT reading/writing
+     public static final TagType<ByteTag> TYPE = new TagType.StaticSize<ByteTag>() {
+         @Override
+         public ByteTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/CompoundTag.java b/net/minecraft/nbt/CompoundTag.java
+index b9f6aa790159b2df712244c44c55d6393c837d16..671172e95f65ef3d84384f402b37aee8f8ffb72c 100644
+--- a/net/minecraft/nbt/CompoundTag.java
++++ b/net/minecraft/nbt/CompoundTag.java
+@@ -35,7 +35,34 @@ public final class CompoundTag implements Tag {
+             },
+             t -> new Dynamic<>(NbtOps.INSTANCE, t.copy())
+         );
+-    private static final int SELF_SIZE_IN_BYTES = 48;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_MAP);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_MAP);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    // On change, check ListTag#writeWrapped.
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        if (!this.tags.isEmpty()) {
++            for (final Map.Entry<String, Tag> entry : this.tags.entrySet()) {
++                ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeNamedTag(entry.getValue(), entry.getKey(), out, stringFallback);
++            }
++        }
++
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_END);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 48; // Paper - Optimize NBT reading/writing
+     private static final int MAP_ENTRY_SIZE_IN_BYTES = 32;
+     public static final TagType<CompoundTag> TYPE = new TagType.VariableSize<CompoundTag>() {
+         @Override
+@@ -160,7 +187,7 @@ public final class CompoundTag implements Tag {
+     };
+     private final Map<String, Tag> tags;
+ 
+-    CompoundTag(final Map<String, Tag> tags) {
++    public CompoundTag(final Map<String, Tag> tags) { // Paper - Optimize NBT reading/writing
+         this.tags = tags;
+     }
+ 
+diff --git a/net/minecraft/nbt/DoubleTag.java b/net/minecraft/nbt/DoubleTag.java
+index 981d3b2ba7b8d3ab6c753c9d9b9ebb987a3ba433..bc74df24fdef6b630d7684c63a0e7c6bf1f391ec 100644
+--- a/net/minecraft/nbt/DoubleTag.java
++++ b/net/minecraft/nbt/DoubleTag.java
+@@ -6,7 +6,27 @@ import java.io.IOException;
+ import net.minecraft.util.Mth;
+ 
+ public record DoubleTag(double value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 16;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_DOUBLE);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_DOUBLE);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeDouble(this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 16; // Paper - Optimize NBT reading/writing
+     public static final DoubleTag ZERO = new DoubleTag(0.0);
+     public static final TagType<DoubleTag> TYPE = new TagType.StaticSize<DoubleTag>() {
+         @Override
+diff --git a/net/minecraft/nbt/EndTag.java b/net/minecraft/nbt/EndTag.java
+index 49969555a0634b3fc6250931842a22f13c429e10..4b9c859d3de51fea955b9180dd4ebd3f88c0a78f 100644
+--- a/net/minecraft/nbt/EndTag.java
++++ b/net/minecraft/nbt/EndTag.java
+@@ -5,6 +5,21 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ 
+ public final class EndTag implements Tag {
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_END);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_END);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {}
++    // Paper end - Optimize NBT reading/writing
++
+     private static final int SELF_SIZE_IN_BYTES = 8;
+     public static final TagType<EndTag> TYPE = new TagType<EndTag>() {
+         @Override
+diff --git a/net/minecraft/nbt/FloatTag.java b/net/minecraft/nbt/FloatTag.java
+index a3cf69eaebc067cc19fed940631d8d9fed509ad1..a32ad9a5346119b3719dedf1e25ab1dd9a096f01 100644
+--- a/net/minecraft/nbt/FloatTag.java
++++ b/net/minecraft/nbt/FloatTag.java
+@@ -6,7 +6,27 @@ import java.io.IOException;
+ import net.minecraft.util.Mth;
+ 
+ public record FloatTag(float value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 12;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_FLOAT);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_FLOAT);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeFloat(this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 12; // Paper - Optimize NBT reading/writing
+     public static final FloatTag ZERO = new FloatTag(0.0F);
+     public static final TagType<FloatTag> TYPE = new TagType.StaticSize<FloatTag>() {
+         @Override
+diff --git a/net/minecraft/nbt/IntArrayTag.java b/net/minecraft/nbt/IntArrayTag.java
+index 8ed91b84eb90cfe31993fa32b35263e7adea918e..ab00ff3a05c2f1430b7b7fb7d7b816cedc2b318d 100644
+--- a/net/minecraft/nbt/IntArrayTag.java
++++ b/net/minecraft/nbt/IntArrayTag.java
+@@ -8,7 +8,29 @@ import java.util.Optional;
+ import org.apache.commons.lang3.ArrayUtils;
+ 
+ public final class IntArrayTag implements CollectionTag {
+-    private static final int SELF_SIZE_IN_BYTES = 24;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_INT_ARRAY);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_INT_ARRAY);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        final int[] data = this.data;
++        out.writeInt(data.length);
++        out.writeInts(data);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 24; // Paper - Optimize NBT reading/writing
+     public static final TagType<IntArrayTag> TYPE = new TagType.VariableSize<IntArrayTag>() {
+         @Override
+         public IntArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/IntTag.java b/net/minecraft/nbt/IntTag.java
+index 345ac3791ddc86fd003c8280135c2051d6642f6d..31deb91480b81b2aed423144d6f0a4e5e84fa463 100644
+--- a/net/minecraft/nbt/IntTag.java
++++ b/net/minecraft/nbt/IntTag.java
+@@ -5,7 +5,27 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ 
+ public record IntTag(int value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 12;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_INT);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_INT);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeInt(this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 12; // Paper - Optimize NBT reading/writing
+     public static final TagType<IntTag> TYPE = new TagType.StaticSize<IntTag>() {
+         @Override
+         public IntTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/ListTag.java b/net/minecraft/nbt/ListTag.java
+index 73b50aa596c5ce163d1130d2afac2940aefb95bc..e660e4aebd51d20746f34bb9a9f9fd80ec5ada76 100644
+--- a/net/minecraft/nbt/ListTag.java
++++ b/net/minecraft/nbt/ListTag.java
+@@ -15,7 +15,74 @@ import org.jspecify.annotations.Nullable;
+ 
+ public final class ListTag extends AbstractList<Tag> implements CollectionTag {
+     private static final String WRAPPER_MARKER = "";
+-    private static final int SELF_SIZE_IN_BYTES = 36;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LIST);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LIST);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    private static byte getIdToWrite(final List<Tag> list, final int size) {
++        if (size == 0) {
++            return ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_END;
++        }
++
++        final Tag first = list.get(0);
++        final Class<? extends Tag> firstClass = first.getClass();
++        for (int i = 1; i < size; ++i) {
++            if (list.get(i).getClass() != firstClass) {
++                // Must wrap.
++                return ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_MAP;
++            }
++        }
++
++        // No wrapping needed.
++        return first.getId();
++    }
++
++    // Equivalent to new CompoundTag(Map.of("", tag)).write(...).
++    private static void writeWrapped(final Tag tag, final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeNamedTag(tag, "", out, stringFallback);
++
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_END);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        final List<Tag> tags = this.list;
++        final int size = tags.size();
++
++        final byte typeToWrite = getIdToWrite(tags, size);
++
++        out.writeByte(typeToWrite);
++        out.writeInt(size);
++
++        if (typeToWrite == ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_MAP) {
++            // Must potentially wrap.
++            for (int i = 0; i < size; ++i) {
++                final Tag tag = tags.get(i);
++                if (!(tag instanceof CompoundTag compoundTag) || isWrapper(compoundTag)) {
++                    writeWrapped(tag, out, stringFallback);
++                } else {
++                    compoundTag.moonrise$writeWithoutId(out, stringFallback);
++                }
++            }
++        } else {
++            for (int i = 0; i < size; ++i) {
++                tags.get(i).moonrise$writeWithoutId(out, stringFallback);
++            }
++        }
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 36; // Paper - Optimize NBT reading/writing
+     public static final TagType<ListTag> TYPE = new TagType.VariableSize<ListTag>() {
+         @Override
+         public ListTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/LongArrayTag.java b/net/minecraft/nbt/LongArrayTag.java
+index fdc315d7877b3fbd6aa470ab7b17a38dfdeddf22..202ce0d0465517e51207a33b86c24c030bedd64a 100644
+--- a/net/minecraft/nbt/LongArrayTag.java
++++ b/net/minecraft/nbt/LongArrayTag.java
+@@ -8,7 +8,29 @@ import java.util.Optional;
+ import org.apache.commons.lang3.ArrayUtils;
+ 
+ public final class LongArrayTag implements CollectionTag {
+-    private static final int SELF_SIZE_IN_BYTES = 24;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LONG_ARRAY);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LONG_ARRAY);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        final long[] data = this.data;
++        out.writeInt(data.length);
++        out.writeLongs(data);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 24; // Paper - Optimize NBT reading/writing
+     public static final TagType<LongArrayTag> TYPE = new TagType.VariableSize<LongArrayTag>() {
+         @Override
+         public LongArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/LongTag.java b/net/minecraft/nbt/LongTag.java
+index f157c6de001b4680f12e09bd310f55103f2fa874..9118a43337748ecf7355f63306856531ccf8cfa2 100644
+--- a/net/minecraft/nbt/LongTag.java
++++ b/net/minecraft/nbt/LongTag.java
+@@ -5,7 +5,27 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ 
+ public record LongTag(long value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 16;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LONG);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_LONG);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeLong(this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 16; // Paper - Optimize NBT reading/writing
+     public static final TagType<LongTag> TYPE = new TagType.StaticSize<LongTag>() {
+         @Override
+         public LongTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/NbtIo.java b/net/minecraft/nbt/NbtIo.java
+index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..dc79808f63509237af971ccbd7067b7f172940df 100644
+--- a/net/minecraft/nbt/NbtIo.java
++++ b/net/minecraft/nbt/NbtIo.java
+@@ -22,6 +22,17 @@ import net.minecraft.util.DelegateDataOutput;
+ import net.minecraft.util.FastBufferedInputStream;
+ import net.minecraft.util.Util;
+ import org.jspecify.annotations.Nullable;
++// Paper start - Optimize NBT reading/writing
++import ca.spottedleaf.ioutil.buffer.Buffer;
++import ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream;
++import ca.spottedleaf.ioutil.stream.wrapped.BufferedBufferOutputStream;
++import ca.spottedleaf.ioutil.stream.wrapped.SimpleBufferOutputStream;
++import ca.spottedleaf.moonrise.patches.nbt_rw.CopyingOutputStream;
++import ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser;
++import ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants;
++import java.io.ByteArrayOutputStream;
++import java.util.Arrays;
++// Paper end - Optimize NBT reading/writing
+ 
+ public class NbtIo {
+     private static final OpenOption[] SYNC_OUTPUT_OPTIONS = new OpenOption[]{
+@@ -152,21 +163,102 @@ public class NbtIo {
+         return type == 0 ? EndTag.INSTANCE : readTagSafe(input, accounter, type);
+     }
+ 
+-    public static void writeAnyTag(final Tag tag, final DataOutput output) throws IOException {
+-        output.writeByte(tag.getId());
+-        if (tag.getId() != 0) {
++    // Paper start - Optimize NBT reading/writing
++    private static void writeTagV(final Tag tag, final DataOutput output, final String name) throws IOException {
++        final byte id = tag.getId();
++        output.writeByte(id);
++        if (id != NBTConstants.NBT_TAG_END) {
++            if (name != null) {
++                output.writeUTF(name);
++            }
+             tag.write(output);
+         }
+     }
+ 
+-    public static void writeUnnamedTag(final Tag tag, final DataOutput output) throws IOException {
+-        output.writeByte(tag.getId());
+-        if (tag.getId() != 0) {
+-            output.writeUTF("");
+-            tag.write(output);
++    private static void writeTag(final Tag tag, final DataOutput output, final String name) throws IOException {
++        final boolean stringFallback;
++        final OutputStream stream;
++        if (output instanceof NbtIo.StringFallbackDataOutput fallback) {
++            stringFallback = true;
++            stream = fallback.parent instanceof OutputStream s ? s : null;
++        } else {
++            stringFallback = false;
++            stream = output instanceof OutputStream s ? s : null;
++        }
++        if (stream == null) {
++            // Fall back to vanilla.
++            writeTagV(tag, output, name);
++            return;
++        }
++        final AbstractBufferOutputStream toFlush;
++        final boolean writeBuffer;
++        final CopyingOutputStream copy;
++
++        if (stream instanceof AbstractBufferOutputStream out) {
++            if (NBTConstants.DEBUG_READ_WRITE) {
++                // No recursion, so we do not need to handle possible buffer reuse.
++                toFlush = new BufferedBufferOutputStream(NBTConstants.BUFFER.get(), copy = new CopyingOutputStream(stream));
++            } else {
++                toFlush = out;
++            }
++
++            writeBuffer = false;
++        } else {
++            // No recursion, so we do not need to handle possible buffer reuse.
++            if (NBTConstants.DEBUG_READ_WRITE) {
++                toFlush = new BufferedBufferOutputStream(NBTConstants.BUFFER.get(), copy = new CopyingOutputStream(stream));
++            } else {
++                toFlush = new BufferedBufferOutputStream(NBTConstants.BUFFER.get(), stream);
++            }
++            writeBuffer = true;
++        }
++        try {
++            if (name != null) {
++                FastNBTSerialiser.writeNamedTag(tag, name, toFlush, stringFallback);
++            } else {
++                FastNBTSerialiser.writeTag(tag, toFlush, stringFallback);
++            }
++
++            if (NBTConstants.DEBUG_READ_WRITE) {
++                toFlush.writeBuffer();
++
++                final ByteArrayOutputStream vanillaRaw = new ByteArrayOutputStream();
++                writeTagV(tag, new DataOutputStream(vanillaRaw), name);
++
++                final byte[] expected = vanillaRaw.toByteArray();
++                final byte[] got = new byte[Math.toIntExact(copy.copy.getReadableBytes())];
++                copy.copy.readBytes(0L, got, 0, got.length);
++
++                final int mismatch = Arrays.mismatch(expected, got);
++                if (mismatch != -1) {
++                    // This will fail to write the byte at the mismatch.
++                    final SimpleBufferOutputStream fail = new SimpleBufferOutputStream(new Buffer(false, "", new byte[mismatch]));
++                    if (name != null) {
++                        FastNBTSerialiser.writeNamedTag(tag, name, fail, stringFallback);
++                    } else {
++                        FastNBTSerialiser.writeTag(tag, fail, stringFallback);
++                    }
++
++                    throw new IllegalStateException("NBT serialization differs from vanilla");
++                }
++            }
++        } finally {
++            // Maintain behavior with DataOutput.
++            if (writeBuffer) {
++                toFlush.writeBuffer();
++            }
+         }
+     }
+ 
++    public static void writeAnyTag(final Tag tag, final DataOutput output) throws IOException {
++        writeTag(tag, output, null);
++    }
++
++    public static void writeUnnamedTag(final Tag tag, final DataOutput output) throws IOException {
++        writeTag(tag, output, "");
++    }
++    // Paper end - Optimize NBT reading/writing
++
+     public static void writeUnnamedTagWithFallback(final Tag tag, final DataOutput output) throws IOException {
+         writeUnnamedTag(tag, new NbtIo.StringFallbackDataOutput(output));
+     }
+diff --git a/net/minecraft/nbt/ShortTag.java b/net/minecraft/nbt/ShortTag.java
+index e2bb75b4b6ffdad1f4f9933d11ed5cc01cd09f92..aa7d51539f26507b54fb07529886429d9ccaa36a 100644
+--- a/net/minecraft/nbt/ShortTag.java
++++ b/net/minecraft/nbt/ShortTag.java
+@@ -5,7 +5,27 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ 
+ public record ShortTag(short value) implements NumericTag {
+-    private static final int SELF_SIZE_IN_BYTES = 10;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_SHORT);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_SHORT);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeShort((int)this.value);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 10; // Paper - Optimize NBT reading/writing
+     public static final TagType<ShortTag> TYPE = new TagType.StaticSize<ShortTag>() {
+         @Override
+         public ShortTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/StringTag.java b/net/minecraft/nbt/StringTag.java
+index c4aa87a9ae15e6f169977644e4ccf379e845f32b..78659fb7014a4aa31c5d0e788059f34bc04392ed 100644
+--- a/net/minecraft/nbt/StringTag.java
++++ b/net/minecraft/nbt/StringTag.java
+@@ -6,7 +6,27 @@ import java.io.IOException;
+ import java.util.Optional;
+ 
+ public record StringTag(String value) implements PrimitiveTag {
+-    private static final int SELF_SIZE_IN_BYTES = 36;
++    // Paper start - Optimize NBT reading/writing
++    @Override
++    public final void moonrise$writeWithId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_STRING);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithIdAndName(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final String name, final boolean stringFallback) throws IOException {
++        out.writeByte(ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.NBT_TAG_STRING);
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(name, out, stringFallback);
++        this.moonrise$writeWithoutId(out, stringFallback);
++    }
++
++    @Override
++    public final void moonrise$writeWithoutId(final ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream out, final boolean stringFallback) throws IOException {
++        ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser.writeUTF(this.value, out, stringFallback);
++    }
++    // Paper end - Optimize NBT reading/writing
++
++    public static final int SELF_SIZE_IN_BYTES = 36; // Paper - Optimize NBT reading/writing
+     public static final TagType<StringTag> TYPE = new TagType.VariableSize<StringTag>() {
+         @Override
+         public StringTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
+diff --git a/net/minecraft/nbt/Tag.java b/net/minecraft/nbt/Tag.java
+index efc744e8b0bd10aec4172d8d903e1695556b41f1..ed127c89667c27c125e33c84b63c6e126c614b98 100644
+--- a/net/minecraft/nbt/Tag.java
++++ b/net/minecraft/nbt/Tag.java
+@@ -4,7 +4,7 @@ import java.io.DataOutput;
+ import java.io.IOException;
+ import java.util.Optional;
+ 
+-public sealed interface Tag permits CompoundTag, CollectionTag, PrimitiveTag, EndTag {
++public sealed interface Tag extends ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTWrite permits CompoundTag, CollectionTag, PrimitiveTag, EndTag { // Paper - Optimize NBT reading/writing
+     int OBJECT_HEADER = 8;
+     int ARRAY_HEADER = 12;
+     int OBJECT_REFERENCE = 4;
+diff --git a/net/minecraft/network/FriendlyByteBuf.java b/net/minecraft/network/FriendlyByteBuf.java
+index b63d24683f7b3b1f11e927cf4261ff2d05cdbd38..3c8ea0b434f66f8e1d9eb6f7ec5ed214c65df430 100644
+--- a/net/minecraft/network/FriendlyByteBuf.java
++++ b/net/minecraft/network/FriendlyByteBuf.java
+@@ -466,14 +466,81 @@ public class FriendlyByteBuf extends ByteBuf {
+         }
+     }
+ 
++    // Paper start - Optimize NBT reading/writing
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
++    private static final String BUFFER_REF_KEY = "moonrise:network_read_nbt";
++    private static boolean reinterpretSupported = true;
++
++    private static @Nullable Tag readNbtV(final ByteBuf input, final NbtAccounter accounter) throws IOException {
++        final Tag ret = NbtIo.readAnyTag(new ByteBufInputStream(input), accounter);
++        return ret instanceof net.minecraft.nbt.EndTag ? null : ret;
++    }
++
+     public static @Nullable Tag readNbt(final ByteBuf input, final NbtAccounter accounter) {
+         try {
+-            Tag tag = NbtIo.readAnyTag(new ByteBufInputStream(input), accounter);
+-            return tag.getId() == 0 ? null : tag;
+-        } catch (IOException e) {
+-            throw new EncoderException(e);
++            if (!input.hasArray() && (!input.hasMemoryAddress() || !reinterpretSupported)) {
++                // Fall back to vanilla.
++                return readNbtV(input, accounter);
++            }
++
++            final java.lang.foreign.MemorySegment segment;
++            if (input.hasArray()) {
++                segment = java.lang.foreign.MemorySegment.ofBuffer(ByteBuffer.wrap(input.array(), input.arrayOffset(), input.capacity())).asReadOnly();
++            } else {
++                try {
++                    segment = java.lang.foreign.MemorySegment.ofAddress(input.memoryAddress()).asReadOnly().reinterpret(input.capacity());
++                } catch (final IllegalCallerException ex) {
++                    reinterpretSupported = false;
++                    LOGGER.error("MemorySegment.reinterpret not supported", ex);
++                    return readNbtV(input, accounter);
++                }
++            }
++            final ca.spottedleaf.ioutil.buffer.Buffer buffer = new ca.spottedleaf.ioutil.buffer.Buffer(
++                ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.DEBUG_READ_WRITE,
++                BUFFER_REF_KEY,
++                segment
++            );
++            int vanillaReadBytes = -1;
++            try {
++                buffer.setIndices(input.readerIndex(), input.writerIndex());
++
++                try (final ca.spottedleaf.ioutil.stream.wrapped.SimpleBufferInputStream in = new ca.spottedleaf.ioutil.stream.wrapped.SimpleBufferInputStream(buffer)) {
++                    final Tag ret = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.parseTagNoNameVanilla(in, accounter);
++
++                    if (ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.DEBUG_READ_WRITE) {
++                        final Tag vanilla;
++                        final ByteBuf inputCopy = input.copy();
++                        try (final ByteBufInputStream vanillaIn = new ByteBufInputStream(inputCopy, true)) {
++                            vanilla = NbtIo.readAnyTag(vanillaIn, accounter);
++                            vanillaReadBytes = inputCopy.readerIndex();
++                        }
++                        if (!java.util.Objects.equals(vanilla, ret)) {
++                            throw new IllegalStateException();
++                        }
++                    }
++                    return ret instanceof net.minecraft.nbt.EndTag ? null : ret;
++                }
++            } catch (final Throwable thr) {
++                ca.spottedleaf.common.util.ThrowUtil.throwUnchecked(thr);
++                return null;
++            } finally {
++                if (ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants.DEBUG_READ_WRITE) {
++                    if (vanillaReadBytes != -1 && buffer.getReaderIndex() != (vanillaReadBytes + input.readerIndex())) {
++                        throw new IllegalStateException();
++                    }
++                }
++                try {
++                    input.readerIndex(Math.toIntExact(buffer.getReaderIndex()));
++                } finally {
++                    buffer.decReferenceCount(BUFFER_REF_KEY);
++                    buffer.ensureRefCountZero();
++                }
++            }
++        } catch (final IOException ex) {
++            throw new EncoderException(ex);
+         }
+     }
++    // Paper end - Optimize NBT reading/writing
+ 
+     public @Nullable Tag readNbt(final NbtAccounter accounter) {
+         return readNbt(this, accounter);
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index c4cfb53e145d69666ffc27ef4ee0c50b54eb9143..ef53d4d17222a882dd3d33575096c864a0a00a06 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -75,7 +75,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     @VisibleForDebug
+     private NaturalSpawner.@Nullable SpawnState lastSpawnState;
+     // Paper start
+-    public final ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = new ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<>();
++    public final ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+     public int getFullChunksCount() {
+         return this.fullChunks.size();
+     }
+diff --git a/net/minecraft/util/DelegateDataOutput.java b/net/minecraft/util/DelegateDataOutput.java
+index d3a4b5f3f981a4e5f06a4975fe30e33da2c7c862..7166d7064e7f323d0c7cd52cfa5af4ef26168da3 100644
+--- a/net/minecraft/util/DelegateDataOutput.java
++++ b/net/minecraft/util/DelegateDataOutput.java
+@@ -5,7 +5,7 @@ import java.io.IOException;
+ import net.minecraft.SuppressForbidden;
+ 
+ public class DelegateDataOutput implements DataOutput {
+-    private final DataOutput parent;
++    public final DataOutput parent; // Paper - Optimize NBT reading/writing
+ 
+     public DelegateDataOutput(final DataOutput parent) {
+         this.parent = parent;
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 21878bd770f6c0bc10dd0a67be5bd94d7e16f741..c14996f1d8a9ed77a845a464c1789bab0715741b 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -201,7 +201,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+ 
+     // Paper start - rewrite chunk system
+     private ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup entityLookup;
+-    private final ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData> chunkData = new ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<>();
++    private final ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable<ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData> chunkData = ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable.createWithCapacity(ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable.defaultCapacity(), 0.25f);
+ 
+     @Override
+     public final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup moonrise$getEntityLookup() {
