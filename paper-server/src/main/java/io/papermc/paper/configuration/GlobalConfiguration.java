@@ -295,6 +295,9 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class Misc extends ConfigurationPart {
 
+        @Comment("Reconfigure compatible players after worlds load or unload to refresh client registries and world lists. This fires quit/join events and creates new Player objects. Connections handled through PlayerLoginEvent are skipped.")
+        public boolean reconfigureOnWorldChanges = false;
+
         @SuppressWarnings("unused") // used in postProcess
         public ChatThreads chatThreads;
         public class ChatThreads extends ConfigurationPart {
