@@ -34,6 +34,11 @@ public record PaperBannerPatternLayers(
         return convert(impl);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.patterns());
+    }
+
     static final class BuilderImpl implements BannerPatternLayers.Builder {
 
         private final net.minecraft.world.level.block.entity.BannerPatternLayers.Builder builder = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder();

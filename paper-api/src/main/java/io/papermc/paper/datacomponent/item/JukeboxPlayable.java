@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Contract;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
  */
 @ApiStatus.NonExtendable
-public interface JukeboxPlayable  {
+public interface JukeboxPlayable {
 
     @Contract(value = "_ -> new", pure = true)
     static JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
