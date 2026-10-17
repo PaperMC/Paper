@@ -1,15 +1,13 @@
 package org.bukkit.command;
 
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * This class is provided as a convenience to implement both TabCompleter and
  * CommandExecutor.
  *
- * @apiNote plugin developers should prefer to use the
+ * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@ApiStatus.Obsolete(since = "26.3")
+@Deprecated(since = "26.4")
 public interface TabExecutor extends TabCompleter, CommandExecutor {
 }
