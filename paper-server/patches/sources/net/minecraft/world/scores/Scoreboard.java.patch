@@ -1,5 +1,78 @@
 --- a/net/minecraft/world/scores/Scoreboard.java
 +++ b/net/minecraft/world/scores/Scoreboard.java
+@@ -36,6 +_,7 @@
+     private final Map<DisplaySlot, Objective> displayObjectives = new EnumMap<>(DisplaySlot.class);
+     private final Object2ObjectMap<String, PlayerTeam> teamsByName = new Object2ObjectOpenHashMap<>();
+     private final Object2ObjectMap<String, PlayerTeam> teamsByPlayer = new Object2ObjectOpenHashMap<>();
++    private @Nullable PlayerTeam collideRuleTeam; // Paper - configurable player collisions
+ 
+     public @Nullable Objective getObjective(final @Nullable String name) {
+         return this.objectivesByName.get(name);
+@@ -253,6 +_,11 @@
+             return team;
+         } else {
+             team = new PlayerTeam(this, name);
++            // Paper start - configurable player collisions
++            if (name.equals(net.minecraft.server.MinecraftServer.getServer().getPlayerList().collideRuleTeamName)) {
++                collideRuleTeam = team;
++            }
++            // Paper end - configurable player collisions
+             this.teamsByName.put(name, team);
+             this.onTeamAdded(team);
+             return team;
+@@ -267,10 +_,16 @@
+         }
+ 
+         this.onTeamRemoved(team);
++
++        // Paper start - configurable player collisions
++        if (team == collideRuleTeam) {
++            collideRuleTeam = null;
++        }
++        // Paper end - configurable player collisions
+     }
+ 
+     public boolean addPlayerToTeam(final String player, final PlayerTeam team) {
+-        if (this.getPlayersTeam(player) != null) {
++        if (this.getPlayersTeam0(player) != null) { // Paper - configurable player collisions
+             this.removePlayerFromTeam(player);
+         }
+ 
+@@ -279,7 +_,7 @@
+     }
+ 
+     public boolean removePlayerFromTeam(final String player) {
+-        PlayerTeam team = this.getPlayersTeam(player);
++        PlayerTeam team = this.getPlayersTeam0(player); // Paper - configurable player collisions
+         if (team != null) {
+             this.removePlayerFromTeam(player, team);
+             return true;
+@@ -289,7 +_,7 @@
+     }
+ 
+     public void removePlayerFromTeam(final String player, final PlayerTeam team) {
+-        if (this.getPlayersTeam(player) != team) {
++        if (this.getPlayersTeam0(player) != team) { // Paper - configurable player collisions
+             throw new IllegalStateException("Player is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
+         }
+ 
+@@ -305,9 +_,16 @@
+         return this.teamsByName.values();
+     }
+ 
++    // Paper start - configurable player collisions, don't expose collide rule team
+     public @Nullable PlayerTeam getPlayersTeam(final String name) {
++        PlayerTeam team = getPlayersTeam0(name);
++        return team != null && team != collideRuleTeam ? team : null;
++    }
++
++    private @Nullable PlayerTeam getPlayersTeam0(final String name) {
+         return this.teamsByPlayer.get(name);
+     }
++    // Paper end - configurable player collisions
+ 
+     public void onObjectiveAdded(final Objective objective) {
+     }
 @@ -373,7 +_,7 @@
      }
  
