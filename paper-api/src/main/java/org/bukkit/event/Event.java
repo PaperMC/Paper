@@ -1,9 +1,14 @@
 package org.bukkit.event;
 
-import org.bukkit.Bukkit;
+import com.destroystokyo.paper.util.SneakyThrow;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.NotNull;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
 
 /**
  * Represents an event.
@@ -14,6 +19,17 @@ import org.jetbrains.annotations.NotNull;
  * @see PluginManager#registerEvents(Listener,Plugin)
  */
 public abstract class Event {
+    private static final MethodHandle EMPTY = MethodHandles.empty(MethodType.methodType(void.class, Event.class));
+    private static final MutableCallSite CALL_EVENT = new MutableCallSite(EMPTY);
+    private static final MethodHandle CALL_EVENT_HANDLE = CALL_EVENT.dynamicInvoker();
+
+    public static void setEventCaller(@NotNull MethodHandle handle) {
+        if (CALL_EVENT.getTarget() != EMPTY) {
+            throw new IllegalStateException("already initialized");
+        }
+        CALL_EVENT.setTarget(handle);
+        MutableCallSite.syncAll(new MutableCallSite[]{CALL_EVENT});
+    }
 
     private final boolean isAsync;
 
@@ -42,7 +58,11 @@ public abstract class Event {
      * @return {@code false} if event was cancelled, if cancellable. otherwise {@code true}.
      */
     public boolean callEvent() {
-        Bukkit.getPluginManager().callEvent(this);
+        try {
+            CALL_EVENT_HANDLE.invokeExact(this);
+        } catch (Throwable e) {
+            SneakyThrow.sneaky(e);
+        }
         if (this instanceof Cancellable) {
             return !((Cancellable) this).isCancelled();
         } else {
