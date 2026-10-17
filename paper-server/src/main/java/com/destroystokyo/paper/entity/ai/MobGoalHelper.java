@@ -212,10 +212,15 @@ public class MobGoalHelper {
     public static EnumSet<GoalType> vanillaToPaper(Goal goal) {
         EnumSet<GoalType> goals = EnumSet.noneOf(GoalType.class);
         for (GoalType type : GoalType.values()) {
-            if (goal.hasFlag(paperToVanilla(type))) {
+            if (type != GoalType.UNKNOWN_BEHAVIOR && goal.hasFlag(paperToVanilla(type))) {
                 goals.add(type);
             }
         }
+
+        if (goals.isEmpty()) {
+            goals.add(GoalType.UNKNOWN_BEHAVIOR);
+        }
+
         return goals;
     }
 
@@ -224,7 +229,6 @@ public class MobGoalHelper {
             case MOVE -> GoalType.MOVE;
             case LOOK -> GoalType.LOOK;
             case JUMP -> GoalType.JUMP;
-            case UNKNOWN_BEHAVIOR -> GoalType.UNKNOWN_BEHAVIOR;
             case TARGET -> GoalType.TARGET;
         };
     }
@@ -232,7 +236,9 @@ public class MobGoalHelper {
     public static EnumSet<Goal.Flag> paperToVanilla(EnumSet<GoalType> types) {
         EnumSet<Goal.Flag> goals = EnumSet.noneOf(Goal.Flag.class);
         for (GoalType type : types) {
-            goals.add(paperToVanilla(type));
+            if (type != GoalType.UNKNOWN_BEHAVIOR) {
+                goals.add(paperToVanilla(type));
+            }
         }
         return goals;
     }
@@ -242,8 +248,8 @@ public class MobGoalHelper {
             case MOVE -> Goal.Flag.MOVE;
             case LOOK -> Goal.Flag.LOOK;
             case JUMP -> Goal.Flag.JUMP;
-            case UNKNOWN_BEHAVIOR -> Goal.Flag.UNKNOWN_BEHAVIOR;
             case TARGET -> Goal.Flag.TARGET;
+            default -> throw new IllegalArgumentException(type + " does not have a vanilla representation!");
         };
     }
 
