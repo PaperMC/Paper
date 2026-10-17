@@ -1,5 +1,25 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
+@@ -58,6 +_,7 @@
+ import net.minecraft.network.protocol.game.ClientGamePacketListener;
+ import net.minecraft.network.protocol.game.ClientboundChunksBiomesPacket;
+ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
++import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+ import net.minecraft.resources.Identifier;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.server.network.ServerPlayerConnection;
+@@ -73,9 +_,11 @@
+ import net.minecraft.util.thread.ConsecutiveExecutor;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.Leashable;
+ import net.minecraft.world.entity.UpdateInterval;
+ import net.minecraft.world.entity.ai.village.poi.PoiManager;
+ import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
++import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.TicketStorage;
 @@ -151,6 +_,33 @@
      public int serverViewDistance;
      private final WorldGenContext worldGenContext;
@@ -311,7 +331,7 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
                  if (this.seenBy.isEmpty()) {
-@@ -1382,23 +_,47 @@
+@@ -1382,23 +_,58 @@
          }
  
          public void updatePlayer(final ServerPlayer player) {
@@ -352,6 +372,17 @@
 +                        // Paper start - entity tracking events
 +                        if (io.papermc.paper.event.player.PlayerTrackEntityEvent.getHandlerList().getRegisteredListeners().length == 0 || new io.papermc.paper.event.player.PlayerTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity()).callEvent()) {
                          this.serverEntity.addPairing(player);
++                        // Paper start - Resend trader leashes when the holder returns to tracking range
++                        if (this.entity instanceof WanderingTrader) {
++                            for (Leashable leashed : Leashable.leashableLeashedTo(this.entity)) {
++                                Entity leashedEntity = (Entity) leashed;
++                                TrackedEntity leashedTracker = ChunkMap.this.entityMap.get(leashedEntity.getId());
++                                if (leashedTracker != null && leashedTracker.seenBy.contains(player.connection)) {
++                                    player.connection.send(new ClientboundSetEntityLinkPacket(leashedEntity, this.entity));
++                                }
++                            }
++                        }
++                        // Paper end - Resend trader leashes when the holder returns to tracking range
                          if (this.seenBy.size() == 1) {
                              ChunkMap.this.level.debugSynchronizers().registerEntity(this.entity);
                          }
