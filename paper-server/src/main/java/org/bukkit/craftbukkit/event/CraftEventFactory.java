@@ -12,7 +12,9 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
@@ -112,6 +114,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1605,6 +1608,60 @@ public class CraftEventFactory {
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
     }
 
+    public static void callPlayerBundleItemSelectEvent(final net.minecraft.world.entity.player.Player player, final int slotId, final int selectedIndex) {
+        if (player.isCreative() && player.containerMenu instanceof net.minecraft.world.inventory.InventoryMenu) {
+            // The packet's slotId will always be 0 if this packet is sent for a player selecting an item in a bundle in their creative inventory,
+            // making it unfit for firing an event.
+            return;
+        }
+
+        if (slotId < 0 || slotId >= player.containerMenu.slots.size() || selectedIndex <= net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+            return;
+        }
+
+        final net.minecraft.world.item.ItemStack item = player.containerMenu.slots.get(slotId).getItem();
+        if (!item.is(net.minecraft.tags.ItemTags.BUNDLES)) {
+            return;
+        }
+
+        final net.minecraft.world.item.component.BundleContents contents = item.get(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS);
+        if (contents == null) {
+            return;
+        }
+
+        final int previousIndex = contents.getSelectedItemIndex();
+        if (selectedIndex >= contents.size() || selectedIndex == previousIndex) {
+            return;
+        }
+
+        PlayerBundleItemSelectEvent.Direction direction = PlayerBundleItemSelectEvent.Direction.UNKNOWN;
+        // Scroll direction can only be reliably determined if three or more item stacks are in the bundle,
+        // because we only have access to the before and after selection index.
+        if (contents.size() >= 3) {
+            if (previousIndex == net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+                direction = selectedIndex == 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
+            } else {
+                int diff = selectedIndex - previousIndex;
+                direction = diff > 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
+
+                if (Math.abs(diff) == contents.size() - 1) {
+                    direction = direction.flip();
+                }
+            }
+        }
+
+        new PlayerBundleItemSelectEvent(
+            player.containerMenu.getBukkitView(),
+            CraftItemStack.asBukkitMirror(item),
+            slotId,
+            contents.getSelectedItem() != null ? CraftItemStack.asBukkitMirror(contents.getSelectedItem().create()) : org.bukkit.inventory.ItemStack.empty(),
+            CraftItemStack.asBukkitMirror(contents.items().get(selectedIndex).create()),
+            previousIndex,
+            selectedIndex,
+            direction
+        ).callEvent();
+    }
+
     public static ItemStack handleEditBookEvent(ServerPlayer player, int itemInHandIndex, ItemStack itemInHand, ItemStack newBookItem) {
         PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), (itemInHandIndex >= 0 && itemInHandIndex <= 8) ? itemInHandIndex : -1, (BookMeta) CraftItemStack.getItemMeta(itemInHand), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.is(Items.WRITTEN_BOOK));
         player.level().getCraftServer().getPluginManager().callEvent(editBookEvent);
@@ -2109,7 +2166,7 @@ public class CraftEventFactory {
         Location from = bukkitPlayer.getLocation();
         PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
         event.callEvent();
-        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
+        if (event.isCancelled() || event.getTo().getWorld() == null || !player.isAlive()) {
             return null;
         }
 
@@ -2406,6 +2463,10 @@ public class CraftEventFactory {
             return false;
         }
         return true;
+    }
+
+    public static ItemTransportingEntitySortEvent createItemTransportingEntitySortEvent(PathfinderMob mob, Container container) {
+        return new ItemTransportingEntitySortEvent(mob.getBukkitEntity(), CraftItemStack.asBukkitCopy(mob.getMainHandItem()), new CraftInventory(container));
     }
 
     public static ClockTimeSkipEvent createTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {
