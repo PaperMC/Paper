@@ -792,6 +792,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void registerAttribute(Attribute attribute) {
+        TickThread.ensureTickThread(this.getHandleRaw(), "Cannot update attributes asynchronously");
         this.getHandle().craftAttributes.registerAttribute(attribute);
     }
 
