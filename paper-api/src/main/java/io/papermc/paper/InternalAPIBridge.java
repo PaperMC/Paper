@@ -139,10 +139,5 @@ public interface InternalAPIBridge {
      * @param offerAmount    the amount of enchantment offers to roll.
      * @return an array of enchantment offers with size {@code offerAmount}.
      */
-    @Nullable EnchantmentOffer[] rollEnchantmentOffers(
-        final ItemStack targetStack,
-        final int seed,
-        final int bookshelfCount,
-        final int offerAmount
-    );
+    @Nullable EnchantmentOffer[] rollEnchantmentOffers(final ItemStack targetStack, final int seed, final int bookshelfCount, final int offerAmount);
 }

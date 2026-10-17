@@ -282,39 +282,25 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public @Nullable EnchantmentOffer[] rollEnchantmentOffers(
-        final ItemStack targetStack,
-        final int seed,
-        final int bookshelfCount,
-        final int offerAmount
-    ) {
+    public @Nullable EnchantmentOffer[] rollEnchantmentOffers(final ItemStack targetStack, final int seed, final int bookshelfCount, final int offerAmount) {
         final int[] costs = new int[offerAmount];
         final int[] enchantClue = new int[offerAmount];
         final int[] levelClue = new int[offerAmount];
 
         final RandomSource randomSource = new RandomSourceWrapper(new Random());
-        EnchantmentMenu.fillEnchantmentOffers(
-            randomSource,
-            seed,
-            bookshelfCount,
-            CraftItemStack.unwrap(targetStack),
-            CraftRegistry.getMinecraftRegistry(),
-            costs,
-            enchantClue,
-            levelClue
-        );
+        EnchantmentMenu.fillEnchantmentOffers(randomSource, seed, bookshelfCount, CraftItemStack.unwrap(targetStack), CraftRegistry.getMinecraftRegistry(), costs, enchantClue, levelClue);
 
         final IdMap<Holder<Enchantment>> holderIdMap = CraftRegistry.getMinecraftRegistry()
             .lookupOrThrow(Registries.ENCHANTMENT)
             .asHolderIdMap();
+
         final @Nullable EnchantmentOffer[] offers = new EnchantmentOffer[offerAmount];
         for (int i = 0; i < costs.length; i++) {
-            if (enchantClue[i] < 0) continue;
-            offers[i] = new EnchantmentOffer(
-                CraftEnchantment.minecraftHolderToBukkit(holderIdMap.byId(enchantClue[i])),
-                levelClue[i],
-                costs[i]
-            );
+            if (enchantClue[i] < 0) {
+                continue;
+            }
+
+            offers[i] = new EnchantmentOffer(CraftEnchantment.minecraftHolderToBukkit(holderIdMap.byId(enchantClue[i])), levelClue[i], costs[i]);
         }
 
         return offers;
