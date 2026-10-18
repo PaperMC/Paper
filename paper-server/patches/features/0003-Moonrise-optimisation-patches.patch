@@ -19654,14 +19654,16 @@ index 0000000000000000000000000000000000000000..22a3d9b5a8e08b5b52107f7dca15789c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df555878da46454
+index 0000000000000000000000000000000000000000..221899319a68ea1b2a7424cbf832fea69af0dc72
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/nbt_rw/FastNBTParser.java
-@@ -0,0 +1,291 @@
+@@ -0,0 +1,311 @@
 +package ca.spottedleaf.moonrise.patches.nbt_rw;
 +
 +import ca.spottedleaf.ioutil.stream.AbstractBufferInputStream;
 +import ca.spottedleaf.ioutil.stream.wrapped.BufferedBufferInputStream;
++import net.minecraft.CrashReport;
++import net.minecraft.CrashReportCategory;
 +import net.minecraft.nbt.ByteArrayTag;
 +import net.minecraft.nbt.ByteTag;
 +import net.minecraft.nbt.CompoundTag;
@@ -19676,6 +19678,7 @@ index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df55587
 +import net.minecraft.nbt.NbtAccounter;
 +import net.minecraft.nbt.NbtFormatException;
 +import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.ReportedNbtException;
 +import net.minecraft.nbt.ShortTag;
 +import net.minecraft.nbt.StringTag;
 +import net.minecraft.nbt.Tag;
@@ -19705,7 +19708,10 @@ index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df55587
 +            // fallback to vanilla
 +            return NbtIo.read(dataIn);
 +        }
-+        final NbtAccounter ctx = NbtAccounter.unlimitedHeap();
++        return nbtIoReadStream(stream, NbtAccounter.unlimitedHeap());
++    }
++
++    public static CompoundTag nbtIoReadStream(final InputStream stream, final NbtAccounter ctx) throws IOException {
 +        final Tag tag;
 +
 +        final AbstractBufferInputStream toRead;
@@ -19745,13 +19751,26 @@ index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df55587
 +        throw new IOException("Root tag must be a named compound tag");
 +    }
 +
++    // matches Vanilla's NbtIo#readTagSafe: only IOExceptions thrown while reading the tag payload are wrapped,
++    // while those thrown reading the tag type or name propagate unchanged
++    private static Tag parseVanillaSafe(final byte id, final AbstractBufferInputStream in, final NbtAccounter ctx) {
++        try {
++            return parseVanilla(id, in, ctx);
++        } catch (final IOException ex) {
++            final CrashReport report = CrashReport.forThrowable(ex, "Loading NBT data");
++            final CrashReportCategory category = report.addCategory("NBT Tag");
++            category.setDetail("Tag type", id);
++            throw new ReportedNbtException(report);
++        }
++    }
++
 +    public static Tag parseNamedTagVanilla(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
 +        final byte id = in.readByte();
 +        if (id == NBT_TAG_END) {
 +            return EndTag.INSTANCE;
 +        }
 +        skipUTF(in);
-+        return parseVanilla(id, in, ctx);
++        return parseVanillaSafe(id, in, ctx);
 +    }
 +
 +    public static Tag parseTagNoNameVanilla(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
@@ -19759,7 +19778,7 @@ index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df55587
 +        if (id == NBT_TAG_END) {
 +            return EndTag.INSTANCE;
 +        }
-+        return parseVanilla(id, in, ctx);
++        return parseVanillaSafe(id, in, ctx);
 +    }
 +
 +    private static ByteTag parseByteTag(final AbstractBufferInputStream in, final NbtAccounter ctx) throws IOException {
@@ -19942,7 +19961,8 @@ index 0000000000000000000000000000000000000000..59aa0151d7788c37157ebe973df55587
 +            }
 +
 +            default: {
-+                throw new NbtFormatException("Invalid or unknown tag id: " + type);
++                // matches Vanilla's TagType#createInvalid
++                throw new IOException("Invalid tag id: " + type);
 +            }
 +        }
 +    }
@@ -26321,10 +26341,10 @@ index f157c6de001b4680f12e09bd310f55103f2fa874..9118a43337748ecf7355f63306856531
          @Override
          public LongTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/NbtIo.java b/net/minecraft/nbt/NbtIo.java
-index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..3aafad6ccbc942946194f80dde583f6f5fef3c8f 100644
+index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..a4c411730c605920e79af2b9b9b6482de542caef 100644
 --- a/net/minecraft/nbt/NbtIo.java
 +++ b/net/minecraft/nbt/NbtIo.java
-@@ -22,6 +22,13 @@ import net.minecraft.util.DelegateDataOutput;
+@@ -22,6 +22,14 @@ import net.minecraft.util.DelegateDataOutput;
  import net.minecraft.util.FastBufferedInputStream;
  import net.minecraft.util.Util;
  import org.jspecify.annotations.Nullable;
@@ -26332,13 +26352,42 @@ index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..3aafad6ccbc942946194f80dde583f6f
 +import ca.spottedleaf.ioutil.stream.AbstractBufferOutputStream;
 +import ca.spottedleaf.ioutil.stream.wrapped.BufferedBufferOutputStream;
 +import ca.spottedleaf.moonrise.patches.nbt_rw.CopyingOutputStream;
++import ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser;
 +import ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTSerialiser;
 +import ca.spottedleaf.moonrise.patches.nbt_rw.NBTConstants;
 +// Paper end - Optimize NBT reading/writing
  
  public class NbtIo {
      private static final OpenOption[] SYNC_OUTPUT_OPTIONS = new OpenOption[]{
-@@ -152,21 +159,102 @@ public class NbtIo {
+@@ -46,9 +54,11 @@ public class NbtIo {
+     }
+ 
+     public static CompoundTag readCompressed(final InputStream in, final NbtAccounter accounter) throws IOException {
+-        try (DataInputStream dis = createDecompressorStream(in)) {
+-            return read(dis, accounter);
++        // Paper start - Optimize NBT reading/writing
++        try (GZIPInputStream stream = new GZIPInputStream(in)) {
++            return FastNBTParser.nbtIoReadStream(stream, accounter);
+         }
++        // Paper end - Optimize NBT reading/writing
+     }
+ 
+     public static void parseCompressed(final Path file, final StreamTagVisitor output, final NbtAccounter accounter) throws IOException {
+@@ -76,9 +86,11 @@ public class NbtIo {
+     }
+ 
+     public static void writeCompressed(final CompoundTag tag, final OutputStream out) throws IOException {
+-        try (DataOutputStream dos = createCompressorStream(out)) {
+-            write(tag, dos);
++        // Paper start - Optimize NBT reading/writing
++        try (GZIPOutputStream stream = new GZIPOutputStream(out)) {
++            writeTag(tag, stream, "", true);
+         }
++        // Paper end - Optimize NBT reading/writing
+     }
+ 
+     public static void write(final CompoundTag tag, final Path file) throws IOException {
+@@ -152,20 +164,105 @@ public class NbtIo {
          return type == 0 ? EndTag.INSTANCE : readTagSafe(input, accounter, type);
      }
  
@@ -26377,6 +26426,10 @@ index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..3aafad6ccbc942946194f80dde583f6f
 +            writeTagV(tag, output, name);
 +            return;
 +        }
++        writeTag(tag, stream, name, stringFallback);
++    }
++
++    private static void writeTag(final Tag tag, final OutputStream stream, final String name, final boolean stringFallback) throws IOException {
 +        final AbstractBufferOutputStream toFlush;
 +        final boolean writeBuffer;
 +        final CopyingOutputStream copy;
@@ -26398,7 +26451,7 @@ index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..3aafad6ccbc942946194f80dde583f6f
 +                toFlush = new BufferedBufferOutputStream(NBTConstants.BUFFER.get(), stream);
 +            }
 +            writeBuffer = true;
-+        }
+         }
 +        try {
 +            if (name != null) {
 +                FastNBTSerialiser.writeNamedTag(tag, name, toFlush, stringFallback);
@@ -26434,21 +26487,20 @@ index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..3aafad6ccbc942946194f80dde583f6f
 +            if (writeBuffer) {
 +                toFlush.writeBuffer();
 +            }
-         }
-     }
- 
++        }
++    }
++
 +    public static void writeAnyTag(final Tag tag, final DataOutput output) throws IOException {
 +        writeTag(tag, output, null);
 +    }
 +
 +    public static void writeUnnamedTag(final Tag tag, final DataOutput output) throws IOException {
 +        writeTag(tag, output, "");
-+    }
+     }
 +    // Paper end - Optimize NBT reading/writing
-+
+ 
      public static void writeUnnamedTagWithFallback(final Tag tag, final DataOutput output) throws IOException {
          writeUnnamedTag(tag, new NbtIo.StringFallbackDataOutput(output));
-     }
 diff --git a/net/minecraft/nbt/ShortTag.java b/net/minecraft/nbt/ShortTag.java
 index e2bb75b4b6ffdad1f4f9933d11ed5cc01cd09f92..aa7d51539f26507b54fb07529886429d9ccaa36a 100644
 --- a/net/minecraft/nbt/ShortTag.java
@@ -31904,7 +31956,7 @@ index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc74
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index ac3695b4550a4d438c264f6054192cd59490c556..bb61d4e4ecfe5bab6269fa3d4303dab95719d7bb 100644
+index adc255a80a2c8c4526bfbd1b1506939c878e206a..71ce072c2c9a6349d895054184321cb336ae567b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
@@ -32916,7 +32968,7 @@ index 789547baacfaed25ea99406edc77f1a5901eb9bc..c708f4517ba1274db7046810044e69da
          this(setDirty, true, ImmutableList.of());
      }
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 90a3acba15f86673ed59f981e2a781dd10c9d24e..0ebb87ce71cccc73a60945552d0f4ac000291dd6 100644
+index 6fd266a9d05f6681ba9319d5eccbea4daa44a8f2..b842fa8de45c0b25912e40baa7ede5ebc259fa81 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -207,7 +207,7 @@ public class ArmorStand extends LivingEntity {
@@ -39695,6 +39747,19 @@ index e3a0d0f56207b7eab2f982bdaa421dc456ab52ba..d5697697d48963a01f8d4c3570b75da2
      }
  
      public Optional<BlockUtil.FoundRectangle> createPortal(final BlockPos origin, final Direction.Axis portalAxis) {
+diff --git a/net/minecraft/world/level/storage/SavedDataStorage.java b/net/minecraft/world/level/storage/SavedDataStorage.java
+index f359e53024019f35aaa5cd8477da708bda2fc57a..d2a379b55467af19d9c7915e6964f97ca7ea264f 100644
+--- a/net/minecraft/world/level/storage/SavedDataStorage.java
++++ b/net/minecraft/world/level/storage/SavedDataStorage.java
+@@ -116,7 +116,7 @@ public class SavedDataStorage implements AutoCloseable {
+                 tag = NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
+             } else {
+                 try (DataInputStream dis = new DataInputStream(inputStream)) {
+-                    tag = NbtIo.read(dis);
++                    tag = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(dis); // Paper - Optimize NBT reading/writing
+                 }
+             }
+ 
 diff --git a/net/minecraft/world/phys/AABB.java b/net/minecraft/world/phys/AABB.java
 index 8683fb1f1b3bd8264bf2a14272c70661c833cefc..0f64620a09ccfc3b96757f82a1d0c7fc37dd60b6 100644
 --- a/net/minecraft/world/phys/AABB.java
