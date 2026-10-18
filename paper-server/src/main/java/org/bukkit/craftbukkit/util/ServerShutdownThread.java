@@ -20,7 +20,7 @@ public class ServerShutdownThread extends TickThread {
 
             // Give the server at least a second to realize that it needs to stop, if it takes longer that means it could be stuck.
             // If the server hasn't finished starting up yet, give it as much time as it needs to start up and close on its own. This is
-            // assuming that as long as the server thread is running, it will eventually successfully init & isn't deadlocked.
+            // assuming that as long as the server thread is running, it isn't deadlocked and will eventually either successfully init or fail and stop running.
             for (int i = 1000; i > 0 && !server.hasStopped() || (!server.hasStarted && server.getRunningThread().isAlive()); i -= 100) {
                 Thread.sleep(100);
             }
