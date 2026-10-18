@@ -17,3 +17,46 @@
              level.playSound(null, pos, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
              player.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemStack, player, new ItemStack(Items.GLASS_BOTTLE)));
              if (!level.isClientSide()) {
+@@ -73,5 +_,42 @@
+     public Component getName(final ItemStack itemStack) {
+         PotionContents potion = itemStack.get(DataComponents.POTION_CONTENTS);
+         return potion != null ? potion.getName(this.descriptionId + ".effect.") : super.getName(itemStack);
++    }
++    @Override
++    public ItemStack finishUsingItem(ItemStack stack, Level level, net.minecraft.world.entity.LivingEntity user) {
++        // Paper start - fix instant kill exploit
++        net.minecraft.world.item.alchemy.PotionContents vanillaPotionContents = stack.getOrDefault(DataComponents.POTION_CONTENTS, net.minecraft.world.item.alchemy.PotionContents.EMPTY);
++        if (vanillaPotionContents.hasEffects()) {
++            boolean modified = false;
++            java.util.List<net.minecraft.world.effect.MobEffectInstance> safeEffects = new java.util.ArrayList<>();
++
++            for (net.minecraft.world.effect.MobEffectInstance effect : vanillaPotionContents.customEffects()) {
++                if (effect.getAmplifier() >= 32) {
++                    safeEffects.add(new net.minecraft.world.effect.MobEffectInstance(
++                        effect.getEffect(),
++                        effect.getDuration(),
++                        31,
++                        effect.isAmbient(),
++                        effect.isVisible(),
++                        effect.showIcon()
++                    ));
++                    modified = true;
++                } else {
++                    safeEffects.add(effect);
++                }
++            }
++
++            if (modified) {
++                stack = stack.copy();
++                stack.set(DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(
++                    vanillaPotionContents.potion(),
++                    vanillaPotionContents.customColor(),
++                    safeEffects,
++                    vanillaPotionContents.customName()
++                ));
++            }
++        }
++        return super.finishUsingItem(stack, level, user);
++        // Paper end - fix instant kill exploit
+     }
+ }
