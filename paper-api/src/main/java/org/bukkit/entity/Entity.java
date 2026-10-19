@@ -1,12 +1,16 @@
 package org.bukkit.entity;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.math.Angle;
+import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.Namespaced;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -38,6 +42,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * Represents a base entity in the world
@@ -1400,4 +1405,49 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @throws IllegalArgumentException if {@code this} is contained in {@code players}
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
+
+    /**
+     * Gets if the entity is allied to the given entity.
+     *
+     * @param other the other entity
+     * @return {@code true} if the entity is allied to the given entity
+     */
+    boolean isAlliedTo(@NotNull Entity other);
+
+    /**
+     * Gets an immutable map of the current additional rules of alliance with any entity.
+     * <br>
+     * These are additional rules from the vanilla behavior for any entity, like share a team.
+     * <br>
+     * These rules are not (currently) persistent.
+     *
+     * @return an immutable map of the current additional rules of alliance with any entity
+     * @see #addAdditionalAlliedRule(Key, Predicate)
+     */
+    @UnmodifiableView
+    @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
+
+    /**
+     * Add a rule of alliance with any entity.
+     * <br>
+     * If a rule with the specified {@link Key} already exists, it will be overwritten.
+     *
+     * @param key the key of the rule
+     * @param predicate the rule of alliance with any entity
+     */
+    void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<Entity> predicate);
+
+    /**
+     * Remove the rule of alliance with any entity.
+     *
+     * @param key the key of the rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Key key);
+
+    /**
+     * Remove the rules of alliance with any entity.
+     *
+     * @param namespaced the namespaced of the rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Namespaced namespaced);
 }
