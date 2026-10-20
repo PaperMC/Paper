@@ -45,7 +45,7 @@ public record OptionallyFlatBedrockCondition(Identifier randomName, VerticalAnch
 
     @Override
     public ConditionEvaluator compile(final MaterialRuleContext ruleContext) {
-        final boolean hasFlatBedrock = ruleContext.context.level().paperConfig().environment.generateFlatBedrock;
+        final boolean hasFlatBedrock = ruleContext.serverLevel != null && ruleContext.serverLevel.paperConfig().environment.generateFlatBedrock;
         final int tempTrueAtAndBelowY = ruleContext.resolveAnchorY(this.trueAtAndBelow);
         final int tempFalseAtAndAboveY = ruleContext.resolveAnchorY(this.falseAtAndAbove);
 

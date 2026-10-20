@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -69,6 +_,7 @@
+@@ -70,6 +_,7 @@
          }
  
          BlockState placementState = this.getPlacementState(updatedPlaceContext);
@@ -8,7 +8,7 @@
          if (placementState == null) {
              return InteractionResult.FAIL;
          }
-@@ -82,21 +_,46 @@
+@@ -83,11 +_,35 @@
          Player player = updatedPlaceContext.getPlayer();
          ItemStack itemStack = updatedPlaceContext.getItemInHand();
          BlockState placedState = level.getBlockState(pos);
@@ -46,19 +46,23 @@
              if (player instanceof ServerPlayer serverPlayer) {
                  CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, pos, itemStack);
              }
+@@ -95,13 +_,13 @@
+ 
+         BlockSoundSet blockSoundSet = placedState.getSounds(level);
+         Holder<SoundEvent> placeSound = this.getPlaceSound(blockSoundSet);
+-        if (placeSound != null) {
++        if (placeSound != null && player == null) { // Paper - Fix block place logic; reintroduce this for the dispenser (i.e the shulker)
+             level.playSound(player, pos, placeSound, SoundSource.BLOCKS, (blockSoundSet.volume() + 1.0F) / 2.0F, blockSoundSet.pitch() * 0.8F);
          }
  
-         SoundType soundType = placedState.getSoundType();
-+        if (player == null) // Paper - Fix block place logic; reintroduce this for the dispenser (i.e the shulker)
-         level.playSound(player, pos, this.getPlaceSound(placedState), SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
          level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(player, placedState));
          itemStack.consume(1, player);
 -        return InteractionResult.SUCCESS;
 +        return InteractionResult.SUCCESS.configurePaper(context); // Paper
      }
  
-     protected SoundEvent getPlaceSound(final BlockState blockState) {
-@@ -136,8 +_,20 @@
+     protected @Nullable Holder<SoundEvent> getPlaceSound(final BlockSoundSet blockSoundSet) {
+@@ -141,8 +_,20 @@
  
      protected boolean canPlace(final BlockPlaceContext context, final BlockState stateForPlacement) {
          Player player = context.getPlayer();
@@ -81,7 +85,7 @@
      }
  
      protected boolean mustSurvive() {
-@@ -162,7 +_,7 @@
+@@ -167,7 +_,7 @@
                      return false;
                  }
  

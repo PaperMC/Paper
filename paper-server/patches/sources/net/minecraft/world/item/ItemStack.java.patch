@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -190,9 +_,17 @@
+@@ -189,9 +_,17 @@
                  if (itemStack.isEmpty()) {
                      output.writeVarInt(0);
                  } else {
@@ -19,7 +19,7 @@
                  }
              }
          };
-@@ -204,7 +_,7 @@
+@@ -203,7 +_,7 @@
              public ItemStack decode(final RegistryFriendlyByteBuf input) {
                  ItemStack itemStack = codec.decode(input);
                  if (!itemStack.isEmpty()) {
@@ -28,7 +28,7 @@
                      ItemStack.CODEC.encodeStart(ops, itemStack).getOrThrow(DecoderException::new);
                  }
  
-@@ -369,12 +_,141 @@
+@@ -368,12 +_,144 @@
          } else {
              ItemStack stackBeforeUse = this.copy();
              Item usedItem = this.getItem();
@@ -161,8 +161,11 @@
 +
 +                    if (usedItem instanceof BlockItem blockItem && placedPos != null) {
 +                        BlockState placedState = level.getBlockState(placedPos);
-+                        net.minecraft.world.level.block.SoundType soundType = placedState.getSoundType();
-+                        level.playSound(player, pos, blockItem.getPlaceSound(placedState), net.minecraft.sounds.SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
++                        net.minecraft.world.level.block.sounds.BlockSoundSet blockSoundSet = placedState.getSounds(level);
++                        net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> placeSound = blockItem.getPlaceSound(blockSoundSet);
++                        if (placeSound != null) {
++                            level.playSound(player, pos, placeSound, net.minecraft.sounds.SoundSource.BLOCKS, (blockSoundSet.volume() + 1.0F) / 2.0F, blockSoundSet.pitch() * 0.8F);
++                        }
 +                    }
 +
 +                    player.awardStat(Stats.ITEM_USED.get(usedItem));
@@ -175,7 +178,7 @@
              } else {
                  return result;
              }
-@@ -452,31 +_,67 @@
+@@ -451,31 +_,67 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -251,7 +254,7 @@
              this.shrink(1);
              onBreak.accept(broken);
          }
-@@ -489,7 +_,26 @@
+@@ -488,7 +_,26 @@
                  return;
              }
  
@@ -279,7 +282,7 @@
              this.applyDamage(newDamage, serverPlayer, i -> {});
          }
      }
-@@ -499,9 +_,14 @@
+@@ -498,9 +_,14 @@
      }
  
      public void hurtAndBreak(final int amount, final LivingEntity owner, final EquipmentSlot slot) {
@@ -295,7 +298,7 @@
              );
          }
      }
-@@ -760,6 +_,12 @@
+@@ -759,6 +_,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -308,7 +311,7 @@
      public <T> @Nullable T set(final DataComponentType<T> type, final @Nullable T value) {
          return this.components.set(type, value);
      }
-@@ -1032,6 +_,18 @@
+@@ -1031,6 +_,18 @@
          EnchantmentHelper.forEachModifier(this, slot, consumer);
      }
  
@@ -327,7 +330,7 @@
      public Component getDisplayName() {
          MutableComponent hoverName = Component.empty().append(this.getHoverName());
          if (this.has(DataComponents.CUSTOM_NAME)) {
-@@ -1100,7 +_,7 @@
+@@ -1099,7 +_,7 @@
      }
  
      public void consume(final int amount, final @Nullable LivingEntity owner) {

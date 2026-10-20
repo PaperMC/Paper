@@ -1,10 +1,10 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -76,9 +_,9 @@
+@@ -79,9 +_,9 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int CONVERSION_RETRY_DELAY_MS = 5000;
      private static final int CONVERSION_RETRIES = 2;
--    private final List<ConsoleInput> consoleInput = Collections.synchronizedList(Lists.newArrayList());
+-    private final List<ConsoleInput> consoleInput = Collections.synchronizedList(new ArrayList<>());
 +    private final java.util.Queue<ConsoleInput> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - Perf: use a proper queue
      private @Nullable QueryThreadGs4 queryThreadGs4;
 -    private final RconConsoleSource rconConsoleSource;
@@ -12,7 +12,7 @@
      private @Nullable RconThread rconThread;
      public DedicatedServerSettings settings;
      private @Nullable MinecraftServerGui gui;
-@@ -90,6 +_,7 @@
+@@ -93,6 +_,7 @@
      private final @Nullable ManagementServer jsonRpcServer;
  
      public DedicatedServer(
@@ -20,7 +20,7 @@
          final Thread serverThread,
          final LevelStorageSource.LevelStorageAccess levelStorageSource,
          final PackRepository packRepository,
-@@ -102,6 +_,7 @@
+@@ -105,6 +_,7 @@
          final NotificationManager notificationManager
      ) {
          super(
@@ -28,7 +28,7 @@
              serverThread,
              levelStorageSource,
              packRepository,
-@@ -115,7 +_,8 @@
+@@ -118,7 +_,8 @@
              notificationManager
          );
          this.settings = settings;
@@ -38,7 +38,7 @@
          this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
          this.jsonRpcServer = jsonRpcServer;
          this.serverLinks = createServerLinks(settings);
-@@ -167,6 +_,10 @@
+@@ -170,6 +_,10 @@
          Thread consoleThread = new Thread("Server console handler") {
              @Override
              public void run() {
@@ -49,7 +49,7 @@
                  BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
  
                  String line;
-@@ -177,16 +_,41 @@
+@@ -180,16 +_,41 @@
                  } catch (IOException e) {
                      DedicatedServer.LOGGER.error("Exception handling console input", e);
                  }
@@ -92,7 +92,7 @@
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
          if (this.isSingleplayer()) {
-@@ -197,8 +_,45 @@
+@@ -200,8 +_,45 @@
              this.setLocalIp(properties.serverIp);
          }
  
@@ -139,7 +139,7 @@
          InetAddress localAddress = null;
          if (!this.getLocalIp().isEmpty()) {
              localAddress = InetAddress.getByName(this.getLocalIp());
-@@ -207,47 +_,73 @@
+@@ -210,47 +_,73 @@
          if (this.getPort() < 0) {
              this.setPort(properties.serverPort);
          }
@@ -221,7 +221,7 @@
          }
  
          if (properties.enableQuery) {
-@@ -260,7 +_,7 @@
+@@ -263,7 +_,7 @@
              this.rconThread = RconThread.create(this);
          }
  
@@ -230,7 +230,7 @@
              Thread watchdog = new Thread(new ServerWatchdog(this), "Server Watchdog");
              watchdog.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
              watchdog.setDaemon(true);
-@@ -277,6 +_,12 @@
+@@ -280,6 +_,12 @@
          return true;
      }
  
@@ -243,7 +243,7 @@
      @Override
      public boolean isEnforceWhitelist() {
          return this.settings.getProperties().enforceWhitelist.get();
-@@ -294,6 +_,7 @@
+@@ -297,6 +_,7 @@
  
      @Override
      public void setUsingWhitelist(final boolean usingWhitelist) {
@@ -251,7 +251,7 @@
          this.settings.update(p -> p.whiteList.update(this.registryAccess(), usingWhitelist));
      }
  
-@@ -345,7 +_,7 @@
+@@ -348,7 +_,7 @@
  
      @Override
      protected void forceDifficulty() {
@@ -260,7 +260,7 @@
      }
  
      public int viewDistance() {
-@@ -403,11 +_,11 @@
+@@ -406,11 +_,11 @@
          }
  
          if (this.rconThread != null) {
@@ -274,7 +274,7 @@
          }
  
          if (this.jsonRpcServer != null) {
-@@ -417,6 +_,9 @@
+@@ -420,6 +_,9 @@
                  LOGGER.error("Interrupted while stopping the management server", e);
              }
          }
@@ -284,7 +284,7 @@
      }
  
      @Override
-@@ -426,12 +_,20 @@
+@@ -429,12 +_,20 @@
      }
  
      public void handleConsoleInput(final String msg, final CommandSourceStack source) {
@@ -308,7 +308,7 @@
              this.getCommands().performPrefixedCommand(input.source, input.msg);
          }
      }
-@@ -592,12 +_,15 @@
+@@ -600,12 +_,15 @@
  
      @Override
      public String getMotd() {
@@ -326,7 +326,7 @@
      }
  
      @Override
-@@ -623,7 +_,11 @@
+@@ -631,7 +_,11 @@
      @Override
      public boolean enforceSecureProfile() {
          DedicatedServerProperties properties = this.getProperties();
@@ -339,7 +339,7 @@
      }
  
      @Override
-@@ -708,21 +_,60 @@
+@@ -721,21 +_,60 @@
  
      @Override
      public String getPluginNames() {
@@ -405,7 +405,7 @@
      }
  
      @Override
-@@ -852,4 +_,15 @@
+@@ -871,4 +_,15 @@
      public Map<String, String> getCodeOfConducts() {
          return this.codeOfConductTexts;
      }

@@ -1,38 +1,29 @@
 --- a/net/minecraft/world/level/block/FrostedIceBlock.java
 +++ b/net/minecraft/world/level/block/FrostedIceBlock.java
-@@ -36,6 +_,7 @@
+@@ -32,10 +_,11 @@
  
      @Override
      protected void tick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
 +        if (!level.paperConfig().environment.frostedIce.enabled) return; // Paper - Frosted ice options
-         if (random.nextInt(3) == 0 || this.fewerNeigboursThan(level, pos, 4)) {
-             int brightness = level.dimension() == Level.END ? level.getBrightness(LightLayer.BLOCK, pos) : level.getMaxLocalRawBrightness(pos);
-             if (brightness > 11 - state.getValue(AGE) - state.getLightDampening() && this.slightlyMelt(state, level, pos)) {
-@@ -45,7 +_,7 @@
-                     neighborPos.setWithOffset(pos, direction);
-                     BlockState neighbour = level.getBlockState(neighborPos);
-                     if (neighbour.is(this) && !this.slightlyMelt(neighbour, level, neighborPos)) {
--                        level.scheduleTick(neighborPos, this, Mth.nextInt(random, 20, 40));
-+                        level.scheduleTick(neighborPos, this, Mth.nextInt(random, level.paperConfig().environment.frostedIce.delay.min, level.paperConfig().environment.frostedIce.delay.max)); // Paper - Frosted ice options
-                     }
-                 }
- 
-@@ -53,12 +_,17 @@
-             }
+         if (this.shouldEnvironmentIncreaseCracking(state, level, pos, random) && this.slightlyMelt(state, level, pos)) {
+             this.propagateMelting(level, pos, random);
+         } else {
+-            level.scheduleTick(pos, this, this.getTickDelay(random));
++            level.scheduleTick(pos, this, this.getTickDelay(level, random)); // Paper - Frosted ice options
          }
- 
--        level.scheduleTick(pos, this, Mth.nextInt(random, 20, 40));
-+        level.scheduleTick(pos, this, Mth.nextInt(random, level.paperConfig().environment.frostedIce.delay.min, level.paperConfig().environment.frostedIce.delay.max)); // Paper - Frosted ice options
      }
  
-     private boolean slightlyMelt(final BlockState state, final Level level, final BlockPos pos) {
-         int age = state.getValue(AGE);
-         if (age < 3) {
-+            // Paper start - FrostedIce BlockFadeEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, state.setValue(AGE, age + 1)).isCancelled()) {
-+                return false;
-+            }
-+            // Paper end - FrostedIce BlockFadeEvent
-             level.setBlock(pos, state.setValue(AGE, age + 1), Block.UPDATE_CLIENTS);
-             return false;
-         } else {
+@@ -79,6 +_,13 @@
+     protected int getTickDelay(final RandomSource random) {
+         return Mth.nextInt(random, 20, 40);
+     }
++
++    // Paper start - Frosted ice options
++    @Override
++    protected int getTickDelay(final Level level, final RandomSource random) {
++        return Mth.nextInt(random, level.paperConfig().environment.frostedIce.delay.min, level.paperConfig().environment.frostedIce.delay.max);
++    }
++    // Paper end - Frosted ice options
+ 
+     @Override
+     protected ItemStack getCloneItemStack(final LevelReader level, final BlockPos pos, final BlockState state, final boolean includeData) {

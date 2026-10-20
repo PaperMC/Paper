@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/net/minecraft/world/level/material/FlowingFluid.java
-@@ -119,6 +_,15 @@
-                 Fluid newBelowFluidType = newBelowFluid.getType();
-                 if (belowFluid.canBeReplacedWith(level, belowPos, newBelowFluidType, Direction.DOWN)
-                     && canHoldSpecificFluid(level, belowPos, belowState, newBelowFluidType)) {
+@@ -128,6 +_,15 @@
+                 FluidState newBelowFluid = this.getNewLiquid(level, belowPos, belowState);
+                 if (belowFluid.canBeReplacedWith(level, belowPos, newBelowFluid, Direction.DOWN)
+                     && canHoldSpecificFluid(level, belowPos, belowState, newBelowFluid)) {
 +                    // CraftBukkit start
 +                    org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +                    org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.block.BlockFace.DOWN);
@@ -16,7 +16,7 @@
                      this.spreadTo(level, belowPos, belowState, Direction.DOWN, newBelowFluid);
                      if (this.sourceNeighborCount(level, pos) >= 3) {
                          this.spreadToSides(level, pos, fluidState, state);
-@@ -147,7 +_,18 @@
+@@ -156,7 +_,18 @@
                  Direction spread = entry.getKey();
                  FluidState newNeighborFluid = entry.getValue();
                  BlockPos neighborPos = pos.relative(spread);
@@ -36,7 +36,7 @@
              }
          }
      }
-@@ -159,7 +_,8 @@
+@@ -168,7 +_,8 @@
  
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos relativePos = mutablePos.setWithOffset(pos, direction);
@@ -44,26 +44,23 @@
 +            BlockState blockState = level.getBlockStateIfLoaded(relativePos); // Paper - Prevent chunk loading from fluid flowing
 +            if (blockState == null) continue; // Paper - Prevent chunk loading from fluid flowing
              FluidState fluidState = blockState.getFluidState();
-             if (fluidState.getType().isSame(this) && canPassThroughWall(direction, level, pos, state, relativePos, blockState)) {
+             if (fluidState.is(this) && canPassThroughWall(direction, level, pos, state, relativePos, blockState)) {
                  if (fluidState.isSource()) {
-@@ -264,13 +_,15 @@
-             container.placeLiquid(level, pos, state, target);
+@@ -280,6 +_,13 @@
          } else {
              if (!state.isAir()) {
--                this.beforeDestroyingBlock(level, pos, state);
-+                this.beforeDestroyingBlock(level, pos, state, pos.relative(direction.getOpposite())); // Paper - Add BlockBreakBlockEvent
+                 this.beforeDestroyingBlock(level, pos, state);
++                // Paper start - Add BlockBreakBlockEvent
++                if (level instanceof Level realLevel) {
++                    net.minecraft.world.level.block.entity.BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
++                    Block.dropResources(state, realLevel, pos, blockEntity, pos.relative(direction.getOpposite()));
++                    level.destroyBlock(pos, false);
++                } else
++                // Paper end - Add BlockBreakBlockEvent
+                 level.destroyBlock(pos, true);
              }
  
-             level.setBlockAndUpdate(pos, target.createLegacyBlock());
-         }
-     }
- 
-+    protected void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state, BlockPos source) { beforeDestroyingBlock(level, pos, state); } // Paper - Add BlockBreakBlockEvent
-+
-     protected abstract void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state);
- 
-     protected int getSlopeDistance(
-@@ -281,7 +_,8 @@
+@@ -297,7 +_,8 @@
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              if (direction != from) {
                  BlockPos testPos = pos.relative(direction);
@@ -71,9 +68,9 @@
 +                BlockState testState = context.getBlockStateIfLoaded(testPos); // Paper - Prevent chunk loading from fluid flowing
 +                if (testState == null) continue; // Paper - Prevent chunk loading from fluid flowing
                  FluidState testFluidState = testState.getFluidState();
-                 if (this.canPassThrough(level, this.getFlowing(), pos, state, direction, testPos, testState, testFluidState)) {
+                 if (this.canPassThrough(level, pos, state, direction, testPos, testState, testFluidState)) {
                      if (context.isHole(testPos)) {
-@@ -363,7 +_,8 @@
+@@ -378,7 +_,8 @@
  
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos testPos = pos.relative(direction);
@@ -83,7 +80,7 @@
              FluidState testFluidState = testState.getFluidState();
              if (this.canMaybePassThrough(level, pos, state, direction, testPos, testState, testFluidState)) {
                  FluidState newFluid = this.getNewLiquid(level, testPos, testState);
-@@ -424,10 +_,24 @@
+@@ -439,10 +_,24 @@
              if (newFluidState.isEmpty()) {
                  fluidState = newFluidState;
                  blockState = Blocks.AIR.defaultBlockState();
@@ -108,7 +105,7 @@
                  level.setBlockAndUpdate(pos, blockState);
                  level.scheduleTick(pos, fluidState.getType(), tickDelay);
              }
-@@ -496,8 +_,27 @@
+@@ -513,8 +_,27 @@
              return this.getBlockState(pos, this.getCacheKey(pos));
          }
  

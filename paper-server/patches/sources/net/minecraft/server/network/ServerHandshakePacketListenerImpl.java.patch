@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-@@ -14,9 +_,20 @@
- 
+@@ -16,9 +_,20 @@
  public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketListener {
      private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
+     private static final Component CONNECTION_REJECTED_REASON = Component.translatable("multiplayer.disconnect.rejected");
 +    // Spigot start
 +    private static final com.google.gson.Gson gson = new com.google.gson.Gson();
 +    static final java.util.regex.Pattern HOST_PATTERN = java.util.regex.Pattern.compile("[0-9a-f\\.:]{0,45}");
@@ -21,17 +21,17 @@
      public ServerHandshakePacketListenerImpl(final MinecraftServer server, final Connection connection) {
          this.server = server;
          this.connection = connection;
-@@ -24,6 +_,7 @@
+@@ -26,6 +_,7 @@
  
      @Override
      public void handleIntention(final ClientIntentionPacket packet) {
 +        this.connection.hostname = packet.hostName() + ":" + packet.port(); // CraftBukkit  - set hostname
-         switch (packet.intention()) {
-             case LOGIN:
-                 this.beginLogin(packet, false);
-@@ -50,22 +_,119 @@
-             default:
-                 throw new UnsupportedOperationException("Invalid intention " + packet.intention());
+         ServerConnectionDetails details = ServerConnectionDetails.fromIntentPacket(packet);
+         if (!this.server.acceptsConnection(this.connection, details)) {
+             this.connection.disconnect(CONNECTION_REJECTED_REASON);
+@@ -57,22 +_,119 @@
+                     throw new UnsupportedOperationException("Invalid intention " + packet.intention());
+             }
          }
 +
 +        // Paper start - NetworkClient implementation

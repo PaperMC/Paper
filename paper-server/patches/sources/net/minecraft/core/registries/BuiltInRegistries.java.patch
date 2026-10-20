@@ -1,65 +1,23 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -367,6 +_,11 @@
-     public static final Registry<ContextKeySet> CONTEXT_KEY_SET = registerSimple(Registries.CONTEXT_KEY_SET, LootContextParamSets::bootstrap);
-     public static final Registry<Consumer<GameTestHelper>> TEST_FUNCTION = registerSimple(Registries.TEST_FUNCTION, BuiltinTestFunctions::bootstrap);
-     public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
+@@ -373,9 +_,19 @@
+     public static final Registry<ContextKeySet> CONTEXT_KEY_SET = BUILDER.registerSimple(Registries.CONTEXT_KEY_SET, LootContextParamSets::bootstrap);
+     public static final Registry<Consumer<GameTestHelper>> TEST_FUNCTION = BUILDER.registerSimple(Registries.TEST_FUNCTION, BuiltinTestFunctions::bootstrap);
+     public static final Registry<? extends Registry<?>> REGISTRY = BUILDER.build();
 +    // Paper start - add built-in registry conversions
 +    public static final io.papermc.paper.registry.data.util.Conversions STATIC_ACCESS_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(
 +        new net.minecraft.resources.RegistryOps.HolderLookupAdapter(net.minecraft.server.RegistryLayer.STATIC_ACCESS)
 +    );
 +    // Paper end - add built-in registry conversions
  
-     private static <T> Registry<T> registerSimple(final ResourceKey<? extends Registry<T>> name, final BuiltInRegistries.RegistryBootstrap<T> loader) {
-         return internalRegister(name, new MappedRegistry<>(name, Lifecycle.stable(), false), loader);
-@@ -394,6 +_,7 @@
-         final ResourceKey<? extends Registry<T>> name, final R registry, final BuiltInRegistries.RegistryBootstrap<T> loader
-     ) {
-         Bootstrap.checkBootstrapCalled(() -> "registry " + name.identifier());
-+        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry); // Paper - initialize API registry
-         Identifier key = name.identifier();
-         LOADERS.put(key, () -> loader.run(registry));
-         WRITABLE_REGISTRY.register((ResourceKey)name, registry, RegistrationInfo.BUILT_IN);
-@@ -401,16 +_,34 @@
-     }
- 
      public static void bootStrap() {
+-        BUILDER.bootStrap();
 +        // Paper start
 +        bootStrap(() -> {});
 +    }
 +    public static void bootStrap(Runnable runnable) {
++        BUILDER.bootStrap(runnable);
 +        // Paper end
-+        REGISTRY.freeze(); // Paper - freeze main registry early
-         createContents();
-+        runnable.run(); // Paper
-         freeze();
-         validate(REGISTRY);
      }
  
-     private static void createContents() {
-+        // Paper start - class-load org.bukkit.Registry
-+        // we have to class-load Registry here to create all the CraftRegistry instances
-+        // that will be created when Registry is class-loaded before RegistryAccess#getRegistry
-+        // would try to create them in lockReferenceHolder
-+        try {
-+            Class.forName(org.bukkit.Registry.class.getName());
-+        } catch (final ClassNotFoundException ex) {
-+            throw new RuntimeException(ex);
-+        }
-+        // Paper end - class-load org.bukkit.Registry
-         LOADERS.forEach((key, value) -> {
-             if (value.get() == null) {
-                 LOGGER.error("Unable to bootstrap registry '{}'", key);
-             }
-+            io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(ResourceKey.createRegistryKey(key)); // Paper - lock reference holder creation
-         });
-     }
- 
-@@ -419,6 +_,7 @@
- 
-         for (Registry<?> registry : REGISTRY) {
-             bindBootstrappedTagsToEmpty(registry);
-+            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), STATIC_ACCESS_CONVERSIONS); // Paper
-             registry.freeze();
-         }
-     }
+     public static <T> HolderGetter<T> acquireBootstrapRegistrationLookup(final Registry<T> registry) {

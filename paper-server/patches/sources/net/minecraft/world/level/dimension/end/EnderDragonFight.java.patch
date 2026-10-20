@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/dimension/end/EnderDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
-@@ -104,6 +_,7 @@
+@@ -103,6 +_,7 @@
      public @Nullable DragonRespawnStage respawnStage;
      private int respawnTime;
      public List<EntityReference<EndCrystal>> respawnCrystals;
@@ -8,7 +8,7 @@
      public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                  ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "needs_state_scanning", true).forGetter(fight -> fight.needsStateScanning),
-@@ -160,6 +_,12 @@
+@@ -159,6 +_,12 @@
          );
          this.dragonEvent.setPlayBossMusic(true).setCreateWorldFog(true);
          this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance(origin.getX(), 128 + origin.getY(), origin.getZ(), 192.0));
@@ -21,7 +21,7 @@
          if (this.gateways.isEmpty()) {
              ObjectArrayList<Integer> newGateways = new ObjectArrayList<>(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
              Util.shuffle(newGateways, RandomSource.createThreadLocalInstance(seed));
-@@ -199,7 +_,7 @@
+@@ -198,7 +_,7 @@
                      .map(e -> e.getEntity(this.level, EndCrystal.class))
                      .filter(Objects::nonNull)
                      .toList();
@@ -30,7 +30,7 @@
                      this.abortRespawnSequence();
                      return;
                  }
-@@ -246,9 +_,9 @@
+@@ -245,9 +_,9 @@
              this.dragonUUID = dragon.getUUID();
              LOGGER.info("Found that there's a dragon still alive ({})", dragon);
              this.dragonKilled = false;
@@ -42,7 +42,7 @@
                  this.dragonUUID = null;
              }
          }
-@@ -281,6 +_,7 @@
+@@ -280,6 +_,7 @@
          if (stage == DragonRespawnStage.END) {
              this.respawnStage = null;
              this.dragonKilled = false;
@@ -50,7 +50,7 @@
              EnderDragon dragon = this.createNewDragon();
              if (dragon != null) {
                  for (ServerPlayer player : this.dragonEvent.getPlayers()) {
-@@ -408,12 +_,20 @@
+@@ -407,12 +_,20 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
@@ -77,7 +77,7 @@
  
              this.hasPreviouslyKilledDragon = true;
              this.dragonKilled = true;
-@@ -428,14 +_,26 @@
+@@ -427,14 +_,26 @@
          this.setDirty();
      }
  
@@ -105,7 +105,7 @@
      }
  
      public void spawnNewGateway(final BlockPos pos) {
-@@ -458,6 +_,12 @@
+@@ -457,6 +_,12 @@
              this.exitPortalLocation = this.exitPortalLocation.atY(Math.max(this.level.getMinY() + 1, this.exitPortalLocation.getY()));
              this.setDirty();
          }
@@ -118,7 +118,7 @@
  
          Holder.Reference<Feature> feature = this.level.registryAccess().getOrThrow(activated ? EndFeatures.END_PODIUM_ACTIVE : EndFeatures.END_PODIUM_INACTIVE);
          if (feature.value().place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.exitPortalLocation)) {
-@@ -476,6 +_,7 @@
+@@ -475,6 +_,7 @@
              dragon.snapTo(this.origin.getX(), 128 + this.origin.getY(), this.origin.getZ(), this.level.getRandom().nextFloat() * 360.0F, 0.0F);
              this.level.addFreshEntity(dragon);
              this.dragonUUID = dragon.getUUID();
@@ -126,7 +126,7 @@
              this.setDirty();
          }
  
-@@ -488,6 +_,10 @@
+@@ -487,6 +_,10 @@
              this.ticksSinceDragonSeen = 0;
              if (dragon.hasCustomName()) {
                  this.dragonEvent.setName(dragon.getDisplayName());
@@ -137,7 +137,7 @@
              }
          }
      }
-@@ -509,6 +_,7 @@
+@@ -508,6 +_,7 @@
  
      private void abortRespawnSequence() {
          LOGGER.debug("Aborting respawn sequence");
@@ -145,7 +145,7 @@
          this.respawnStage = null;
          this.respawnTime = 0;
          this.resetSpikeCrystals();
-@@ -520,7 +_,13 @@
+@@ -519,7 +_,13 @@
          return this.hasPreviouslyKilledDragon;
      }
  
@@ -160,7 +160,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos location = this.exitPortalLocation;
              if (location == null) {
-@@ -535,6 +_,20 @@
+@@ -534,6 +_,20 @@
  
                  location = this.exitPortalLocation;
              }
@@ -179,9 +179,9 @@
 +            }
 +            // Paper end - Perf: Do crystal-portal proximity check before entity lookup
  
-             List<EndCrystal> crystals = Lists.newArrayList();
+             List<EndCrystal> crystals = new ArrayList<>();
              BlockPos center = location.above(1);
-@@ -542,18 +_,19 @@
+@@ -541,18 +_,19 @@
              for (Direction direction : Direction.Plane.HORIZONTAL) {
                  List<EndCrystal> found = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(center.relative(direction, 3)));
                  if (found.isEmpty()) {
@@ -204,7 +204,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch portal = this.findExitPortal(); portal != null; portal = this.findExitPortal()) {
                  for (int x = 0; x < this.exitPortalPattern.getWidth(); x++) {
-@@ -573,7 +_,9 @@
+@@ -572,7 +_,9 @@
              this.spawnExitPortal(false);
              this.respawnCrystals = crystals.stream().map(EntityReference::of).toList();
              this.setDirty();

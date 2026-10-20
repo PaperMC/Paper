@@ -656,7 +656,7 @@
 +        // CraftBukkit end
          int slot = packet.slot();
          if (Inventory.isHotbarSlot(slot) || slot == 40) {
-             List<String> contents = Lists.newArrayList();
+             List<String> contents = new ArrayList<>();
 @@ -1012,10 +_,14 @@
      }
  
@@ -735,7 +735,7 @@
              if (this.player.isSleeping()) {
                  if (movedDist > 1.0) {
                      this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), targetYRot, targetXRot);
-@@ -1149,28 +_,79 @@
+@@ -1149,32 +_,89 @@
                  if (level.tickRateManager().runsNormally()) {
                      this.receivedMovePacketCount++;
                      int deltaPackets = this.receivedMovePacketCount - this.knownMovePacketCount;
@@ -821,9 +821,6 @@
                  }
  
                  boolean playerStandsOnSomething = this.player.verticalCollisionBelow;
-@@ -1179,6 +_,12 @@
-                 }
- 
                  this.player.move(MoverType.PLAYER, new Vec3(xDist, yDist, zDist));
 +                this.player.onGround = isOnGround; // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
 +                // Paper start - prevent position desync
@@ -831,9 +828,9 @@
 +                    return; // ... thanks Mojang for letting move calls teleport across dimensions.
 +                }
 +                // Paper end - prevent position desync
-                 double oyDist = yDist;
-                 xDist = targetX - this.player.getX();
-                 yDist = targetY - this.player.getY();
+                 if (isOnGround && !playerStandsOnSomething) {
+                     this.forceSendPlayerSupportBlocks();
+                 }
 @@ -1188,21 +_,88 @@
  
                  zDist = targetZ - this.player.getZ();
@@ -2529,7 +2526,7 @@
      }
  
      @Override
-@@ -2250,27 +_,32 @@
+@@ -2250,16 +_,19 @@
  
      private void resetPlayerChatState(final RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2550,12 +2547,7 @@
                  }
              );
      }
- 
-     @Override
-     public void handleCustomPayload(final ServerboundCustomPayloadPacket packet) {
-+        super.handleCustomPayload(packet); // Paper
-     }
- 
+@@ -2273,6 +_,7 @@
      @Override
      public void handleClientTickEnd(final ServerboundClientTickEndPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -2563,7 +2555,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2308,12 +_,23 @@
+@@ -2310,12 +_,23 @@
      }
  
      public void tickClientLoadTimeout() {
@@ -2589,7 +2581,7 @@
          this.clientLoadedTimeoutTimer = 0;
      }
  
-@@ -2325,4 +_,80 @@
+@@ -2327,4 +_,80 @@
          this.waitingForRespawn = false;
          this.clientLoadedTimeoutTimer = 60;
      }

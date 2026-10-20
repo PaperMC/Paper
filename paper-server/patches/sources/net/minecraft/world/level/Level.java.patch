@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -87,8 +_,19 @@
+@@ -86,8 +_,19 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -20,7 +20,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
-@@ -131,6 +_,55 @@
+@@ -129,6 +_,55 @@
      private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
@@ -76,9 +76,9 @@
      protected Level(
          final WritableLevelData levelData,
          final ResourceKey<Level> dimension,
-@@ -140,7 +_,25 @@
+@@ -137,7 +_,25 @@
+         final boolean isClientSide,
          final boolean isDebug,
-         final long biomeZoomSeed,
          final int maxChainedNeighborUpdates
 +        , String bukkitName, // Paper
 +        org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
@@ -102,7 +102,7 @@
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
          this.dimension = dimension;
-@@ -158,6 +_,46 @@
+@@ -154,6 +_,46 @@
          return 0;
      }
  
@@ -149,7 +149,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -168,8 +_,15 @@
+@@ -164,8 +_,15 @@
          return null;
      }
  
@@ -166,7 +166,7 @@
      }
  
      public boolean isInValidBounds(final BlockPos pos) {
-@@ -181,7 +_,7 @@
+@@ -177,7 +_,7 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(final BlockPos pos) {
@@ -175,7 +175,7 @@
      }
  
      private static boolean isInValidBoundsHorizontal(final BlockPos pos) {
-@@ -194,14 +_,78 @@
+@@ -190,14 +_,78 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -258,7 +258,7 @@
  
      @Override
      public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
-@@ -215,6 +_,22 @@
+@@ -211,6 +_,22 @@
  
      @Override
      public boolean setBlock(final BlockPos pos, final BlockState blockState, final @Block.UpdateFlags int updateFlags, final int updateLimit) {
@@ -281,7 +281,7 @@
          if (!this.isInValidBounds(pos)) {
              return false;
          }
-@@ -225,12 +_,32 @@
+@@ -221,12 +_,32 @@
  
          LevelChunk chunk = this.getChunkAt(pos);
          Block block = blockState.getBlock();
@@ -314,7 +314,7 @@
          if (newState == blockState) {
              if (oldState != newState) {
                  this.setBlocksDirty(pos, oldState, newState);
-@@ -258,9 +_,64 @@
+@@ -254,9 +_,64 @@
  
              this.updatePOIOnBlockStateChange(pos, oldState, newState);
          }
@@ -379,7 +379,7 @@
  
      public void updatePOIOnBlockStateChange(final BlockPos pos, final BlockState oldState, final BlockState newState) {
      }
-@@ -272,19 +_,41 @@
+@@ -268,19 +_,41 @@
      }
  
      @Override
@@ -425,7 +425,7 @@
          boolean destroyed = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, updateLimit);
          if (destroyed) {
              this.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(breaker, blockState));
-@@ -352,11 +_,19 @@
+@@ -348,11 +_,19 @@
  
      @Override
      public BlockState getBlockState(final BlockPos pos) {
@@ -446,7 +446,7 @@
          return chunk.getBlockState(pos);
      }
  
-@@ -527,6 +_,7 @@
+@@ -533,6 +_,7 @@
      }
  
      public void addBlockEntityTicker(final TickingBlockEntity ticker) {
@@ -454,7 +454,7 @@
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
      }
  
-@@ -537,18 +_,23 @@
+@@ -543,18 +_,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -482,7 +482,7 @@
          this.tickingBlockEntities = false;
      }
  
-@@ -556,12 +_,23 @@
+@@ -562,12 +_,23 @@
          try {
              tick.accept(entity);
          } catch (Throwable t) {
@@ -510,7 +510,7 @@
  
      public boolean shouldTickDeath(final Entity entity) {
          return true;
-@@ -695,6 +_,12 @@
+@@ -699,6 +_,12 @@
  
      @Override
      public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
@@ -523,7 +523,7 @@
          if (!this.isInValidBounds(pos)) {
              return null;
          } else {
-@@ -707,6 +_,12 @@
+@@ -711,6 +_,12 @@
      public void setBlockEntity(final BlockEntity blockEntity) {
          BlockPos pos = blockEntity.getBlockPos();
          if (this.isInValidBounds(pos)) {
@@ -536,7 +536,7 @@
              this.getChunkAt(pos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1125,7 +_,8 @@
+@@ -1124,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),
@@ -546,7 +546,7 @@
  
          public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
          private final String id;
-@@ -1139,4 +_,16 @@
+@@ -1138,4 +_,16 @@
              return this.id;
          }
      }

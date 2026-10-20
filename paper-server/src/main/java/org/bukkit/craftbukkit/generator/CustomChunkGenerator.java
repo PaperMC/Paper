@@ -267,17 +267,16 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         final Blender blender,
         final RandomState randomState,
         final StructureManager structureManager,
-        final BiomeManager biomeManager,
         final @Nullable WorldGenRegion carverBiomeRegion,
         final Set<Holder<net.minecraft.world.level.biome.Biome>> possibleBiomes
     ) {
         if (this.delegate instanceof NoiseBasedChunkGenerator noiseBasedChunkGenerator) {
-            return noiseBasedChunkGenerator.buildTerrain(chunk, blender, randomState, structureManager, biomeManager, carverBiomeRegion, possibleBiomes, this);
+            return noiseBasedChunkGenerator.buildTerrain(chunk, blender, randomState, structureManager, carverBiomeRegion, possibleBiomes, this);
         }
 
         CompletableFuture<ChunkAccess> future = null;
         if (this.shouldGenerateNoise(chunk)) {
-            future = this.delegate.buildTerrain(chunk, blender, randomState, structureManager, biomeManager, carverBiomeRegion, possibleBiomes);
+            future = this.delegate.buildTerrain(chunk, blender, randomState, structureManager, carverBiomeRegion, possibleBiomes);
         }
 
         Function<ChunkAccess, ChunkAccess> work = c -> {

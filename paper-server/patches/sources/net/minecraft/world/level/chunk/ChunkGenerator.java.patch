@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -116,8 +_,8 @@
+@@ -117,8 +_,8 @@
  
      protected abstract MapCodec<? extends ChunkGenerator> codec();
  
@@ -11,7 +11,7 @@
      }
  
      public Optional<Identifier> getTypeNameForDataFixer() {
-@@ -160,16 +_,34 @@
+@@ -172,16 +_,34 @@
      }
  
      public @Nullable Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
@@ -48,7 +48,7 @@
          ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
          Map<StructurePlacement, Set<Holder<Structure>>> placementScans = new Object2ObjectArrayMap<>();
  
-@@ -264,6 +_,7 @@
+@@ -276,6 +_,7 @@
          BlockPos.MutableBlockPos structurePos = new BlockPos.MutableBlockPos();
  
          for (ChunkPos chunkPos : positions) {
@@ -56,7 +56,7 @@
              structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
              double distSqr = structurePos.distSqr(pos);
              boolean isClosest = closestPos == null || distSqr < closest;
-@@ -295,9 +_,12 @@
+@@ -307,9 +_,12 @@
          for (int x = -radius; x <= radius; x++) {
              boolean xEdge = x == -radius || x == radius;
  
@@ -72,7 +72,7 @@
                      int sectorX = chunkOriginX + spacing * x;
                      int sectorZ = chunkOriginZ + spacing * z;
                      ChunkPos chunkTarget = config.getPotentialStructureChunk(seed, sectorX, sectorZ);
-@@ -349,7 +_,7 @@
+@@ -361,7 +_,7 @@
          }
      }
  
@@ -81,7 +81,7 @@
          ChunkPos centerPos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(centerPos)) {
              SectionPos sectionPos = SectionPos.of(centerPos, level.getMinSectionY());
-@@ -424,7 +_,14 @@
+@@ -433,7 +_,14 @@
                              Supplier<String> currentlyGenerating = () -> featureRegistry.getResourceKey(feature)
                                  .map(Object::toString)
                                  .orElseGet(feature::toString);
@@ -97,7 +97,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(currentlyGenerating);
-@@ -452,6 +_,34 @@
+@@ -461,6 +_,34 @@
              }
          }
      }
@@ -132,27 +132,27 @@
  
      private static BoundingBox getWritableArea(final ChunkAccess chunk) {
          ChunkPos chunkPos = chunk.getPos();
-@@ -527,7 +_,7 @@
-                             }
-                         }
+@@ -530,7 +_,7 @@
+                 }
+             }
  
--                        if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z())) {
-+                        if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z(), featurePlacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
-                             if (structures.size() == 1) {
-                                 this.tryGenerateStructure(
-                                     structures.get(0),
-@@ -623,6 +_,14 @@
-             biomePredicate
-         );
-         if (start.isValid()) {
-+            // CraftBukkit start
-+            BoundingBox box = start.getBoundingBox();
-+            org.bukkit.event.world.AsyncStructureSpawnEvent event = new org.bukkit.event.world.AsyncStructureSpawnEvent(structureManager.level.getMinecraftWorld().getWorld(), org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(structure), new org.bukkit.util.BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()), sourceChunkPos.x(), sourceChunkPos.z());
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+            if (event.isCancelled()) {
-+                return true;
-+            }
-+            // CraftBukkit end
-             structureManager.setStartForStructure(structure, start, centerChunk);
-             return true;
-         } else {
+-            return featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z());
++            return featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z(), featurePlacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null); // Paper - Add missing structure set seed configs
+         }).toList();
+         return structureSetsInChunk.isEmpty()
+             ? CompletableFuture.completedFuture(centerChunk)
+@@ -555,6 +_,14 @@
+                 StructureStart start = set.value()
+                     .tryGenerateStartInChunk(this, registryAccess, state, centerChunk.getPos(), centerChunk, structureTemplateManager, level, climateSampler);
+                 if (start != null) {
++                    // CraftBukkit start
++                    BoundingBox box = start.getBoundingBox();
++                    org.bukkit.event.world.AsyncStructureSpawnEvent event = new org.bukkit.event.world.AsyncStructureSpawnEvent(structureManager.level.getMinecraftWorld().getWorld(), org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(start.getStructure()), new org.bukkit.util.BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()), centerChunk.getPos().x(), centerChunk.getPos().z());
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     int references = fetchReferences(structureManager, centerChunk, start.getStructure());
+                     start.setReferences(references);
+                     structureManager.setStartForStructure(start.getStructure(), start, centerChunk);

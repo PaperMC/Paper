@@ -1,0 +1,36 @@
+--- a/net/minecraft/world/level/block/CrackingIceBlock.java
++++ b/net/minecraft/world/level/block/CrackingIceBlock.java
+@@ -31,7 +_,7 @@
+             neighborPos.setWithOffset(pos, direction);
+             BlockState neighbour = level.getBlockState(neighborPos);
+             if (neighbour.is(this) && !this.slightlyMelt(neighbour, level, neighborPos)) {
+-                level.scheduleTick(neighborPos, this, this.getTickDelay(random));
++                level.scheduleTick(neighborPos, this, this.getTickDelay(level, random)); // Paper - Frosted ice options
+             }
+         }
+     }
+@@ -39,6 +_,11 @@
+     protected boolean slightlyMelt(final BlockState state, final Level level, final BlockPos pos) {
+         int age = state.getValue(AGE);
+         if (age < 3) {
++            // Paper start - FrostedIce BlockFadeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, state.setValue(AGE, age + 1)).isCancelled()) {
++                return false;
++            }
++            // Paper end - FrostedIce BlockFadeEvent
+             level.setBlock(pos, state.setValue(AGE, age + 1), Block.UPDATE_CLIENTS);
+             SoundEvent crackingSound = this.getCrackingIceSound();
+             if (crackingSound != null) {
+@@ -60,6 +_,12 @@
+     }
+ 
+     protected abstract int getTickDelay(final RandomSource random);
++
++    // Paper start - Frosted ice options
++    protected int getTickDelay(final Level level, final RandomSource random) {
++        return this.getTickDelay(random);
++    }
++    // Paper end - Frosted ice options
+ 
+     protected void playCrackingIceParticle(final BlockState state, final Level level, final BlockPos pos) {
+     }

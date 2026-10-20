@@ -1,0 +1,53 @@
+--- a/net/minecraft/core/registries/BuiltinRegistryBuilder.java
++++ b/net/minecraft/core/registries/BuiltinRegistryBuilder.java
+@@ -53,6 +_,7 @@
+         final ResourceKey<? extends Registry<T>> name, final R registry, final BuiltinRegistryBuilder.RegistryBootstrap<T> loader
+     ) {
+         Bootstrap.checkBootstrapCalled(() -> "registry " + name.identifier());
++        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry); // Paper - initialize API registry
+         Identifier key = name.identifier();
+         this.loaders.put(key, () -> loader.run(registry));
+         this.registry.register((ResourceKey)name, registry, RegistrationInfo.BUILT_IN);
+@@ -60,16 +_,34 @@
+     }
+ 
+     public void bootStrap() {
++        // Paper start
++        this.bootStrap(() -> {});
++    }
++    public void bootStrap(Runnable runnable) {
++        // Paper end
++        this.registry.freeze(); // Paper - freeze main registry early
+         this.createContents();
++        runnable.run(); // Paper
+         this.freeze();
+         validate(this.registry);
+     }
+ 
+     private void createContents() {
++        // Paper start - class-load org.bukkit.Registry
++        // we have to class-load Registry here to create all the CraftRegistry instances
++        // that will be created when Registry is class-loaded before RegistryAccess#getRegistry
++        // would try to create them in lockReferenceHolder
++        try {
++            Class.forName(org.bukkit.Registry.class.getName());
++        } catch (final ClassNotFoundException ex) {
++            throw new RuntimeException(ex);
++        }
++        // Paper end - class-load org.bukkit.Registry
+         this.loaders.forEach((key, value) -> {
+             if (value.get() == null) {
+                 LOGGER.error("Unable to bootstrap registry '{}'", key);
+             }
++            io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(ResourceKey.createRegistryKey(key)); // Paper - lock reference holder creation
+         });
+     }
+ 
+@@ -78,6 +_,7 @@
+ 
+         for (Registry<?> registry : this.registry) {
+             bindBootstrappedTagsToEmpty(registry);
++            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), BuiltInRegistries.STATIC_ACCESS_CONVERSIONS); // Paper
+             registry.freeze();
+         }
+     }

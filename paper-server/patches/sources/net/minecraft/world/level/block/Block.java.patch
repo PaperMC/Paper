@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -88,25 +_,43 @@
+@@ -95,25 +_,43 @@
                  return !Shapes.joinIsNotEmpty(Shapes.block(), shape, BooleanOp.NOT_SAME);
              }
          });
@@ -58,7 +58,7 @@
      private @Nullable Item item;
      private static final int CACHE_SIZE = 256;
      private static final ThreadLocal<Object2ByteLinkedOpenHashMap<Block.ShapePairKey>> OCCLUSION_CACHE = ThreadLocal.withInitial(() -> {
-@@ -378,6 +_,27 @@
+@@ -377,6 +_,27 @@
          return state.getDrops(params);
      }
  
@@ -66,7 +66,7 @@
 +    public static boolean dropResources(final BlockState state, final Level level, final BlockPos pos, final @Nullable BlockEntity blockEntity, final BlockPos source) {
 +        if (level instanceof ServerLevel serverLevel) {
 +            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
-+            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
++            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity, null, ItemStack.EMPTY)) {
 +                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
 +            }
 +            Block block = state.getBlock(); // Paper - Properly handle xp dropping
@@ -76,7 +76,7 @@
 +            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
 +                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
 +            }
-+            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false, null); // Paper - Properly handle xp dropping
 +            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
 +        }
 +        return true;
@@ -84,9 +84,9 @@
 +    // Paper end - Add BlockBreakBlockEvent
 +
      public static void dropResources(final BlockState state, final Level level, final BlockPos pos) {
-         if (level instanceof ServerLevel serverLevel) {
-             getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
-@@ -392,6 +_,12 @@
+         dropResources(state, level, pos, null, null, ItemStack.EMPTY);
+     }
+@@ -387,6 +_,12 @@
          }
      }
  
@@ -99,7 +99,7 @@
      public static void dropResources(
          final BlockState state,
          final Level level,
-@@ -399,10 +_,11 @@
+@@ -394,10 +_,11 @@
          final @Nullable BlockEntity blockEntity,
          final @Nullable Entity breaker,
          final ItemStack tool
@@ -107,12 +107,12 @@
      ) {
          if (level instanceof ServerLevel serverLevel) {
              getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
--            state.spawnAfterBreak(serverLevel, pos, tool, true);
-+            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+-            state.spawnAfterBreak(serverLevel, pos, tool, true, breaker);
++            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience, breaker); // Paper - Properly handle xp dropping
          }
      }
  
-@@ -435,13 +_,25 @@
+@@ -430,13 +_,25 @@
          if (level instanceof ServerLevel serverLevel && !itemStack.isEmpty() && serverLevel.getGameRules().get(GameRules.BLOCK_DROPS)) {
              ItemEntity entity = entityFactory.get();
              entity.setDefaultPickUpDelay();
@@ -140,7 +140,7 @@
          }
      }
  
-@@ -459,6 +_,13 @@
+@@ -454,6 +_,13 @@
          return this.defaultBlockState();
      }
  
@@ -154,7 +154,7 @@
      public void playerDestroy(
          final ServerLevel level,
          final ServerPlayer player,
-@@ -466,10 +_,13 @@
+@@ -461,10 +_,13 @@
          final BlockState state,
          final @Nullable BlockEntity blockEntity,
          final ItemStack destroyedWith
@@ -170,7 +170,7 @@
      }
  
      public void setPlacedBy(final Level level, final BlockPos pos, final BlockState state, final @Nullable LivingEntity by, final ItemStack itemStack) {
-@@ -615,12 +_,20 @@
+@@ -610,12 +_,20 @@
          return this.builtInRegistryHolder;
      }
  
@@ -194,7 +194,7 @@
  
      private record ShapePairKey(VoxelShape first, VoxelShape second) {
          @Override
-@@ -636,6 +_,7 @@
+@@ -631,6 +_,7 @@
  
      @Retention(RetentionPolicy.CLASS)
      @Target(ElementType.TYPE_USE)

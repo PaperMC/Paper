@@ -14,28 +14,30 @@ public class PaperServicesDiscoveryService extends MinecraftServicesDiscoverySer
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaperServicesDiscoveryService.class);
 
-    public PaperServicesDiscoveryService(final Proxy proxy, final boolean servicesKeySetEnabled, final Supplier<DiscoveryResponse> discoverySupplier) {
-        super(proxy, servicesKeySetEnabled, discoverySupplier);
+    public PaperServicesDiscoveryService(final Proxy proxy, final boolean servicesKeySetEnabled, final Supplier<DiscoveryResponse> discoverySupplier, final String clientVersion) {
+        super(proxy, servicesKeySetEnabled, discoverySupplier, clientVersion);
     }
 
-    public static PaperServicesDiscoveryService create(final Proxy proxy) {
-        return create(proxy, true, determineEnvironment());
+    public static PaperServicesDiscoveryService create(final Proxy proxy, final String clientVersion) {
+        return create(proxy, true, determineEnvironment(), clientVersion);
     }
 
-    public static PaperServicesDiscoveryService create(final Proxy proxy, final boolean servicesKeySetEnabled) {
-        return create(proxy, servicesKeySetEnabled, determineEnvironment());
+    public static PaperServicesDiscoveryService create(final Proxy proxy, final boolean servicesKeySetEnabled, final String clientVersion) {
+        return create(proxy, servicesKeySetEnabled, determineEnvironment(), clientVersion);
     }
 
     public static PaperServicesDiscoveryService create(
         final Proxy proxy,
         final boolean servicesKeySetEnabled,
-        final Environment environment
+        final Environment environment,
+        final String clientVersion
     ) {
         LOGGER.info("Environment: {}", environment);
         return new PaperServicesDiscoveryService(
             proxy,
             servicesKeySetEnabled,
-            createDiscoverySupplier(proxy, environment)
+            createDiscoverySupplier(proxy, environment, clientVersion),
+            clientVersion
         );
     }
 

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -91,6 +_,7 @@
+@@ -106,6 +_,7 @@
      List<CompoundTag> entities,
      List<CompoundTag> blockEntities,
      CompoundTag structureData
@@ -8,9 +8,9 @@
  ) {
      private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
      private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
-@@ -106,6 +_,24 @@
-     public static final String BLOCK_LIGHT_TAG = "BlockLight";
-     public static final String SKY_LIGHT_TAG = "SkyLight";
+@@ -124,6 +_,24 @@
+     private static final String STRUCTURES_TAG = "structures";
+     private static final String STRUCTURE_STARTS_TAG = "starts";
  
 +    // Paper start - guard against serializing mismatching coordinates
 +    // TODO Note: This needs to be re-checked each update
@@ -33,7 +33,7 @@
      public static SerializableChunkData parse(
          final LevelHeightAccessor levelHeight, final PalettedContainerFactory containerFactory, final CompoundTag chunkData
      ) {
-@@ -113,7 +_,15 @@
+@@ -131,7 +_,15 @@
              return null;
          }
  
@@ -49,17 +49,17 @@
 +        ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0)); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
          long lastUpdateTime = chunkData.getLongOr("LastUpdate", 0L);
          long inhabitedTime = chunkData.getLongOr("InhabitedTime", 0L);
-         ChunkStatus status = chunkData.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -151,7 +_,7 @@
-         CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
+         ChunkStatus status = chunkData.read("status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
+@@ -170,7 +_,7 @@
          ListTag sectionTags = chunkData.getListOrEmpty("sections");
          List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
+         Codec<PalettedContainerRO<Holder<Biome>>> noiseBiomeCodec = containerFactory.noiseBiomeContainerCodec();
 -        Codec<PalettedContainerRO<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerCodec();
 +        Codec<PalettedContainer<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
          Codec<PalettedContainer<BlockState>> blockStatesCodec = containerFactory.blockStatesContainerCodec();
+         NoiseBiomeChunk.Builder noiseBiomeChunkBuilder = new NoiseBiomeChunk.Builder(levelHeight, chunkPos);
  
-         for (int i = 0; i < sectionTags.size(); i++) {
-@@ -168,7 +_,7 @@
+@@ -188,7 +_,7 @@
                                  .getOrThrow(SerializableChunkData.ChunkReadException::new)
                          )
                          .orElseGet(containerFactory::createForBlockStates);
@@ -68,7 +68,7 @@
                          .map(
                              container -> biomesCodec.parse(NbtOps.INSTANCE, container)
                                  .promotePartial(msg -> logErrors(chunkPos, y, msg))
-@@ -204,6 +_,7 @@
+@@ -233,6 +_,7 @@
              entities,
              blockEntities,
              structureData
@@ -76,8 +76,8 @@
          );
      }
  
-@@ -280,6 +_,12 @@
-             }
+@@ -311,6 +_,12 @@
+             protoChunk.setNoiseBiomeChunk(this.noiseBiomeChunk);
          }
  
 +        // CraftBukkit start - load chunk persistent data from nbt - SPIGOT-6814: Already load PDC here to account for 1.17 to 1.18 chunk upgrading.
@@ -89,10 +89,10 @@
          chunk.setLightCorrect(this.lightCorrect);
          Set<Heightmap.Types> toPrime = EnumSet.copyOf(chunk.getPersistedStatus().heightmapsAfter());
  
-@@ -370,6 +_,12 @@
-             .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
+@@ -402,6 +_,12 @@
              .toArray(ShortList[]::new);
          CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
+         NoiseBiomeChunk noiseBiomeChunk = chunk instanceof ProtoChunk protoChunk ? protoChunk.getNoiseBiomeChunk() : null;
 +        // CraftBukkit start - store chunk persistent data in nbt
 +        CompoundTag persistentDataContainer = null;
 +        if (!chunk.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
@@ -102,7 +102,7 @@
          return new SerializableChunkData(
              level.palettedContainerFactory(),
              pos,
-@@ -388,6 +_,7 @@
+@@ -421,6 +_,7 @@
              entities,
              blockEntities,
              structureData
@@ -110,7 +110,7 @@
          );
      }
  
-@@ -451,6 +_,11 @@
+@@ -492,6 +_,11 @@
          this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
          tag.put("Heightmaps", heightmapsTag);
          tag.put("structures", this.structureData);
@@ -122,9 +122,9 @@
          return tag;
      }
  
-@@ -534,6 +_,12 @@
+@@ -575,6 +_,12 @@
              } else {
-                 StructureStart start = StructureStart.loadStaticStart(context, startsTag.getCompoundOrEmpty(key), seed);
+                 StructureStart start = StructureStart.load(context, startsTag.getCompoundOrEmpty(key), seed, structure);
                  if (start != null) {
 +                    // CraftBukkit start - load persistent data for structure start
 +                    net.minecraft.nbt.Tag persistentBase = startsTag.getCompoundOrEmpty(key).get("StructureBukkitValues");
@@ -132,6 +132,15 @@
 +                        start.persistentDataContainer.putAll(compoundTag);
 +                    }
 +                    // CraftBukkit end
-                     outmap.put(startFeature, start);
+                     starts.put(structure, start);
                  }
              }
+@@ -643,7 +_,7 @@
+                     if (collectFields.getResult() instanceof CompoundTag chunkTag) {
+                         int version = NbtUtils.getDataVersion(chunkTag);
+                         SimpleRegionStorage.injectDatafixingContext(
+-                            chunkTag, ChunkMap.getChunkDataFixContextTag(scanner.dimension(), scanner.typeNameForDataFixer())
++                            chunkTag, ChunkMap.getChunkDataFixContextTag(scanner.dimension(), scanner.typeNameForDataFixer(), scanner.levelStem()) // Paper - pass level stem
+                         );
+                         CompoundTag fixedChunkTag = DataFixTypes.CHUNK.updateToCurrentVersion(scanner.fixerUpper(), chunkTag, version);
+                         ChunkStatus status = fixedChunkTag.read("status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);

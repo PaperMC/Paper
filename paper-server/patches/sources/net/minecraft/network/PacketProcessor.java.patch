@@ -24,7 +24,7 @@
          return Thread.currentThread() == this.runningThread;
      }
  
-     public <T extends PacketListener> void scheduleIfPossible(final T listener, final Packet<T> packet) {
+     public <T extends PacketListener & PacketProcessor.Handler> void scheduleIfPossible(final T listener, final Packet<? super T> packet) {
          if (this.closed) {
 -            throw new RejectedExecutionException("Server already shutting down");
 -        }
@@ -47,8 +47,8 @@
      }
  
      public void processQueuedPackets() {
-@@ -44,8 +_,28 @@
-         this.closed = true;
+@@ -48,8 +_,28 @@
+         void onPacketError(Packet<?> packet, Exception cause) throws ReportedException;
      }
  
 +    // Paper start - detailed watchdog information
@@ -69,14 +69,14 @@
 +    }
 +    // Paper end - detailed watchdog information
 +
-     private record ListenerAndPacket<T extends PacketListener>(T listener, Packet<T> packet) {
+     private record ListenerAndPacket<T extends PacketListener & PacketProcessor.Handler>(T listener, Packet<? super T> packet) {
          public void handle() {
 +            packetProcessing.push(this.listener); // Paper - detailed watchdog information
 +            try { // Paper - detailed watchdog information
              if (this.listener.shouldHandleMessage(this.packet)) {
                  try {
                      this.packet.handle(this.listener);
-@@ -59,6 +_,12 @@
+@@ -63,6 +_,12 @@
              } else {
                  PacketProcessor.LOGGER.debug("Ignoring packet due to disconnection: {}", this.packet);
              }

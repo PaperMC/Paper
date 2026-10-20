@@ -1,7 +1,7 @@
 --- a/net/minecraft/core/dispenser/FlintAndSteelDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/FlintAndSteelDispenseItemBehavior.java
-@@ -24,16 +_,27 @@
-         this.setSuccess(true);
+@@ -24,8 +_,15 @@
+         ServerLevel level = source.level();
          Direction facing = source.state().getValue(DispenserBlock.FACING);
          BlockPos targetPos = source.pos().relative(facing);
 +        // Paper start - Call BlockDispenseEvent
@@ -12,20 +12,34 @@
 +        }
 +        // Paper end - Call BlockDispenseEvent
          BlockState target = level.getBlockState(targetPos);
-         if (!tryIgniteExplosiveEntities(level, targetPos)) {
-             if (BaseFireBlock.canBePlacedAt(level, targetPos, facing)) {
-+                // CraftBukkit start - Ignition by dispensing flint and steel
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, targetPos, source.pos()).isCancelled()) {
-                 level.setBlockAndUpdate(targetPos, BaseFireBlock.getState(level, targetPos));
-                 level.gameEvent(null, GameEvent.BLOCK_PLACE, targetPos);
-+                }
-+                // CraftBukkit end
-             } else if (CampfireBlock.canLight(target) || CandleBlock.canLight(target) || CandleCakeBlock.canLight(target)) {
-                 level.setBlockAndUpdate(targetPos, target.setValue(BlockStateProperties.LIT, true));
-                 level.gameEvent(null, GameEvent.BLOCK_CHANGE, targetPos);
-             } else if (target.getBlock() instanceof TntBlock) {
--                if (TntBlock.prime(level, targetPos, null, dispensed)) {
-+                if (TntBlock.prime(level, targetPos, null, dispensed, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, source.pos()))) { // CraftBukkit - TNTPrimeEvent
-                     level.removeBlock(targetPos, false);
-                 } else {
-                     this.setSuccess(false);
+-        boolean ignited = tryIgnite(dispensed, level, targetPos, facing, target);
++        boolean ignited = tryIgnite(dispensed, level, targetPos, facing, target, source.pos()); // CraftBukkit
+         this.setSuccess(ignited);
+         if (this.isSuccess()) {
+             FlintAndSteelItem.playSound(level, targetPos);
+@@ -36,19 +_,23 @@
+     }
+ 
+     private static boolean tryIgnite(
+-        final ItemStack dispensed, final ServerLevel level, final BlockPos targetPos, final Direction facing, final BlockState target
++        final ItemStack dispensed, final ServerLevel level, final BlockPos targetPos, final Direction facing, final BlockState target, final BlockPos sourcePos // CraftBukkit
+     ) {
+         if (tryIgniteExplosiveEntities(level, targetPos)) {
+             return true;
+         } else if (BaseFireBlock.canBePlacedAt(level, targetPos, facing)) {
++            // CraftBukkit start - Ignition by dispensing flint and steel
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, targetPos, sourcePos).isCancelled()) {
+             level.setBlockAndUpdate(targetPos, BaseFireBlock.getState(level, targetPos));
+             level.gameEvent(null, GameEvent.BLOCK_PLACE, targetPos);
++            }
++            // CraftBukkit end
+             return true;
+         } else if (CampfireBlock.canLight(target) || CandleBlock.canLight(target) || CandleCakeBlock.canLight(target)) {
+             level.setBlockAndUpdate(targetPos, target.setValue(BlockStateProperties.LIT, true));
+             level.gameEvent(null, GameEvent.BLOCK_CHANGE, targetPos);
+             return true;
+-        } else if (target.getBlock() instanceof TntBlock && TntBlock.prime(level, targetPos, null, dispensed)) {
++        } else if (target.getBlock() instanceof TntBlock && TntBlock.prime(level, targetPos, null, dispensed, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, sourcePos))) { // CraftBukkit - TNTPrimeEvent
+             level.removeBlock(targetPos, false);
+             return true;
+         } else {

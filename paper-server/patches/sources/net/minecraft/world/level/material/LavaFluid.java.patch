@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
-@@ -95,6 +_,13 @@
+@@ -79,6 +_,13 @@
                      BlockState blockState = level.getBlockState(testPos);
                      if (blockState.isAir()) {
                          if (this.hasFlammableNeighbours(level, testPos)) {
@@ -14,7 +14,7 @@
                              level.setBlockAndUpdate(testPos, BaseFireBlock.getState(level, testPos));
                              return;
                          }
-@@ -110,6 +_,14 @@
+@@ -94,6 +_,14 @@
                      }
  
                      if (level.isEmptyBlock(testPos.above()) && this.isFlammable(level, testPos)) {
@@ -29,7 +29,7 @@
                          level.setBlockAndUpdate(testPos.above(), BaseFireBlock.getState(level, testPos));
                      }
                  }
-@@ -119,9 +_,10 @@
+@@ -103,9 +_,10 @@
  
      @Override
      protected void entityInside(final Level level, final BlockPos pos, final Entity entity, final InsideBlockEffectApplier effectApplier) {
@@ -40,10 +40,10 @@
 +        effectApplier.runAfter(InsideBlockEffectType.LAVA_IGNITE, ignitedEntity -> ignitedEntity.lavaHurt(savedPos)); // Paper - track lava contact
      }
  
-     private boolean hasFlammableNeighbours(final LevelReader level, final BlockPos pos) {
-@@ -208,7 +_,11 @@
+     @Override
+@@ -187,7 +_,11 @@
              FluidState fluidState = level.getFluidState(pos);
-             if (this.is(FluidTags.LAVA) && fluidState.is(FluidTags.WATER)) {
+             if (fluidState.is(FluidTags.WATER)) {
                  if (state.getBlock() instanceof LiquidBlock) {
 -                    level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
 +                    // CraftBukkit start
@@ -54,12 +54,15 @@
                  }
  
                  this.fizz(level, pos);
-@@ -226,7 +_,7 @@
+@@ -196,6 +_,11 @@
+         }
  
-     @Override
-     protected float getExplosionResistance() {
--        return 100.0F;
+         super.spreadTo(level, pos, state, direction, target);
++    }
++
++    @Override
++    protected float getExplosionResistance() {
 +        return Blocks.LAVA.getExplosionResistance(); // Paper - Get explosion resistance from actual block
      }
  
-     @Override
+     private static boolean isFastLava(final LevelReader level) {

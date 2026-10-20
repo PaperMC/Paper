@@ -39,7 +39,7 @@
      public @Nullable BlockState setBlockState(final BlockPos pos, final BlockState state) {
          return this.setBlockState(pos, state, Block.UPDATE_ALL);
      }
-@@ -264,6 +_,7 @@
+@@ -269,6 +_,7 @@
      public boolean tryMarkSaved() {
          if (this.unsaved) {
              this.unsaved = false;
@@ -47,7 +47,7 @@
              return true;
          } else {
              return false;
-@@ -271,7 +_,7 @@
+@@ -276,7 +_,7 @@
      }
  
      public boolean isUnsaved() {
@@ -56,27 +56,25 @@
      }
  
      public abstract ChunkStatus getPersistedStatus();
-@@ -428,6 +_,23 @@
+@@ -433,6 +_,21 @@
              throw new ReportedException(report);
          }
      }
 +
 +    // CraftBukkit start
-+    public void setNoiseBiome(int quartX, int quartY, int quartZ, Holder<Biome> biome) {
++    public void setBiome(final int x, final int y, final int z, final Holder<Biome> biome) {
 +        try {
-+            int quartMinY = QuartPos.fromBlock(this.getMinY());
-+            int quartMaxY = quartMinY + QuartPos.fromBlock(this.getHeight()) - 1;
-+            int clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
-+            int sectionIndex = this.getSectionIndex(QuartPos.toBlock(clampedQuartY));
-+            this.sections[sectionIndex].setNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3, biome);
-+        } catch (Throwable throwable) {
-+            CrashReport report = CrashReport.forThrowable(throwable, "Setting biome");
++            int clampedY = Math.clamp(y, this.getMinY(), this.getMaxY());
++            int sectionIndex = this.getSectionIndex(clampedY);
++            this.sections[sectionIndex].setBiome(SectionPos.sectionRelative(x), SectionPos.sectionRelative(clampedY), SectionPos.sectionRelative(z), biome);
++        } catch (Throwable t) {
++            CrashReport report = CrashReport.forThrowable(t, "Setting biome");
 +            CrashReportCategory category = report.addCategory("Biome being set");
-+            category.setDetail("Location", () -> CrashReportCategory.formatLocation(this, quartX, quartY, quartZ));
++            category.setDetail("Location", () -> CrashReportUtil.formatLocation(this, x, y, z));
 +            throw new ReportedException(report);
 +        }
 +    }
 +    // CraftBukkit end
  
-     public void fillBiomesFromNoise(final BiomeResolver biomeResolver) {
+     public void fillBiomes(final BiomeResolver biomeResolver) {
          ChunkPos pos = this.getPos();

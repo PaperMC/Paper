@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-@@ -295,13 +_,35 @@
+@@ -296,13 +_,35 @@
  
          if (!this.explosionData.isEmpty()) {
              if (this.fuse == 0) {
@@ -38,7 +38,7 @@
                          level.explode(
                              this,
                              Explosion.getDefaultDamageSource(this.level(), this),
-@@ -309,17 +_,27 @@
+@@ -310,17 +_,27 @@
                              this.getX(),
                              this.getY(0.0625),
                              this.getZ(),
@@ -69,7 +69,7 @@
          }
      }
  
-@@ -340,6 +_,12 @@
+@@ -341,6 +_,12 @@
              && !this.isPrimed()) {
              int fuse = this.explosionData.get().fuse();
              int fuseTime = imminent ? PrimedTnt.getRandomShortFuse(fuse, this.getRandom()) : fuse;
@@ -82,7 +82,7 @@
              this.setPermanentlyInvulnerable(true);
              this.setFuse(fuseTime);
              this.entityData.set(MAX_FUSE, fuseTime);
-@@ -455,7 +_,15 @@
+@@ -456,7 +_,15 @@
                  if (heldItem.is(Items.SHEARS) && this.readyForShearing()) {
                      if (this.level() instanceof ServerLevel level) {
                          ItemStack itemStackToShear = this.getItemBySlot(EquipmentSlot.BODY);
@@ -99,7 +99,7 @@
                          this.gameEvent(GameEvent.SHEAR, player);
                          heldItem.hurtAndBreak(1, player, hand.asEquipmentSlot());
                          CriteriaTriggers.PLAYER_SHEARED_EQUIPMENT.trigger((ServerPlayer)player, itemStackToShear, this);
-@@ -463,12 +_,26 @@
+@@ -464,12 +_,26 @@
  
                      return InteractionResult.SUCCESS;
                  } else if (isSwallowableItem(heldItem)) {
@@ -128,7 +128,7 @@
                      return itWorked ? InteractionResult.SUCCESS_SERVER : InteractionResult.PASS;
                  } else {
                      return Bucketable.bucketMobPickup(player, hand, this).orElse(super.mobInteract(player, hand));
-@@ -525,7 +_,7 @@
+@@ -528,7 +_,7 @@
          if (this.level() instanceof ServerLevel serverLevel) {
              for (SulfurCubeArchetype.ContactDamage damage : this.contactDamages) {
                  Entity damageSource = !damage.attributeToSource() && !(entity instanceof Player) ? null : this;
@@ -137,7 +137,7 @@
              }
          }
      }
-@@ -604,10 +_,24 @@
+@@ -607,10 +_,24 @@
  
      @Override
      public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
@@ -164,7 +164,7 @@
          this.playSound(this.getEjectSound());
          this.pickupTimer = 100;
      }
-@@ -747,6 +_,10 @@
+@@ -750,6 +_,10 @@
              double sulfurCubeTopPosition = sulfurCubeBottomPosition + this.getBbHeight();
              double pusherTopPosition = pusherFeetPosition + pusher.getBbHeight();
              if (cubeToPusher.horizontalDistance() < 1.3F && pusherFeetPosition <= sulfurCubeTopPosition && pusherTopPosition > sulfurCubeBottomPosition) {
@@ -175,7 +175,7 @@
                  double knockback = Math.max(0.0, 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
                  Vec3 pushDirection = cubeToPusher.horizontal().normalize().scale(knockback);
                  float pushSpeedScale = player.isPassenger() ? 0.16F : 0.3F;
-@@ -826,7 +_,7 @@
+@@ -830,7 +_,7 @@
      }
  
      @Override
@@ -184,18 +184,18 @@
          if (source.getEntity() != null && this.hasBodyItem()) {
              float horizontalHitAngleScale = 1.6F;
              float verticalHitAngleScale = 0.5F;
-@@ -864,16 +_,26 @@
+@@ -867,15 +_,26 @@
              double knockBackResistance = this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
              horizontalPower *= (float)(1.0 - knockBackResistance);
              verticalPower *= (float)(1.0 - knockBackResistance);
 -            this.needsSync = true;
 +            // this.needsSync = true; // Paper - moved down
-             Vec3 deltaMovement = this.getDeltaMovement();
++            Vec3 deltaMovement = this.getDeltaMovement();
              horizontalPower *= 0.4F;
-             horizontalPower = Mth.clamp(horizontalPower, -128.0F, 128.0F);
-             verticalPower = Mth.clamp(verticalPower, -128.0F, 128.0F);
+             horizontalPower = Math.clamp(horizontalPower, -128.0F, 128.0F);
+             verticalPower = Math.clamp(verticalPower, -128.0F, 128.0F);
              Vec3 horizontalKnockback = new Vec3(xd, 0.0, zd).normalize().scale(horizontalPower);
--            this.setDeltaMovement(deltaMovement.x - horizontalKnockback.x, deltaMovement.y + verticalPower * 1.2, deltaMovement.z - horizontalKnockback.z);
+-            this.addDeltaMovement(-horizontalKnockback.x, verticalPower * 1.2, -horizontalKnockback.z);
 +            // Paper start - knockback events
 +            Vec3 targetMovement = new Vec3(
 +                deltaMovement.x - horizontalKnockback.x, deltaMovement.y + verticalPower * 1.2, deltaMovement.z - horizontalKnockback.z
@@ -207,14 +207,14 @@
 +                this.setDeltaMovement(deltaMovement.add(event.getKnockback().getX(), event.getKnockback().getY(), event.getKnockback().getZ()));
 +            }
 +            // Paper end - knockback events
-             this.playSound(hitSound.value());
+             this.soundSettings.hitSound().ifPresent(s -> this.playSound(s.value()));
          } else {
 -            super.knockback(power, xd, zd, source, damage, comesFromEffect);
 +            super.knockback(power, xd, zd, source, damage, comesFromEffect, attacker, eventCause); // Paper - knockback events
          }
      }
  
-@@ -1010,7 +_,7 @@
+@@ -1012,7 +_,7 @@
          }
  
          @Override

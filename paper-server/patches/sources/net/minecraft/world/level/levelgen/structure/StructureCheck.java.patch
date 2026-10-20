@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -59,8 +_,12 @@
+@@ -47,8 +_,12 @@
      private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
      private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
      private final LongSet chunksWithoutStartsInStorage = new LongOpenHashSet();
@@ -13,10 +13,19 @@
          final ChunkScanAccess storageAccess,
          final RegistryAccess registryAccess,
          final StructureTemplateManager structureTemplateManager,
-@@ -83,7 +_,22 @@
+@@ -60,7 +_,7 @@
+         final long seed,
+         final DataFixer fixerUpper
+     ) {
+-        this.storageScanner = new ChunkStructureScanner(storageAccess, registryAccess, seed, fixerUpper, dimension, chunkGenerator.getTypeNameForDataFixer());
++        this.storageScanner = new ChunkStructureScanner(storageAccess, registryAccess, seed, fixerUpper, dimension, chunkGenerator.getTypeNameForDataFixer(), levelStem); // Paper - pass level stem
+         this.registryAccess = registryAccess;
+         this.structureTemplateManager = structureTemplateManager;
+         this.chunkGenerator = chunkGenerator;
+@@ -69,7 +_,22 @@
+         this.biomeSource = biomeSource;
          this.climateSampler = randomState.createClimateSampler(SamplerContext.builder().enableCaches().build());
          this.seed = seed;
-         this.fixerUpper = fixerUpper;
 -    }
 +        this.levelStem = levelStem; // Paper - also store level stem
 +    }
@@ -37,7 +46,7 @@
  
      public StructureCheckResult checkStart(final ChunkPos pos, final Structure structure, final StructurePlacement placement, final boolean requireUnreferenced) {
          long posKey = pos.pack();
-@@ -105,7 +_,7 @@
+@@ -91,7 +_,7 @@
              this.chunksWithoutStartsInStorage.add(posKey);
          }
  
@@ -46,12 +55,3 @@
              return StructureCheckResult.START_NOT_PRESENT;
          }
  
-@@ -150,7 +_,7 @@
-         if (collectFields.getResult() instanceof CompoundTag chunkTag) {
-             int version = NbtUtils.getDataVersion(chunkTag);
-             SimpleRegionStorage.injectDatafixingContext(
--                chunkTag, ChunkMap.getChunkDataFixContextTag(this.dimension, this.chunkGenerator.getTypeNameForDataFixer())
-+                chunkTag, ChunkMap.getChunkDataFixContextTag(this.dimension, this.chunkGenerator.getTypeNameForDataFixer(), this.levelStem) // Paper - pass level stem
-             );
- 
-             CompoundTag fixedChunkTag;

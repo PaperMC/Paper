@@ -22,9 +22,9 @@
 -        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
 +        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
              Block block = state.getBlock();
-             boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player;
              if (block.dropFromExplosion(explosion)) {
-@@ -177,8 +_,10 @@
+                 BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+@@ -176,8 +_,10 @@
                      .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
                      .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
                      .withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
@@ -36,7 +36,7 @@
 +                    // CraftBukkit end
                  }
  
-                 state.spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack);
+                 boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player;
 @@ -258,7 +_,7 @@
      }
  
@@ -46,7 +46,7 @@
      }
  
      protected boolean canBeReplaced(final BlockState state, final Fluid fluid) {
-@@ -486,6 +_,15 @@
+@@ -488,6 +_,15 @@
              this.replaceable = properties.replaceable;
          }
  
@@ -62,7 +62,7 @@
          private boolean calculateSolid() {
              if (this.owner.properties.forceSolidOn) {
                  return SolidDebugger.logAndGet(this.typeHolder(), SolidDebugger.Reason.FORCE_SOLID_ON);
-@@ -510,12 +_,14 @@
+@@ -512,12 +_,14 @@
              }
          }
  
@@ -77,7 +77,7 @@
  
              this.legacySolid = this.calculateSolid();
              this.occlusionShape = this.canOcclude ? this.owner.getOcclusionShape(this.asState()) : Shapes.empty();
-@@ -550,6 +_,12 @@
+@@ -552,6 +_,12 @@
              return this.legacySolid;
          }
  
@@ -90,7 +90,7 @@
          public boolean isValidSpawn(final BlockGetter level, final BlockPos pos, final EntityType<?> type) {
              return this.getBlock().properties.isValidSpawn.test(this.asState(), level, pos, type);
          }
-@@ -570,19 +_,19 @@
+@@ -572,19 +_,19 @@
              return this.occlusionShape;
          }
  
@@ -115,7 +115,7 @@
              return this.isAir;
          }
  
-@@ -596,7 +_,7 @@
+@@ -598,7 +_,7 @@
          }
  
          public MapColor getMapColor(final BlockGetter level, final BlockPos pos) {
@@ -124,7 +124,7 @@
          }
  
          public BlockState rotate(final Rotation rotation) {
-@@ -660,14 +_,14 @@
+@@ -662,14 +_,14 @@
          }
  
          public PushReaction getPistonPushReaction() {
@@ -141,7 +141,7 @@
              return this.canOcclude;
          }
  
-@@ -758,7 +_,13 @@
+@@ -760,7 +_,13 @@
          }
  
          public void onPlace(final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston) {
@@ -156,15 +156,15 @@
          }
  
          public void affectNeighborsAfterRemoval(final ServerLevel level, final BlockPos pos, final boolean movedByPiston) {
-@@ -785,6 +_,7 @@
- 
-         public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
-             this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience);
+@@ -789,6 +_,7 @@
+             final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience, final @Nullable Entity breaker
+         ) {
+             this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience, breaker);
 +            if (dropExperience) this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, tool, true)); // Paper - Properly handle xp dropping
          }
  
          public List<ItemStack> getDrops(final LootParams.Builder params) {
-@@ -877,11 +_,11 @@
+@@ -881,11 +_,11 @@
              return this.getBlock() instanceof EntityBlock ? ((EntityBlock)this.getBlock()).getTicker(level, this.asState(), type) : null;
          }
  
