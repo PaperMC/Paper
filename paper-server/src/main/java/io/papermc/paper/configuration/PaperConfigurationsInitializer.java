@@ -250,7 +250,7 @@ public final class PaperConfigurationsInitializer {
         // Apply legacy transformations before settings flatten
         final YamlConfiguration spigotConfiguration = loadLegacyConfigFile(spigotConfig); // needs to change spigot config values in this transformation
         LegacyPaperConfig.transformation(spigotConfiguration).apply(legacy);
-        spigotConfiguration.save(Files.newBufferedWriter(spigotConfig, StandardCharsets.UTF_8));
+        spigotConfiguration.save(spigotConfig.toFile());
         legacy.mergeFrom(legacy.node("settings")); // flatten "settings" to root
         legacy.removeChild("settings");
         LegacyPaperConfig.toNewFormat().apply(legacy);
@@ -305,7 +305,7 @@ public final class PaperConfigurationsInitializer {
         legacyWorldSettings.removeChild("default");
         if (!worldDefaults.virtual()) {
             worldDefaults.node(Configuration.LEGACY_CONFIG_VERSION_FIELD).raw(version);
-            LegacySpigotWorldConfig.migrate(worldDefaults);
+            LegacySpigotWorldConfig.migrate(worldDefaults, "spigot.yml world-settings.default");
             final ConfigurationNode defaults = worldDefaultsLoader.load();
             defaults.mergeFrom(worldDefaults);
             worldDefaultsLoader.save(defaults);
@@ -316,7 +316,7 @@ public final class PaperConfigurationsInitializer {
             try {
                 final Path worldConfigDir = resolveWorldConfigDirectory(levelFolder, key);
                 legacyWorldNode.node(Configuration.LEGACY_CONFIG_VERSION_FIELD).raw(version);
-                LegacySpigotWorldConfig.migrate(legacyWorldNode);
+                LegacySpigotWorldConfig.migrate(legacyWorldNode, "spigot.yml world-settings." + key);
                 final YamlConfigurationLoader worldLoader = ConfigurationLoaders.naturallySortedWithoutHeader(worldConfigDir.resolve(WORLD_CONFIG_FILE_NAME));
                 final ConfigurationNode worldNode = worldLoader.load();
                 worldNode.mergeFrom(legacyWorldNode);

@@ -903,6 +903,19 @@ index 54a8384f1bc805865e81aeebcf1eadc89d097c91..56041e88597d7ee1f86f881a9de5507e
      );
      public static final Holder<Attribute> NAME_TAG_DISTANCE = register(
          "name_tag_distance", new RangedAttribute("attribute.name.name_tag_distance", 64.0, 0.0, 512.0).setSyncable(true)
+diff --git a/net/minecraft/world/entity/ai/goal/FloatGoal.java b/net/minecraft/world/entity/ai/goal/FloatGoal.java
+index abbe5e9d4fbb10195f6dc408de603fe7bb435d82..d804517e8afa0ce9a9e690211c7db9f28294bee2 100644
+--- a/net/minecraft/world/entity/ai/goal/FloatGoal.java
++++ b/net/minecraft/world/entity/ai/goal/FloatGoal.java
+@@ -17,7 +17,7 @@ public class FloatGoal extends Goal {
+     public FloatGoal(final Mob mob, final TagKey<Fluid> fluid) {
+         this.mob = mob;
+         this.fluid = fluid;
+-        if (mob.level().paperConfig().entities.behavior.spawnerNerfedMobsShouldJump) mob.goalFloat = this; // Paper - Allow nerfed mobs to jump and float
++        if (mob.level().paperConfig().entities.spawning.spawnerMobs.nerfedShouldJump) mob.goalFloat = this; // Paper - Allow nerfed mobs to jump and float
+         this.setFlags(EnumSet.of(Goal.Flag.JUMP));
+         mob.getNavigation().setCanFloat(true);
+     }
 diff --git a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 index f852126b179dc0c5dab3dbd22d3bfb8b73a5dba8..b0d8bb85febde2dc1925ad1a05e3a1bfe19cf925 100644
 --- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
@@ -1118,7 +1131,7 @@ index ab0239a9d32bd937fb8eef9696b8b7d32e89406c..fd7f464446acd64201664b01a22b3f41
                  if (distanceSquared > viewDistance * viewDistance) {
                      double deltaLength = Math.sqrt(distanceSquared);
 diff --git a/net/minecraft/world/level/BaseSpawner.java b/net/minecraft/world/level/BaseSpawner.java
-index 56f9c7906761b49c1090bd2489fe111f0d2a4a32..2e3ceb8f783f22270111b5c963c0ef785ac96eb5 100644
+index 56f9c7906761b49c1090bd2489fe111f0d2a4a32..33d37dfed35236fec2e39e289a3a6b4a1f0af062 100644
 --- a/net/minecraft/world/level/BaseSpawner.java
 +++ b/net/minecraft/world/level/BaseSpawner.java
 @@ -195,7 +195,7 @@ public abstract class BaseSpawner {
@@ -1126,7 +1139,7 @@ index 56f9c7906761b49c1090bd2489fe111f0d2a4a32..2e3ceb8f783f22270111b5c963c0ef78
                                  nextSpawnData.getEquipment().ifPresent(mob::equip);
                                  // Spigot start
 -                                if (mob.level().spigotConfig.nerfSpawnerMobs) {
-+                                if (mob.level().paperConfig().entities.spawning.nerfSpawnerMobs) {
++                                if (mob.level().paperConfig().entities.spawning.spawnerMobs.nerf) {
                                      mob.aware = false;
                                  }
                                  // Spigot end
@@ -1304,7 +1317,7 @@ index c0779cb3c237e4399a53a7e6fc95bb2d88483bca..212db695d80d45c4fbfffe2858feb659
                  return;
              }
 diff --git a/net/minecraft/world/level/block/NetherPortalBlock.java b/net/minecraft/world/level/block/NetherPortalBlock.java
-index 28ab25af5929991622629f056f32b1184853cb24..9a9d9d6a5ef8b65609d70a08f3e4df8c886a8fe1 100644
+index 28ab25af5929991622629f056f32b1184853cb24..a28e336e35e5cb00c9e4e2e3b3452179819a65dc 100644
 --- a/net/minecraft/world/level/block/NetherPortalBlock.java
 +++ b/net/minecraft/world/level/block/NetherPortalBlock.java
 @@ -60,7 +60,7 @@ public class NetherPortalBlock extends Block implements Portal {
@@ -1312,10 +1325,19 @@ index 28ab25af5929991622629f056f32b1184853cb24..9a9d9d6a5ef8b65609d70a08f3e4df8c
      @Override
      protected void randomTick(final BlockState state, final ServerLevel level, BlockPos pos, final RandomSource random) {
 -        if (level.spigotConfig.enableZombiePigmenPortalSpawns && level.isSpawningMonsters() // Paper
-+        if (level.paperConfig().entities.spawning.enableZombiePigmenPortalSpawns && level.isSpawningMonsters() // Paper
++        if (level.paperConfig().entities.spawning.portalZombifiedPiglins.enabled && level.isSpawningMonsters() // Paper
              && level.getLevelData().getDifficulty() != Difficulty.PEACEFUL
              && level.environmentAttributes().getValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS, pos)
              && random.nextInt(2000) < level.getDifficulty().getId()
+@@ -75,7 +75,7 @@ public class NetherPortalBlock extends Block implements Portal {
+                     entity.setPortalCooldown();
+                     // Paper start - Add option to nerf pigmen from nether portals
+                     entity.fromNetherPortal = true;
+-                    if (level.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false;
++                    if (level.paperConfig().entities.spawning.portalZombifiedPiglins.nerf) ((net.minecraft.world.entity.Mob) entity).aware = false;
+                     // Paper end - Add option to nerf pigmen from nether portals
+                     Entity vehicle = entity.getVehicle();
+                     if (vehicle != null) {
 diff --git a/net/minecraft/world/level/block/NetherWartBlock.java b/net/minecraft/world/level/block/NetherWartBlock.java
 index fcd93b9c78e4705861f345defe2a94f3626306dd..c2f946112148b8f6bdd416e6ca4ae63959aa430d 100644
 --- a/net/minecraft/world/level/block/NetherWartBlock.java

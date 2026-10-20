@@ -1,7 +1,6 @@
 package io.papermc.paper.command.subcommands;
 
 import io.papermc.paper.command.PaperSubcommand;
-import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
@@ -24,9 +23,9 @@ public final class ReloadCommand implements PaperSubcommand {
         Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
         Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
 
-        MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
-        server.paperConfigurations.reloadConfigs(server);
-        server.server.reloadCount++;
+        final CraftServer server = (CraftServer) sender.getServer();
+        server.reloadPaperConfiguration();
+        server.reloadCount++;
 
         Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
     }

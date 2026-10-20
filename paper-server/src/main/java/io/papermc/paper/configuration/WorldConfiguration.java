@@ -167,10 +167,25 @@ public class WorldConfiguration extends ConfigurationPart {
         public class Spawning extends ConfigurationPart {
             @Comment("The radius around a player, in chunks, that mobs may naturally spawn in.")
             public int mobSpawnRange = 8;
-            @Comment("Whether mobs spawned by a monster spawner have reduced AI.")
-            public boolean nerfSpawnerMobs = false;
-            @Comment("Whether zombified piglins may spawn from nether portals.")
-            public boolean enableZombiePigmenPortalSpawns = true;
+            @Comment("Mobs spawned by monster spawners.")
+            public SpawnerMobs spawnerMobs;
+
+            public class SpawnerMobs extends ConfigurationPart {
+                @Comment("Spawn them without AI.")
+                public boolean nerf = false;
+                @Comment("Whether nerfed mobs still jump and float in water.")
+                public boolean nerfedShouldJump = false;
+            }
+
+            @Comment("Zombified piglins spawned by nether portals.")
+            public PortalZombifiedPiglins portalZombifiedPiglins;
+
+            public class PortalZombifiedPiglins extends ConfigurationPart {
+                public boolean enabled = true;
+                @Comment("Spawn them without AI.")
+                public boolean nerf = false;
+            }
+
             @Comment("Ticks before a dropped item despawns.")
             public int itemDespawnRate = 6000;
             @Comment("Ticks before a stuck arrow despawns.")
@@ -298,7 +313,6 @@ public class WorldConfiguration extends ConfigurationPart {
 
         public class Behavior extends ConfigurationPart {
             public boolean disableChestCatDetection = false;
-            public boolean spawnerNerfedMobsShouldJump = false;
             public int experienceMergeMaxValue = -1;
             public boolean shouldRemoveDragon = false;
             public boolean zombiesTargetTurtleEggs = true;
@@ -333,7 +347,6 @@ public class WorldConfiguration extends ConfigurationPart {
             }
 
             public boolean disablePlayerCrits = false;
-            public boolean nerfPigmenFromNetherPortals = false;
             @Comment("Prevents merging items that are not on the same y level, preventing potential visual artifacts.")
             public boolean onlyMergeItemsHorizontally = false;
             public PillagerPatrols pillagerPatrols;

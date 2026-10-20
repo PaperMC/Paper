@@ -50,6 +50,7 @@ public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
     static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): merge spigot.yml and bukkit.yml
     private static GlobalConfiguration instance;
+    private static @Nullable Level levelBeforeDebug; // root log level to restore once logging.debug is turned off again
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return instance;
@@ -170,6 +171,14 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean isProxyOnlineMode() {
             return org.bukkit.Bukkit.getOnlineMode() || (this.bungeeCord.enabled && this.bungeeCord.onlineMode) || (this.velocity.enabled && this.velocity.onlineMode);
         }
+
+        @PostProcess
+        private void postProcess() {
+            if (this.bungeeCord.enabled && this.velocity.enabled) {
+                LOGGER.error("Both BungeeCord and Velocity forwarding are enabled, but only one can be used. Disabling BungeeCord...");
+                this.bungeeCord.enabled = false;
+            }
+        }
     }
 
     public Console console;
@@ -199,6 +208,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public int recipeSpamLimit = 20;
         public IntOr.Disabled incomingPacketThreshold = new IntOr.Disabled(OptionalInt.of(300));
 
+        @Comment("Commands that do not count towards the chat spam limit, matched by prefix.")
         public Commands commands;
         public class Commands extends ConfigurationPart {
             public boolean enabled = false;
@@ -273,9 +283,15 @@ public class GlobalConfiguration extends ConfigurationPart {
         @PostProcess
         private void postProcess() {
             final LoggerContext context = (LoggerContext) LogManager.getContext(false);
-            if (this.debug && !LogManager.getRootLogger().isTraceEnabled()) {
-                final org.apache.logging.log4j.core.config.Configuration configuration = context.getConfiguration();
-                configuration.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.ALL);
+            final org.apache.logging.log4j.core.config.Configuration configuration = context.getConfiguration();
+            final org.apache.logging.log4j.core.config.LoggerConfig root = configuration.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+            if (this.debug && levelBeforeDebug == null && !LogManager.getRootLogger().isTraceEnabled()) {
+                levelBeforeDebug = root.getLevel();
+                root.setLevel(Level.ALL);
+                context.updateLoggers(configuration);
+            } else if (!this.debug && levelBeforeDebug != null) {
+                root.setLevel(levelBeforeDebug);
+                levelBeforeDebug = null;
                 context.updateLoggers(configuration);
             }
             if (LogManager.getRootLogger().isTraceEnabled()) {

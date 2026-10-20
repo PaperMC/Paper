@@ -401,12 +401,7 @@ public final class CraftServer implements Server {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
         }
 
-        this.overrideAllCommandBlockCommands = GlobalConfiguration.get().commands.commandBlockOverrides.contains("*");
-        this.ignoreVanillaPermissions = GlobalConfiguration.get().commands.ignoreVanillaPermissions;
-        console.autosavePeriod = GlobalConfiguration.get().misc.autoSaveInterval;
-        this.warningState = GlobalConfiguration.get().misc.deprecatedVerbose;
-        TicketType.PLUGIN_TYPE_TIMEOUT = GlobalConfiguration.get().chunkSystem.pluginTicketTimeout;
-        this.minimumAPI = ApiVersion.getOrCreateVersion(GlobalConfiguration.get().misc.minimumApi);
+        this.applyPaperConfiguration(); // Paper - moved from bukkit.yml and commands.yml
         this.loadIcon();
         CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
 
@@ -417,6 +412,36 @@ public final class CraftServer implements Server {
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
         this.spark = new io.papermc.paper.SparksFly(this); // Paper - spark
+    }
+
+    public void applyPaperConfiguration() {
+        final GlobalConfiguration config = GlobalConfiguration.get();
+        this.overrideAllCommandBlockCommands = config.commands.commandBlockOverrides.contains("*");
+        this.ignoreVanillaPermissions = config.commands.ignoreVanillaPermissions;
+        this.console.autosavePeriod = config.misc.autoSaveInterval;
+        this.warningState = config.misc.deprecatedVerbose;
+        TicketType.PLUGIN_TYPE_TIMEOUT = config.chunkSystem.pluginTicketTimeout;
+        this.minimumAPI = ApiVersion.getOrCreateVersion(config.misc.minimumApi);
+        for (final ServerLevel world : this.console.getAllLevels()) {
+            for (final SpawnCategory spawnCategory : SpawnCategory.values()) {
+                if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+                    final MobCategory category = CraftSpawnCategory.toNMS(spawnCategory);
+                    world.ticksPerSpawnCategory.put(spawnCategory, world.paperConfig().entities.spawning.ticksPerSpawn.getInt(category));
+                    world.getWorld().setSpawnLimit(spawnCategory, world.paperConfig().entities.spawning.spawnLimits.getInt(category));
+                }
+            }
+        }
+    }
+
+    public void reloadPaperConfiguration() {
+        final Set<String> previousAliases = this.getCommandAliases().keySet().stream()
+            .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
+            .collect(java.util.stream.Collectors.toSet());
+        this.console.paperConfigurations.reloadConfigs(this.console);
+        this.applyPaperConfiguration();
+        this.getCommandMap().getKnownCommands().keySet().removeIf(previousAliases::contains);
+        this.commandMap.registerServerAliases();
+        this.syncCommands();
     }
 
     public boolean getCommandBlockOverride(String command) {
@@ -848,11 +873,7 @@ public final class CraftServer implements Server {
         DedicatedServerProperties config = this.console.settings.getProperties();
 
         this.console.setMotd(config.motd.get());
-        this.warningState = GlobalConfiguration.get().misc.deprecatedVerbose;
-        TicketType.PLUGIN_TYPE_TIMEOUT = GlobalConfiguration.get().chunkSystem.pluginTicketTimeout;
-        this.minimumAPI = ApiVersion.getOrCreateVersion(GlobalConfiguration.get().misc.minimumApi);
         this.printSaveWarning = false;
-        this.console.autosavePeriod = GlobalConfiguration.get().misc.autoSaveInterval;
         this.loadIcon();
         CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
 
@@ -868,17 +889,10 @@ public final class CraftServer implements Server {
         }
 
         this.console.paperConfigurations.reloadConfigs(this.console);
+        this.applyPaperConfiguration();
         for (ServerLevel world : this.console.getAllLevels()) {
             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
             world.setSpawnSettings(world.isSpawningMonsters()); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
-
-            for (SpawnCategory spawnCategory : SpawnCategory.values()) {
-                if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
-                    final MobCategory category = CraftSpawnCategory.toNMS(spawnCategory);
-                    world.ticksPerSpawnCategory.put(spawnCategory, world.paperConfig().entities.spawning.ticksPerSpawn.getInt(category));
-                    world.getWorld().setSpawnLimit(spawnCategory, world.paperConfig().entities.spawning.spawnLimits.getInt(category));
-                }
-            }
         }
 
         Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -895,8 +909,6 @@ public final class CraftServer implements Server {
         this.reloadData();
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
-        this.overrideAllCommandBlockCommands = GlobalConfiguration.get().commands.commandBlockOverrides.contains("*");
-        this.ignoreVanillaPermissions = GlobalConfiguration.get().commands.ignoreVanillaPermissions;
 
         int pollCount = 0;
 
@@ -2703,12 +2715,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean reloadCommandAliases() {
-        Set<String> removals = getCommandAliases().keySet().stream()
-                .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
-                .collect(java.util.stream.Collectors.toSet());
-        getCommandMap().getKnownCommands().keySet().removeIf(removals::contains);
-        this.console.paperConfigurations.reloadConfigs(this.console);
-        commandMap.registerServerAliases();
+        this.reloadPaperConfiguration();
         return true;
     }
 

@@ -43,22 +43,6 @@ public abstract class FileConfiguration extends MemoryConfiguration {
     }
 
     /**
-     * Saves this {@link FileConfiguration} to the specified {@link Writer}.
-     *
-     * @param writer Writer to save to.
-     * @throws IOException Thrown when the given writer cannot be written to
-     *     for any reason.
-     * @throws IllegalArgumentException Thrown when writer is null.
-     */
-    public void save(@NotNull Writer writer) throws IOException {
-        Preconditions.checkArgument(writer != null, "Writer cannot be null");
-        String data = this.saveToString();
-        try (writer) {
-            writer.write(data);
-        }
-    }
-
-    /**
      * Saves this {@link FileConfiguration} to the specified location.
      * <p>
      * If the file does not exist, it will be created. If already exists, it
@@ -81,7 +65,12 @@ public abstract class FileConfiguration extends MemoryConfiguration {
         String data = saveToString();
 
         Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
-        this.save(writer);
+
+        try {
+            writer.write(data);
+        } finally {
+            writer.close();
+        }
     }
 
     /**

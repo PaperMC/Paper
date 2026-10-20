@@ -1,6 +1,10 @@
 package io.papermc.paper.configuration.transformation.world;
 
 import io.papermc.paper.configuration.Configuration;
+import io.papermc.paper.configuration.transformation.Transformations;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
@@ -12,13 +16,22 @@ import static org.spongepowered.configurate.transformation.TransformAction.remov
 
 public final class LegacySpigotWorldConfig {
 
+    // hunger.* keeps its paths
+    private static final String[] HUNGER_KEYS = {
+        "jump-walk-exhaustion", "jump-sprint-exhaustion", "combat-exhaustion", "regen-exhaustion",
+        "swim-multiplier", "sprint-multiplier", "other-multiplier"
+    };
+
     private LegacySpigotWorldConfig() {
     }
 
-    public static void migrate(final ConfigurationNode node) throws ConfigurateException {
+    public static void migrate(final ConfigurationNode node, final String source) throws ConfigurateException {
+        final ConfigurationNode legacy = node.copy();
         toNewFormat().apply(node);
-        pruneEmptyLegacySections(node);
         node.removeChild(Configuration.LEGACY_CONFIG_VERSION_FIELD);
+        final Set<NodePath> keptInPlace = Arrays.stream(HUNGER_KEYS).map(key -> path("hunger", key)).collect(Collectors.toSet());
+        Transformations.removeUnmigrated(legacy, node, source, keptInPlace);
+        pruneEmptyLegacySections(node);
     }
 
     public static ConfigurationTransformation toNewFormat() {
@@ -36,8 +49,8 @@ public final class LegacySpigotWorldConfig {
             .addAction(path("unload-frozen-chunks"), move(path("chunks", "unload-frozen-chunks")))
             // entities: spawning
             .addAction(path("mob-spawn-range"), move(entities("spawning", "mob-spawn-range")))
-            .addAction(path("nerf-spawner-mobs"), move(entities("spawning", "nerf-spawner-mobs")))
-            .addAction(path("enable-zombie-pigmen-portal-spawns"), move(entities("spawning", "enable-zombie-pigmen-portal-spawns")))
+            .addAction(path("nerf-spawner-mobs"), move(entities("spawning", "spawner-mobs", "nerf")))
+            .addAction(path("enable-zombie-pigmen-portal-spawns"), move(entities("spawning", "portal-zombified-piglins", "enabled")))
             .addAction(path("item-despawn-rate"), move(entities("spawning", "item-despawn-rate")))
             .addAction(path("arrow-despawn-rate"), move(entities("spawning", "arrow-despawn-rate")))
             .addAction(path("trident-despawn-rate"), move(entities("spawning", "trident-despawn-rate")))
@@ -104,14 +117,6 @@ public final class LegacySpigotWorldConfig {
             builder.addAction(path("growth", pair[0] + "-modifier"), move(path("growth-modifiers", pair[1])));
         }
 
-        // hunger.* keeps its key names
-        for (final String key : new String[]{
-            "jump-walk-exhaustion", "jump-sprint-exhaustion", "combat-exhaustion", "regen-exhaustion",
-            "swim-multiplier", "sprint-multiplier", "other-multiplier"
-        }) {
-            builder.addAction(path("hunger", key), move(path("hunger", key)));
-        }
-
         // seed-<feature> -> seeds.<feature>
         for (final String[] pair : new String[][]{
             {"village", "village"}, {"desert", "desert"}, {"igloo", "igloo"}, {"jungle", "jungle"},
@@ -146,6 +151,6 @@ public final class LegacySpigotWorldConfig {
     }
 
     private static NodePath entities(final String... other) {
-        return io.papermc.paper.configuration.transformation.Transformations.prefix("entities", other);
+        return Transformations.prefix("entities", other);
     }
 }

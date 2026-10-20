@@ -1,7 +1,9 @@
 package io.papermc.paper.configuration.transformation.global;
 
 import io.papermc.paper.configuration.transformation.Transformations;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
@@ -19,12 +21,19 @@ public final class LegacyBukkitConfig {
     }
 
     public static void migrate(final ConfigurationNode node) throws ConfigurateException {
+        final ConfigurationNode legacy = node.copy();
         toNewFormat().apply(node);
-        Transformations.pruneEmptySections(node, "settings", "spawn-limits", "ticks-per", "chunk-gc", "worlds");
+        // world settings, handled by migrateWorldDefaults
+        node.removeChild("spawn-limits");
+        node.removeChild("ticks-per");
+        Transformations.removeUnmigrated(legacy, node, "bukkit.yml", Set.of());
+        Transformations.pruneEmptySections(node, "settings", "chunk-gc", "worlds");
     }
 
     public static void migrateCommands(final ConfigurationNode node) throws ConfigurateException {
+        final ConfigurationNode legacy = node.copy();
         commandsToNewFormat().apply(node);
+        Transformations.removeUnmigrated(legacy, node, "commands.yml", Set.of());
     }
 
     public static ConfigurationTransformation toNewFormat() {
@@ -78,7 +87,7 @@ public final class LegacyBukkitConfig {
 
     private static void normalizeAlias(final ConfigurationNode alias) throws SerializationException {
         if (!alias.isList()) {
-            alias.set(java.util.List.of(alias.getString("") + " $1-"));
+            alias.set(List.of(alias.getString("") + " $1-"));
         }
     }
 
@@ -107,13 +116,24 @@ public final class LegacyBukkitConfig {
             .build();
     }
 
+    // Expects a copy of the whole bukkit.yml, keeps only what belongs in the world defaults
     public static void migrateWorldDefaults(final ConfigurationNode node) throws ConfigurateException {
         worldDefaultsToNewFormat().apply(node);
-        Transformations.pruneEmptySections(node, "settings", "spawn-limits", "ticks-per", "chunk-gc", "worlds", "aliases");
+        for (final Object key : List.copyOf(node.childrenMap().keySet())) {
+            if (!"entities".equals(key) && !"chunks".equals(key)) {
+                node.removeChild(key);
+            }
+        }
     }
 
     private static TransformAction spawning(final String section, final String category) {
-        return move(path("entities", "spawning", section, category));
+        return (nodePath, value) -> {
+            if (value.getInt(0) < 0) { // meant the vanilla value, which is the default now
+                value.raw(null);
+                return null;
+            }
+            return path("entities", "spawning", section, category).array();
+        };
     }
 
     private static TransformAction intoGenerators() {

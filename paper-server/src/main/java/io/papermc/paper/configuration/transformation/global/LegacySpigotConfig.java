@@ -5,9 +5,6 @@ import io.papermc.paper.configuration.transformation.Transformations;
 import org.spongepowered.configurate.ConfigurateException;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
@@ -28,13 +25,21 @@ import static org.spongepowered.configurate.transformation.TransformAction.set;
 // Transforms spigot.yml non-world settings into the new config format
 public final class LegacySpigotConfig {
 
+    private static final Set<NodePath> KEPT_IN_PLACE = Set.of(
+        path("players", "disable-saving"),
+        path("advancements", "disable-saving"),
+        path("stats", "disable-saving")
+    );
+
     private LegacySpigotConfig() {}
 
     public static void migrate(final ConfigurationNode node) throws ConfigurateException {
+        final ConfigurationNode legacy = node.copy();
         transformation().apply(node);
         toNewFormat().apply(node);
-        Transformations.pruneEmptySections(node, "settings", "commands", "messages", "stats", "advancements", "players");
         node.removeChild(Configuration.LEGACY_CONFIG_VERSION_FIELD);
+        Transformations.removeUnmigrated(legacy, node, "spigot.yml", KEPT_IN_PLACE);
+        Transformations.pruneEmptySections(node, "settings", "commands", "messages", "stats", "advancements", "players");
     }
 
     public static ConfigurationTransformation transformation() {
@@ -127,20 +132,14 @@ public final class LegacySpigotConfig {
             .addAction(
                 messages("outdated-client"),
                 move(
-                    miniMessage(
-                        Set.of("Outdated client! Please use {0}", "Incompatible client! Please use %s")::contains,
-                        translatable("multiplayer.disconnect.outdated_client")
-                    ),
+                    versionKickMessage("Outdated client! Please use %s", "multiplayer.disconnect.outdated_client"),
                     messages("kick", "outdated-client")
                 )
             )
             .addAction(
                 messages("outdated-server"),
                 move(
-                    miniMessage(
-                        Set.of("Outdated server! I'm still on {0}", "Incompatible client! Please use %s")::contains,
-                        translatable("multiplayer.disconnect.outdated_server")
-                    ),
+                    versionKickMessage("Outdated server! I'm still on %s", "multiplayer.disconnect.outdated_server"),
                     messages("kick", "outdated-server")
                 )
             )
@@ -184,18 +183,18 @@ public final class LegacySpigotConfig {
         return prefix("messages", other);
     }
 
-    private static TransformAction miniMessage(final Predicate<? super String> englishCheck, final Component component) {
+    // spigot used {0} for the server version, the kick message substitutes it into %s
+    private static TransformAction versionKickMessage(final String englishDefault, final String translationKey) {
+        final TransformAction convert = miniMessageWithTranslatable(
+            Set.of(englishDefault, "Incompatible client! Please use %s")::contains,
+            translatable(translationKey)
+        );
         return (path, value) -> {
-            final Object val = value.raw();
-            Component outputComponent = component;
-            if (val != null) {
-                final String strVal = val.toString();
-                if (!englishCheck.test(strVal)) {
-                    outputComponent = translatable(strVal.replaceAll("\\{\\d+}", "%s"));
-                }
+            final String message = value.getString();
+            if (message != null) {
+                value.raw(message.replaceAll("\\{\\d+}", "%s"));
             }
-            value.set(MiniMessage.miniMessage().serialize(outputComponent));
-            return null;
+            return convert.visitPath(path, value);
         };
     }
 

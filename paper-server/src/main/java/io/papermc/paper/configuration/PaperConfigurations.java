@@ -28,10 +28,9 @@ import io.papermc.paper.configuration.transformation.global.versioned.V30_Packet
 import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V32_SpigotConfigCleanup;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
-import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
-import io.papermc.paper.configuration.transformation.world.versioned.V32_SpawnAndSaveDefaults;
+import io.papermc.paper.configuration.transformation.world.versioned.V32_WorldConfigCleanup;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
 import io.papermc.paper.configuration.type.Duration;
@@ -272,7 +271,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_ZeroWorldHeight.apply(versionedBuilder);
         V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
-        V32_SpawnAndSaveDefaults.apply(versionedBuilder);
+        V32_WorldConfigCleanup.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
