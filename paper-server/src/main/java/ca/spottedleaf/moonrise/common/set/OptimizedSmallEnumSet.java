@@ -45,6 +45,10 @@ public final class OptimizedSmallEnumSet<E extends Enum<E>> {
         return Long.bitCount(this.backingSet);
     }
 
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     public void addAllUnchecked(final Collection<E> enums) {
         for (final E element : enums) {
             if (element == null) {
