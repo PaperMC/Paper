@@ -31,7 +31,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 7767e5420e3d2e569008747523d70147ea8d97fb..b6c6bf9b20fee63b7e2a37d949bb1e55cef40de6 100644
+index 7767e5420e3d2e569008747523d70147ea8d97fb..eddf7c3cef3b3209b47de97d93862937e9d2c82b 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -68,6 +68,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
@@ -111,15 +111,15 @@ index 7767e5420e3d2e569008747523d70147ea8d97fb..b6c6bf9b20fee63b7e2a37d949bb1e55
 +
 +    synchronized net.minecraft.nbt.CompoundTag getOversizedData(int x, int z) throws IOException {
 +        Path file = getOversizedFile(x, z);
-+        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new java.util.zip.InflaterInputStream(Files.newInputStream(file))))) {
-+            return net.minecraft.nbt.NbtIo.read((java.io.DataInput) out);
++        try (DataInputStream out = new DataInputStream(new java.util.zip.InflaterInputStream(Files.newInputStream(file)))) { // Paper - Optimize NBT reading/writing; FastNBTParser buffers internally
++            return ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead((java.io.DataInput) out); // Paper - Optimize NBT reading/writing
 +        }
 +
 +    }
 +    // Paper end
  }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 3b5833c5aa1dfe6045cd9ea731509227907fc6d8..c4f27907774f694c6bf2129ba14e5155c838a19b 100644
+index a78e27fa5733bdb21e06e89025fd23551b3912e7..939d9a660ca9c878d2c087bad07f64dab3c06fef 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -19,6 +19,7 @@ import net.minecraft.world.level.ChunkPos;
@@ -143,7 +143,7 @@ index 3b5833c5aa1dfe6045cd9ea731509227907fc6d8..c4f27907774f694c6bf2129ba14e5155
 +        synchronized (regionfile) {
 +            try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
 +                CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x(), chunkCoordinate.z());
-+                CompoundTag chunk = NbtIo.read(datainputstream);
++                CompoundTag chunk = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(datainputstream); // Paper - Optimize NBT reading/writing
 +                if (oversizedData == null) {
 +                    return chunk;
 +                }
@@ -184,7 +184,7 @@ index 3b5833c5aa1dfe6045cd9ea731509227907fc6d8..c4f27907774f694c6bf2129ba14e5155
 +        // Paper end
  
          try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
-             return regionChunkInputStream == null ? null : NbtIo.read(regionChunkInputStream);
+             return regionChunkInputStream == null ? null : ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(regionChunkInputStream); // Paper - Optimize NBT reading/writing
 @@ -265,6 +309,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              } else {
                  try (DataOutputStream output = region.getChunkDataOutputStream(pos)) {

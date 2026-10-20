@@ -55,7 +55,7 @@ index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2
          this.used.set(position, position + size);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a881f514ad3 100644
+index d1ea7f442e258b06f5c879de7d57fd16caf09178..5e64762059846f14d4e8ddfec1d1640c199cece2 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -46,6 +46,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
@@ -104,7 +104,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
 +
 +            InputStream input = compression.wrap(new ByteArrayInputStream(chunkData.array(), chunkData.position(), chunkDataLength - chunkData.position()));
 +
-+            return net.minecraft.nbt.NbtIo.read(new DataInputStream(input));
++            return ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(new DataInputStream(input)); // Paper - Optimize NBT reading/writing
 +        } catch (Exception ex) {
 +            return null;
 +        }
@@ -264,7 +264,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
 +                    for (RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
 +                        try {
 +                            DataInputStream in = new DataInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData))); // typical java
-+                            compound = net.minecraft.nbt.NbtIo.read((java.io.DataInput)in);
++                            compound = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead((java.io.DataInput)in); // Paper - Optimize NBT reading/writing
 +                            compression = compressionType;
 +                            break; // reaches here iff readNBT does not throw
 +                        } catch (Exception ex) {
@@ -639,7 +639,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
          return stub;
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index a2dd62ced02de213ffe1244b893069b93011713c..154b571b33c868c6520ab563d8cd5482f1c288c3 100644
+index 4d3abebdb8b5f952837acb3093ff6e04c44b08e4..6db9314f12dd69ab82d689ab77b7cc6bd53af102 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -27,6 +27,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
@@ -703,9 +703,9 @@ index a2dd62ced02de213ffe1244b893069b93011713c..154b571b33c868c6520ab563d8cd5482
          final int chunkX, final int chunkZ, final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData readData
      ) throws IOException {
          try {
--            return NbtIo.read(readData.input());
+-            return ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(readData.input()); // Paper - Optimize NBT reading/writing
 +            // Paper start - Attempt to recalculate regionfile header if it is corrupt
-+            final CompoundTag ret = NbtIo.read(readData.input());
++            final CompoundTag ret = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(readData.input()); // Paper - Optimize NBT reading/writing
 +            if (!this.isChunkData) {
 +                return ret;
 +            }
@@ -745,13 +745,13 @@ index a2dd62ced02de213ffe1244b893069b93011713c..154b571b33c868c6520ab563d8cd5482
          // Paper end
  
          try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
--            return regionChunkInputStream == null ? null : NbtIo.read(regionChunkInputStream);
+-            return regionChunkInputStream == null ? null : ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(regionChunkInputStream); // Paper - Optimize NBT reading/writing
 +            // Paper start - recover from corrupt regionfile header
 +            if (regionChunkInputStream == null) {
 +                return null;
 +            }
 +
-+            final CompoundTag serialisedChunkData = NbtIo.read(regionChunkInputStream);
++            final CompoundTag serialisedChunkData = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(regionChunkInputStream); // Paper - Optimize NBT reading/writing
 +            if (this.isChunkData) {
 +                ChunkPos headerChunkPos = SerializableChunkData.getChunkCoordinate(serialisedChunkData);
 +                if (!headerChunkPos.equals(pos)) {
@@ -832,7 +832,7 @@ index 84a92dc868e61969460dddb156af332e6384bcd1..3fef98e8c3c9908c6f05ded33596cbcb
          tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
          tag.storeNullable("blending_data", BlendingData.Packed.CODEC, this.blendingData);
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index df4f03f3a346e0ab0074757b3a077b2407135ac3..0b0265c8d4cb70aef758c1b443d007ef8d6c282b 100644
+index cdbe291d2053239e3b8dd0042dfb475306a6b6e5..12ac13394fc38f089be0ad7731eb4ea9487e1d17 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -34,6 +34,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
