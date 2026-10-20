@@ -883,9 +883,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, StructureType, MapCursor.Type)}
+     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, MapCursor.Type)}
      */
-    @Deprecated // Paper
+    @Deprecated
     @NotNull
     default ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType) {
         return this.createExplorerMap(world, location, structureType, 100, true);
@@ -905,12 +905,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, StructureType, MapCursor.Type, int, boolean)}
+     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, MapCursor.Type, int, boolean)}
      */
-    @Deprecated // Paper
-    @NotNull
-    public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
-    // Paper start
+    @Deprecated
+    @NotNull ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
+
     /**
      * Create a new explorer map targeting the closest nearby structure of a
      * given {@link StructureType}.
@@ -984,8 +983,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *      Structure, int, boolean)
      */
     @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull Structure structure, @NotNull MapCursor.Type mapIcon, int radius, boolean findUnexplored);
-
-    // Paper end
 
     /**
      * Reloads the server, refreshing settings and plugin information.
