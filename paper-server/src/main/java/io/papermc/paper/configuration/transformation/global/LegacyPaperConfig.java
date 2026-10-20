@@ -171,8 +171,13 @@ public final class LegacyPaperConfig {
     private static void miniMessageWithTranslatable(final ConfigurationTransformation.Builder builder, final Predicate<String> englishCheck, final String i18nKey, final String... strPath) {
         miniMessageWithTranslatable(builder, englishCheck, Component.translatable(i18nKey), strPath);
     }
+
     private static void miniMessageWithTranslatable(final ConfigurationTransformation.Builder builder, final Predicate<String> englishCheck, final Component component, final String... strPath) {
-        builder.addAction(path((Object[]) strPath), (path, value) -> {
+        builder.addAction(path((Object[]) strPath), miniMessageWithTranslatable(englishCheck, component));
+    }
+
+    static TransformAction miniMessageWithTranslatable(final Predicate<? super String> englishCheck, final Component component) {
+        return (path, value) -> {
             final Object val = value.raw();
             if (val != null) {
                 final String strVal = val.toString();
@@ -183,7 +188,7 @@ public final class LegacyPaperConfig {
             }
             value.set(MiniMessage.miniMessage().serialize(component));
             return null;
-        });
+        };
     }
 
     private static void miniMessage(final ConfigurationTransformation.Builder builder, final String... strPath) {
@@ -197,7 +202,7 @@ public final class LegacyPaperConfig {
     }
 
     @SuppressWarnings("deprecation") // valid use to convert legacy string to mini-message in legacy migration
-    private static String miniMessage(final String input) {
+    static String miniMessage(final String input) {
         return MiniMessage.miniMessage().serialize(LegacyComponentSerializer.legacySection().deserialize(ChatColor.translateAlternateColorCodes('&', input)));
     }
 

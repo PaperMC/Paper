@@ -67,6 +67,7 @@ subprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven(paperMavenPublicUrl)
     }

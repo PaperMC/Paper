@@ -85,11 +85,12 @@ interface RemovedConfigurations {
         path("commands", "fix-target-selector-tag-completion"),
         path("misc", "fix-entity-position-desync"),
         path("chunk-system", "gen-parallelism"),
-        path("logging"), // server is no longer obfuscated since 26.1
+        path("logging", "deobfuscate-stacktraces"), // server is no longer obfuscated since 26.1
         path("unsupported-settings", "compression-format"),
         path("commands", "time-command-affects-all-worlds"), // replaced with time.affects-all-worlds
         path("misc", "fix-far-end-terrain-generation"),
-        path("misc", "send-full-pos-for-item-entities")
+        path("misc", "send-full-pos-for-item-entities"),
+        path("timings"),
     };
 
 }

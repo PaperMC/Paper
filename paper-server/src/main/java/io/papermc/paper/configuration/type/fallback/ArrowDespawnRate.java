@@ -1,6 +1,5 @@
 package io.papermc.paper.configuration.type.fallback;
 
-import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Map;
@@ -24,15 +23,15 @@ public class ArrowDespawnRate extends FallbackValue.Int {
 
     @Override
     public Set<ContextKey<?>> required() {
-        return Set.of(FallbackValue.SPIGOT_WORLD_CONFIG);
+        return Set.of(FallbackValue.WORLD_CONFIG);
     }
 
     @Override
     protected int fallback() {
-        return this.get(FallbackValue.SPIGOT_WORLD_CONFIG).arrowDespawnRate;
+        return this.get(FallbackValue.WORLD_CONFIG).entities.spawning.arrowDespawnRate;
     }
 
-    public static ArrowDespawnRate def(SpigotWorldConfig spigotConfig) {
-        return new ArrowDespawnRate(FallbackValue.SPIGOT_WORLD_CONFIG.singleton(spigotConfig));
+    public static ArrowDespawnRate def(io.papermc.paper.configuration.WorldConfiguration worldConfig) {
+        return new ArrowDespawnRate(FallbackValue.WORLD_CONFIG.singleton(worldConfig));
     }
 }
