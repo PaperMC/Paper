@@ -191,7 +191,7 @@ public class CraftChunk implements Chunk {
     @Override
     public boolean isSlimeChunk() {
         // 987234911L is taken from Slime when seeing if a slime can spawn in a chunk
-        return this.level.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), level.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
+        return this.level.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), level.paperConfig().seeds.slime).nextInt(10) == 0; // Paper
     }
 
     @Override

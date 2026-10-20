@@ -1,15 +1,26 @@
 package io.papermc.paper.configuration.transformation;
 
+import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.Configurations;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.transformation.TransformAction;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.spongepowered.configurate.NodePath.path;
 
 public final class Transformations {
+    private static final Logger LOGGER = LogUtils.getClassLogger();
+
     private Transformations() {
     }
 
@@ -34,8 +45,114 @@ public final class Transformations {
         return ConfigurationTransformation.versionedBuilder().versionKey(Configuration.VERSION_FIELD);
     }
 
-    @FunctionalInterface
-    public interface DefaultsAware {
-        void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode);
+    public static void pruneEmptySections(final ConfigurationNode node, final String... sections) {
+        for (final String section : sections) {
+            final ConfigurationNode child = node.node(section);
+            if (!child.virtual() && isEffectivelyEmpty(child)) {
+                node.removeChild(section);
+            }
+        }
+    }
+
+    private static boolean isEffectivelyEmpty(final ConfigurationNode node) {
+        if (node.isMap()) {
+            return node.childrenMap().values().stream().allMatch(Transformations::isEffectivelyEmpty);
+        }
+        return node.empty();
+    }
+
+    /**
+     * Removes every option a legacy migration left at its original path, so options nothing reads
+     * anymore are not carried into the new config as unknown keys.
+     *
+     * @param legacy the legacy node before migrating
+     * @param migrated the same node after migrating
+     * @param source the legacy file the options came from, for logging
+     * @param keptInPlace options that legitimately keep their path
+     */
+    public static void removeUnmigrated(final ConfigurationNode legacy, final ConfigurationNode migrated, final String source, final Set<NodePath> keptInPlace) {
+        final List<NodePath> leaves = new ArrayList<>();
+        collectLeaves(legacy, new ArrayList<>(), leaves);
+        final List<String> removed = new ArrayList<>();
+        for (final NodePath leaf : leaves) {
+            if (keptInPlace.contains(leaf) || migrated.node(leaf.array()).virtual()) {
+                continue;
+            }
+            final Object[] path = leaf.array();
+            migrated.node(path).raw(null);
+            removed.add(Arrays.stream(path).map(String::valueOf).collect(Collectors.joining(".")));
+            // drop parents emptied by the removal
+            for (int length = path.length - 1; length > 0; length--) {
+                final ConfigurationNode parent = migrated.node(Arrays.copyOf(path, length));
+                if (!isEffectivelyEmpty(parent)) {
+                    break;
+                }
+                parent.raw(null);
+            }
+        }
+        if (!removed.isEmpty()) {
+            LOGGER.warn("Dropped options from {} that are no longer used: {}", source, String.join(", ", removed));
+        }
+    }
+
+    private static void collectLeaves(final ConfigurationNode node, final List<Object> path, final List<NodePath> leaves) {
+        if (node.isMap()) {
+            for (final Map.Entry<Object, ? extends ConfigurationNode> child : node.childrenMap().entrySet()) {
+                path.add(child.getKey());
+                collectLeaves(child.getValue(), path, leaves);
+                path.removeLast();
+            }
+        } else if (!path.isEmpty() && !node.empty()) {
+            leaves.add(NodePath.of(path));
+        }
+    }
+
+    public static ConfigurationTransformation single(final NodePath path, final TransformAction action) {
+        return ConfigurationTransformation.builder().addAction(path, action).build();
+    }
+
+    public static TransformAction setRaw(final Object value) {
+        return (path, node) -> {
+            node.raw(value);
+            return null;
+        };
+    }
+
+    public static NodePath prefix(final String prefix, final String... other) {
+        final List<String> list = new ArrayList<>(other.length + 1);
+        list.add(prefix);
+        list.addAll(Arrays.asList(other));
+        return NodePath.of(list);
+    }
+
+    public static TransformAction move(final NodePath to) {
+        return (path, node) -> to.array();
+    }
+
+    // replaces the last path element with all the arguments
+    public static TransformAction renameDeep(final String first, final String... other) {
+        return (path, node) -> {
+            final Object[] current = path.array();
+            final Object[] newPath = new Object[current.length + other.length];
+            System.arraycopy(current, 0, newPath, 0, current.length - 1);
+            newPath[current.length - 1] = first;
+            System.arraycopy(other, 0, newPath, current.length, other.length);
+            return newPath;
+        };
+    }
+
+    public static TransformAction move(final TransformAction action, final NodePath newPath) {
+        return (path, node) -> {
+            action.visitPath(path, node);
+            return newPath.array();
+        };
+    }
+
+    public static TransformAction moveParent(final String... parents) {
+        return (path, value) -> {
+            checkState(path.size() > 0, "can't move root");
+            final NodePath newPath = path((Object[]) parents);
+            return newPath.withAppendedChild(path.get(path.size() - 1)).array();
+        };
     }
 }

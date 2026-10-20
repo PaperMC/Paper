@@ -1,6 +1,5 @@
 package io.papermc.paper.configuration;
 
-import org.spigotmc.SpigotConfig;
 
 public class PaperServerConfiguration implements ServerConfiguration {
 
@@ -11,6 +10,6 @@ public class PaperServerConfiguration implements ServerConfiguration {
 
     @Override
     public boolean isProxyEnabled() {
-        return GlobalConfiguration.get().proxies.velocity.enabled || SpigotConfig.bungee;
+        return GlobalConfiguration.get().proxies.velocity.enabled || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled;
     }
 }

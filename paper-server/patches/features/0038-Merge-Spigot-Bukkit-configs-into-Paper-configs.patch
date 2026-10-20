@@ -1,0 +1,1712 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 20 Oct 2026 18:54:31 +0200
+Subject: [PATCH] Merge Spigot/Bukkit configs into Paper configs
+
+
+diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
+index 76f990f150f040b1ad6d7d5b91cfb34ebd6f436a..6e9c75faa9a3e838e522530bfec721a2cc85fcb7 100644
+--- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
++++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
+@@ -199,7 +199,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+ 
+     @Override
+     public long configAutoSaveInterval(final ServerLevel world) {
+-        return world.paperConfig().chunks.autoSaveInterval.value();
++        return world.paperConfig().chunks.autoSaveInterval;
+     }
+ 
+     @Override
+diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
+index 829f7685904fd741e00403647ae76d32275c34a3..b06a03d8bc7f9abf536592eadc34cb59b327951e 100644
+--- a/io/papermc/paper/entity/activation/ActivationRange.java
++++ b/io/papermc/paper/entity/activation/ActivationRange.java
+@@ -37,7 +37,6 @@ import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+ import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
+-import org.spigotmc.SpigotWorldConfig;
+ import java.util.List;
+ import java.util.Set;
+ 
+@@ -55,27 +54,27 @@ public final class ActivationRange {
+ 
+     private static int checkInactiveWakeup(final Entity entity) {
+         final Level world = entity.level();
+-        final SpigotWorldConfig config = world.spigotConfig;
++        final io.papermc.paper.configuration.WorldConfiguration config = world.paperConfig();
+         final long inactiveFor = MinecraftServer.currentTick - entity.activatedTick;
+         if (entity.activationType == ActivationType.VILLAGER) {
+-            if (inactiveFor > config.wakeUpInactiveVillagersEvery && world.wakeupInactiveRemainingVillagers > 0) {
++            if (inactiveFor > config.entities.activationRange.wakeUpInactive.villagersEvery && world.wakeupInactiveRemainingVillagers > 0) {
+                 world.wakeupInactiveRemainingVillagers--;
+-                return config.wakeUpInactiveVillagersFor;
++                return config.entities.activationRange.wakeUpInactive.villagersFor;
+             }
+         } else if (entity.activationType == ActivationType.ANIMAL) {
+-            if (inactiveFor > config.wakeUpInactiveAnimalsEvery && world.wakeupInactiveRemainingAnimals > 0) {
++            if (inactiveFor > config.entities.activationRange.wakeUpInactive.animalsEvery && world.wakeupInactiveRemainingAnimals > 0) {
+                 world.wakeupInactiveRemainingAnimals--;
+-                return config.wakeUpInactiveAnimalsFor;
++                return config.entities.activationRange.wakeUpInactive.animalsFor;
+             }
+         } else if (entity.activationType == ActivationType.FLYING_MONSTER) {
+-            if (inactiveFor > config.wakeUpInactiveFlyingEvery && world.wakeupInactiveRemainingFlying > 0) {
++            if (inactiveFor > config.entities.activationRange.wakeUpInactive.flyingMonstersEvery && world.wakeupInactiveRemainingFlying > 0) {
+                 world.wakeupInactiveRemainingFlying--;
+-                return config.wakeUpInactiveFlyingFor;
++                return config.entities.activationRange.wakeUpInactive.flyingMonstersFor;
+             }
+         } else if (entity.activationType == ActivationType.MONSTER || entity.activationType == ActivationType.RAIDER) {
+-            if (inactiveFor > config.wakeUpInactiveMonstersEvery && world.wakeupInactiveRemainingMonsters > 0) {
++            if (inactiveFor > config.entities.activationRange.wakeUpInactive.monstersEvery && world.wakeupInactiveRemainingMonsters > 0) {
+                 world.wakeupInactiveRemainingMonsters--;
+-                return config.wakeUpInactiveMonstersFor;
++                return config.entities.activationRange.wakeUpInactive.monstersFor;
+             }
+         }
+         return -1;
+@@ -90,14 +89,14 @@ public final class ActivationRange {
+      * @param config
+      * @return boolean If it should always tick.
+      */
+-    public static boolean initializeEntityActivationState(final Entity entity, final SpigotWorldConfig config) {
+-        return (entity.activationType == ActivationType.MISC && config.miscActivationRange <= 0)
+-            || (entity.activationType == ActivationType.RAIDER && config.raiderActivationRange <= 0)
+-            || (entity.activationType == ActivationType.ANIMAL && config.animalActivationRange <= 0)
+-            || (entity.activationType == ActivationType.MONSTER && config.monsterActivationRange <= 0)
+-            || (entity.activationType == ActivationType.VILLAGER && config.villagerActivationRange <= 0)
+-            || (entity.activationType == ActivationType.WATER && config.waterActivationRange <= 0)
+-            || (entity.activationType == ActivationType.FLYING_MONSTER && config.flyingMonsterActivationRange <= 0)
++    public static boolean initializeEntityActivationState(final Entity entity, final io.papermc.paper.configuration.WorldConfiguration config) {
++        return (entity.activationType == ActivationType.MISC && config.entities.activationRange.misc <= 0)
++            || (entity.activationType == ActivationType.RAIDER && config.entities.activationRange.raiders <= 0)
++            || (entity.activationType == ActivationType.ANIMAL && config.entities.activationRange.animals <= 0)
++            || (entity.activationType == ActivationType.MONSTER && config.entities.activationRange.monsters <= 0)
++            || (entity.activationType == ActivationType.VILLAGER && config.entities.activationRange.villagers <= 0)
++            || (entity.activationType == ActivationType.WATER && config.entities.activationRange.water <= 0)
++            || (entity.activationType == ActivationType.FLYING_MONSTER && config.entities.activationRange.flyingMonsters <= 0)
+             || entity instanceof EyeOfEnder
+             || entity instanceof Player
+             || entity instanceof ThrowableProjectile
+@@ -122,17 +121,17 @@ public final class ActivationRange {
+      * @param world
+      */
+     public static void activateEntities(final Level world) {
+-        final int miscActivationRange = world.spigotConfig.miscActivationRange;
+-        final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
+-        final int animalActivationRange = world.spigotConfig.animalActivationRange;
+-        final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
+-        final int waterActivationRange = world.spigotConfig.waterActivationRange;
+-        final int flyingActivationRange = world.spigotConfig.flyingMonsterActivationRange;
+-        final int villagerActivationRange = world.spigotConfig.villagerActivationRange;
+-        world.wakeupInactiveRemainingAnimals = Math.min(world.wakeupInactiveRemainingAnimals + 1, world.spigotConfig.wakeUpInactiveAnimals);
+-        world.wakeupInactiveRemainingVillagers = Math.min(world.wakeupInactiveRemainingVillagers + 1, world.spigotConfig.wakeUpInactiveVillagers);
+-        world.wakeupInactiveRemainingMonsters = Math.min(world.wakeupInactiveRemainingMonsters + 1, world.spigotConfig.wakeUpInactiveMonsters);
+-        world.wakeupInactiveRemainingFlying = Math.min(world.wakeupInactiveRemainingFlying + 1, world.spigotConfig.wakeUpInactiveFlying);
++        final int miscActivationRange = world.paperConfig().entities.activationRange.misc;
++        final int raiderActivationRange = world.paperConfig().entities.activationRange.raiders;
++        final int animalActivationRange = world.paperConfig().entities.activationRange.animals;
++        final int monsterActivationRange = world.paperConfig().entities.activationRange.monsters;
++        final int waterActivationRange = world.paperConfig().entities.activationRange.water;
++        final int flyingActivationRange = world.paperConfig().entities.activationRange.flyingMonsters;
++        final int villagerActivationRange = world.paperConfig().entities.activationRange.villagers;
++        world.wakeupInactiveRemainingAnimals = Math.min(world.wakeupInactiveRemainingAnimals + 1, world.paperConfig().entities.activationRange.wakeUpInactive.animalsMaxPerTick);
++        world.wakeupInactiveRemainingVillagers = Math.min(world.wakeupInactiveRemainingVillagers + 1, world.paperConfig().entities.activationRange.wakeUpInactive.villagersMaxPerTick);
++        world.wakeupInactiveRemainingMonsters = Math.min(world.wakeupInactiveRemainingMonsters + 1, world.paperConfig().entities.activationRange.wakeUpInactive.monstersMaxPerTick);
++        world.wakeupInactiveRemainingFlying = Math.min(world.wakeupInactiveRemainingFlying + 1, world.paperConfig().entities.activationRange.wakeUpInactive.flyingMonstersMaxPerTick);
+ 
+         int maxRange = Math.max(monsterActivationRange, animalActivationRange);
+         maxRange = Math.max(maxRange, raiderActivationRange);
+@@ -140,11 +139,11 @@ public final class ActivationRange {
+         maxRange = Math.max(maxRange, flyingActivationRange);
+         maxRange = Math.max(maxRange, waterActivationRange);
+         maxRange = Math.max(maxRange, villagerActivationRange);
+-        maxRange = Math.min((world.spigotConfig.simulationDistance << 4) - 8, maxRange);
++        maxRange = Math.min((world.paperConfig().chunks.simulationDistance.or(world.getServer().getPlayerList().getSimulationDistance()) << 4) - 8, maxRange);
+ 
+         for (final Player player : world.players()) {
+             player.activatedTick = MinecraftServer.currentTick;
+-            if (world.spigotConfig.ignoreSpectatorActivation && player.isSpectator()) {
++            if (world.paperConfig().entities.activationRange.ignoreSpectators && player.isSpectator()) {
+                 continue;
+             }
+ 
+@@ -195,7 +194,7 @@ public final class ActivationRange {
+      * @return
+      */
+     public static int checkEntityImmunities(final Entity entity) { // return # of ticks to get immunity
+-        final SpigotWorldConfig config = entity.level().spigotConfig;
++        final io.papermc.paper.configuration.WorldConfiguration config = entity.level().paperConfig();
+         final int inactiveWakeUpImmunity = checkInactiveWakeup(entity);
+         if (inactiveWakeUpImmunity > -1) {
+             return inactiveWakeUpImmunity;
+@@ -240,7 +239,7 @@ public final class ActivationRange {
+             if (entity instanceof final Villager villager) {
+                 final Brain<Villager> behaviorController = villager.getBrain();
+ 
+-                if (config.villagersActiveForPanic) {
++                if (config.entities.activationRange.villagersActiveForPanic) {
+                     for (final Activity activity : VILLAGER_PANIC_IMMUNITIES) {
+                         if (behaviorController.isActive(activity)) {
+                             return 20 * 5;
+@@ -248,9 +247,9 @@ public final class ActivationRange {
+                     }
+                 }
+ 
+-                if (config.villagersWorkImmunityAfter > 0 && inactiveFor >= config.villagersWorkImmunityAfter) {
++                if (config.entities.activationRange.villagersWorkImmunityAfter > 0 && inactiveFor >= config.entities.activationRange.villagersWorkImmunityAfter) {
+                     if (behaviorController.isActive(Activity.WORK)) {
+-                        return config.villagersWorkImmunityFor;
++                        return config.entities.activationRange.villagersWorkImmunityFor;
+                     }
+                 }
+             }
+diff --git a/net/minecraft/advancements/predicates/LocationPredicate.java b/net/minecraft/advancements/predicates/LocationPredicate.java
+index 7e619958c539f28c79bc1466dcd634273b6e8742..0a4afa5f9429f024fa1b147712c9778039fe9ae0 100644
+--- a/net/minecraft/advancements/predicates/LocationPredicate.java
++++ b/net/minecraft/advancements/predicates/LocationPredicate.java
+@@ -46,7 +46,7 @@ public record LocationPredicate(
+             return false;
+         }
+ 
+-        if (this.dimension.isPresent() && this.dimension.get() != (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck ? level.dimension() : org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(level))) { // Paper - Add option for strict advancement dimension checks
++        if (this.dimension.isPresent() && this.dimension.get() != (io.papermc.paper.configuration.GlobalConfiguration.get().advancements.strictDimensionCheck ? level.dimension() : org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(level))) { // Paper - Add option for strict advancement dimension checks
+             return false;
+         }
+ 
+diff --git a/net/minecraft/commands/CommandSourceStack.java b/net/minecraft/commands/CommandSourceStack.java
+index 7cbcc8865893ea4f7fae8da13f534c65fcdcd216..2f1a34596eefbb97ef598b344924239ffc689fbb 100644
+--- a/net/minecraft/commands/CommandSourceStack.java
++++ b/net/minecraft/commands/CommandSourceStack.java
+@@ -547,7 +547,7 @@ public class CommandSourceStack implements SharedSuggestionProvider, ExecutionCo
+             }
+         }
+ 
+-        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS) && (!org.spigotmc.SpigotConfig.silentCommandBlocks || !(this.source instanceof net.minecraft.world.level.BaseCommandBlock.CloseableCommandBlockSource))) { // Spigot // Paper - Fix spigot config silentCommandBlocks filtering player commands
++        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS) && (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.silentCommandBlockConsole || !(this.source instanceof net.minecraft.world.level.BaseCommandBlock.CloseableCommandBlockSource))) { // Spigot // Paper - Fix spigot config silentCommandBlocks filtering player commands
+             this.server.sendSystemMessage(broadcast);
+         }
+     }
+diff --git a/net/minecraft/commands/Commands.java b/net/minecraft/commands/Commands.java
+index d9acbf61ecd3d2800402880dd5d4d92239b01223..d4cd0622b79e7b148169784dd423f12f598fd2c6 100644
+--- a/net/minecraft/commands/Commands.java
++++ b/net/minecraft/commands/Commands.java
+@@ -449,7 +449,7 @@ public class Commands {
+                     .append(net.kyori.adventure.text.Component.newline())
+                     .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(context));
+             }
+-            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandString, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
++            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandString, !io.papermc.paper.configuration.GlobalConfiguration.get().messages.sendCommandParseFailureMessage ? null : builder.build());
+             org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
+             if (event.message() != null) {
+                 sender.sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
+@@ -482,7 +482,7 @@ public class Commands {
+ 
+     public void sendCommands(final ServerPlayer player) {
+         // Paper start - Send empty commands if tab completion is disabled
+-        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.tabCompletion) {
+             player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>(), COMMAND_NODE_INSPECTOR));
+             return;
+         }
+@@ -552,7 +552,7 @@ public class Commands {
+                 child = child.clientNode;
+             }
+             // Paper end - Brigadier API
+-            if (!org.spigotmc.SpigotConfig.sendNamespaced && child.getName().contains(":")) continue; // Spigot
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.sendNamespacedCommands && child.getName().contains(":")) continue; // Spigot
+             if (child.canUse(commandFilter)) {
+                 ArgumentBuilder<S, ?> builder = child.createBuilder();
+                 // Paper start
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index aa7f2ba4d931f98ce15c52dc2b99f07504149582..ac860da11e8b7f2a5319bc430716e6e63ccb4154 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -110,6 +110,7 @@ public class Main {
+                 JvmProfiler.INSTANCE.start(Environment.SERVER);
+             }
+ 
++            io.papermc.paper.configuration.PaperConfigurationsInitializer.load(options); // Paper - load the initialization config section before anything that needs it
+             io.papermc.paper.plugin.PluginInitializerManager.load(options); // Paper
+             Bootstrap.bootStrap();
+             Bootstrap.validate();
+@@ -132,24 +133,7 @@ public class Main {
+             RegionFileVersion.configure(settings.getProperties().regionFileComression);
+             Path eulaFile = Paths.get("eula.txt");
+             Eula eula = new Eula(eulaFile);
+-            // Paper start - load config files early for access below if needed
+-            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("bukkit-settings"));
+-            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("spigot-settings"));
+-            // Paper end - load config files early for access below if needed
+             if (options.has("initSettings")) { // CraftBukkit
+-                // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
+-                File configFile = (File) options.valueOf("bukkit-settings");
+-                org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
+-                configuration.options().copyDefaults(true);
+-                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8)));
+-                configuration.save(configFile);
+-
+-                File commandFile = (File) options.valueOf("commands-settings");
+-                org.bukkit.configuration.file.YamlConfiguration commandsConfiguration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(commandFile);
+-                commandsConfiguration.options().copyDefaults(true);
+-                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), java.nio.charset.StandardCharsets.UTF_8)));
+-                commandsConfiguration.save(commandFile);
+-                // CraftBukkit end
+                 LOGGER.info("Initialized '{}' and '{}'", settingsFile.toAbsolutePath(), eulaFile.toAbsolutePath());
+                 return;
+             }
+@@ -178,8 +162,6 @@ public class Main {
+             }
+             // Paper end - Detect headless JRE
+ 
+-            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
+-
+             // Paper start - fix SPIGOT-5824
+             File universePath;
+             File userCacheFile = new File(Services.USERID_CACHE_FILE);
+@@ -187,7 +169,7 @@ public class Main {
+                 universePath = (File) options.valueOf("universe"); // CraftBukkit
+                 userCacheFile = new File(universePath, Services.USERID_CACHE_FILE);
+             } else {
+-                universePath = new File(bukkitConfiguration.getString("settings.world-container", "."));
++                universePath = new File(io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().worldContainer); // Paper - world container from the initialization config
+             }
+             // Paper end - fix SPIGOT-5824
+             Services services = Services.create(com.destroystokyo.paper.profile.PaperServicesDiscoveryService.create(Proxy.NO_PROXY), universePath, userCacheFile, options); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index c3bf41af0273e902f881cc070fcef6dd64abb063..649bca135f70594ee1f0791d226b5ef3b6cfcc4f 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1062,7 +1062,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         try {
+             io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
+         } catch (InterruptedException _) {} // Paper
+-        if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().players.saveUserCacheOnStopOnly) {
+             LOGGER.info("Saving usercache.json");
+             this.services().nameToIdCache().save(false); // Paper - Perf: Async GameProfileCache saving
+         }
+@@ -1607,7 +1607,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         this.ticksUntilAutosave--;
+         // Paper start - Incremental chunk and player saving
+-        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
++        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().players.autoSave.rate;
+         if (playerSaveInterval < 0) {
+             playerSaveInterval = this.autosavePeriod;
+         }
+@@ -1622,7 +1622,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 this.saveGlobalData(false);
+             }
+             for (final ServerLevel level : this.getAllLevels()) {
+-                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                if (level.paperConfig().chunks.autoSaveInterval > 0) {
+                     level.saveIncrementally(fullSave);
+                 }
+             }
+@@ -1728,7 +1728,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             return new ServerStatus.Players(maxPlayers, players.size(), List.of());
+         }
+ 
+-        int sampleSize = Math.min(players.size(), org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
++        int sampleSize = Math.min(players.size(), io.papermc.paper.configuration.GlobalConfiguration.get().players.sampleCount); // Paper - PaperServerListPingEvent
+         ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
+         int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
+ 
+@@ -2449,7 +2449,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             for (ServerPlayer player : Lists.newArrayList(playerList.getPlayers())) {
+                 if (!whiteList.isWhiteListed(player.nameAndId()) && !this.getPlayerList().isOp(player.nameAndId())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
+-                    player.connection.disconnect(net.kyori.adventure.text.Component.text(org.spigotmc.SpigotConfig.whitelistMessage), org.bukkit.event.player.PlayerKickEvent.Cause.WHITELIST); // Paper - use configurable message & kick event cause
++                    player.connection.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.whitelist, org.bukkit.event.player.PlayerKickEvent.Cause.WHITELIST); // Paper - use configurable message & kick event cause
+                 }
+             }
+         }
+diff --git a/net/minecraft/server/PlayerAdvancements.java b/net/minecraft/server/PlayerAdvancements.java
+index e70701663abd6f19a506690167d80f0dceab8000..f1f10f65498b522b434352755f37f9901f223e10 100644
+--- a/net/minecraft/server/PlayerAdvancements.java
++++ b/net/minecraft/server/PlayerAdvancements.java
+@@ -128,7 +128,7 @@ public class PlayerAdvancements {
+     }
+ 
+     public void save() {
+-        if (org.spigotmc.SpigotConfig.disableAdvancementSaving) return; // Spigot
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().advancements.disableSaving) return; // Spigot
+         JsonElement json = this.codec.encodeStart(JsonOps.INSTANCE, this.asData()).getOrThrow();
+ 
+         try {
+diff --git a/net/minecraft/server/ServerAdvancementManager.java b/net/minecraft/server/ServerAdvancementManager.java
+index b9c4ae19fc4c7a5921eaea2ace0aa432371a4478..f134aab9303667732f4f85d7f57bbc966c478d07 100644
+--- a/net/minecraft/server/ServerAdvancementManager.java
++++ b/net/minecraft/server/ServerAdvancementManager.java
+@@ -24,10 +24,11 @@ public class ServerAdvancementManager {
+     public ServerAdvancementManager(final HolderLookup.Provider registries) {
+         HolderLookup.RegistryLookup<Advancement> advancements = registries.lookupOrThrow(Registries.ADVANCEMENT);
+         Builder<Identifier, AdvancementHolder> builder = ImmutableMap.builder();
++        final java.util.Set<String> disabledAdvancements = io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().disabledAdvancements; // Paper - read early, before the global config exists
+         advancements.listElements().forEach(advancement -> {
+             // Spigot start
+             Identifier id = advancement.key().identifier();
+-            if (org.spigotmc.SpigotConfig.disabledAdvancements != null && (org.spigotmc.SpigotConfig.disabledAdvancements.contains("*") || org.spigotmc.SpigotConfig.disabledAdvancements.contains(id.toString()) || org.spigotmc.SpigotConfig.disabledAdvancements.contains(id.getNamespace()))) {
++            if (disabledAdvancements.contains("*") || disabledAdvancements.contains(id.toString()) || disabledAdvancements.contains(id.getNamespace())) {
+                 return;
+             }
+             // Spigot end
+diff --git a/net/minecraft/server/Services.java b/net/minecraft/server/Services.java
+index 077b2a6442f12d92d56f4356a263abee4831c37d..b123d386a63d277ad75ad4761ae7c70d666fff90 100644
+--- a/net/minecraft/server/Services.java
++++ b/net/minecraft/server/Services.java
+@@ -44,9 +44,7 @@ public record Services(
+         GameProfileRepository profileRepository = serviceAccess.createProfileRepository();
+         UserNameToIdResolver profileCache = new CachedUserNameToIdResolver(profileRepository, userCacheFile); // Paper
+         // Paper start - load paper config files from cli options
+-        final java.nio.file.Path legacyConfigPath = ((File) options.valueOf("paper-settings")).toPath();
+-        final java.nio.file.Path configDirPath = ((File) options.valueOf("paper-settings-directory")).toPath();
+-        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, nameCacheDir.toPath(), (File) options.valueOf("spigot-settings"));
++        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurationsInitializer.create(options);
+         PaperServices paperServices = new PaperServices(
+             paperConfigurations,
+             new io.papermc.paper.profile.PaperFilledProfileCache()
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 68675926ee85f738b3693a76fc29b80b80c717ed..beaa33f874fa62e55ef1497565a1708596c09a53 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -229,15 +229,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             this.setLocalIp(properties.serverIp);
+         }
+ 
+-        // Spigot start
+-        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
+-        org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
+-        org.spigotmc.SpigotConfig.registerCommands();
+-        // Spigot end
+-        // Paper start - initialize global and world-defaults configuration
++        // Paper start - initialize global and world-defaults configuration; has to be before CraftServer
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         // Paper end - initialize global and world-defaults configuration
++        // Spigot start
++        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        // Spigot end
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
+@@ -245,7 +243,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+         this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
+         // Paper end - fix converting txt to json file
+-        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
++        org.spigotmc.WatchdogThread.doStart(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.timeoutSeconds, io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartOnCrash); // Paper - start watchdog thread
+         consoleThread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+@@ -261,7 +259,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 LOGGER.error("**** INVALID CONFIGURATION!");
+                 LOGGER.error("You are trying to use a Unix domain socket but you're not on a supported OS.");
+                 return false;
+-            } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && !org.spigotmc.SpigotConfig.bungee) {
++            } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled) {
+                 LOGGER.error("**** INVALID CONFIGURATION!");
+                 LOGGER.error("Unix domain sockets require IPs to be forwarded from a proxy.");
+                 return false;
+@@ -299,7 +297,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // CraftBukkit end
+ 
+         // Paper start - Add Velocity IP Forwarding Support
+-        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
++        boolean usingProxy = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
+         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
+         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
+         // Paper end - Add Velocity IP Forwarding Support
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index fd0b9f20fbdd523d51550fd6009b5011e6e7e6e6..0536ef13920615b36bec4c260fb3064acbbf639c 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -210,7 +210,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             );
+         }
+ 
+-        this.chunkGeneratorState = generator.createState(registryAccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, levelSeed, level.spigotConfig); // Spigot
++        this.chunkGeneratorState = generator.createState(registryAccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, levelSeed, level.paperConfig()); // Spigot
+         this.mainThreadExecutor = mainThreadExecutor;
+         ConsecutiveExecutor worldgen = new ConsecutiveExecutor(executor, "worldgen");
+         this.chunkStatusListener = chunkStatusListener;
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index ef53d4d17222a882dd3d33575096c864a0a00a06..fb2c014f22b4ae99e71b20d79ad098cd408ea53e 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -497,7 +497,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     public void tick(final BooleanSupplier haveTime, final boolean tickChunks) {
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("purge");
+-        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
++        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.paperConfig().chunks.unloadFrozenChunks) { // Spigot
+             this.ticketStorage.purgeStaleTickets(this.chunkMap);
+         }
+ 
+@@ -576,7 +576,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         if (doMobSpawning && (this.spawnEnemies || this.spawnFriendlies)) { // Paper
+             // Paper start - PlayerNaturallySpawnCreaturesEvent
+             for (ServerPlayer player : this.level.players()) {
+-                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, player.getBukkitEntity().getViewDistance());
++                int chunkRange = Math.min(level.paperConfig().entities.spawning.mobSpawnRange, player.getBukkitEntity().getViewDistance());
+                 chunkRange = Math.min(chunkRange, 8);
+                 player.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte) chunkRange);
+                 player.playerNaturallySpawnedEvent.callEvent();
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index ea4cc487002a0edc54cc49bfbecf72be156b6af7..dd0c2a8ccda47dd148f278394236661ab6711d52 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -636,7 +636,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
+         final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
+         this.gameRules = gameRules;
+-        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules)), executor); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
++        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, () -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), server.registryAccess(), gameRules)), executor); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
+         this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
+         this.weatherData.setLevel(this);
+         this.typeKey = typeKey;
+@@ -685,8 +685,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             server.getStructureTemplateManager(),
+             executor,
+             generator,
+-            this.spigotConfig.viewDistance, // Spigot
+-            this.spigotConfig.simulationDistance, // Spigot
++            this.paperConfig().chunks.viewDistance.or(server.getPlayerList().getViewDistance()), // Paper - per world view distance
++            this.paperConfig().chunks.simulationDistance.or(server.getPlayerList().getSimulationDistance()), // Paper - per world simulation distance
+             syncWrites,
+             null // Paper - rewrite chunk system
+             , savedDataStorage // Paper - initialize SavedDataStorage earlier
+@@ -920,7 +920,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             this.tickBlockEntities();
+             profiler.pop();
+             } // Paper - option to disable ticking
+-            this.spigotConfig.currentPrimedTnt = 0; // Spigot
++            this.currentPrimedTnt = 0; // Paper - max TNT per tick
+         }
+ 
+         profiler.push("entityManagement");
+@@ -1051,7 +1051,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         int minZ = chunkPos.getMinBlockZ();
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("thunder");
+-        if (!this.paperConfig().environment.disableThunder && raining && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
++        if (!this.paperConfig().environment.disableThunder && raining && this.isThundering() && this.paperConfig().environment.thunderChance > 0 && this.random.nextInt(this.paperConfig().environment.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
+             BlockPos pos = this.findLightningTargetAround(this.getBlockRandomPos(minX, 0, minZ, 15));
+             if (this.isRainingAt(pos)) {
+                 DifficultyInstance difficulty = this.getCurrentDifficultyAt(pos);
+@@ -2999,8 +2999,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         return this.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) ? this.getServer().getPlayerList().getPlayers() : this.players();
+     }
+ 
+-    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
+-        final double range = rangeFunction.apply(this.spigotConfig);
++    public double getGlobalSoundRangeSquared(java.util.function.Function<io.papermc.paper.configuration.WorldConfiguration, Integer> rangeFunction) {
++        final double range = rangeFunction.apply(this.paperConfig());
+         return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
+     }
+     // Paper end - respect global sound events gamerule
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 1137be30f125cb79f05f3e5c104cdf8cca979ff1..40c4508adca0d4fcc7061d7a57ee4146cb207425 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -1640,7 +1640,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         ResourceKey<Level> oldMainDimensionKey = org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(oldLevel);
+         ResourceKey<Level> newMainDimensionKey = org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(this.level());
+         // Paper start - Add option for strict advancement dimension checks
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().advancements.strictDimensionCheck) {
+             oldMainDimensionKey = oldKey;
+             newMainDimensionKey = newKey;
+         }
+@@ -2047,19 +2047,19 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+                 int distance = Math.round((float)Math.sqrt(dx * dx + dy * dy + dz * dz) * 100.0F);
+                 if (distance > 0) {
+                     this.awardStat(Stats.SWIM_ONE_CM, distance);
+-                    this.causeFoodExhaustion(this.level().spigotConfig.swimMultiplier * distance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.SWIM); // CraftBukkit - EntityExhaustionEvent // Spigot
++                    this.causeFoodExhaustion(this.level().paperConfig().hunger.swimMultiplier * distance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.SWIM); // CraftBukkit - EntityExhaustionEvent // Spigot
+                 }
+             } else if (this.isEyeInFluid(FluidTags.WATER)) {
+                 int distance = Math.round((float)Math.sqrt(dx * dx + dy * dy + dz * dz) * 100.0F);
+                 if (distance > 0) {
+                     this.awardStat(Stats.WALK_UNDER_WATER_ONE_CM, distance);
+-                    this.causeFoodExhaustion(this.level().spigotConfig.swimMultiplier * distance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK_UNDERWATER); // CraftBukkit - EntityExhaustionEvent // Spigot
++                    this.causeFoodExhaustion(this.level().paperConfig().hunger.swimMultiplier * distance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK_UNDERWATER); // CraftBukkit - EntityExhaustionEvent // Spigot
+                 }
+             } else if (this.isInWater()) {
+                 int horizontalDistance = Math.round((float)Math.sqrt(dx * dx + dz * dz) * 100.0F);
+                 if (horizontalDistance > 0) {
+                     this.awardStat(Stats.WALK_ON_WATER_ONE_CM, horizontalDistance);
+-                    this.causeFoodExhaustion(this.level().spigotConfig.swimMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK_ON_WATER); // CraftBukkit - EntityExhaustionEvent // Spigot
++                    this.causeFoodExhaustion(this.level().paperConfig().hunger.swimMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK_ON_WATER); // CraftBukkit - EntityExhaustionEvent // Spigot
+                 }
+             } else if (this.onClimbable()) {
+                 if (dy > 0.0) {
+@@ -2070,13 +2070,13 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+                 if (horizontalDistance > 0) {
+                     if (this.isSprinting()) {
+                         this.awardStat(Stats.SPRINT_ONE_CM, horizontalDistance);
+-                        this.causeFoodExhaustion(this.level().spigotConfig.sprintMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.SPRINT); // CraftBukkit - EntityExhaustionEvent // Spigot
++                        this.causeFoodExhaustion(this.level().paperConfig().hunger.sprintMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.SPRINT); // CraftBukkit - EntityExhaustionEvent // Spigot
+                     } else if (this.isCrouching()) {
+                         this.awardStat(Stats.CROUCH_ONE_CM, horizontalDistance);
+-                        this.causeFoodExhaustion(this.level().spigotConfig.otherMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.CROUCH); // CraftBukkit - EntityExhaustionEvent // Spigot
++                        this.causeFoodExhaustion(this.level().paperConfig().hunger.otherMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.CROUCH); // CraftBukkit - EntityExhaustionEvent // Spigot
+                     } else {
+                         this.awardStat(Stats.WALK_ONE_CM, horizontalDistance);
+-                        this.causeFoodExhaustion(this.level().spigotConfig.otherMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK); // CraftBukkit - EntityExhaustionEvent // Spigot
++                        this.causeFoodExhaustion(this.level().paperConfig().hunger.otherMultiplier * horizontalDistance * 0.01F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.WALK); // CraftBukkit - EntityExhaustionEvent // Spigot
+                     }
+                 }
+             } else if (this.isFallFlying()) {
+@@ -2155,9 +2155,9 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         super.jumpFromGround();
+         this.awardStat(Stats.JUMP);
+         if (this.isSprinting()) {
+-            this.causeFoodExhaustion(this.level().spigotConfig.jumpSprintExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.JUMP_SPRINT); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
++            this.causeFoodExhaustion(this.level().paperConfig().hunger.jumpSprintExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.JUMP_SPRINT); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+         } else {
+-            this.causeFoodExhaustion(this.level().spigotConfig.jumpWalkExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.JUMP); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
++            this.causeFoodExhaustion(this.level().paperConfig().hunger.jumpWalkExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.JUMP); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+         }
+     }
+ 
+diff --git a/net/minecraft/server/network/ServerCommandSuggestionsProvider.java b/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
+index 52cb9e845bd18a27cbafd432e5339cf3929b1fc7..70e7f1efd47824d5076a8afe5b668d9158ab0865 100644
+--- a/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
++++ b/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
+@@ -60,7 +60,7 @@ public class ServerCommandSuggestionsProvider {
+ 
+                     // Paper start - Option to disable sending of namespaced commands
+                     dispatcher.getCompletionSuggestions(parse).thenAccept(suggestions -> {
+-                        if (!org.spigotmc.SpigotConfig.sendNamespaced && suggestions.getRange().getStart() <= 1) {
++                        if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.sendNamespacedCommands && suggestions.getRange().getStart() <= 1) {
+                             suggestions.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
+                         }
+                         request.future.complete(limitSuggestionCount(suggestions));
+diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
+index 42408dede2808447281b49f4006c1d8b03c10bf4..feb93a5196978200c386db8fd4e413a0dd472df8 100644
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -247,7 +247,7 @@ public class ServerConnectionListener {
+             this.addPendingConnections();
+             // Spigot start
+             // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
+-            if (org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().players.connectionShuffle > 0 && MinecraftServer.currentTick % io.papermc.paper.configuration.GlobalConfiguration.get().players.connectionShuffle == 0) {
+                 Collections.shuffle(this.connections);
+             }
+             // Spigot end
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8178922f5ecc7f6709335c7fbeb6dca505b044bb..5173bd0ab4acc03a6ccd978432a472fda2ced313 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -628,7 +628,7 @@ public class ServerGamePacketListenerImpl
+                     return;
+                 }
+                 // Paper end - Prevent moving into unloaded chunks
+-                if (movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
++                if (movedDist - expectedDist > Math.max(100.0, Mth.square(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
+                     // CraftBukkit end
+                     LOGGER.warn(
+                         "{} (vehicle of {}) moved too quickly! {},{},{}", vehicle.getPlainTextName(), this.player.getPlainTextName(), xDist, yDist, zDist
+@@ -658,7 +658,7 @@ public class ServerGamePacketListenerImpl
+                 zDist = targetZ - vehicle.getZ();
+                 movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
+                 boolean fail = false;
+-                if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
++                if (movedDist > io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedWronglyThreshold) { // Spigot
+                     fail = true;
+                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
+                 }
+@@ -867,7 +867,7 @@ public class ServerGamePacketListenerImpl
+             this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
+             return;
+         }
+-        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.tabCompletion) {
+             return;
+         }
+         final int index;
+@@ -1597,7 +1597,7 @@ public class ServerGamePacketListenerImpl
+ 
+                     if (this.shouldCheckPlayerMovement(isFallFlying)) {
+                         float metersPerTick = isFallFlying ? 300.0F : 100.0F;
+-                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) { // CraftBukkit - moved to quickly multiplier
++                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) { // CraftBukkit - moved to quickly multiplier
+                             // Paper start - Add fail move event
+                             io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
+                                 targetX, targetY, targetZ, targetYRot, targetXRot, true);
+@@ -1659,7 +1659,7 @@ public class ServerGamePacketListenerImpl
+                 movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
+                 boolean movedWrongly = false; // Paper - Add fail move event; rename
+                 if (!this.player.isChangingDimension()
+-                    && movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold // Spigot
++                    && movedDist > io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedWronglyThreshold // Spigot
+                     && !this.player.isSleeping()
+                     && !this.player.isCreative()
+                     && !this.player.isSpectator()
+@@ -2443,7 +2443,7 @@ public class ServerGamePacketListenerImpl
+     // CraftBukkit start
+     private void performUnsignedChatCommand(String command) {
+         String prefixedCommand = "/" + command;
+-        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.commandExecution) { // Paper - Add missing SpigotConfig logCommands check
+             LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), prefixedCommand);
+         }
+ 
+@@ -2485,7 +2485,7 @@ public class ServerGamePacketListenerImpl
+     private void performSignedChatCommand(final ServerboundChatCommandSignedPacket packet, final LastSeenMessages lastSeenMessages) {
+         // CraftBukkit start
+         String commandString = "/" + packet.command();
+-        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.commandExecution) { // Paper - Add missing SpigotConfig logCommands check
+             LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), commandString);
+         } // Paper - Add missing SpigotConfig logCommands check
+ 
+@@ -2686,8 +2686,8 @@ public class ServerGamePacketListenerImpl
+ 
+     // Spigot start - spam exclusions
+     private void detectRateSpam(final TickThrottler throttler, final String message) {
+-        if (org.spigotmc.SpigotConfig.enableSpamExclusions) {
+-            for (String exclude : org.spigotmc.SpigotConfig.spamExclusions) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.commands.enabled) {
++            for (String exclude : io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.commands.exclusions) {
+                 if (exclude != null && message.startsWith(exclude)) {
+                     return;
+                 }
+diff --git a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 649f9646abb1bd84f1f22409aee09d2a4d27e581..d6ccaa60c946c577e89fc7cddf2f4ade823797e8 100644
+--- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -69,6 +69,16 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+         // Paper end
+     }
+ 
++    // Paper start - configurable kick message
++    private static net.kyori.adventure.text.Component withServerVersion(final net.kyori.adventure.text.Component message) {
++        final String version = SharedConstants.getCurrentVersion().name();
++        if (message instanceof final net.kyori.adventure.text.TranslatableComponent translatable && translatable.arguments().isEmpty()) {
++            return translatable.arguments(net.kyori.adventure.text.Component.text(version));
++        }
++        return message.replaceText(builder -> builder.matchLiteral("%s").replacement(version));
++    }
++    // Paper end - configurable kick message
++
+     private void beginLogin(ClientIntentionPacket packet, final boolean transfer) { // Paper - remove packet final
+         this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
+         // Paper start - Connection throttle
+@@ -105,9 +115,9 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+         if (packet.protocolVersion() != SharedConstants.getCurrentVersion().protocolVersion()) {
+             net.kyori.adventure.text.Component adventureReason; // Paper - Fix hex colors not working in some kick messages
+             if (packet.protocolVersion() < SharedConstants.getCurrentVersion().protocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
+-                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
++                adventureReason = withServerVersion(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.outdatedClient); // Paper - configurable kick message
+             } else {
+-                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
++                adventureReason = withServerVersion(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.outdatedServer); // Paper - configurable kick message
+             }
+             Component reason = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureReason); // Paper - Fix hex colors not working in some kick messages
+ 
+@@ -116,7 +126,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+         } else {
+             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transfer));
+             // Paper start - PlayerHandshakeEvent
+-            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
++            boolean proxyLogicEnabled = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled;
+             boolean handledByEvent = false;
+             // Try and handle the handshake through the event
+             if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
+@@ -152,7 +162,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+             // Spigot start
+             String[] split = packet.hostName().split("\00");
+             if (!handledByEvent && proxyLogicEnabled) { // Paper
+-                // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
++                // if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled) { // Paper - comment out, we check above!
+                 if ((split.length == 3 || split.length == 4) && (ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher(split[1]).matches())) { // Paper - Add bypass host check
+                     // Paper start - Unix domain socket support
+                     java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
+@@ -170,7 +180,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                     this.connection.spoofedProfile = ServerHandshakePacketListenerImpl.gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
+                 }
+             } else if ((split.length == 3 || split.length == 4) && (ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher(split[1]).matches())) {
+-                Component message = Component.literal("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
++                Component message = Component.literal("Unknown data in login hostname, did you forget to enable proxies.bungee-cord in paper-global.yml?");
+                 this.connection.send(new ClientboundLoginDisconnectPacket(message));
+                 this.connection.disconnect(message);
+             }
+diff --git a/net/minecraft/server/players/CachedUserNameToIdResolver.java b/net/minecraft/server/players/CachedUserNameToIdResolver.java
+index 7443744e3f256983e52a1cefcaf66082e4a46a7b..5755e499ee39902a4905221b4b62dffb3130cb29 100644
+--- a/net/minecraft/server/players/CachedUserNameToIdResolver.java
++++ b/net/minecraft/server/players/CachedUserNameToIdResolver.java
+@@ -98,7 +98,7 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+         Date expirationDate = c.getTime();
+         CachedUserNameToIdResolver.GameProfileInfo profileInfo = new CachedUserNameToIdResolver.GameProfileInfo(profile, expirationDate);
+         this.safeAdd(profileInfo);
+-        if (!org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) this.save(true); // Spigot - skip saving if disabled // Paper - Perf: Async GameProfileCache saving
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().players.saveUserCacheOnStopOnly) this.save(true); // Spigot - skip saving if disabled // Paper - Perf: Async GameProfileCache saving
+         return profileInfo;
+     }
+ 
+@@ -152,7 +152,7 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+             }
+         }
+ 
+-        if (needsSave && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
++        if (needsSave && !io.papermc.paper.configuration.GlobalConfiguration.get().players.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
+             this.save(true); // Paper - Perf: Async GameProfileCache saving
+         }
+ 
+@@ -212,7 +212,7 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+         // Paper end - Perf: Async GameProfileCache saving
+         JsonArray entryList = new JsonArray();
+         DateFormat dateFormat = createDateFormat();
+-        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
++        this.listTopMRUProfiles(io.papermc.paper.configuration.GlobalConfiguration.get().players.userCacheSize).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
+         String toSave = this.gson.toJson(entryList);
+ 
+         Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 62f57eb254321902692550d0a86c24292ef9e87d..dd61d753ca140506147c0fd474247e03ed572576 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -568,7 +568,7 @@ public abstract class PlayerList {
+ 
+                 return new LoginResult(reason, org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED); // Paper - PlayerLoginEvent
+             } else {
+-                return this.canBypassFullServerLogin(nameAndId, new LoginResult(Component.translatable("multiplayer.disconnect.server_full"), org.bukkit.event.player.PlayerLoginEvent.Result.KICK_FULL)); // Paper - PlayerServerFullCheckEvent
++                return this.canBypassFullServerLogin(nameAndId, new LoginResult(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.serverFull), org.bukkit.event.player.PlayerLoginEvent.Result.KICK_FULL)); // Paper - PlayerServerFullCheckEvent
+             }
+         }
+     }
+@@ -903,7 +903,7 @@ public abstract class PlayerList {
+         boolean isOp = this.ops.contains(nameAndId);
+         boolean isWhitelisted = !this.isUsingWhitelist() || isOp || this.whitelist.contains(nameAndId);
+ 
+-        final net.kyori.adventure.text.Component configuredMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage);
++        final net.kyori.adventure.text.Component configuredMessage = io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.whitelist;
+         final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event
+             = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(new com.destroystokyo.paper.profile.CraftPlayerProfile(nameAndId), this.isUsingWhitelist(), isWhitelisted, isOp, configuredMessage);
+         event.callEvent();
+@@ -968,7 +968,7 @@ public abstract class PlayerList {
+             for (final ServerPlayer player : this.players) {
+             if (interval == -1 || now - player.lastSave >= interval) {
+                 this.save(player);
+-                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) {
++                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().players.autoSave.maxPerTick()) {
+                     break;
+                 }
+             }
+@@ -1086,7 +1086,7 @@ public abstract class PlayerList {
+         // Paper end
+         // CraftBukkit start - disconnect safely
+         for (ServerPlayer player : this.players) {
+-            if (isRestarting) player.connection.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
++            if (isRestarting) player.connection.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.restart, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
+             player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
+         }
+         // CraftBukkit end
+diff --git a/net/minecraft/stats/ServerStatsCounter.java b/net/minecraft/stats/ServerStatsCounter.java
+index f5beb001b938072e78c0ead7e0ad0499784ed1cf..e04ddc7d60b2ef718d9654876ec94d297fbeaec7 100644
+--- a/net/minecraft/stats/ServerStatsCounter.java
++++ b/net/minecraft/stats/ServerStatsCounter.java
+@@ -80,16 +80,15 @@ public class ServerStatsCounter extends StatsCounter {
+         // Disables saving any forced stats, so it stays at the same value (without enabling disableStatSaving)
+         // Fixes stat initialization to not cause a NullPointerException
+         // Spigot start
+-        for (Map.Entry<net.minecraft.resources.Identifier, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet()) {
+-            Stat<net.minecraft.resources.Identifier> wrapper = Stats.CUSTOM.get(java.util.Objects.requireNonNull(BuiltInRegistries.CUSTOM_STAT.getValue(entry.getKey()))); // Paper - ensured by SpigotConfig#stats
+-            this.stats.put(wrapper, entry.getValue().intValue());
++        for (final it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<net.minecraft.core.Holder<net.minecraft.resources.Identifier>> entry : io.papermc.paper.configuration.GlobalConfiguration.get().stats.forcedCustomStatValues.object2IntEntrySet()) {
++            this.stats.put(Stats.CUSTOM.get(entry.getKey().value()), entry.getIntValue());
+         }
+         // Spigot end
+         // Paper end - Moved after stat fetching for player state file
+     }
+ 
+     public void save() {
+-        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().stats.disableSaving) return; // Spigot
+         try {
+             FileUtil.createDirectoriesSafe(this.file.getParent());
+ 
+@@ -103,8 +102,8 @@ public class ServerStatsCounter extends StatsCounter {
+ 
+     @Override
+     public void setValue(final Player player, final Stat<?> stat, final int count) {
+-        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
+-        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.Identifier key && org.spigotmc.SpigotConfig.forcedStats.get(key) != null) return; // Paper - disable saving forced stats
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().stats.disableSaving) return; // Spigot
++        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.Identifier key && io.papermc.paper.configuration.GlobalConfiguration.get().stats.forcedCustomStatValues.containsKey(BuiltInRegistries.CUSTOM_STAT.wrapAsHolder(key))) return; // Paper - disable saving forced stats
+         super.setValue(player, stat, count);
+         this.dirty.add(stat);
+     }
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 5cc94652112c67ca4e7ae6e8b324e9c9f8908d7d..6ff4d68d9720746a61bbada09689aa04caa090e8 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -565,7 +565,7 @@ public abstract class Entity
+         this.chunkPosition = ChunkPos.ZERO;
+         // Paper start - EAR 2
+         if (level != null) {
+-            this.defaultActivationState = io.papermc.paper.entity.activation.ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
++            this.defaultActivationState = io.papermc.paper.entity.activation.ActivationRange.initializeEntityActivationState(this, level.paperConfig());
+         } else {
+             this.defaultActivationState = false;
+         }
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 23297b54c74684765f90e9e599d051a44357e9a5..5c889ad7dfdf57add2f7cfa18c0df4e90fade92e 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1849,7 +1849,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+             this.stopUsingItem();
+             if (!this.level().isClientSide() && this.hasCustomName()) {
+-                if (org.spigotmc.SpigotConfig.logNamedDeaths) LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.namedLivingEntityDeaths) LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
+             }
+ 
+             this.handleKillingBlow();
+diff --git a/net/minecraft/world/entity/ai/attributes/Attributes.java b/net/minecraft/world/entity/ai/attributes/Attributes.java
+index 54a8384f1bc805865e81aeebcf1eadc89d097c91..56041e88597d7ee1f86f881a9de5507e57a6f8de 100644
+--- a/net/minecraft/world/entity/ai/attributes/Attributes.java
++++ b/net/minecraft/world/entity/ai/attributes/Attributes.java
+@@ -14,7 +14,7 @@ public class Attributes {
+     public static final Holder<Attribute> ARMOR_TOUGHNESS = register(
+         "armor_toughness", new RangedAttribute("attribute.name.armor_toughness", 0.0, 0.0, 20.0).setSyncable(true)
+     );
+-    public static final Holder<Attribute> ATTACK_DAMAGE = register("attack_damage", new RangedAttribute("attribute.name.attack_damage", 2.0, 0.0, org.spigotmc.SpigotConfig.attackDamage)); // Spigot
++    public static final Holder<Attribute> ATTACK_DAMAGE = register("attack_damage", new RangedAttribute("attribute.name.attack_damage", 2.0, 0.0, 2048.0));
+     public static final Holder<Attribute> ATTACK_KNOCKBACK = register("attack_knockback", new RangedAttribute("attribute.name.attack_knockback", 0.0, 0.0, 5.0));
+     public static final Holder<Attribute> ATTACK_SPEED = register(
+         "attack_speed", new RangedAttribute("attribute.name.attack_speed", 4.0, 0.0, 1024.0).setSyncable(true)
+@@ -63,10 +63,10 @@ public class Attributes {
+     );
+     public static final Holder<Attribute> LUCK = register("luck", new RangedAttribute("attribute.name.luck", 0.0, -1024.0, 1024.0).setSyncable(true));
+     public static final Holder<Attribute> MAX_ABSORPTION = register(
+-        "max_absorption", new RangedAttribute("attribute.name.max_absorption", 0.0, 0.0, org.spigotmc.SpigotConfig.maxAbsorption).setSyncable(true) // Spigot
++        "max_absorption", new RangedAttribute("attribute.name.max_absorption", 0.0, 0.0, 2048.0).setSyncable(true)
+     );
+     public static final Holder<Attribute> MAX_HEALTH = register(
+-        "max_health", new RangedAttribute("attribute.name.max_health", 20.0, 1.0, org.spigotmc.SpigotConfig.maxHealth).setSyncable(true) // Spigot
++        "max_health", new RangedAttribute("attribute.name.max_health", 20.0, 1.0, 1024.0).setSyncable(true)
+     );
+     public static final Holder<Attribute> MINING_EFFICIENCY = register(
+         "mining_efficiency", new RangedAttribute("attribute.name.mining_efficiency", 0.0, 0.0, 1024.0).setSyncable(true)
+@@ -75,7 +75,7 @@ public class Attributes {
+         "movement_efficiency", new RangedAttribute("attribute.name.movement_efficiency", 0.0, 0.0, 1.0).setSyncable(true)
+     );
+     public static final Holder<Attribute> MOVEMENT_SPEED = register(
+-        "movement_speed", new RangedAttribute("attribute.name.movement_speed", 0.7, 0.0, org.spigotmc.SpigotConfig.movementSpeed).setSyncable(true) // Spigot
++        "movement_speed", new RangedAttribute("attribute.name.movement_speed", 0.7, 0.0, 1024.0).setSyncable(true)
+     );
+     public static final Holder<Attribute> NAME_TAG_DISTANCE = register(
+         "name_tag_distance", new RangedAttribute("attribute.name.name_tag_distance", 64.0, 0.0, 512.0).setSyncable(true)
+diff --git a/net/minecraft/world/entity/ai/goal/FloatGoal.java b/net/minecraft/world/entity/ai/goal/FloatGoal.java
+index abbe5e9d4fbb10195f6dc408de603fe7bb435d82..d804517e8afa0ce9a9e690211c7db9f28294bee2 100644
+--- a/net/minecraft/world/entity/ai/goal/FloatGoal.java
++++ b/net/minecraft/world/entity/ai/goal/FloatGoal.java
+@@ -17,7 +17,7 @@ public class FloatGoal extends Goal {
+     public FloatGoal(final Mob mob, final TagKey<Fluid> fluid) {
+         this.mob = mob;
+         this.fluid = fluid;
+-        if (mob.level().paperConfig().entities.behavior.spawnerNerfedMobsShouldJump) mob.goalFloat = this; // Paper - Allow nerfed mobs to jump and float
++        if (mob.level().paperConfig().entities.spawning.spawnerMobs.nerfedShouldJump) mob.goalFloat = this; // Paper - Allow nerfed mobs to jump and float
+         this.setFlags(EnumSet.of(Goal.Flag.JUMP));
+         mob.getNavigation().setCanFloat(true);
+     }
+diff --git a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index f852126b179dc0c5dab3dbd22d3bfb8b73a5dba8..b0d8bb85febde2dc1925ad1a05e3a1bfe19cf925 100644
+--- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -634,7 +634,7 @@ public class EnderDragon extends Mob implements Enemy {
+                     double deltaX = this.getX() - player.getX();
+                     double deltaZ = this.getZ() - player.getZ();
+                     double distanceSquared = Mth.square(deltaX) + Mth.square(deltaZ);
+-                    final double soundRadiusSquared = level.getGlobalSoundRangeSquared(config -> config.dragonDeathSoundRadius); // Paper - respect global sound events gamerule
++                    final double soundRadiusSquared = level.getGlobalSoundRangeSquared(config -> config.misc.soundRadius.dragonDeath); // Paper - respect global sound events gamerule
+                     if (!level.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Paper - respect global sound events gamerule
+                     if (distanceSquared > Mth.square(viewDistance)) {
+                         double deltaLength = Math.sqrt(distanceSquared);
+diff --git a/net/minecraft/world/entity/boss/wither/WitherBoss.java b/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 1ab44f34b5d18d12259717444370f886b3a56144..2e332ef5356141f2814e3d7966fd7efa8f63cfab 100644
+--- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -281,7 +281,7 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+                         double deltaX = this.getX() - player.getX();
+                         double deltaZ = this.getZ() - player.getZ();
+                         double distanceSquared = Mth.square(deltaX) + Mth.square(deltaZ);
+-                        final double soundRadiusSquared = level.getGlobalSoundRangeSquared(config -> config.witherSpawnSoundRadius); // Paper - respect global sound events gamerule
++                        final double soundRadiusSquared = level.getGlobalSoundRangeSquared(config -> config.misc.soundRadius.witherSpawn); // Paper - respect global sound events gamerule
+                         if (!level.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Spigot // Paper - respect global sound events gamerule
+                         if (distanceSquared > Mth.square(viewDistance)) {
+                             double deltaLength = Math.sqrt(distanceSquared);
+diff --git a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+index 0526ac2faf920185ec8079d7f5b7969b92a8b2c0..228b76b170b0b237621442c668fa0a21da6d14aa 100644
+--- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
++++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+@@ -24,7 +24,7 @@ public abstract class BlockAttachedEntity extends Entity {
+     public static final String TAG_BLOCK_POS = "block_pos";
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int CHECK_INTERVAL = 100;
+-    private int ticksSinceLastCheck; { this.ticksSinceLastCheck = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
++    private int ticksSinceLastCheck; { this.ticksSinceLastCheck = this.getId() % this.level().paperConfig().tickRates.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
+     protected BlockPos pos;
+     protected @Nullable DamageSource lastDamageSource; // Paper - Backport MC-311924 fix
+ 
+@@ -43,7 +43,7 @@ public abstract class BlockAttachedEntity extends Entity {
+     public void tick() {
+         if (this.level() instanceof ServerLevel level) {
+             this.checkBelowWorld();
+-            if (this.ticksSinceLastCheck++ >= this.level().spigotConfig.hangingTickFrequency) { // Spigot
++            if (this.ticksSinceLastCheck++ >= this.level().paperConfig().tickRates.hangingTickFrequency) { // Spigot
+                 this.ticksSinceLastCheck = 0;
+                 this.tickAtCheckInterval();
+                 if (!this.isRemoved() && !this.survives()) {
+diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
+index a1fa75b4a02187686f1bd18f409abd2e6cbe31be..3c0993eab7c0de0ab537c2715d95fc225d1f17df 100644
+--- a/net/minecraft/world/entity/item/ItemEntity.java
++++ b/net/minecraft/world/entity/item/ItemEntity.java
+@@ -248,7 +248,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     private void mergeWithNeighbours() {
+         if (this.isMergable()) {
+-            double radius = this.level().spigotConfig.itemMerge; // Spigot
++            double radius = this.level().paperConfig().entities.behavior.mergeRadius.item; // Spigot
+             for (ItemEntity entity : this.level()
+                 .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(radius, this.level().paperConfig().entities.behavior.onlyMergeItemsHorizontally ? 0 : radius - 0.5D, radius), other -> other != this && other.isMergable())) { // Spigot // Paper - configuration to only merge items horizontally
+                 if (entity.isMergable()) {
+@@ -515,7 +515,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     public void setItem(final ItemStack itemStack) {
+         this.getEntityData().set(DATA_ITEM, itemStack);
+-        this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(itemStack.getItem(), this.level().spigotConfig.itemDespawnRate) : this.level().spigotConfig.itemDespawnRate; // Paper - Alternative item-despawn-rate
++        this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(itemStack.getItem(), this.level().paperConfig().entities.spawning.itemDespawnRate) : this.level().paperConfig().entities.spawning.itemDespawnRate; // Paper - Alternative item-despawn-rate
+     }
+ 
+     public void setTarget(final @Nullable UUID target) {
+diff --git a/net/minecraft/world/entity/item/PrimedTnt.java b/net/minecraft/world/entity/item/PrimedTnt.java
+index d0961a772aef797c9374af28c15282ff9761d9c9..cc78080018700b58a71cd039eb43544262a2c578 100644
+--- a/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -105,7 +105,7 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+ 
+     @Override
+     public void tick() {
+-        if (this.level().spigotConfig.maxTntTicksPerTick > 0 && ++this.level().spigotConfig.currentPrimedTnt > this.level().spigotConfig.maxTntTicksPerTick) { return; } // Spigot
++        if (this.level().paperConfig().fixes.maxTntPerTick > 0 && ++this.level().currentPrimedTnt > this.level().paperConfig().fixes.maxTntPerTick) { return; } // Paper - max TNT per tick
+         this.handlePortal();
+         this.applyGravity();
+         this.move(MoverType.SELF, this.getDeltaMovement());
+diff --git a/net/minecraft/world/entity/monster/cubemob/Slime.java b/net/minecraft/world/entity/monster/cubemob/Slime.java
+index 984ec15bdebcb541cd6ee9014a654ea58988f6f1..c67c4a7868d146eb3ce8547f44ec8f187543df54 100644
+--- a/net/minecraft/world/entity/monster/cubemob/Slime.java
++++ b/net/minecraft/world/entity/monster/cubemob/Slime.java
+@@ -94,7 +94,7 @@ public class Slime extends AbstractCubeMob implements Enemy {
+             }
+ 
+             ChunkPos chunkPos = ChunkPos.containing(pos);
+-            boolean slimeChunk = level.getMinecraftWorld().paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkPos.x(), chunkPos.z(), worldGenLevel.getSeed(), level.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
++            boolean slimeChunk = level.getMinecraftWorld().paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkPos.x(), chunkPos.z(), worldGenLevel.getSeed(), level.getMinecraftWorld().paperConfig().seeds.slime).nextInt(10) == 0; // Paper
+             // Paper start - Replace rules for Height in Slime Chunks
+             final double maxHeightSlimeChunk = level.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.slimeChunk.maximum;
+             if (random.nextInt(10) == 0 && slimeChunk && pos.getY() < maxHeightSlimeChunk) {
+diff --git a/net/minecraft/world/entity/monster/zombie/Drowned.java b/net/minecraft/world/entity/monster/zombie/Drowned.java
+index d28dca38fd59ed9f1497d480f0fb9325ff22e2ad..a49940fd1ae31f221f99f1959894f3d7384f54ae 100644
+--- a/net/minecraft/world/entity/monster/zombie/Drowned.java
++++ b/net/minecraft/world/entity/monster/zombie/Drowned.java
+@@ -99,7 +99,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
+         this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0));
+         this.targetSelector.addGoal(1, new HurtByTargetGoal(this, Drowned.class).setAlertOthers(ZombifiedPiglin.class));
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, (target, level) -> this.okTarget(target)));
+-        if (this.level().spigotConfig.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Paper - Check drowned for villager aggression config
++        if (this.level().paperConfig().entities.behavior.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Paper - Check drowned for villager aggression config
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Axolotl.class, true, false));
+         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
+diff --git a/net/minecraft/world/entity/monster/zombie/Zombie.java b/net/minecraft/world/entity/monster/zombie/Zombie.java
+index 071c1fba954486634599eab7843f7ae751ee5be6..925231ba27fddd95502d9d7fd7c3e4b468cfa7f2 100644
+--- a/net/minecraft/world/entity/monster/zombie/Zombie.java
++++ b/net/minecraft/world/entity/monster/zombie/Zombie.java
+@@ -139,7 +139,7 @@ public class Zombie extends Monster {
+         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
+         this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(ZombifiedPiglin.class));
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+-        if (this.level().spigotConfig.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Spigot
++        if (this.level().paperConfig().entities.behavior.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Spigot
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
+     }
+diff --git a/net/minecraft/world/entity/npc/villager/Villager.java b/net/minecraft/world/entity/npc/villager/Villager.java
+index e6f3961f1573dffef51b8ee724a52800c8a6004b..fe845f495c7573cbfda18d5895ea0fe3ae1d4145 100644
+--- a/net/minecraft/world/entity/npc/villager/Villager.java
++++ b/net/minecraft/world/entity/npc/villager/Villager.java
+@@ -236,7 +236,7 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
+             this.setUnhappyCounter(this.getUnhappyCounter() - 1);
+         }
+         if (this.aware && this.isEffectiveAi()) { // Paper - Do not tick AI for inactive unaware mobs
+-            if (this.level().spigotConfig.tickInactiveVillagers) {
++            if (this.level().paperConfig().entities.activationRange.tickInactiveVillagers) {
+                 this.customServerAiStep(this.level().getMinecraftWorld());
+             } else {
+                 this.customServerAiStep(this.level().getMinecraftWorld(), true);
+@@ -623,7 +623,7 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
+ 
+     @Override
+     public void die(final DamageSource source) {
+-        if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString()); // Spigot
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.villagerDeaths) LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString()); // Spigot
+         Entity murderer = source.getEntity();
+         if (murderer != null) {
+             this.tellWitnessesThatIWasMurdered(murderer);
+@@ -788,7 +788,7 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightningBolt, w).isCancelled()) {
+                     return false;
+                 }
+-                if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} was struck by lightning {}.", this, lightningBolt); // Move down
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.villagerDeaths) LOGGER.info("Villager {} was struck by lightning {}.", this, lightningBolt); // Move down
+                 // Paper end - Add EntityZapEvent
+                 w.finalizeSpawn(level, level.getCurrentDifficultyAt(w.blockPosition()), EntitySpawnReason.CONVERSION, null);
+                 w.setPersistenceRequired();
+diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
+index 4ba3fb85b0473b4e7aa237701034d25f84e955cd..7fe3b445a92ba3eb371cbe01bf99adfa4f4167d5 100644
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -1076,7 +1076,7 @@ public abstract class Player extends Avatar implements ContainerUser {
+                         this.setLastHurtMob(entity);
+                         this.itemAttackInteraction(entity, attackingItemStack, damageSource, true);
+                         this.damageStatsAndHearts(entity, oldLivingEntityHealth);
+-                        this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
++                        this.causeFoodExhaustion(this.level().paperConfig().hunger.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+                     } else {
+                         this.playServerSideSound(SoundEvents.PLAYER_ATTACK_NODAMAGE);
+                     }
+@@ -1359,7 +1359,7 @@ public abstract class Player extends Avatar implements ContainerUser {
+         this.setLastHurtMob(target);
+         this.itemAttackInteraction(target, weaponItem, damageSource, wasHurt);
+         this.damageStatsAndHearts(target, oldLivingEntityHealth);
+-        this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
++        this.causeFoodExhaustion(this.level().paperConfig().hunger.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+         return true;
+     }
+ 
+diff --git a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+index 82f279c48cf3da6856ad96f753ee1a36dde9c725..ce75296bf5fbf65758770d39cf3c07630a62c633 100644
+--- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
++++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+@@ -412,7 +412,7 @@ public abstract class AbstractArrow extends Projectile {
+ 
+     protected void tickDespawn() {
+         this.life++;
+-        if (this.life >= (this.pickup == Pickup.CREATIVE_ONLY ? this.level().paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (this.pickup == Pickup.DISALLOWED ? this.level().paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? this.level().spigotConfig.tridentDespawnRate : this.level().spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - Configurable non-player arrow despawn rate; TODO: Extract this to init?
++        if (this.life >= (this.pickup == Pickup.CREATIVE_ONLY ? this.level().paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (this.pickup == Pickup.DISALLOWED ? this.level().paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? this.level().paperConfig().entities.spawning.tridentDespawnRate.or(this.level().paperConfig().entities.spawning.arrowDespawnRate) : this.level().paperConfig().entities.spawning.arrowDespawnRate)))) { // Spigot // Paper - Configurable non-player arrow despawn rate; TODO: Extract this to init?
+             this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+diff --git a/net/minecraft/world/food/FoodData.java b/net/minecraft/world/food/FoodData.java
+index 38ccab90d09c92e6b70d1457931b64fb4e6ff7ec..df544a56277238465ccf664cb34fbdce5a1d7ba5 100644
+--- a/net/minecraft/world/food/FoodData.java
++++ b/net/minecraft/world/food/FoodData.java
+@@ -80,7 +80,7 @@ public class FoodData {
+             if (this.tickTimer >= this.unsaturatedRegenRate) { // CraftBukkit - add regen rate manipulation
+                 player.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
+                 // this.addExhaustion(6.0F); // CraftBukkit - EntityExhaustionEvent
+-                player.causeFoodExhaustion(player.level().spigotConfig.regenExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
++                player.causeFoodExhaustion(player.level().paperConfig().hunger.regenExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+                 this.tickTimer = 0;
+             }
+         } else if (this.foodLevel <= 0) {
+diff --git a/net/minecraft/world/item/EnderEyeItem.java b/net/minecraft/world/item/EnderEyeItem.java
+index ab0239a9d32bd937fb8eef9696b8b7d32e89406c..fd7f464446acd64201664b01a22b3f413e0db318 100644
+--- a/net/minecraft/world/item/EnderEyeItem.java
++++ b/net/minecraft/world/item/EnderEyeItem.java
+@@ -78,7 +78,7 @@ public class EnderEyeItem extends Item {
+                 double deltaX = soundPos.getX() - player.getX();
+                 double deltaZ = soundPos.getZ() - player.getZ();
+                 double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+-                final double soundRadiusSquared = serverLevel.getGlobalSoundRangeSquared(config -> config.endPortalSoundRadius); // Paper - respect global sound events gamerule
++                final double soundRadiusSquared = serverLevel.getGlobalSoundRangeSquared(config -> config.misc.soundRadius.endPortal); // Paper - respect global sound events gamerule
+                 if (!serverLevel.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Spigot // Paper - respect global sound events gamerule
+                 if (distanceSquared > viewDistance * viewDistance) {
+                     double deltaLength = Math.sqrt(distanceSquared);
+diff --git a/net/minecraft/world/level/BaseSpawner.java b/net/minecraft/world/level/BaseSpawner.java
+index 56f9c7906761b49c1090bd2489fe111f0d2a4a32..33d37dfed35236fec2e39e289a3a6b4a1f0af062 100644
+--- a/net/minecraft/world/level/BaseSpawner.java
++++ b/net/minecraft/world/level/BaseSpawner.java
+@@ -195,7 +195,7 @@ public abstract class BaseSpawner {
+ 
+                                 nextSpawnData.getEquipment().ifPresent(mob::equip);
+                                 // Spigot start
+-                                if (mob.level().spigotConfig.nerfSpawnerMobs) {
++                                if (mob.level().paperConfig().entities.spawning.spawnerMobs.nerf) {
+                                     mob.aware = false;
+                                 }
+                                 // Spigot end
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index c14996f1d8a9ed77a845a464c1789bab0715741b..4b303abf54d4870d0341b223d63ba2e063f5d4ae 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -162,7 +162,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public int wakeupInactiveRemainingVillagers;
+     // Paper end - EAR 2
+     public boolean populating;
+-    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
++    public int currentPrimedTnt = 0; // Paper - max TNT per tick; reset each tick
+     // Paper start - add paper world config
+     private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
+     public io.papermc.paper.configuration.WorldConfiguration paperConfig() {
+@@ -189,11 +189,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     // Paper end - Use getChunkIfLoadedImmediately
+     // Paper start - per world ticks per spawn
+     private int getTicksPerSpawn(SpawnCategory spawnCategory) {
+-        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
+-        if (perWorld >= 0) {
+-            return perWorld;
+-        }
+-        return this.getCraftServer().getTicksPerSpawns(spawnCategory);
++        return this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
+     }
+     // Paper end
+ 
+@@ -835,8 +831,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
+         org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
+         org.bukkit.World.Environment environment, // Paper
+-        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
+-        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        java.util.function.Supplier<io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create per world config
+         java.util.concurrent.Executor executor // Paper - Anti-Xray
+     ) {
+         // Paper start - getblock optimisations - cache world height/sections
+@@ -849,8 +844,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
+         // Paper end - getblock optimisations - cache world height/sections
+         final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
+-        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
+-        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
++        this.paperConfig = paperWorldConfigCreator.get(); // Paper - create per world config
+         this.generator = generator;
+         this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);
+ 
+diff --git a/net/minecraft/world/level/block/BambooSaplingBlock.java b/net/minecraft/world/level/block/BambooSaplingBlock.java
+index 171ea5f33fb9eada196ccac4a8b522c3664412f4..eb7d99467cd6bef2e27b4ccfd833b7079acadbf7 100644
+--- a/net/minecraft/world/level/block/BambooSaplingBlock.java
++++ b/net/minecraft/world/level/block/BambooSaplingBlock.java
+@@ -31,7 +31,7 @@ public class BambooSaplingBlock extends Block implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+-        if (random.nextFloat() < (level.spigotConfig.bambooModifier / (100.0F * 3)) && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (random.nextFloat() < (level.paperConfig().growthModifiers.bamboo / (100.0F * 3)) && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+             this.growBamboo(level, pos);
+         }
+     }
+diff --git a/net/minecraft/world/level/block/BambooStalkBlock.java b/net/minecraft/world/level/block/BambooStalkBlock.java
+index 57f0ab50c2eb22701bc709baba5a1e053757bfa1..871eb5531e2e24a31f219b37314d1a0a8733aadd 100644
+--- a/net/minecraft/world/level/block/BambooStalkBlock.java
++++ b/net/minecraft/world/level/block/BambooStalkBlock.java
+@@ -112,7 +112,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (state.getValue(STAGE) == 0) {
+-            if (random.nextFloat() < (level.spigotConfig.bambooModifier / (100.0F * 3)) && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
++            if (random.nextFloat() < (level.paperConfig().growthModifiers.bamboo / (100.0F * 3)) && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int height = this.getHeightBelowUpToMax(level, pos) + 1;
+                 if (height < level.paperConfig().maxGrowthHeight.bamboo.max) { // Paper - Configurable cactus/bamboo/reed growth height
+                     this.growBamboo(state, level, pos, random, height);
+diff --git a/net/minecraft/world/level/block/CaveVinesBlock.java b/net/minecraft/world/level/block/CaveVinesBlock.java
+index 8cb4adda185a229a9f036355d3984187f60d7585..6daf57234397e8ae176515d173ea08972c0d4644 100644
+--- a/net/minecraft/world/level/block/CaveVinesBlock.java
++++ b/net/minecraft/world/level/block/CaveVinesBlock.java
+@@ -51,7 +51,7 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements CaveVines {
+ 
+     @Override
+     protected BlockState getGrowIntoState(BlockState growFromState, RandomSource random, @org.jspecify.annotations.Nullable Level level) {
+-        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.spigotConfig.glowBerryModifier / 100.0F)) : 0.11F);
++        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.paperConfig().growthModifiers.glowBerry / 100.0F)) : 0.11F);
+         return super.getGrowIntoState(growFromState, random).setValue(CaveVinesBlock.BERRIES, value);
+     }
+     // Paper end - Fix Spigot growth modifiers
+diff --git a/net/minecraft/world/level/block/CocoaBlock.java b/net/minecraft/world/level/block/CocoaBlock.java
+index fd19b107e2a26f78ff9808f57df35f7a78d4251e..83a1750e608e9ef5149e526d1a17e9b4d730c96e 100644
+--- a/net/minecraft/world/level/block/CocoaBlock.java
++++ b/net/minecraft/world/level/block/CocoaBlock.java
+@@ -43,7 +43,7 @@ public class CocoaBlock extends HorizontalDirectionalBlock implements Bonemealab
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+-        if (level.getRandom().nextFloat() < (level.spigotConfig.cocoaModifier / (100.0F * 5))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (level.getRandom().nextFloat() < (level.paperConfig().growthModifiers.cocoa / (100.0F * 5))) { // Spigot - SPIGOT-7159: Better modifier resolution
+             int age = state.getValue(AGE);
+             if (age < 2) {
+                 org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(AGE, age + 1), Block.UPDATE_CLIENTS); // CraftBukkit
+diff --git a/net/minecraft/world/level/block/CropBlock.java b/net/minecraft/world/level/block/CropBlock.java
+index f7d3cfe3439d63665c2050b3e95b39a947a7fb2e..9038d1725c233f2180e89a5aa69ec341e3b49ccc 100644
+--- a/net/minecraft/world/level/block/CropBlock.java
++++ b/net/minecraft/world/level/block/CropBlock.java
+@@ -77,17 +77,17 @@ public class CropBlock extends VegetationBlock implements BonemealableBlock {
+                 // Spigot start
+                 int modifier = 100;
+                 if (this == Blocks.BEETROOTS) {
+-                    modifier = level.spigotConfig.beetrootModifier;
++                    modifier = level.paperConfig().growthModifiers.beetroot;
+                 } else if (this == Blocks.CARROTS) {
+-                    modifier = level.spigotConfig.carrotModifier;
++                    modifier = level.paperConfig().growthModifiers.carrot;
+                 } else if (this == Blocks.POTATOES) {
+-                    modifier = level.spigotConfig.potatoModifier;
++                    modifier = level.paperConfig().growthModifiers.potato;
+                 // Paper start - Fix Spigot growth modifiers
+                 } else if (this == Blocks.TORCHFLOWER_CROP) {
+-                    modifier = level.spigotConfig.torchFlowerModifier;
++                    modifier = level.paperConfig().growthModifiers.torchFlower;
+                 // Paper end - Fix Spigot growth modifiers
+                 } else if (this == Blocks.WHEAT) {
+-                    modifier = level.spigotConfig.wheatModifier;
++                    modifier = level.paperConfig().growthModifiers.wheat;
+                 }
+ 
+                 if (random.nextFloat() < (modifier / (100.0F * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+diff --git a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+index 4fd9e6bb598afdebfda4828e9f18afe556057f63..56fea0bc68fcf215e15fdbd1b674b064e96d7eca 100644
+--- a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
++++ b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+@@ -47,13 +47,13 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
+         // Spigot start
+         int modifier = 100;
+         if (this == Blocks.KELP) {
+-            modifier = level.spigotConfig.kelpModifier;
++            modifier = level.paperConfig().growthModifiers.kelp;
+         } else if (this == Blocks.TWISTING_VINES) {
+-            modifier = level.spigotConfig.twistingVinesModifier;
++            modifier = level.paperConfig().growthModifiers.twistingVines;
+         } else if (this == Blocks.WEEPING_VINES) {
+-            modifier = level.spigotConfig.weepingVinesModifier;
++            modifier = level.paperConfig().growthModifiers.weepingVines;
+         } else if (this == Blocks.CAVE_VINES) {
+-            modifier = level.spigotConfig.caveVinesModifier;
++            modifier = level.paperConfig().growthModifiers.caveVines;
+         }
+         if (state.getValue(AGE) < 25 && random.nextDouble() < ((modifier / 100.0) * this.growPerTickProbability)) { // Spigot - SPIGOT-7159: Better modifier resolution
+             // Spigot end
+diff --git a/net/minecraft/world/level/block/MangrovePropaguleBlock.java b/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+index 3f05c540c2dfeebfe7e4e956a1087e1a4dea50b0..89b20e4fef1ba49a854ba89a1d6feb6b958e91bb 100644
+--- a/net/minecraft/world/level/block/MangrovePropaguleBlock.java
++++ b/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+@@ -92,7 +92,7 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (!isHanging(state)) {
+-            if (random.nextFloat() < (level.spigotConfig.saplingModifier / (100.0F * 7))) { // Paper - Fix Spigot growth modifiers
++            if (random.nextFloat() < (level.paperConfig().growthModifiers.sapling / (100.0F * 7))) { // Paper - Fix Spigot growth modifiers
+                 this.advanceTree(level, pos, state, random);
+             }
+         } else {
+diff --git a/net/minecraft/world/level/block/MushroomBlock.java b/net/minecraft/world/level/block/MushroomBlock.java
+index c0779cb3c237e4399a53a7e6fc95bb2d88483bca..212db695d80d45c4fbfffe2858feb659ee6eb631 100644
+--- a/net/minecraft/world/level/block/MushroomBlock.java
++++ b/net/minecraft/world/level/block/MushroomBlock.java
+@@ -36,7 +36,7 @@ public class MushroomBlock extends VegetationBlock implements BonemealableBlock
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, BlockPos pos, final RandomSource random) {
+-        if (random.nextFloat() < (level.spigotConfig.mushroomModifier / (100.0F * 25))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (random.nextFloat() < (level.paperConfig().growthModifiers.mushroom / (100.0F * 25))) { // Spigot - SPIGOT-7159: Better modifier resolution
+             if (!this.canSpread(level, pos)) {
+                 return;
+             }
+diff --git a/net/minecraft/world/level/block/NetherPortalBlock.java b/net/minecraft/world/level/block/NetherPortalBlock.java
+index 28ab25af5929991622629f056f32b1184853cb24..a28e336e35e5cb00c9e4e2e3b3452179819a65dc 100644
+--- a/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -60,7 +60,7 @@ public class NetherPortalBlock extends Block implements Portal {
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, BlockPos pos, final RandomSource random) {
+-        if (level.spigotConfig.enableZombiePigmenPortalSpawns && level.isSpawningMonsters() // Paper
++        if (level.paperConfig().entities.spawning.portalZombifiedPiglins.enabled && level.isSpawningMonsters() // Paper
+             && level.getLevelData().getDifficulty() != Difficulty.PEACEFUL
+             && level.environmentAttributes().getValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS, pos)
+             && random.nextInt(2000) < level.getDifficulty().getId()
+@@ -75,7 +75,7 @@ public class NetherPortalBlock extends Block implements Portal {
+                     entity.setPortalCooldown();
+                     // Paper start - Add option to nerf pigmen from nether portals
+                     entity.fromNetherPortal = true;
+-                    if (level.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false;
++                    if (level.paperConfig().entities.spawning.portalZombifiedPiglins.nerf) ((net.minecraft.world.entity.Mob) entity).aware = false;
+                     // Paper end - Add option to nerf pigmen from nether portals
+                     Entity vehicle = entity.getVehicle();
+                     if (vehicle != null) {
+diff --git a/net/minecraft/world/level/block/NetherWartBlock.java b/net/minecraft/world/level/block/NetherWartBlock.java
+index fcd93b9c78e4705861f345defe2a94f3626306dd..c2f946112148b8f6bdd416e6ca4ae63959aa430d 100644
+--- a/net/minecraft/world/level/block/NetherWartBlock.java
++++ b/net/minecraft/world/level/block/NetherWartBlock.java
+@@ -44,7 +44,7 @@ public class NetherWartBlock extends VegetationBlock {
+     @Override
+     protected void randomTick(BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         int age = state.getValue(AGE);
+-        if (age < 3 && random.nextFloat() < (level.spigotConfig.wartModifier / (100.0F * 10))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (age < 3 && random.nextFloat() < (level.paperConfig().growthModifiers.netherWart / (100.0F * 10))) { // Spigot - SPIGOT-7159: Better modifier resolution
+             state = state.setValue(AGE, age + 1);
+             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state, Block.UPDATE_CLIENTS); // CraftBukkit
+         }
+diff --git a/net/minecraft/world/level/block/PitcherCropBlock.java b/net/minecraft/world/level/block/PitcherCropBlock.java
+index 946816dd8fc145eeb300f6b23a80821e533a05bd..b7f386f6d72e72be0c661fce97a50ff65f300eb3 100644
+--- a/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -141,7 +141,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     @Override
+     public void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         float growthSpeed = CropBlock.getGrowthSpeed(this, level, pos);
+-        boolean shouldProgressGrowth = random.nextFloat() < (level.spigotConfig.pitcherPlantModifier / (100.0F * (Math.floor(25.0F / growthSpeed) + 1))); // Paper - Fix Spigot growth modifiers
++        boolean shouldProgressGrowth = random.nextFloat() < (level.paperConfig().growthModifiers.pitcherPlant / (100.0F * (Math.floor(25.0F / growthSpeed) + 1))); // Paper - Fix Spigot growth modifiers
+         if (shouldProgressGrowth) {
+             this.grow(level, state, pos, 1);
+         }
+diff --git a/net/minecraft/world/level/block/SaplingBlock.java b/net/minecraft/world/level/block/SaplingBlock.java
+index 5564a54f23aab158b9506325953ec70cab55c961..37c4b6c44d760b9d96e4c90850356f451c74de21 100644
+--- a/net/minecraft/world/level/block/SaplingBlock.java
++++ b/net/minecraft/world/level/block/SaplingBlock.java
+@@ -36,7 +36,7 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+-        if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (level.spigotConfig.saplingModifier / (100.0F * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (level.paperConfig().growthModifiers.sapling / (100.0F * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
+             this.advanceTree(level, pos, state, random);
+         }
+     }
+diff --git a/net/minecraft/world/level/block/StemBlock.java b/net/minecraft/world/level/block/StemBlock.java
+index 45596c309bd6200794fb578e937e2331b7c30a16..21be426315dfbd7cd1c682d8fa1a9408072a46ee 100644
+--- a/net/minecraft/world/level/block/StemBlock.java
++++ b/net/minecraft/world/level/block/StemBlock.java
+@@ -65,7 +65,7 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
+     protected void randomTick(BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (level.getRawBrightness(pos, 0) >= 9) {
+             float growthSpeed = CropBlock.getGrowthSpeed(this, level, pos);
+-            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? level.spigotConfig.pumpkinModifier : level.spigotConfig.melonModifier) / (100.0F * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
++            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? level.paperConfig().growthModifiers.pumpkin : level.paperConfig().growthModifiers.melon) / (100.0F * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int age = state.getValue(AGE);
+                 if (age < 7) {
+                     state = state.setValue(AGE, age + 1);
+diff --git a/net/minecraft/world/level/block/SugarCaneBlock.java b/net/minecraft/world/level/block/SugarCaneBlock.java
+index b7bc0151fa6b01ed4814ca2050daa63f5b5b05a1..788cf3c709da2d01d84968cf52ebbd66e9e45165 100644
+--- a/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -50,7 +50,7 @@ public class SugarCaneBlock extends Block {
+ 
+             if (height < level.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable cactus/bamboo/reed growth height
+                 int age = state.getValue(AGE);
+-                int modifier = level.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
++                int modifier = level.paperConfig().growthModifiers.cane; // Spigot - SPIGOT-7159: Better modifier resolution
+                 if (age >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0F * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos.above(), this.defaultBlockState(), Block.UPDATE_ALL); // CraftBukkit
+                     level.setBlock(pos, state.setValue(AGE, 0), Block.UPDATE_NONE);
+diff --git a/net/minecraft/world/level/block/SweetBerryBushBlock.java b/net/minecraft/world/level/block/SweetBerryBushBlock.java
+index 3865af609541eb29056fb1eaa915840b60f83dcb..301c8774261cd464261560aa539bc05bd945b6e1 100644
+--- a/net/minecraft/world/level/block/SweetBerryBushBlock.java
++++ b/net/minecraft/world/level/block/SweetBerryBushBlock.java
+@@ -64,7 +64,7 @@ public class SweetBerryBushBlock extends VegetationBlock implements Bonemealable
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         int age = state.getValue(AGE);
+-        if (age < 3 && random.nextFloat() < (level.spigotConfig.sweetBerryModifier / (100.0F * 5)) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (age < 3 && random.nextFloat() < (level.paperConfig().growthModifiers.sweetBerry / (100.0F * 5)) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+             BlockState newState = state.setValue(AGE, age + 1);
+             if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, newState, Block.UPDATE_CLIENTS)) return; // CraftBukkit
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newState));
+diff --git a/net/minecraft/world/level/block/VineBlock.java b/net/minecraft/world/level/block/VineBlock.java
+index 81f87a0054cc2882679b9fade760d1f5a0772312..5c9a44ee907719b6f7c742f848956b01ea968c7f 100644
+--- a/net/minecraft/world/level/block/VineBlock.java
++++ b/net/minecraft/world/level/block/VineBlock.java
+@@ -163,7 +163,7 @@ public class VineBlock extends Block {
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (level.getGameRules().get(GameRules.SPREAD_VINES)) {
+-            if (random.nextFloat() < (level.spigotConfig.vineModifier / (100.0F * 4))) { // Spigot - SPIGOT-7159: Better modifier resolution
++            if (random.nextFloat() < (level.paperConfig().growthModifiers.vine / (100.0F * 4))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 Direction testDirection = Direction.getRandom(random);
+                 BlockPos abovePos = pos.above();
+                 if (testDirection.getAxis().isHorizontal() && !state.getValue(getPropertyForFace(testDirection))) {
+diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 803e36f33c706d8484739cb21af25b9289dc8808..c094f53b72811eb20873944a5cedeb1ab24337ee 100644
+--- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -135,8 +135,8 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+             entity.setCooldown(0);
+             // Spigot start
+             boolean result = tryMoveItems(level, pos, state, entity, () -> suckInItems(level, entity));
+-            if (!result && entity.level.spigotConfig.hopperCheck > 1) {
+-                entity.setCooldown(entity.level.spigotConfig.hopperCheck);
++            if (!result && entity.level.paperConfig().tickRates.hopperCheck > 1) {
++                entity.setCooldown(entity.level.paperConfig().tickRates.hopperCheck);
+             }
+             // Spigot end
+         }
+@@ -198,7 +198,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+             }
+ 
+             if (changed) {
+-                entity.setCooldown(level.spigotConfig.hopperTransfer); // Spigot
++                entity.setCooldown(level.paperConfig().tickRates.hopperTransfer); // Spigot
+                 setChanged(level, pos, state);
+                 return true;
+             }
+@@ -235,7 +235,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+                 ItemStack movedItem = origItemStack;
+ 
+                 final int originalItemCount = origItemStack.getCount();
+-                final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
++                final int movedItemCount = Math.min(level.paperConfig().hopper.amount, originalItemCount);
+                 origItemStack.setCount(movedItemCount);
+ 
+                 // We only need to fire the event once to give protection plugins a chance to cancel this event
+@@ -264,7 +264,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+             }
+         }
+         if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
+-            hopper.setCooldown(level.spigotConfig.hopperTransfer);
++            hopper.setCooldown(level.paperConfig().tickRates.hopperTransfer);
+         }
+         return false;
+     }
+@@ -272,7 +272,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     private static boolean hopperPull(final Level level, final Hopper hopper, final Container container, ItemStack origItemStack, final int i) {
+         ItemStack movedItem = origItemStack;
+         final int originalItemCount = origItemStack.getCount();
+-        final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
++        final int movedItemCount = Math.min(level.paperConfig().hopper.amount, originalItemCount);
+         movedItem.setCount(movedItemCount);
+ 
+         if (!skipPullModeEventFire) {
+@@ -366,7 +366,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+ 
+     private static void applyCooldown(final Hopper hopper) {
+         if (hopper instanceof HopperBlockEntity blockEntity && blockEntity.getLevel() != null) {
+-            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
++            blockEntity.setCooldown(blockEntity.getLevel().paperConfig().tickRates.hopperTransfer);
+         }
+     }
+ 
+@@ -631,7 +631,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+                         skipTickCount = 1;
+                     }
+ 
+-                    hopperBlockEntity.setCooldown(hopperBlockEntity.level.spigotConfig.hopperTransfer - skipTickCount); // Spigot
++                    hopperBlockEntity.setCooldown(hopperBlockEntity.level.paperConfig().tickRates.hopperTransfer - skipTickCount); // Spigot
+                 }
+ 
+                 container.setChanged();
+@@ -722,7 +722,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     }
+ 
+     private static @Nullable Container getBlockContainer(final Level level, final BlockPos pos, final BlockState state) {
+-        if (!level.spigotConfig.hopperCanLoadChunks && !level.hasChunkAt(pos)) return null; // Spigot
++        if (!level.paperConfig().hopper.canLoadChunks && !level.hasChunkAt(pos)) return null; // Spigot
+         Block block = state.getBlock();
+         if (block instanceof WorldlyContainerHolder worldlyContainerHolder) {
+             return worldlyContainerHolder.getContainer(state, level, pos);
+diff --git a/net/minecraft/world/level/block/entity/SignBlockEntity.java b/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index 4ce511e141cec76435b0b0f38f0c341df456a3cd..094d6ed35da1e55a15a07473202284dde5ef192f 100644
+--- a/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -225,7 +225,7 @@ public class SignBlockEntity extends BlockEntity {
+                     if (this.allowOpFeatures) {
+                         // Paper start - Fix commands from signs not firing command events
+                         String commandLine = command.command().startsWith("/") ? command.command() : "/" + command.command();
+-                        if (org.spigotmc.SpigotConfig.logCommands) {
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.commandExecution) {
+                             LOGGER.info("{} issued server command: {}", player.getScoreboardName(), commandLine);
+                         }
+                         final io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent bukkitEvent = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent(
+diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
+index cc4800823c20e8ecbf0b4d74fd85a22bcb70c74c..8d096e0701fa6a4e9e84ec3a4c22e7bcb11593e3 100644
+--- a/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -116,7 +116,7 @@ public abstract class ChunkGenerator {
+ 
+     protected abstract MapCodec<? extends ChunkGenerator> codec();
+ 
+-    public ChunkGeneratorStructureState createState(final HolderLookup<StructureSet> structureSets, final RandomState randomState, final long legacyLevelSeed, final org.spigotmc.SpigotWorldConfig conf) { // Spigot
++    public ChunkGeneratorStructureState createState(final HolderLookup<StructureSet> structureSets, final RandomState randomState, final long legacyLevelSeed, final io.papermc.paper.configuration.WorldConfiguration conf) { // Spigot
+         return ChunkGeneratorStructureState.createForNormal(randomState, legacyLevelSeed, this.getOrigin(randomState), this.biomeSource, structureSets, conf); // Spigot
+     }
+ 
+diff --git a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+index 8547fccf2216867147adcefa3e58a2c9ce58eadb..d6d2a1088bfdd60be9bd9b91053d5415ce612ada 100644
+--- a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
++++ b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+@@ -42,7 +42,7 @@ public class ChunkGeneratorStructureState {
+     private boolean hasGeneratedPositions;
+     private final ChunkPos origin;
+     private final List<Holder<StructureSet>> possibleStructureSets;
+-    public final org.spigotmc.SpigotWorldConfig config; // Paper - Add missing structure set seed configs
++    public final io.papermc.paper.configuration.WorldConfiguration config; // Paper - Add missing structure set seed configs
+ 
+     public static ChunkGeneratorStructureState createForFlat(
+         final RandomState randomState,
+@@ -50,7 +50,7 @@ public class ChunkGeneratorStructureState {
+         final ChunkPos origin,
+         final BiomeSource biomeSource,
+         final Stream<Holder<StructureSet>> structureOverrides
+-        , org.spigotmc.SpigotWorldConfig config // Spigot
++        , io.papermc.paper.configuration.WorldConfiguration config // Spigot
+     ) {
+         List<Holder<StructureSet>> structures = structureOverrides.filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource)).toList();
+         return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, 0L, ChunkGeneratorStructureState.injectSpigot(structures, config), config); // Spigot
+@@ -62,7 +62,7 @@ public class ChunkGeneratorStructureState {
+         final ChunkPos origin,
+         final BiomeSource biomeSource,
+         final HolderLookup<StructureSet> allStructures
+-        , org.spigotmc.SpigotWorldConfig config // Spigot
++        , io.papermc.paper.configuration.WorldConfiguration config // Spigot
+     ) {
+         List<Holder<StructureSet>> structures = allStructures.listElements()
+             .filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource))
+@@ -80,7 +80,7 @@ public class ChunkGeneratorStructureState {
+     // Paper end - Add missing structure set seed configs
+ 
+     // Spigot start
+-    private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> structures, org.spigotmc.SpigotWorldConfig config) {
++    private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> structures, io.papermc.paper.configuration.WorldConfiguration config) {
+         return structures.stream().map((structureSet) -> {
+             StructureSet structureset = structureSet.value();
+             final Holder<StructureSet> newHolder; // Paper - Add missing structure set seed configs
+@@ -88,24 +88,24 @@ public class ChunkGeneratorStructureState {
+             if (structureset.placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement randomConfig && id.getNamespace().equals(net.minecraft.resources.Identifier.DEFAULT_NAMESPACE)) { // Paper - Add missing structure set seed configs; check namespace cause datapacks could add structure sets with the same path
+                 String name = id.getPath();
+                 int seed = switch (name) {
+-                    case "villages" -> config.villageSeed;
+-                    case "desert_pyramids" -> config.desertSeed;
+-                    case "igloos" -> config.iglooSeed;
+-                    case "jungle_temples" -> config.jungleSeed;
+-                    case "swamp_huts" -> config.swampSeed;
+-                    case "ocean_monuments" -> config.monumentSeed;
+-                    case "shipwrecks" -> config.shipwreckSeed;
+-                    case "ocean_ruins" -> config.oceanSeed;
+-                    case "pillager_outposts" -> config.outpostSeed;
+-                    case "end_cities" -> config.endCitySeed;
+-                    case "nether_complexes" -> config.netherSeed;
+-                    case "woodland_mansions" -> config.mansionSeed;
+-                    case "nether_fossils" -> config.fossilSeed;
+-                    case "ruined_portals" -> config.portalSeed;
+-                    case "ancient_cities" -> config.ancientCitySeed;
+-                    case "trail_ruins" -> config.trailRuinsSeed;
+-                    case "trial_chambers" -> config.trialChambersSeed;
+-                    case "abandoned_camp" -> config.abandonedCampSeed;
++                    case "villages" -> config.seeds.village;
++                    case "desert_pyramids" -> config.seeds.desert;
++                    case "igloos" -> config.seeds.igloo;
++                    case "jungle_temples" -> config.seeds.jungle;
++                    case "swamp_huts" -> config.seeds.swamp;
++                    case "ocean_monuments" -> config.seeds.monument;
++                    case "shipwrecks" -> config.seeds.shipwreck;
++                    case "ocean_ruins" -> config.seeds.ocean;
++                    case "pillager_outposts" -> config.seeds.outpost;
++                    case "end_cities" -> config.seeds.endCity;
++                    case "nether_complexes" -> config.seeds.nether;
++                    case "woodland_mansions" -> config.seeds.mansion;
++                    case "nether_fossils" -> config.seeds.fossil;
++                    case "ruined_portals" -> config.seeds.portal;
++                    case "ancient_cities" -> config.seeds.ancientCity;
++                    case "trail_ruins" -> config.seeds.trailRuins;
++                    case "trial_chambers" -> config.seeds.trialChambers;
++                    case "abandoned_camp" -> config.seeds.abandonedCamp;
+                     default -> randomConfig.salt;
+                 };
+ 
+@@ -136,7 +136,7 @@ public class ChunkGeneratorStructureState {
+         final ChunkPos origin,
+         final long concentricRingsSeed,
+         final List<Holder<StructureSet>> possibleStructureSets
+-        , final org.spigotmc.SpigotWorldConfig config // Paper - Add missing structure set seed configs
++        , final io.papermc.paper.configuration.WorldConfiguration config // Paper - Add missing structure set seed configs
+     ) {
+         this.randomState = randomState;
+         this.levelSeed = levelSeed;
+@@ -184,8 +184,8 @@ public class ChunkGeneratorStructureState {
+         HolderSet<Biome> preferredBiomes = placement.preferredBiomes();
+         RandomSource random = RandomSource.create();
+         // Paper start - Add missing structure set seed configs
+-        if (this.config.strongholdSeed != null && structureSet.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
+-            random.setSeed(this.config.strongholdSeed);
++        if (this.config.seeds.stronghold.isDefined() && structureSet.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
++            random.setSeed(this.config.seeds.stronghold.longValue());
+         } else {
+         // Paper end - Add missing structure set seed configs
+         random.setSeed(this.concentricRingsSeed);
+diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+index 12ac13394fc38f089be0ad7731eb4ea9487e1d17..327864e4e0a61fd0079f170c2b46e98b896d6774 100644
+--- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+@@ -92,10 +92,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
+             boolean stopBelowZero = false;
+             final boolean chunkStorage = this.dataFixType == net.minecraft.util.datafix.DataFixTypes.CHUNK;
+             if (chunkStorage) {
+-                final boolean belowZeroGenerationInExistingChunks = (this instanceof net.minecraft.server.level.ChunkMap chunkMap)
+-                    ? chunkMap.level.spigotConfig.belowZeroGenerationInExistingChunks
+-                    : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
+-                if (version <= 2730 && !belowZeroGenerationInExistingChunks) {
++                if (version <= 2730 && !io.papermc.paper.configuration.GlobalConfiguration.get().misc.belowZeroGenerationInExistingChunks) {
+                     stopBelowZero = "full".equals(chunkTag.getCompound("Level").flatMap(level -> level.getString("Status")).orElse(null));
+                 }
+             }
+diff --git a/net/minecraft/world/level/levelgen/FlatLevelSource.java b/net/minecraft/world/level/levelgen/FlatLevelSource.java
+index fb8fa10f1b1fd23e8718a3f4257f3603dd55eb89..d724598e510b28f0dfd257ebd3bc92a6907d1e2c 100644
+--- a/net/minecraft/world/level/levelgen/FlatLevelSource.java
++++ b/net/minecraft/world/level/levelgen/FlatLevelSource.java
+@@ -46,7 +46,7 @@ public class FlatLevelSource extends ChunkGenerator {
+     }
+ 
+     @Override
+-    public ChunkGeneratorStructureState createState(final HolderLookup<StructureSet> structureSets, final RandomState randomState, final long levelSeed, final org.spigotmc.SpigotWorldConfig config) { // Spigot
++    public ChunkGeneratorStructureState createState(final HolderLookup<StructureSet> structureSets, final RandomState randomState, final long levelSeed, final io.papermc.paper.configuration.WorldConfiguration config) { // Spigot
+         Stream<Holder<StructureSet>> structures = this.settings
+             .structureOverrides()
+             .map(HolderSet::stream)
+diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+index bd332a2a0fc1cef260a2a9a14401e551628db030..98a7ca4decc3277effe95220f7b3aaa19056d0da 100644
+--- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -100,9 +100,9 @@ public class StructureCheck {
+     private Integer getSaltOverride(Structure type) {
+         if (this.heightAccessor instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+             if (type instanceof net.minecraft.world.level.levelgen.structure.structures.MineshaftStructure) {
+-                return serverLevel.spigotConfig.mineshaftSeed;
++                return serverLevel.paperConfig().seeds.mineshaft.isDefined() ? serverLevel.paperConfig().seeds.mineshaft.intValue() : null;
+             } else if (type instanceof net.minecraft.world.level.levelgen.structure.structures.BuriedTreasureStructure) {
+-                return serverLevel.spigotConfig.buriedTreasureSeed;
++                return serverLevel.paperConfig().seeds.buriedTreasure;
+             }
+         }
+         return null;
+diff --git a/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java b/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java
+index 23c24b33c74aa45496614a541a7d51a21f6d2b91..b3de25e50fc64dce33b28c6768b18ca519231dac 100644
+--- a/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java
++++ b/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java
+@@ -86,9 +86,9 @@ public abstract class AbstractSpreadingStructurePlacement implements StructurePl
+         Integer saltOverride = null;
+         if (structureSet != null) {
+             if (structureSet == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS) {
+-                saltOverride = state.config.mineshaftSeed;
++                saltOverride = state.config.seeds.mineshaft.isDefined() ? state.config.seeds.mineshaft.intValue() : null;
+             } else if (structureSet == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES) {
+-                saltOverride = state.config.buriedTreasureSeed;
++                saltOverride = state.config.seeds.buriedTreasure;
+             }
+         }
+         // Paper end - Add missing structure set seed configs
+diff --git a/net/minecraft/world/level/storage/PlayerDataStorage.java b/net/minecraft/world/level/storage/PlayerDataStorage.java
+index 142a34eb046c87f16b73023c83218d8752922fbe..90a4ec046c527453006479017f2ae3f5802111b2 100644
+--- a/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -31,7 +31,7 @@ public class PlayerDataStorage {
+     }
+ 
+     public void save(final Player player) {
+-        if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().players.disableSaving) return; // Spigot
+         try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
+             TagValueOutput output = TagValueOutput.createWithContext(reporter, player.registryAccess());
+             player.saveWithoutId(output);

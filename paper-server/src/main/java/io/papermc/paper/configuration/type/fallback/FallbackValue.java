@@ -1,9 +1,9 @@
 package io.papermc.paper.configuration.type.fallback;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.configuration.WorldConfiguration;
 import net.minecraft.server.MinecraftServer;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 public sealed abstract class FallbackValue permits FallbackValue.Int {
 
     private static final String DEFAULT_VALUE = "default";
-    static final ContextKey<SpigotWorldConfig> SPIGOT_WORLD_CONFIG = new ContextKey<>("SpigotWorldConfig");
+    static final ContextKey<WorldConfiguration> WORLD_CONFIG = new ContextKey<>("WorldConfiguration");
     static final ContextKey<Supplier<MinecraftServer>> MINECRAFT_SERVER = new ContextKey<>("MinecraftServer");
 
     private final Map<ContextKey<?>, Object> contextMap;

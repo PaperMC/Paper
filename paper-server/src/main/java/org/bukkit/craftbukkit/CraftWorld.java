@@ -1545,11 +1545,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
-        int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
-        if (limit < 0) {
-            limit = this.server.getSpawnLimitUnsafe(spawnCategory);
+        final int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+        if (limit >= 0) {
+            return limit;
         }
-        return limit;
+
+        final net.minecraft.world.entity.MobCategory category = CraftSpawnCategory.toNMS(spawnCategory);
+        final int configured = this.world.paperConfig().entities.spawning.spawnLimits.getInt(category);
+        return configured >= 0 ? configured : category.getMaxInstancesPerChunk();
     }
 
     @Override

@@ -79,7 +79,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                     logger.log(Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author");
                     logger.log(Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring");
                     logger.log(Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once");
-                    logger.log(Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes");
+                    logger.log(Level.SEVERE, "\t If this is the case, consider increasing watchdog.timeout-seconds in paper-global.yml but note that this will replace the crash with LARGE lag spikes");
                     logger.log(Level.SEVERE, "If you are unsure or still think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues");
                     logger.log(Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports");
                     logger.log(Level.SEVERE, "Paper version: " + Bukkit.getServer().getVersion());
@@ -129,7 +129,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                     if (!server.hasStopped()) {
                         server.forceTicks = true;
                         if (this.restart) {
-                            RestartCommand.addShutdownHook(SpigotConfig.restartScript);
+                            RestartCommand.addShutdownHook(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartScript);
                         }
                         // try one last chance to safe shutdown on main in case it 'comes back'
                         server.abnormalExit = true;

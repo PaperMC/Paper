@@ -3472,7 +3472,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
@@ -3499,7 +3499,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
@@ -3526,7 +3526,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
@@ -3553,7 +3553,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
@@ -3580,7 +3580,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * in this world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
@@ -3607,7 +3607,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
@@ -3631,7 +3631,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
-     * server-wide spawn limit instead.
+     * spawn limit from its configuration instead.
      *
      * @param spawnCategory the entity category
      * @param limit the new mob limit

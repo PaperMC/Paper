@@ -33,13 +33,6 @@ public class ReloadCommand extends BukkitCommand {
                 Bukkit.getServer().reloadPermissions();
                 Command.broadcastCommandMessage(sender, text("Permissions successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
                 return true;
-            } else if ("commands".equalsIgnoreCase(args[0])) {
-                if (Bukkit.getServer().reloadCommandAliases()) {
-                    Command.broadcastCommandMessage(sender, text("Command aliases successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
-                } else {
-                    Command.broadcastCommandMessage(sender, text("An error occurred while trying to reload command aliases.", net.kyori.adventure.text.format.NamedTextColor.RED));
-                }
-                return true;
             } else if ("confirm".equalsIgnoreCase(args[0])) {
                 confirmed = true;
             } else {

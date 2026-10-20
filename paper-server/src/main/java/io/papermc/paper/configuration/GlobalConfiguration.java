@@ -1,22 +1,42 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.core.Holder;
+import net.minecraft.util.Util;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
+import org.bukkit.Warning;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -28,12 +48,16 @@ import org.spongepowered.configurate.objectmapping.meta.Setting;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): merge spigot.yml and bukkit.yml
     private static GlobalConfiguration instance;
+    private static @Nullable Level levelBeforeDebug; // root log level to restore once logging.debug is turned off again
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return instance;
     }
+
+    @Comment("Settings that are read during server initialization before the rest of this file can be loaded.")
+    public InitializationConfiguration initialization;
 
     public ChunkLoadingBasic chunkLoadingBasic;
 
@@ -90,10 +114,18 @@ public class GlobalConfiguration extends ConfigurationPart {
             public Component connectionThrottle = Component.text("Connection throttled! Please wait before reconnecting.");
             public Component flyingPlayer = Component.translatable("multiplayer.disconnect.flying");
             public Component flyingVehicle = Component.translatable("multiplayer.disconnect.flying");
+            public Component whitelist = Component.translatable("multiplayer.disconnect.not_whitelisted");
+            public Component serverFull = Component.translatable("multiplayer.disconnect.server_full");
+            public Component outdatedClient = Component.translatable("multiplayer.disconnect.outdated_client");
+            public Component outdatedServer = Component.translatable("multiplayer.disconnect.outdated_server");
+            public Component restart = Component.text("Server is restarting");
         }
 
         public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
         public boolean useDisplayNameInQuitMessage = false;
+        public boolean sendCommandParseFailureMessage = true;
+        @Comment("Broadcast to players when the server shuts down.")
+        public Component shutdown = Component.text("Server closed");
     }
 
     public Spark spark;
@@ -109,6 +141,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public BungeeCord bungeeCord;
 
         public class BungeeCord extends ConfigurationPart {
+            public boolean enabled = false;
             public boolean onlineMode = true;
         }
 
@@ -136,7 +169,15 @@ public class GlobalConfiguration extends ConfigurationPart {
         }
         public boolean proxyProtocol = false;
         public boolean isProxyOnlineMode() {
-            return org.bukkit.Bukkit.getOnlineMode() || (org.spigotmc.SpigotConfig.bungee && this.bungeeCord.onlineMode) || (this.velocity.enabled && this.velocity.onlineMode);
+            return org.bukkit.Bukkit.getOnlineMode() || (this.bungeeCord.enabled && this.bungeeCord.onlineMode) || (this.velocity.enabled && this.velocity.onlineMode);
+        }
+
+        @PostProcess
+        private void postProcess() {
+            if (this.bungeeCord.enabled && this.velocity.enabled) {
+                LOGGER.error("Both BungeeCord and Velocity forwarding are enabled, but only one can be used. Disabling BungeeCord...");
+                this.bungeeCord.enabled = false;
+            }
         }
     }
 
@@ -151,6 +192,9 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Watchdog watchdog;
 
     public class Watchdog extends ConfigurationPart {
+        public int timeoutSeconds = 60;
+        public boolean restartOnCrash = true;
+        public String restartScript = "./start.sh";
         public int earlyWarningEvery = 5000;
         public int earlyWarningDelay = 10000;
     }
@@ -163,6 +207,13 @@ public class GlobalConfiguration extends ConfigurationPart {
         public int recipeSpamIncrement = 1;
         public int recipeSpamLimit = 20;
         public IntOr.Disabled incomingPacketThreshold = new IntOr.Disabled(OptionalInt.of(300));
+
+        @Comment("Commands that do not count towards the chat spam limit, matched by prefix.")
+        public Commands commands;
+        public class Commands extends ConfigurationPart {
+            public boolean enabled = false;
+            public Set<String> exclusions = Set.of("/skill");
+        }
     }
 
     public UnsupportedSettings unsupportedSettings;
@@ -193,12 +244,60 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
         @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
         public boolean rideCommandAllowPlayerAsVehicle = false;
+        @Comment("Send commands with namespace prefixes to clients")
+        public boolean sendNamespacedCommands = true;
+        @Comment("Send tab completions to clients")
+        public boolean tabCompletion = true;
+        @Comment("Hide command block output from the console, regardless of the commandBlockOutput game rule.")
+        public boolean silentCommandBlockConsole = false;
+        @Comment("""
+            Commands that command blocks may run even when a plugin has registered the same name.
+            Use a single '*' entry to allow every command.""")
+        public List<String> commandBlockOverrides = List.of();
+        @Comment("Let plugin-registered permissions take precedence over the vanilla permission level for a command.")
+        public boolean ignoreVanillaPermissions = false;
+        @Comment("""
+            Command aliases, each mapping a name to the commands it runs.
+            '$1-' passes every argument through, '$1' the first, and so on.""")
+        public Map<String, List<String>> aliases = Map.of("icanhasbukkit", List.of("version $1-"));
     }
 
     public Time time;
 
     public class Time extends ConfigurationPart {
         public boolean affectsAllWorlds = false;
+    }
+
+    public Logging logging;
+
+    public class Logging extends ConfigurationPart {
+        @Comment("Raise the root logger to trace level. Very noisy; only useful when debugging the server itself.")
+        public boolean debug = false;
+        @Comment("Log the execution of commands")
+        public boolean commandExecution = true;
+        @Comment("Log the deaths of villagers")
+        public boolean villagerDeaths = true;
+        @Comment("Log the deaths of named living entities")
+        public boolean namedLivingEntityDeaths = true;
+
+        @PostProcess
+        private void postProcess() {
+            final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+            final org.apache.logging.log4j.core.config.Configuration configuration = context.getConfiguration();
+            final org.apache.logging.log4j.core.config.LoggerConfig root = configuration.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+            if (this.debug && levelBeforeDebug == null && !LogManager.getRootLogger().isTraceEnabled()) {
+                levelBeforeDebug = root.getLevel();
+                root.setLevel(Level.ALL);
+                context.updateLoggers(configuration);
+            } else if (!this.debug && levelBeforeDebug != null) {
+                root.setLevel(levelBeforeDebug);
+                levelBeforeDebug = null;
+                context.updateLoggers(configuration);
+            }
+            if (LogManager.getRootLogger().isTraceEnabled()) {
+                LOGGER.info("Debug logging is enabled");
+            }
+        }
     }
 
     public Scoreboards scoreboards;
@@ -215,6 +314,8 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         public int ioThreads = -1;
         public int workerThreads = -1;
+        @Comment("Ticks a chunk stays loaded after a plugin ticket for it is added.")
+        public int pluginTicketTimeout = 600;
 
         @PostProcess
         private void postProcess() {
@@ -270,6 +371,16 @@ public class GlobalConfiguration extends ConfigurationPart {
         }
     }
 
+
+    @Comment("""
+        Plugin-provided generators, keyed by world name. Read while a world is being created, before its
+        own config exists, which is why these live here rather than in the world config.""")
+    public Map<String, WorldGenerators> worldGenerators = Map.of();
+
+    @ConfigSerializable
+    public record WorldGenerators(@Nullable String generator, @Nullable String biomeProvider) {
+    }
+
     public Collisions collisions;
 
     public class Collisions extends ConfigurationPart {
@@ -277,17 +388,26 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean sendFullPosForHardCollidingEntities = true;
     }
 
-    public PlayerAutoSave playerAutoSave;
+    public Players players;
 
+    public class Players extends ConfigurationPart {
 
-    public class PlayerAutoSave extends ConfigurationPart {
-        public int rate = -1;
-        private int maxPerTick = -1;
-        public int maxPerTick() {
-            if (this.maxPerTick < 0) {
-                return (this.rate == 1 || this.rate > 100) ? 10 : 20;
+        public boolean disableSaving = false;
+        public AutoSave autoSave;
+        public int userCacheSize = 1000;
+        public boolean saveUserCacheOnStopOnly = false;
+        @Constraint(Constraints.Positive.class)
+        public int sampleCount = 12;
+        public int connectionShuffle = 0;
+        public class AutoSave extends ConfigurationPart {
+            public int rate = -1;
+            private int maxPerTick = -1;
+            public int maxPerTick() {
+                if (this.maxPerTick < 0) {
+                    return (this.rate == 1 || this.rate > 100) ? 10 : 20;
+                }
+                return this.maxPerTick;
             }
-            return this.maxPerTick;
         }
     }
 
@@ -323,10 +443,14 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
         public int regionFileCacheSize = 256;
+        @Comment("""
+            Whether chunks generated before 1.18 get the extended world height applied when they are next loaded.
+            Global rather than per-world: it is also consulted by the world upgrader and the legacy structure
+            file fix, which run over region files without a loaded world.""")
+        public boolean belowZeroGenerationInExistingChunks = true;
         @Comment("See https://luckformula.emc.gs")
         public boolean useAlternativeLuckFormula = false;
         public boolean useDimensionTypeForCustomSpawners = false;
-        public boolean strictAdvancementDimensionCheck = false;
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
@@ -335,10 +459,36 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
         @Comment("See Fix MC-163962; prevent villager demand from going negative.")
         public boolean preventNegativeVillagerDemand = false;
+        @Comment("""
+            Ticks between server-wide saves of global data and player data.
+            Per-world chunk saving is configured separately, with chunks.auto-save-interval in the world config.""")
+        public int autoSaveInterval = 6000;
         @Comment("Whether the nether dimension is enabled and will be loaded.")
         public boolean enableNether = true;
+        @Comment("Whether the end dimension is enabled and will be loaded.")
+        public boolean enableEnd = true;
+        @Comment("File that plugin permissions are loaded from, relative to the server root.")
+        public String permissionsFile = "permissions.yml";
+        @Comment("Milliseconds a connecting player must wait before reconnecting. Set to -1 to disable.")
+        public int connectionThrottle = 4000;
+        @Comment("Whether the plugin list is included in GS4 query responses.")
+        public boolean queryPlugins = true;
+        @Comment("""
+            Whether deprecation warnings are printed when a plugin uses a deprecated API.
+            DEFAULT defers to the plugin's own author-declared preference.""")
+        public Warning.WarningState deprecatedVerbose = Warning.WarningState.DEFAULT;
+        @Comment("Lowest plugin API version the server will load. 'none' allows any.")
+        public String minimumApi = "none";
+        @Comment("Cache map colours between renders. Uses more memory but is faster.")
+        public boolean useMapColorCache = true;
         @Comment("Fix for MC-301114. This removes the oldest combat entry when it hits the cap, to fix a memory leak on constant entity damage.")
         public IntOr.Disabled maxTrackingCombatEntries = new IntOr.Disabled(OptionalInt.of(10240));
+        public int nettyThreads = 4;
+
+        @PostProcess
+        private void postProcess() {
+            System.setProperty("io.netty.eventLoopThreads", Integer.toString(this.nettyThreads));
+        }
     }
 
     public BlockUpdates blockUpdates;
@@ -353,6 +503,9 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Anticheat anticheat;
 
     public class Anticheat extends ConfigurationPart {
+
+        public double movedWronglyThreshold = 0.0625D;
+        public double movedTooQuicklyMultiplier = 10.0D;
 
         public Obfuscation obfuscation;
 
@@ -391,5 +544,40 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class UpdateChecker extends ConfigurationPart {
         public boolean enabled = true;
+    }
+
+    public Advancements advancements;
+    public class Advancements extends ConfigurationPart {
+        public boolean strictDimensionCheck = false;
+        public boolean disableSaving = false;
+        // disabled-advancements list has to be read before datapacks load, so it's part of InitializationConfiguration
+    }
+
+    public Stats stats;
+    public class Stats extends ConfigurationPart {
+        public boolean disableSaving = false;
+        public Object2IntMap<Holder<Identifier>> forcedCustomStatValues = new Object2IntOpenHashMap<>();
+    }
+
+    public AttributesSection attributes;
+    public class AttributesSection extends ConfigurationPart {
+        @ConfigSerializable
+        public record AttributeOverride(double max) {
+        }
+
+        @MergeMap
+        public Map<Holder<Attribute>, AttributeOverride> overrides = Stream.of(Attributes.MAX_ABSORPTION, Attributes.MAX_HEALTH, Attributes.MOVEMENT_SPEED, Attributes.ATTACK_DAMAGE)
+            .collect(Collectors.toMap(Function.identity(), a -> new AttributeOverride(((RangedAttribute) a.value()).maxValue)));
+
+        @PostProcess
+        private void postProcess() {
+            this.overrides.forEach((attribute, override) -> {
+                if (attribute.value() instanceof final RangedAttribute ranged) {
+                    ranged.maxValue = override.max();
+                } else {
+                    LOGGER.warn("Ignoring attribute max override for {}, it is not a ranged attribute", attribute.getRegisteredName());
+                }
+            });
+        }
     }
 }
