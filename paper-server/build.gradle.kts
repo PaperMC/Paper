@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation(platform("ca.spottedleaf.leafpile:bom:1.3.0"))
+    implementation(platform("ca.spottedleaf.leafpile:bom:1.3.1"))
     implementation("ca.spottedleaf.leafpile:common")
     implementation("ca.spottedleaf.leafpile:concurrentutil")
     implementation("ca.spottedleaf.leafpile:converter")
