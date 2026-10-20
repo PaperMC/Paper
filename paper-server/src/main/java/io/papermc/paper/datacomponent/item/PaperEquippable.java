@@ -9,7 +9,6 @@ import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -38,8 +37,8 @@ public record PaperEquippable(
     }
 
     @Override
-    public Key equipSound() {
-        return PaperAdventure.asAdventure(this.impl.equipSound().value().location());
+    public @Nullable Key equipSound() {
+        return this.impl.equipSound().map(sound -> PaperAdventure.asAdventure(sound.value().location())).orElse(null);
     }
 
     @Override
@@ -89,8 +88,8 @@ public record PaperEquippable(
     }
 
     @Override
-    public Key shearSound() {
-        return PaperAdventure.asAdventure(this.impl.shearingSound().value().location());
+    public @Nullable Key shearSound() {
+        return this.impl.shearingSound().map(sound -> PaperAdventure.asAdventure(sound.value().location())).orElse(null);
     }
 
     @Override
@@ -112,7 +111,7 @@ public record PaperEquippable(
     static final class BuilderImpl implements Builder {
 
         private final net.minecraft.world.entity.EquipmentSlot equipmentSlot;
-        private Holder<SoundEvent> equipSound = SoundEvents.ARMOR_EQUIP_GENERIC;
+        private Optional<Holder<SoundEvent>> equipSound = Optional.of(SoundEvents.ARMOR_EQUIP_GENERIC);
         private Optional<ResourceKey<EquipmentAsset>> assetId = Optional.empty();
         private Optional<Identifier> cameraOverlay = Optional.empty();
         private Optional<HolderSet<net.minecraft.world.entity.EntityType<?>>> allowedEntities = Optional.empty();
@@ -121,15 +120,15 @@ public record PaperEquippable(
         private boolean damageOnHurt = true;
         private boolean equipOnInteract;
         private boolean canBeSheared = false;
-        private Holder<SoundEvent> shearSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEARS_SNIP);
+        private Optional<Holder<SoundEvent>> shearSound = Optional.of(SoundEvents.SHEARS_SNIP);
 
         BuilderImpl(final EquipmentSlot equipmentSlot) {
             this.equipmentSlot = CraftEquipmentSlot.getNMS(equipmentSlot);
         }
 
         @Override
-        public Builder equipSound(final Key sound) {
-            this.equipSound = PaperAdventure.resolveSound(sound);
+        public Builder equipSound(final @Nullable Key sound) {
+            this.equipSound = Optional.ofNullable(sound).map(PaperAdventure::resolveSound);
             return this;
         }
 
@@ -187,8 +186,8 @@ public record PaperEquippable(
         }
 
         @Override
-        public Builder shearSound(final Key shearSound) {
-            this.shearSound = PaperAdventure.resolveSound(shearSound);
+        public Builder shearSound(final @Nullable Key shearSound) {
+            this.shearSound = Optional.ofNullable(shearSound).map(PaperAdventure::resolveSound);
             return this;
         }
 

@@ -18,7 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -154,12 +153,7 @@ public class DummyLevelAccessor implements WorldGenLevel {
     }
 
     @Override
-    public BiomeManager getBiomeManager() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ) {
+    public Holder<Biome> getUncachedBiome(int x, int y, int z) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

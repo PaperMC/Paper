@@ -4,13 +4,14 @@
  import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
+-public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
 +
- public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
++public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener, net.minecraft.network.PacketProcessor.Handler { // CraftBukkit
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
      private static final Logger LOGGER = LogUtils.getLogger();
 +    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("User Authenticator #", 0).uncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).factory()); // Paper - Virtual authenticator threads
@@ -88,7 +89,7 @@
 +    public void disconnectAsync(Component reason) {
 +        try {
 +            LOGGER.info("Disconnecting {}: {}", this.getUserName(), reason.getString());
-+            this.connection.send(new ClientboundLoginDisconnectPacket(reason), PacketSendListener.thenRun(() -> this.connection.disconnect(reason)));
++            this.connection.send(new ClientboundLoginDisconnectPacket(reason), net.minecraft.network.PacketSendListener.thenRun(() -> this.connection.disconnect(reason)));
 +            this.connection.handleConnectionDisconnectOnNextTick = true;
 +        } catch (Exception var3) {
 +            LOGGER.error("Error whilst disconnecting player", (Throwable)var3);
@@ -360,6 +361,21 @@
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie cookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.resolvedUserProfile), this.transferred);
+@@ -294,6 +_,14 @@
+         this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public void onPacketError(final net.minecraft.network.protocol.Packet<?> packet, final Exception e) {
++        LOGGER.error("Failed to handle packet {}, suppressing error", packet, e);
++        this.disconnect(Connection.PACKET_HANDLER_ERROR_DISCONNECT_REASON);
++    }
++    // CraftBukkit end
++
+     @Override
+     public void fillListenerSpecificCrashDetails(final CrashReport report, final CrashReportCategory connectionDetails) {
+         connectionDetails.setDetail("Login phase", () -> this.state.toString());
 @@ -301,8 +_,31 @@
  
      @Override

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.resources.ResourceKey;
@@ -927,17 +928,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(itemStack);
         Consumable consumable = nms.get(DataComponents.CONSUMABLE);
-        SoundEvent soundeffect = SoundEvents.GENERIC_DRINK.value();
+        Holder<SoundEvent> sound = SoundEvents.GENERIC_DRINK;
 
         if (consumable != null) {
-            if (this.getHandle() instanceof Consumable.OverrideConsumeSound consumable_b) {
-                soundeffect = consumable_b.getConsumeSound(nms);
-            } else {
-                soundeffect = consumable.sound().value();
-            }
+            sound = this.getHandle().getConsumeSoundOverride(nms).or(consumable::sound).orElse(sound);
         }
 
-        return CraftSound.minecraftToBukkit(soundeffect);
+        return CraftSound.minecraftHolderToBukkit(sound);
     }
 
     @Override

@@ -5,9 +5,9 @@ import com.mojang.serialization.MapCodec;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
-import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.NoiseBiomeResolver;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.WorldInfo;
@@ -41,7 +41,7 @@ public class CustomWorldChunkManager extends BiomeSource {
     }
 
     @Override
-    public BiomeResolver createResolver(final Climate.Sampler sampler) {
+    public NoiseBiomeResolver createResolver(final Climate.Sampler sampler) {
         return (quartX, quartY, quartZ) -> {
             Holder<net.minecraft.world.level.biome.Biome> biome = CraftBiome.bukkitToMinecraftHolder(
                 this.biomeProvider.getBiome(this.worldInfo, QuartPos.toBlock(quartX), QuartPos.toBlock(quartY), QuartPos.toBlock(quartZ), CraftBiomeParameterPoint.createBiomeParameterPoint(sampler, sampler.sample(quartX, quartY, quartZ)))

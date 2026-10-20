@@ -39,10 +39,10 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     /**
      * Gets the equip sound key.
      *
-     * @return the equip sound key
+     * @return the equip sound key, or {@code null} if none
      */
     @Contract(pure = true)
-    Key equipSound();
+    @Nullable Key equipSound();
 
     /**
      * Gets the asset id if present.
@@ -112,10 +112,10 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     /**
      * Returns the sound that is played when shearing this equipment off an entity.
      *
-     * @return shear sound
+     * @return shear sound, or {@code null} if none
      */
     @Contract(pure = true)
-    Key shearSound();
+    @Nullable Key shearSound();
 
     /**
      * Builder for {@link Equippable}.
@@ -126,11 +126,11 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
         /**
          * Sets the equip sound key for this item.
          *
-         * @param sound the equip sound key
+         * @param sound the equip sound key, or {@code null} for no sound
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder equipSound(Key sound);
+        Builder equipSound(@Nullable Key sound);
 
         /**
          * Sets the asset id for this item.
@@ -207,10 +207,10 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
         /**
          * Sets the sound that is played when shearing this equipment off an entity.
          *
-         * @param shearSound the shear sound key
+         * @param shearSound the shear sound key, or {@code null} for no sound
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder shearSound(Key shearSound);
+        Builder shearSound(@Nullable Key shearSound);
     }
 }

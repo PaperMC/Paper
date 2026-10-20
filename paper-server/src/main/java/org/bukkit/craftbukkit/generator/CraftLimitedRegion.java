@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.QuartPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
@@ -189,7 +188,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome) {
         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         ChunkAccess chunk = this.getHandle().getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z), ChunkStatus.EMPTY);
-        chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), biome);
+        chunk.setBiome(x, y, z, biome);
     }
 
     @Override

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.generator;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.QuartPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -62,9 +61,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(
-            QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z))
-        );
+        return CraftBiome.minecraftHolderToBukkit(this.getHandle().getBiome(x, y, z));
     }
 
     @Override

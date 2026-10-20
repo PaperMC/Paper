@@ -41,7 +41,7 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
 
     @Override
     public void transfer(final String host, final int port) {
-        this.packetListener.send(new ClientboundTransferPacket(host, port));
+        this.packetListener.send(new ClientboundTransferPacket(host, port, Map.of()));
     }
 
     @Override

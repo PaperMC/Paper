@@ -10,8 +10,6 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -26,7 +24,6 @@ import net.minecraft.server.packs.repository.PackDetector;
 import net.minecraft.util.FileSystemUtil;
 import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.level.validation.DirectoryValidator;
-import net.minecraft.world.level.validation.ForbiddenSymlinkInfo;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -98,12 +95,14 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
     @Override
     public @Nullable DiscoveredDatapack discoverPack(final PluginMeta pluginMeta, final Path path, final String id, final Consumer<Configurer> configurer) throws IOException {
         Preconditions.checkState(this.owner != null, "Discovering packs is not supported outside of lifecycle events");
-        final List<ForbiddenSymlinkInfo> badLinks = new ArrayList<>();
-        final Pack.ResourcesSupplier resourcesSupplier = this.detector.detectPackResources(path, badLinks);
-        if (!badLinks.isEmpty()) {
-            LOGGER.warn("Ignoring potential pack entry: {}", ContentValidationException.getMessage(path, badLinks));
+        final Pack.ResourcesSupplier resourcesSupplier;
+        try {
+            resourcesSupplier = this.detector.detectPackResources(path);
+        } catch (final ContentValidationException e) {
+            LOGGER.warn("Ignoring potential pack entry: {}", e.getMessage());
             return null;
-        } else if (resourcesSupplier != null) {
+        }
+        if (resourcesSupplier != null) {
             final String packId = pluginMeta.getName() + "/" + id;
             final ConfigurerImpl configurerImpl = new ConfigurerImpl(Component.text(packId));
             configurer.accept(configurerImpl);

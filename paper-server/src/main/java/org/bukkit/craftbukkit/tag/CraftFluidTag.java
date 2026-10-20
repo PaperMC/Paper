@@ -16,7 +16,7 @@ public class CraftFluidTag extends CraftTag<net.minecraft.world.level.material.F
 
     @Override
     public boolean isTagged(Fluid fluid) {
-        return CraftFluid.bukkitToMinecraft(fluid).is(this.tag);
+        return CraftFluid.bukkitToMinecraft(fluid).builtInRegistryHolder().is(this.tag);
     }
 
     @Override

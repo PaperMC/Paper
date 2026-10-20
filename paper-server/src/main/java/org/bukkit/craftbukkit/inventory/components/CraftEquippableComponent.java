@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -77,7 +76,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
         }
 
         this.handle = new Equippable(slot,
-            equipSound != null ? CraftSound.bukkitToMinecraftHolder(equipSound) : SoundEvents.ARMOR_EQUIP_GENERIC,
+            Optional.of(equipSound != null ? CraftSound.bukkitToMinecraftHolder(equipSound) : SoundEvents.ARMOR_EQUIP_GENERIC),
             Optional.ofNullable(model).map(Identifier::parse).map((k) -> ResourceKey.create(EquipmentAssets.ROOT_ID, k)),
             Optional.ofNullable(cameraOverlay).map(Identifier::parse),
             Optional.ofNullable(allowedEntities),
@@ -86,7 +85,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
             (damageOnHurt != null) ? damageOnHurt : true,
             (equipOnInteract != null) ? equipOnInteract : false,
             (canBeSheared != null) ? canBeSheared : false,
-            shearingSound != null ? CraftSound.bukkitToMinecraftHolder(shearingSound) : BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEARS_SNIP)
+            Optional.of(shearingSound != null ? CraftSound.bukkitToMinecraftHolder(shearingSound) : SoundEvents.SHEARS_SNIP)
         );
     }
 
@@ -94,7 +93,10 @@ public final class CraftEquippableComponent implements EquippableComponent {
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("slot", this.getSlot().name());
-        result.put("equip-sound", Registry.SOUND_EVENT.getKeyOrThrow(this.getEquipSound()).toString());
+        Sound equipSound = this.getEquipSound();
+        if (equipSound != null) {
+            result.put("equip-sound", Registry.SOUND_EVENT.getKeyOrThrow(equipSound).toString());
+        }
 
         NamespacedKey model = this.getModel();
         if (model != null) {
@@ -137,12 +139,12 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public Sound getEquipSound() {
-        return CraftSound.minecraftHolderToBukkit(this.handle.equipSound());
+        return this.handle.equipSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override
     public void setEquipSound(Sound sound) {
-        this.handle = new Equippable(this.handle.slot(), (sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : SoundEvents.ARMOR_EQUIP_GENERIC, this.handle.assetId(), this.handle.cameraOverlay(), this.handle.allowedEntities(), this.handle.dispensable(), this.handle.swappable(), this.handle.damageOnHurt(), this.handle.equipOnInteract(), this.handle.canBeSheared(), this.handle.shearingSound());
+        this.handle = new Equippable(this.handle.slot(), Optional.of((sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : SoundEvents.ARMOR_EQUIP_GENERIC), this.handle.assetId(), this.handle.cameraOverlay(), this.handle.allowedEntities(), this.handle.dispensable(), this.handle.swappable(), this.handle.damageOnHurt(), this.handle.equipOnInteract(), this.handle.canBeSheared(), this.handle.shearingSound());
     }
 
     @Override
@@ -248,12 +250,12 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public Sound getShearingSound() {
-        return CraftSound.minecraftHolderToBukkit(this.handle.shearingSound());
+        return this.handle.shearingSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override
     public void setShearingSound(Sound sound) {
-        this.handle = new Equippable(this.handle.slot(), this.handle.equipSound(), this.handle.assetId(), this.handle.cameraOverlay(), this.handle.allowedEntities(), this.handle.dispensable(), this.handle.swappable(), this.handle.damageOnHurt(), this.handle.equipOnInteract(), this.handle.canBeSheared(), (sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEARS_SNIP));
+        this.handle = new Equippable(this.handle.slot(), this.handle.equipSound(), this.handle.assetId(), this.handle.cameraOverlay(), this.handle.allowedEntities(), this.handle.dispensable(), this.handle.swappable(), this.handle.damageOnHurt(), this.handle.equipOnInteract(), this.handle.canBeSheared(), Optional.of((sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : SoundEvents.SHEARS_SNIP));
     }
 
     @Override

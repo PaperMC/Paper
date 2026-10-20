@@ -182,16 +182,16 @@ public interface SulfurCubeArchetypeRegistryEntry {
 
         // todo The sounds should take a RegistryHolder but need more thoughts on the create method
         /**
-         * {@return the sound played once the sulfur cube is knocked}
+         * {@return the sound played once the sulfur cube is knocked, or {@code null} if none}
          */
         @ApiStatus.Experimental
-        TypedKey<Sound> hitSound();
+        @Nullable TypedKey<Sound> hitSound();
 
         /**
-         * {@return the sound played once the sulfur cube is pushed}
+         * {@return the sound played once the sulfur cube is pushed, or {@code null} if none}
          */
         @ApiStatus.Experimental
-        TypedKey<Sound> pushSound();
+        @Nullable TypedKey<Sound> pushSound();
 
         /**
          * {@return the smallest impulse required to play the push sound}
@@ -214,8 +214,8 @@ public interface SulfurCubeArchetypeRegistryEntry {
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
         @ApiStatus.Experimental
-        static SoundSettings of(final TypedKey<Sound> hitSound, final TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
-            record Impl(TypedKey<Sound> hitSound, TypedKey<Sound> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
+        static SoundSettings of(final @Nullable TypedKey<Sound> hitSound, final @Nullable TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
+            record Impl(@Nullable TypedKey<Sound> hitSound, @Nullable TypedKey<Sound> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
             }
 
             return new Impl(hitSound, pushSound, pushSoundImpulseThreshold, pushSoundCooldown);

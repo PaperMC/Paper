@@ -238,7 +238,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         ).apply(instance, RespawnData::new));
 
         public RespawnData normalized() {
-            return new RespawnData(this.pos.immutable(), Mth.wrapDegrees(this.yaw), Mth.clamp(this.pitch, -90.0F, 90.0F));
+            return new RespawnData(this.pos.immutable(), Mth.wrapDegrees(this.yaw), Math.clamp(this.pitch, -90.0F, 90.0F));
         }
 
         public LevelData.RespawnData toVanilla(final ResourceKey<Level> dimension) {

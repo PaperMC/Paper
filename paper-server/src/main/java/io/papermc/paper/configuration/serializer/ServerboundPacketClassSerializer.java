@@ -73,7 +73,7 @@ public final class ServerboundPacketClassSerializer extends ScalarSerializer<Cla
             }
             ID_TO_INFO = idBuilder.buildOrThrow();
             CLASS_TO_INFO = classBuilder.buildOrThrow();
-            Preconditions.checkState(ID_TO_INFO.size() == 78, "Packet class map must have 78 entries");
+            Preconditions.checkState(ID_TO_INFO.size() == 79, "Packet class map must have 79 entries");
         } catch (final ReflectiveOperationException e) {
             throw new RuntimeException("Could not create packet class map", e);
         }

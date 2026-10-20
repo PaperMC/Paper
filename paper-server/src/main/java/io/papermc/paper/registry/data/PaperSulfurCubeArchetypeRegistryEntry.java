@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -18,6 +19,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.util.valueproviders.ConstantFloat;
 import net.minecraft.world.entity.SulfurCubeArchetype;
 import net.minecraft.world.item.Item;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.SulfurCube;
@@ -113,8 +115,8 @@ public class PaperSulfurCubeArchetypeRegistryEntry implements SulfurCubeArchetyp
     public SoundSettings soundSettings() {
         asConfigured(this.soundSettings, "soundSettings");
         return SoundSettings.of(
-            PaperRegistries.fromNms(this.soundSettings.hitSound().unwrapKey().orElseThrow()),
-            PaperRegistries.fromNms(this.soundSettings.pushSound().unwrapKey().orElseThrow()),
+            this.soundSettings.hitSound().<TypedKey<Sound>>map(sound -> PaperRegistries.fromNms(sound.unwrapKey().orElseThrow())).orElse(null),
+            this.soundSettings.pushSound().<TypedKey<Sound>>map(sound -> PaperRegistries.fromNms(sound.unwrapKey().orElseThrow())).orElse(null),
             this.soundSettings.pushSoundImpulseThreshold(),
             this.soundSettings.pushSoundCooldown()
         );
@@ -181,8 +183,8 @@ public class PaperSulfurCubeArchetypeRegistryEntry implements SulfurCubeArchetyp
         @Override
         public Builder soundSettings(final SoundSettings settings) {
             this.soundSettings = new SulfurCubeArchetype.SoundSettings(
-                this.conversions.getReferenceHolder(PaperRegistries.toNms(settings.hitSound())),
-                this.conversions.getReferenceHolder(PaperRegistries.toNms(settings.pushSound())),
+                Optional.ofNullable(settings.hitSound()).map(sound -> this.conversions.getReferenceHolder(PaperRegistries.toNms(sound))),
+                Optional.ofNullable(settings.pushSound()).map(sound -> this.conversions.getReferenceHolder(PaperRegistries.toNms(sound))),
                 settings.pushSoundImpulseThreshold(),
                 settings.pushSoundCooldown()
             );

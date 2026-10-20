@@ -35,9 +35,9 @@ public interface EquippableComponent extends ConfigurationSerializable {
     /**
      * Gets the sound to play when the item is equipped.
      *
-     * @return the sound
+     * @return the sound, or null if none
      */
-    @NotNull // Paper
+    @Nullable
     Sound getEquipSound();
 
     /**

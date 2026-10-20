@@ -7,9 +7,8 @@ import java.util.UUID;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlagSet;
-import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.biome.NoiseBiomeResolver;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
@@ -105,14 +104,13 @@ public class CraftWorldInfo implements WorldInfo {
                 this.registryAccess.lookupOrThrow(Registries.NOISE),
                 this.getSeed(),
                 false,
-                Blocks.STONE.defaultBlockState(),
                 63,
                 NoiseRouterData.none()
             );
         }
 
         final BiomeSource biomeSource = this.vanillaChunkGenerator.getBiomeSource();
-        final BiomeResolver resolver = biomeSource.createUncachedResolver(randomState);
+        final NoiseBiomeResolver resolver = biomeSource.createUncachedResolver(randomState);
 
         final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)

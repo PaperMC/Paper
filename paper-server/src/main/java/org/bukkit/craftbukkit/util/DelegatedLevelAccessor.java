@@ -31,7 +31,6 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -256,11 +255,6 @@ public abstract class DelegatedLevelAccessor implements WorldGenLevel {
     }
 
     @Override
-    public BiomeManager getBiomeManager() {
-        return this.delegate.getBiomeManager();
-    }
-
-    @Override
     public Holder<Biome> getBiome(BlockPos pos) {
         return this.delegate.getBiome(pos);
     }
@@ -272,13 +266,13 @@ public abstract class DelegatedLevelAccessor implements WorldGenLevel {
 
 
     @Override
-    public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ) {
-        return this.delegate.getNoiseBiome(quartX, quartY, quartZ);
+    public Holder<Biome> getBiome(int x, int y, int z) {
+        return this.delegate.getBiome(x, y, z);
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ) {
-        return this.delegate.getUncachedNoiseBiome(quartX, quartY, quartZ);
+    public Holder<Biome> getUncachedBiome(int x, int y, int z) {
+        return this.delegate.getUncachedBiome(x, y, z);
     }
 
     @Override

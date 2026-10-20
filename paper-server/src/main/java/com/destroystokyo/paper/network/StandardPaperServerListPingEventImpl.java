@@ -96,7 +96,7 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         } else {
             favicon = Optional.empty();
         }
-        final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
+        final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile(), Optional.ofNullable(server.statusContactDetails()));
 
         // Send response
         connection.send(new ClientboundStatusResponsePacket(ping));

@@ -2,7 +2,6 @@
 package io.papermc.paper.block.fluid.type;
 
 import io.papermc.paper.block.fluid.PaperFluidData;
-import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
 
 public class PaperFallingFluidData extends PaperFluidData implements FallingFluidData {
@@ -13,6 +12,6 @@ public class PaperFallingFluidData extends PaperFluidData implements FallingFlui
 
     @Override
     public boolean isFalling() {
-        return this.getState().getValue(FlowingFluid.FALLING);
+        return this.getState().isFalling();
     }
 }

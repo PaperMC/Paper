@@ -267,7 +267,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
             biomeSource = customBiomeSource.vanillaBiomeSource;
         }
-        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createUncachedResolver(serverCache.randomState());
+        final net.minecraft.world.level.biome.NoiseBiomeResolver resolver = biomeSource.createUncachedResolver(serverCache.randomState());
 
         final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
@@ -295,7 +295,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             position.blockY(),
             position.blockZ(),
             CraftStructure.bukkitToMinecraft(structure)
-        ).isValid();
+        ) != null;
     }
     // Paper end
 
@@ -934,7 +934,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (this.world.hasChunkAt(pos)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkAt(pos);
 
-            chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), biome);
+            chunk.setBiome(x, y, z, biome);
             chunk.markUnsaved(); // SPIGOT-2890
         }
     }
@@ -942,12 +942,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public double getTemperature(int x, int y, int z) {
         BlockPos pos = new BlockPos(x, y, z);
-        return this.world.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z)).value().getTemperature(pos, this.world.getSeaLevel());
+        return this.world.getBiome(x, y, z).value().getTemperature(pos, this.world.getSeaLevel());
     }
 
     @Override
     public double getHumidity(int x, int y, int z) {
-        return this.world.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z)).value().climateSettings.downfall();
+        return this.world.getBiome(x, y, z).value().climateSettings.downfall();
     }
 
     @Override

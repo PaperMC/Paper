@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffect;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -14,6 +15,7 @@ import net.minecraft.sounds.SoundEvents;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
@@ -39,8 +41,8 @@ public record PaperConsumable(
     }
 
     @Override
-    public Key sound() {
-        return PaperAdventure.asAdventure(this.impl.sound().value().location());
+    public @Nullable Key sound() {
+        return this.impl.sound().map(sound -> PaperAdventure.asAdventure(sound.value().location())).orElse(null);
     }
 
     @Override
@@ -69,7 +71,7 @@ public record PaperConsumable(
 
         private float consumeSeconds = net.minecraft.world.item.component.Consumable.DEFAULT_CONSUME_SECONDS;
         private net.minecraft.world.item.ItemUseAnimation consumeAnimation = net.minecraft.world.item.ItemUseAnimation.EAT;
-        private Holder<SoundEvent> eatSound = SoundEvents.GENERIC_EAT;
+        private Optional<Holder<SoundEvent>> eatSound = Optional.of(SoundEvents.GENERIC_EAT);
         private boolean hasConsumeParticles = true;
         private final List<net.minecraft.world.item.consume_effects.ConsumeEffect> effects = new ObjectArrayList<>();
 
@@ -86,8 +88,8 @@ public record PaperConsumable(
         }
 
         @Override
-        public Builder sound(final Key sound) {
-            this.eatSound = PaperAdventure.resolveSound(sound);
+        public Builder sound(final @Nullable Key sound) {
+            this.eatSound = Optional.ofNullable(sound).map(PaperAdventure::resolveSound);
             return this;
         }
 

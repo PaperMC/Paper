@@ -98,7 +98,6 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.PatrolSpawner;
@@ -1242,7 +1241,6 @@ public final class CraftServer implements Server {
             net.minecraft.server.Main.forceUpgrade(this.console.storageSource, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, contextRegistryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
-        long biomeZoomSeed = BiomeManager.obfuscateSeed(genSettingsFinal.options().seed());
         LevelStem customStem = genSettingsFinal.dimensions().get(actualDimension).orElse(null);
         if (customStem == null) {
             customStem = levelStemRegistry.getValue(actualDimension);
@@ -1270,7 +1268,6 @@ public final class CraftServer implements Server {
             dimensionKey,
             customStem,
             primaryLevelData.isDebugWorld(),
-            biomeZoomSeed,
             creator.environment() == Environment.NORMAL ? list : ImmutableList.of(),
             true,
             actualDimension,
