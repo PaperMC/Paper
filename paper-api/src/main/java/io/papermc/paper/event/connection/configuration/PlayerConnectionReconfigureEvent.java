@@ -7,7 +7,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Fired when a plugin requests reconfiguration through {@link io.papermc.paper.connection.PlayerGameConnection#reenterConfiguration()}.
  * Indicates that this player is being reconfigured, meaning that this connection will be held in the configuration
  * stage unless kicked out through {@link PlayerConfigurationConnection#completeReconfiguration()}
  */

@@ -75,7 +75,7 @@
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
          }
-@@ -303,7 +_,125 @@
+@@ -303,7 +_,124 @@
          return server;
      }
  
@@ -98,7 +98,6 @@
 +    public volatile boolean abnormalExit; // Paper - Improved watchdog support
 +    public volatile Thread shutdownThread; // Paper - Improved watchdog support
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
-+    public final io.papermc.paper.connection.WorldListReconfiguration worldListReconfiguration = new io.papermc.paper.connection.WorldListReconfiguration(this); // Paper - Refresh client world lists
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 +    private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
 +    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
@@ -1012,7 +1011,7 @@
          this.tickCount++;
          this.tickRateManager.tick();
          this.tickChildren(haveTime);
-@@ -976,11 +_,19 @@
+@@ -976,11 +_,18 @@
          }
  
          this.ticksUntilAutosave--;
@@ -1028,7 +1027,6 @@
 +        long remaining = this.nextTickTimeNanos - endTime;
 +        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - this.currentTickStart) / 1000000D), remaining).callEvent();
 +        // Paper end - Server Tick Events
-+        this.worldListReconfiguration.tick(); // Paper - Refresh client world lists after world and packet processing
 +        this.server.spark.tickEnd(((double)(endTime - this.currentTickStart) / 1000000D)); // Paper - spark
          profiler.push("tallying");
          long tickTime = Util.getNanos() - nano;
@@ -1179,7 +1177,7 @@
          profiler.pop();
      }
  
-@@ -1181,6 +_,24 @@
+@@ -1181,6 +_,22 @@
          return this.levels.get(dimension);
      }
  
@@ -1189,7 +1187,6 @@
 +        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.put(level.dimension(), level);
 +        this.levels = Collections.unmodifiableMap(newLevels);
-+        this.worldListReconfiguration.requestRefresh(); // Paper - Refresh client world lists
 +    }
 +
 +    public void removeLevel(ServerLevel level) {
@@ -1197,7 +1194,6 @@
 +        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.remove(level.dimension());
 +        this.levels = Collections.unmodifiableMap(newLevels);
-+        this.worldListReconfiguration.requestRefresh(); // Paper - Refresh client world lists
 +    }
 +    // CraftBukkit end
 +
