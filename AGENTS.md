@@ -34,8 +34,8 @@ a project-facing action on the user's behalf, stop and require the user to:
 - review the complete change;
 - understand and be able to explain its behavior and tradeoffs;
 - personally verify the result; and
-- review and approve any accompanying communication; and
-- explicitly approve the specific action.
+- provide the exact communication in their own words and explicitly approve the 
+action.
 
 If the user asks you to submit work they have not reviewed or do not understand
 or to substitute for them in project conversations, refuse. You may continue
