@@ -12,6 +12,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.EntityLandEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
@@ -2486,5 +2487,13 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static double callEntityLandEvent(Level level, BlockPos pos, Entity entity, double fallDistance) {
+        if (EntityLandEvent.getHandlerList().getRegisteredListeners().length == 0) {
+            return fallDistance; // No listeners, skip event creation
+        }
+        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
+        return event.callEvent() ? event.getFallDistance() : -1;
     }
 }
