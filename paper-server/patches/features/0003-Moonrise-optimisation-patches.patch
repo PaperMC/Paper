@@ -37191,7 +37191,7 @@ index fb93fa9c80ca93352532ba7c1f81f5b7d7bdc058..de51b7290f11c1b2cb5eacb700b1803a
      private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
      private static final int REGION_CACHE_SIZE = 1024;
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18f2e276c1 100644
+index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..1077ff25ca0da7fb6f89dd2e16174f00b4986283 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.level.ChunkPos;
@@ -37609,7 +37609,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
              for (int i = 0; i < 1024; i++) {
                  int offset = this.offsets.get(i);
                  if (offset != 0) {
-@@ -93,18 +485,61 @@ public class RegionFile implements AutoCloseable {
+@@ -93,18 +485,69 @@ public class RegionFile implements AutoCloseable {
                      // Spigot end
                      if (sectorNumber < 2) {
                          LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
@@ -37623,8 +37623,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
                          LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", path, i, sectorNumber);
 -                        this.offsets.put(i, 0);
 +                        //this.offsets.put(i, 0); // Paper - rewrite chunk system; keep the entry in the header for the change summary
-                     } else {
--                        this.usedSectors.force(sectorNumber, numSectors);
++                    } else {
 +                        //this.usedSectors.force(sectorNumber, numSectors); // Paper - rewrite chunk system; allocated below, so that overlapping allocations can be detected
 +                    }
 +                    // Paper start - rewrite chunk system
@@ -37635,9 +37634,10 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
 +
 +                    if (!invalid) {
 +                        LOGGER.error("Overlapping allocation by local chunk ({},{}) in regionfile {}", i & 31, i >>> 5, this.path.toAbsolutePath());
-+                    } else {
+                     } else {
+-                        this.usedSectors.force(sectorNumber, numSectors);
 +                        LOGGER.error("Invalid allocation by local chunk ({},{}) in regionfile {}: sector {}, length {} sectors, file size {} bytes", i & 31, i >>> 5, this.path.toAbsolutePath(), sectorNumber, numSectors, size);
-+                    }
+                     }
 +
 +                    if (canRecalc) {
 +                        needsRecalc = true;
@@ -37667,15 +37667,23 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
 +                        this.file.close();
 +                    } catch (final IOException suppressed) {
 +                        ex.addSuppressed(suppressed);
-                     }
++                    }
 +                    throw ex;
++                }
++            } else if (hasBackedUp) {
++                // persist removed entries, otherwise every open of the regionfile would detect and back them up again
++                try {
++                    this.writeHeader();
++                    this.file.force(true);
++                } catch (final IOException ex) {
++                    LOGGER.error("Failed to write new header to disk for regionfile {}", this.path.toAbsolutePath(), ex);
                  }
              }
 +            // Paper end - rewrite chunk system
          }
      }
  
-@@ -117,7 +552,20 @@ public class RegionFile implements AutoCloseable {
+@@ -117,7 +560,20 @@ public class RegionFile implements AutoCloseable {
          return this.externalFileDir.resolve(externalFileName);
      }
  
@@ -37696,7 +37704,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          int offset = this.getOffset(pos);
          if (offset == 0) {
              return null;
-@@ -134,36 +582,48 @@ public class RegionFile implements AutoCloseable {
+@@ -134,36 +590,48 @@ public class RegionFile implements AutoCloseable {
          // Spigot end
          int sectorsLength = numSectors * 4096;
          ByteBuffer buffer = ByteBuffer.allocate(sectorsLength);
@@ -37757,7 +37765,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          }
      }
  
-@@ -200,6 +660,15 @@ public class RegionFile implements AutoCloseable {
+@@ -200,6 +668,15 @@ public class RegionFile implements AutoCloseable {
      }
  
      private @Nullable DataInputStream createExternalChunkInputStream(final ChunkPos pos, final byte versionId) throws IOException {
@@ -37773,7 +37781,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          Path externalFile = this.getExternalChunkPath(pos);
          if (!Files.isRegularFile(externalFile)) {
              LOGGER.error("External chunk path {} is not file", externalFile);
-@@ -229,7 +698,7 @@ public class RegionFile implements AutoCloseable {
+@@ -229,7 +706,7 @@ public class RegionFile implements AutoCloseable {
          return (size + 4096 - 1) / 4096;
      }
  
@@ -37782,7 +37790,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          int offset = this.getOffset(pos);
          if (offset == 0) {
              return false;
-@@ -240,7 +709,7 @@ public class RegionFile implements AutoCloseable {
+@@ -240,7 +717,7 @@ public class RegionFile implements AutoCloseable {
          ByteBuffer streamHeader = ByteBuffer.allocate(5);
  
          try {
@@ -37791,7 +37799,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
              streamHeader.flip();
              if (streamHeader.remaining() != 5) {
                  return false;
-@@ -286,7 +755,7 @@ public class RegionFile implements AutoCloseable {
+@@ -286,7 +763,7 @@ public class RegionFile implements AutoCloseable {
          this.file.force(true);
      }
  
@@ -37800,7 +37808,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          int offsetIndex = getOffsetIndex(pos);
          int offset = this.offsets.get(offsetIndex);
          if (offset != 0) {
-@@ -363,7 +832,7 @@ public class RegionFile implements AutoCloseable {
+@@ -363,7 +840,7 @@ public class RegionFile implements AutoCloseable {
          return this.offsets.get(getOffsetIndex(pos));
      }
  
@@ -37809,7 +37817,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          return this.getOffset(pos) != 0;
      }
  
-@@ -372,7 +841,7 @@ public class RegionFile implements AutoCloseable {
+@@ -372,7 +849,7 @@ public class RegionFile implements AutoCloseable {
      }
  
      @Override
@@ -37818,7 +37826,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          try {
              this.padToFullSector();
          } finally {
-@@ -394,9 +863,28 @@ public class RegionFile implements AutoCloseable {
+@@ -394,9 +871,28 @@ public class RegionFile implements AutoCloseable {
          }
      }
  
@@ -37848,7 +37856,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..b6057c9896862d50e2cb2377558dbd18
          public ChunkBuffer(final ChunkPos pos) {
              super(8096);
              super.write(0);
-@@ -413,7 +901,7 @@ public class RegionFile implements AutoCloseable {
+@@ -413,7 +909,7 @@ public class RegionFile implements AutoCloseable {
              int streamLength = this.count - 5 + 1;
              JvmProfiler.INSTANCE.onRegionFileWrite(RegionFile.this.info, this.pos, RegionFile.this.version, streamLength);
              result.putInt(0, streamLength);
