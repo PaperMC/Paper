@@ -239,8 +239,14 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             case PALE_OAK_CREAKING:
                 gen = TreeFeatures.PALE_OAK_CREAKING;
                 break;
-            case POPLAR:
+            case RED_POPLAR:
+                gen = TreeFeatures.RED_POPLAR;
+                break;
+            case ORANGE_POPLAR:
                 gen = TreeFeatures.ORANGE_POPLAR;
+                break;
+            case YELLOW_POPLAR:
+                gen = TreeFeatures.YELLOW_POPLAR;
                 break;
             case TREE:
             default:
@@ -405,11 +411,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             function.accept((T) entity.getBukkitEntity());
         }
 
-        this.addEntityToWorld(entity, reason);
+        this.addEntityWithPassengers(entity, reason);
         return (T) entity.getBukkitEntity();
     }
-
-    public abstract void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
