@@ -1,8 +1,16 @@
 --- a/net/minecraft/core/dispenser/FlintAndSteelDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/FlintAndSteelDispenseItemBehavior.java
-@@ -27,13 +_,39 @@
+@@ -25,21 +_,50 @@
+         Direction facing = source.state().getValue(DispenserBlock.FACING);
+         BlockPos targetPos = source.pos().relative(facing);
          BlockState target = level.getBlockState(targetPos);
-         if (!tryIgniteExplosiveEntities(level, targetPos)) {
+-        if (!tryIgniteExplosiveEntities(level, targetPos)) {
++        // Paper start - Call BlockDispenseEvent
++        final @org.jspecify.annotations.Nullable ItemStack[] blockDispenseEventResult = new ItemStack[1];
++        if (!tryIgniteExplosiveEntities(level, targetPos, () ->
++            (blockDispenseEventResult[0] = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, targetPos, dispensed, this)) == null)
++        ) {
++        // Paper end - Call BlockDispenseEvent
              if (BaseFireBlock.canBePlacedAt(level, targetPos, facing)) {
 +                // Paper start - Call BlockDispenseEvent
 +                ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, targetPos, dispensed, this);
@@ -29,23 +37,39 @@
                  level.gameEvent(null, GameEvent.BLOCK_CHANGE, targetPos);
              } else if (target.getBlock() instanceof TntBlock) {
 -                if (TntBlock.prime(level, targetPos, null, dispensed)) {
-+                // Paper start - Call BlockDispenseEvent
-+                // TODO ideally in the prime supplier otherwise it's a fail
-+                ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, targetPos, dispensed, this);
-+                if (result != null) {
-+                    this.setSuccess(false);
-+                    return result;
-+                }
-+                // Paper end - Call BlockDispenseEvent
-+                if (TntBlock.prime(level, targetPos, null, dispensed, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, source.pos()))) { // CraftBukkit - TNTPrimeEvent
++                // Paper start - Call BlockDispenseEvent / TNTPrimeEvent
++                final java.util.function.BooleanSupplier tntPrimedEvents = () -> (
++                    blockDispenseEventResult[0] = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, targetPos, dispensed, this)) == null
++                    && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, targetPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, source.pos());
++                if (TntBlock.prime(level, targetPos, null, dispensed, tntPrimedEvents)) {
++                // Paper end - Call BlockDispenseEvent / TNTPrimeEvent
                      level.removeBlock(targetPos, false);
                  } else {
                      this.setSuccess(false);
-@@ -54,6 +_,7 @@
+                 }
+             }
+         }
++        if (blockDispenseEventResult[0] != null) return blockDispenseEventResult[0]; // Paper - Call BlockDispenseEvent - yield back possibly changed result stack from sulfur or tnt dispesne events
+ 
+         if (this.isSuccess()) {
+             dispensed.hurtAndBreak(1, level, null, item -> {});
+@@ -48,11 +_,18 @@
+         return dispensed;
+     }
+ 
+-    private static boolean tryIgniteExplosiveEntities(final ServerLevel level, final BlockPos pos) {
++    private static boolean tryIgniteExplosiveEntities(final ServerLevel level, final BlockPos pos, final java.util.function.BooleanSupplier eventSupplier) { // Paper - call BlockDispenseEvent
+         List<SulfurCube> entities = level.getEntitiesOfClass(SulfurCube.class, new AABB(pos), SulfurCube::canExplode);
+         if (entities.isEmpty()) {
              return false;
          }
++
++        // Paper start - call BlockDispenseEvent
++        // If the event was canceled, we return true and stop further event calls.
++        // Vanilla would only consider other flint and steel dispense behaviors if no sulfur cube was in the AABB
++        // that could explode, which was not the case.
++        if (!eventSupplier.getAsBoolean()) return true;
++        // Paper end - call BlockDispenseEvent
  
-+        // TODO - call dispense event
          entities.getFirst().primeTime(false);
          return true;
-     }
