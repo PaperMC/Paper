@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -92,6 +_,7 @@
+@@ -91,6 +_,7 @@
      List<CompoundTag> entities,
      List<CompoundTag> blockEntities,
      CompoundTag structureData
@@ -8,7 +8,7 @@
  ) {
      private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
      private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
-@@ -107,6 +_,24 @@
+@@ -106,6 +_,24 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -33,7 +33,7 @@
      public static SerializableChunkData parse(
          final LevelHeightAccessor levelHeight, final PalettedContainerFactory containerFactory, final CompoundTag chunkData
      ) {
-@@ -114,7 +_,15 @@
+@@ -113,7 +_,15 @@
              return null;
          }
  
@@ -50,7 +50,7 @@
          long lastUpdateTime = chunkData.getLongOr("LastUpdate", 0L);
          long inhabitedTime = chunkData.getLongOr("InhabitedTime", 0L);
          ChunkStatus status = chunkData.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -153,7 +_,7 @@
+@@ -151,7 +_,7 @@
          CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
          ListTag sectionTags = chunkData.getListOrEmpty("sections");
          List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
@@ -59,7 +59,7 @@
          Codec<PalettedContainer<BlockState>> blockStatesCodec = containerFactory.blockStatesContainerCodec();
  
          for (int i = 0; i < sectionTags.size(); i++) {
-@@ -170,7 +_,7 @@
+@@ -168,7 +_,7 @@
                                  .getOrThrow(SerializableChunkData.ChunkReadException::new)
                          )
                          .orElseGet(containerFactory::createForBlockStates);
@@ -68,7 +68,7 @@
                          .map(
                              container -> biomesCodec.parse(NbtOps.INSTANCE, container)
                                  .promotePartial(msg -> logErrors(chunkPos, y, msg))
-@@ -207,6 +_,7 @@
+@@ -204,6 +_,7 @@
              entities,
              blockEntities,
              structureData
@@ -76,7 +76,7 @@
          );
      }
  
-@@ -283,6 +_,12 @@
+@@ -280,6 +_,12 @@
              }
          }
  
@@ -87,9 +87,9 @@
 +        // CraftBukkit end
 +
          chunk.setLightCorrect(this.lightCorrect);
-         EnumSet<Heightmap.Types> toPrime = EnumSet.noneOf(Heightmap.Types.class);
+         Set<Heightmap.Types> toPrime = EnumSet.copyOf(chunk.getPersistedStatus().heightmapsAfter());
  
-@@ -388,6 +_,12 @@
+@@ -370,6 +_,12 @@
              .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
              .toArray(ShortList[]::new);
          CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
@@ -102,7 +102,7 @@
          return new SerializableChunkData(
              level.palettedContainerFactory(),
              pos,
-@@ -407,6 +_,7 @@
+@@ -388,6 +_,7 @@
              entities,
              blockEntities,
              structureData
@@ -110,7 +110,7 @@
          );
      }
  
-@@ -473,6 +_,11 @@
+@@ -451,6 +_,11 @@
          this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
          tag.put("Heightmaps", heightmapsTag);
          tag.put("structures", this.structureData);
@@ -122,7 +122,7 @@
          return tag;
      }
  
-@@ -556,6 +_,12 @@
+@@ -534,6 +_,12 @@
              } else {
                  StructureStart start = StructureStart.loadStaticStart(context, startsTag.getCompoundOrEmpty(key), seed);
                  if (start != null) {

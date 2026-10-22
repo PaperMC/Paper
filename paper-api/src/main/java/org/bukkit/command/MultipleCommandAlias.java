@@ -1,10 +1,16 @@
 package org.bukkit.command;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a command that delegates to one or more other commands
+ *
+ * @apiNote plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
+@ApiStatus.Obsolete(since = "26.3")
 public class MultipleCommandAlias extends Command {
     private Command[] commands;
 

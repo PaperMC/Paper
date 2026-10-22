@@ -6,6 +6,8 @@ import com.google.common.collect.HashBiMap;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Color;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -258,8 +260,10 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Returns the {@link PotionEffectTypeCategory category} of this effect type.
      *
      * @return the category
+     * @deprecated use {@link #getEffectCategory()}
      */
     @NotNull
+    @Deprecated(since = "26.3")
     public abstract PotionEffectTypeCategory getCategory();
 
     /**
@@ -370,7 +374,6 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
         return Registry.MOB_EFFECT.stream().toArray(PotionEffectType[]::new);
     }
 
-    // Paper start
     /**
      * Gets the effect attributes in an immutable map.
      *
@@ -396,17 +399,31 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
     public abstract @NotNull PotionEffectType.Category getEffectCategory();
 
     /**
-     * Category of {@link PotionEffectType}s
+     * Represents a category of {@link PotionEffectType} and its effect on an entity.
      */
     public enum Category {
 
-        BENEFICIAL(net.kyori.adventure.text.format.NamedTextColor.BLUE),
-        HARMFUL(net.kyori.adventure.text.format.NamedTextColor.RED),
-        NEUTRAL(net.kyori.adventure.text.format.NamedTextColor.BLUE);
+        /**
+         * Beneficial effects that positively impact an entity, such as Regeneration,
+         * Absorption, or Fire Resistance.
+         */
+        BENEFICIAL(NamedTextColor.BLUE),
 
-        private final net.kyori.adventure.text.format.TextColor color;
+        /**
+         * Harmful effects that negatively impact an entity, such as Blindness, Wither,
+         * or Levitation.
+         */
+        HARMFUL(NamedTextColor.RED),
 
-        Category(net.kyori.adventure.text.format.TextColor color) {
+        /**
+         * Neutral effects that have neither a positive nor negative effect on an
+         * entity, such as Glowing or Bad Omen.
+         */
+        NEUTRAL(NamedTextColor.BLUE);
+
+        private final TextColor color;
+
+        Category(TextColor color) {
             this.color = color;
         }
 
@@ -417,9 +434,8 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
          * @return the text color
          */
         @NotNull
-        public net.kyori.adventure.text.format.TextColor getColor() {
+        public TextColor getColor() {
             return color;
         }
     }
-    // Paper end
 }

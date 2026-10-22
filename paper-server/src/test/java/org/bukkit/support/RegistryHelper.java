@@ -74,9 +74,9 @@ public final class RegistryHelper {
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
 
-        List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
-        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES, Util.backgroundExecutor()).join();
-        layers = layers.replaceFrom(RegistryLayer.WORLDGEN, worldGenRegistries);
+        List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLD), pendingTags);
+        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLD_REGISTRIES, Util.backgroundExecutor()).join();
+        layers = layers.replaceFrom(RegistryLayer.WORLD, worldGenRegistries);
 
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
@@ -110,6 +110,7 @@ public final class RegistryHelper {
         );
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Keyed> Class<T> getFieldType(Class<T> apiClass, NamespacedKey key) {
         Class<T> fieldType = apiClass;
         // Some registries have extra Typed classes such as BlockType and ItemType.

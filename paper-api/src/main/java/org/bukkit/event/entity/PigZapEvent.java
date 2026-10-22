@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import com.destroystokyo.paper.event.entity.EntityZapEvent;
+import org.bukkit.Warning;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link EntityZapEvent}
  */
 @Deprecated(since = "26.2")
+@Warning(propagate = false)
 public class PigZapEvent extends EntityZapEvent {
 
     @ApiStatus.Internal

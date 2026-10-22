@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Wolf.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface WolfVariantRegistryEntry {
 
@@ -68,7 +67,6 @@ public interface WolfVariantRegistryEntry {
      *     <li>{@link #babyTameClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends WolfVariantRegistryEntry, RegistryBuilder<Wolf.Variant> {
 

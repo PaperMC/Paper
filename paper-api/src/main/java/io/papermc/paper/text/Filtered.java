@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> type of value
  */
-@ApiStatus.Experimental
 @NullMarked
 public interface Filtered<T> {
 
