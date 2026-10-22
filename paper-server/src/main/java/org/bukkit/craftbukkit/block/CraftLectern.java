@@ -11,8 +11,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftLectern extends CraftBlockEntityState<LecternBlockEntity> implements Lectern {
 
-    public CraftLectern(World world, LecternBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftLectern(World world, LecternBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftLectern(CraftLectern state, Location location) {
