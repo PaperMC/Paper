@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import io.papermc.paper.item.ItemStackTemplate;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -19,7 +20,13 @@ public non-sealed interface ItemDialogBody extends DialogBody {
      * @return the item stack
      */
     @Contract(pure = true)
-    ItemStack item();
+    @ApiStatus.Obsolete
+    default ItemStack item() {
+        return this.itemTemplate().getAsItemStack();
+    }
+
+    @Contract(pure = true)
+    ItemStackTemplate itemTemplate();
 
     /**
      * The description of the body, or null if not set.

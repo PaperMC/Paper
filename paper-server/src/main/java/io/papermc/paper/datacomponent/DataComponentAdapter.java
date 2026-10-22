@@ -37,6 +37,10 @@ public record DataComponentAdapter<NMS, API>(
         return nms;
     }
 
+    public NMS toVanillaUnchecked(final API value) {
+        return this.apiToVanilla.apply(value);
+    }
+
     public API fromVanilla(final NMS value) {
         return this.vanillaToApi.apply(value);
     }

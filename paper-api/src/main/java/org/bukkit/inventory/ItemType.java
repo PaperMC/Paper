@@ -4,6 +4,7 @@ import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentType;
 import java.util.Set;
 import java.util.function.Consumer;
+import io.papermc.paper.item.ItemStackTemplate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -3452,6 +3453,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the constructed item stack.
      */
     ItemStack createItemStack(int amount);
+
+    ItemStackTemplate createItemStackTemplate();
+
+    ItemStackTemplate createItemStackTemplate(int amount);
 
     /**
      * Returns true if this ItemType has a corresponding {@link BlockType}.
