@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.entry;
 
+import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.function.BiFunction;
@@ -10,7 +11,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.util.ApiVersion;
 
 import static io.papermc.paper.registry.entry.RegistryEntryMeta.RegistryModificationApiSupport.ADDABLE;
 import static io.papermc.paper.registry.entry.RegistryEntryMeta.RegistryModificationApiSupport.MODIFIABLE;
