@@ -37,9 +37,14 @@ public record PaperItemAdventurePredicate(
 
         @Override
         public ItemAdventurePredicate.Builder addPredicate(final BlockPredicate predicate) {
-            this.predicates.add(new net.minecraft.advancements.predicates.BlockPredicate(Optional.ofNullable(predicate.blocks()).map(
-                blocks -> PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.global().lookup(), blocks)
-            ), Optional.empty(), Optional.empty(), DataComponentMatchers.ANY)); // TODO DataComponentMatchers
+            this.predicates.add(new net.minecraft.advancements.predicates.BlockPredicate(
+                Optional.ofNullable(predicate instanceof final BlockPredicate.MatchesBlocks matchesBlocks ? matchesBlocks.blocks() : null).map(
+                    blocks -> PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.global().lookup(), blocks)
+                ),
+                Optional.empty(),
+                Optional.empty(),
+                DataComponentMatchers.ANY
+            )); // TODO DataComponentMatchers
             return this;
         }
 
