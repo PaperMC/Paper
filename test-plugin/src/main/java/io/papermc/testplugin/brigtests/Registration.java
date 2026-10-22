@@ -69,7 +69,7 @@ public final class Registration {
                       Commands.argument("pos", ArgumentTypes.finePosition(false))
                           .executes(ctx -> {
                               final FinePositionResolver position = ctx.getArgument("pos", FinePositionResolver.class);
-                              ctx.getSource().sendRichSuccess("Position: <red>" + position.resolve(ctx.getSource()), false);
+                              ctx.getSource().sendRichSuccess("Position: <red>" + position.resolve(ctx.getSource()));
                               return Command.SINGLE_SUCCESS;
                           })
                   ).build()
@@ -77,7 +77,7 @@ public final class Registration {
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
                     .executes(ctx -> {
-                        ctx.getSource().sendRichSuccess("overriden command", false);
+                        ctx.getSource().sendRichSuccess("overriden command");
                         return Command.SINGLE_SUCCESS;
                     })
                     .build(),
@@ -92,7 +92,7 @@ public final class Registration {
                     .then(Commands.literal("sub_command")
                         .requires(source -> source.getSender().hasPermission("testplugin.test"))
                         .executes(ctx -> {
-                            ctx.getSource().sendRichSuccess("<red>root_command <gold>sub_command", false);
+                            ctx.getSource().sendRichSuccess("<red>root_command <gold>sub_command");
                             return Command.SINGLE_SUCCESS;
                         })).build(),
                 null,
@@ -190,8 +190,8 @@ public final class Registration {
                             .then(Commands.argument("allow_inform_admins", BoolArgumentType.bool())
                                 .then(Commands.argument("msg", StringArgumentType.greedyString())
                                         .executes(ctx -> {
-                                            ctx.getSource().sendRichSuccess(
-                                                StringArgumentType.getString(ctx, "msg"),
+                                            ctx.getSource().sendSuccess(
+                                                MiniMessage.miniMessage().deserialize(StringArgumentType.getString(ctx, "msg")),
                                                 BoolArgumentType.getBool(ctx, "allow_inform_admins")
                                             );
                                             return Command.SINGLE_SUCCESS;
