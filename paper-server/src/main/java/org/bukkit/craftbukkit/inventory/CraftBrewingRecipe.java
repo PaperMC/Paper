@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.Optional;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.PotionIngredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
@@ -26,12 +25,11 @@ public class CraftBrewingRecipe extends BrewingRecipe implements CraftRecipe {
     }
 
     @Override
-    public void addToRecipeManager() {
-        final net.minecraft.world.item.crafting.BrewingRecipe internalRecipe = new net.minecraft.world.item.crafting.BrewingRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.BrewingRecipe(
             new PotionIngredient(CraftRecipe.toIngredient(this.getInput(), false), Optional.empty()),
             new PotionIngredient(CraftRecipe.toIngredient(this.getIngredient(), false), Optional.empty()),
             CraftItemStack.asTemplate(this.getResult())
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), internalRecipe));
+        ));
     }
 }
