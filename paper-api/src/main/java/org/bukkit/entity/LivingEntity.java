@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -1401,7 +1402,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void setHurtDirection(float hurtDirection);
     // Paper end - hurt direction API
 
-    // Paper start - swing hand API
     /**
      * Makes this entity swing their hand, using the {@link io.papermc.paper.datacomponent.DataComponentTypes#ATTACK_ANIMATION}
      * component on the item held in that hand to determine the animation type and duration.
@@ -1415,7 +1415,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @throws IllegalArgumentException if an invalid hand is passed
      */
     default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
+        Preconditions.checkArgument(hand != null && hand.isHand(), "Expected a valid hand, got \"%s\" instead!", hand);
         if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
             this.swingMainHand();
         } else {
@@ -1435,7 +1435,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @throws IllegalArgumentException if an invalid hand is passed
      */
     void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand, @NotNull io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation);
-    // Paper end - swing hand API
 
     // Paper start - knockback API
     /**

@@ -836,7 +836,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     private net.minecraft.world.item.component.SwingAnimation getSwingAnimation(InteractionHand hand) {
-        net.minecraft.world.item.component.SwingAnimation animation = this.getHandle()
+        final net.minecraft.world.item.component.SwingAnimation animation = this.getHandle()
             .getItemInHand(hand)
             .get(net.minecraft.core.component.DataComponents.ATTACK_ANIMATION);
         return animation != null ? animation : SwingAnimation.DEFAULT;
