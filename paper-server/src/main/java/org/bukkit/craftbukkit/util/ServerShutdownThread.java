@@ -1,12 +1,14 @@
 package org.bukkit.craftbukkit.util;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import io.papermc.paper.log.LoggerShutdown;
 import net.minecraft.server.MinecraftServer;
 
-public class ServerShutdownThread extends Thread {
+public class ServerShutdownThread extends TickThread {
     private final MinecraftServer server;
 
     public ServerShutdownThread(MinecraftServer server) {
+        super("Server Shutdown Thread");
         this.server = server;
     }
 
@@ -15,6 +17,14 @@ public class ServerShutdownThread extends Thread {
         try {
             // Paper start - try to shutdown on main
             server.halt(false, false);
+
+            // If the server hasn't finished starting up yet, give it as much time as it needs to start up and close on its own. This is
+            // assuming that as long as the server thread is running, it isn't deadlocked and will eventually either successfully init or fail and stop running.
+            while (!server.hasStopped() && !server.hasStarted && server.getRunningThread().isAlive()) {
+                Thread.sleep(100L);
+            }
+
+            // Give the server at least a second to realize that it needs to stop, if it takes longer that means it could be stuck.
             for (int i = 1000; i > 0 && !server.hasStopped(); i -= 100) {
                 Thread.sleep(100);
             }
