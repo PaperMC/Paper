@@ -30,6 +30,8 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -155,6 +157,7 @@ import org.bukkit.event.block.BellResonateEvent;
 import org.bukkit.event.block.BellRingEvent;
 import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockDispenseLootEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
@@ -2304,25 +2307,62 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static @Nullable ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack dispensed, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
-        org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
-        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+    public static class PaperBlockDispenseEvent extends BlockDispenseEvent {
 
-        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
+        public enum Result {
+            CANCELLED,
+            REROUTED,
+            ITEM_CHANGE_NO_REROUTE,
+            NO_CHANGE,
+            ;
+
+            public boolean preventBehaviour() {
+                return switch (this) {
+                    case CANCELLED, REROUTED -> true;
+                    case ITEM_CHANGE_NO_REROUTE, NO_CHANGE -> false;
+                };
+            }
+        }
+
+        public Result result = Result.NO_CHANGE;
+
+        public PaperBlockDispenseEvent(final @NotNull Block block, final org.bukkit.inventory.@NotNull ItemStack item, final @NotNull Vector velocity) {
+            super(block, item, velocity);
+        }
+
+        public PaperBlockDispenseEvent withResult(final Result result) {
+            this.result = result;
+            return this;
+        }
+    }
+
+    public static @Nullable ItemStack handleBlockDispenseEvent(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        return switch (handleBlockDispenseEventInspectable(pointer, to, dispensed, instance).result) {
+            case CANCELLED, REROUTED -> dispensed;
+            case NO_CHANGE, ITEM_CHANGE_NO_REROUTE -> null;
+        };
+    }
+
+    public static PaperBlockDispenseEvent handleBlockDispenseEventInspectable(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        final org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
+        final org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+
+        final PaperBlockDispenseEvent event = new PaperBlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
         if (!event.callEvent()) {
-            return dispensed;
+            return event.withResult(PaperBlockDispenseEvent.Result.CANCELLED);
         }
 
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
-            if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
+            final ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+            final DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
+            if (itemBehavior != DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
-                return dispensed;
+                return event.withResult(PaperBlockDispenseEvent.Result.REROUTED);
             }
+            return event.withResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
         }
-        return null;
+        return event.withResult(PaperBlockDispenseEvent.Result.NO_CHANGE);
     }
 
     /**
