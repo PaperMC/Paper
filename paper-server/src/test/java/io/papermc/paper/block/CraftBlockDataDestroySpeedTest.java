@@ -66,9 +66,9 @@ public class CraftBlockDataDestroySpeedTest {
         final double expectedSpeed = toolSpeed <= 1.0F ? toolSpeed : toolSpeed + dummyInstance.getValue();
 
         // API stack + computation
-        final CraftItemStack craftMirror = CraftItemStack.asCraftMirror(itemStack);
+        final ItemStack mirror = CraftItemStack.asBukkitMirror(itemStack);
         final CraftBlockData data = CraftBlockData.createData(blockStateToMine);
-        final float actualSpeed = data.getDestroySpeed(craftMirror, true);
+        final float actualSpeed = data.getDestroySpeed(mirror, true);
 
         Assertions.assertEquals(expectedSpeed, actualSpeed, Vector.getEpsilon());
     }

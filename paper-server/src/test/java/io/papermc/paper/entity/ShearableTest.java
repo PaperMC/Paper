@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ShearableTest {
 
     static List<Class<Shearable>> nmsShearables() {
-        try (final ScanResult result = new ClassGraph().enableClassInfo().whitelistPackages("net.minecraft.world.entity").scan()) {
+        try (final ScanResult result = new ClassGraph().enableClassInfo().acceptPackages("net.minecraft.world.entity").scan()) {
             return result.getClassesImplementing(Shearable.class.getName()).loadClasses(Shearable.class);
         }
     }

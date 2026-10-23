@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/level/block/RedstoneTorchBlock.java
 +++ b/net/minecraft/world/level/block/RedstoneTorchBlock.java
-@@ -25,7 +_,7 @@
+@@ -23,7 +_,7 @@
+ 
  public class RedstoneTorchBlock extends BaseTorchBlock {
-     public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
 -    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap<>();
 +    // Paper - Faster redstone torch rapid clock removal; Move the mapped list to World
      public static final int RECENT_TOGGLE_TIMER = 60;
      public static final int MAX_RECENT_TOGGLES = 8;
      public static final int RESTART_DELAY = 160;
-@@ -68,14 +_,23 @@
+@@ -61,14 +_,23 @@
      @Override
      protected void tick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
          boolean neighborSignal = this.hasNeighborSignal(level, pos, state);
@@ -34,10 +34,10 @@
 +                    return;
 +                }
 +                // Paper end - Call BlockRedstoneEvent
-                 level.setBlock(pos, state.setValue(LIT, false), Block.UPDATE_ALL);
+                 level.setBlockAndUpdate(pos, state.setValue(LIT, false));
                  if (isToggledTooFrequently(level, pos, true)) {
                      level.levelEvent(LevelEvent.REDSTONE_TORCH_BURNOUT, pos, 0);
-@@ -83,6 +_,11 @@
+@@ -76,6 +_,11 @@
                  }
              }
          } else if (!neighborSignal && !isToggledTooFrequently(level, pos, false)) {
@@ -46,10 +46,10 @@
 +                return;
 +            }
 +            // Paper end - Call BlockRedstoneEvent
-             level.setBlock(pos, state.setValue(LIT, true), Block.UPDATE_ALL);
+             level.setBlockAndUpdate(pos, state.setValue(LIT, true));
          }
      }
-@@ -132,7 +_,12 @@
+@@ -125,7 +_,12 @@
      }
  
      private static boolean isToggledTooFrequently(final Level level, final BlockPos pos, final boolean add) {

@@ -1,0 +1,42 @@
+--- a/com/mojang/authlib/services/MinecraftServicesProfileRepository.java
++++ b/com/mojang/authlib/services/MinecraftServicesProfileRepository.java
+@@ -42,6 +_,8 @@
+             .filter(name -> !Strings.isNullOrEmpty(name))
+             .collect(Collectors.toSet());
+ 
++        boolean hasRequested = false; // Paper - Don't sleep after profile lookups if not needed
++
+         for (final List<String> request : Iterables.partition(criteria, ENTRIES_PER_PAGE)) {
+             final List<String> normalizedRequest = request.stream().map(MinecraftServicesProfileRepository::normalizeName).toList();
+ 
+@@ -73,6 +_,13 @@
+                         callback.onProfileLookupFailed(name, new ProfileNotFoundException("Server did not find the requested profile"));
+                     }
+ 
++                    // Paper start - Don't sleep after profile lookups if not needed
++                    if (!hasRequested) {
++                        hasRequested = true;
++                        continue;
++                    }
++                    // Paper end - Don't sleep after profile lookups if not needed
++
+                     try {
+                         Thread.sleep(DELAY_BETWEEN_PAGES);
+                     } catch (final InterruptedException ignored) {
+@@ -102,7 +_,15 @@
+         try {
+             return Optional.ofNullable(client.get(HttpDiscoveryService.constantURL(discoveryService.getUrl(Service.PROFILES, "getByName").replace("{name}", normalizeName(name))), NameAndId.class));
+         } catch (final MinecraftClientException e) {
+-            LOGGER.warn("Couldn't find profile with name: {}", name, e);
++            // Paper start - only log details when debug is enabled
++            if (net.minecraft.server.MinecraftServer.getServer().isDebugging() && e instanceof com.mojang.authlib.exceptions.MinecraftClientHttpException httpException) {
++                LOGGER.warn("Couldn't find profile with name: {}. Received status {} - {}", name, httpException.getStatus(), httpException.getMessage(), e);
++            } else if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++                LOGGER.warn("Couldn't find profile with name: {}", name, e);
++            } else {
++                LOGGER.warn("Couldn't find profile with name: {}", name);
++            }
++            // Paper end - only log details when debug is enabled
+             return Optional.empty();
+         }
+     }

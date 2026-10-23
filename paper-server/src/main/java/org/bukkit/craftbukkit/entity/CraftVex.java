@@ -24,7 +24,7 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public @Nullable LivingEntity getOwner() {
-        return Optionull.map(this.getHandle().getOwner(), net.minecraft.world.entity.LivingEntity::getBukkitLivingEntity);
+        return Optionull.map(this.getHandle().getOwner(), net.minecraft.world.entity.LivingEntity::getBukkitEntity);
     }
 
     @Override

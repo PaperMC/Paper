@@ -1,9 +1,15 @@
 package io.papermc.paper.plugin.manager;
 
-import co.aikar.timings.TimedEventExecutor;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerEventException;
 import com.google.common.collect.Sets;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
@@ -17,14 +23,6 @@ import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
 
 class PaperEventManager {
 
@@ -163,10 +161,15 @@ class PaperEventManager {
                 // This loop checks for extending deprecated events
                 if (clazz.getAnnotation(Deprecated.class) != null) {
                     Warning warning = clazz.getAnnotation(Warning.class);
+                    if (warning != null && !warning.propagate() && !clazz.equals(eventClass)) {
+                        break;
+                    }
+
                     Warning.WarningState warningState = this.server.getWarningState();
                     if (!warningState.printFor(warning)) {
                         break;
                     }
+
                     plugin.getLogger().log(
                         Level.WARNING,
                         String.format(
@@ -174,7 +177,7 @@ class PaperEventManager {
                             plugin.getPluginMeta().getDisplayName(),
                             clazz.getName(),
                             method.toGenericString(),
-                            (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
+                            (warning != null && !warning.reason().isEmpty()) ? warning.reason() : "Please see the deprecation notice on the event for more info",
                             Arrays.toString(plugin.getPluginMeta().getAuthors().toArray())),
                         warningState == Warning.WarningState.ON ? new AuthorNagException(null) : null);
                     break;

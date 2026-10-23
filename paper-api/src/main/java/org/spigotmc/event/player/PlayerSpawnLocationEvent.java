@@ -10,6 +10,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
+
 /**
  * Called when player is about to spawn in a world after joining the server.
  *
@@ -18,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
  * cause issues. Retrieving {@link Player#getUniqueId()} and {@link Player#getName()} is safe. Prefer using
  * {@link io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent}.
  */
-@Warning(value = true, reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.")
 @Deprecated(since = "1.21.9", forRemoval = true)
+@Warning(reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.", value = true, propagate = false)
 public class PlayerSpawnLocationEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
