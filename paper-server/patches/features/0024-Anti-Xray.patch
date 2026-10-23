@@ -228,7 +228,7 @@ index e36089e15cdec4f0447050e87532e650bb8f3d0b..62f57eb254321902692550d0a86c2429
          }
          // Paper end - Send empty chunk
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index a1da101177a5a4fb2b4ba5e34be165daf4d147fb..21878bd770f6c0bc10dd0a67be5bd94d7e16f741 100644
+index 7cbf8592ec5792e458fa07987cf258c51f9e1e8a..c14996f1d8a9ed77a845a464c1789bab0715741b 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -144,6 +144,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -305,7 +305,7 @@ index e482afb37a061ab720b72c4604dfafa42a198cd9..76dae652c910e36c860791a8285bd9fe
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
 diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
-index 1bf8189f25bd301bb655899e2015ccd37a4f5585..f2747c5b5da0a6ea5adc70b46541c6daf0944854 100644
+index 54ccea30b7bd79304cbe00434cfd4ba5586d7493..4e1359f85d66185c57a27302fd4672cd7e265874 100644
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -56,8 +56,14 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
@@ -346,15 +346,15 @@ index 1bf8189f25bd301bb655899e2015ccd37a4f5585..f2747c5b5da0a6ea5adc70b46541c6da
      public int getSerializedSize() {
 @@ -309,7 +321,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
          // in a single-value palette instead of retaining an unused default biome.
-         // Fill in Y/Z/X order, with X varying fastest, to write consecutive storage indices.
+         // Sampling order must match Vanilla, as the RTree caches the last result (MC-241546).
          final Holder<Biome> first = biomeResolver.getNoiseBiome(quartMinX, quartMinY, quartMinZ);
 -        final PalettedContainer<Holder<Biome>> newBiomes = new PalettedContainer<>(first, this.biomes.strategy);
 +        final PalettedContainer<Holder<Biome>> newBiomes = new PalettedContainer<>(first, this.biomes.strategy, null); // Paper - Anti-Xray
  
-         for (int y = 0; y < 4; ++y) {
-             for (int z = 0; z < 4; ++z) {
+         for (int x = 0; x < 4; ++x) {
+             for (int y = 0; y < 4; ++y) {
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9033fc89c 100644
+index 268f73d632691656e7e1244972bf9075ad2994dc..d564338ddc3dc13f0d11a18e26ea36e1f9343745 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -26,6 +26,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
@@ -388,7 +388,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
          return codec(elementCodec, strategy, defaultValue, unpacker);
      }
  
-@@ -74,17 +82,56 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -74,17 +82,60 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
      // Paper end - optimise palette reads
  
@@ -409,7 +409,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
 +            // We readd this here but in a smarter way than it was before
 +            int maxSize = 1 << dataConfiguration.bitsInMemory();
 +
-+            for (T presetValue : presetValues) {
++            for (int i = 0; i < presetValues.length; i++) {
 +                if (this.data.palette.getSize() >= maxSize) {
 +                    java.util.Set<T> allValues = new java.util.HashSet<>(values);
 +                    int duplicates = values.size() - allValues.size();
@@ -418,12 +418,16 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
 +
 +                    if (newBits > dataConfiguration.bitsInMemory()) {
 +                        this.onResize(newBits, null);
++                    } else {
++                        for (int j = i; j < presetValues.length; j++) {
++                            this.data.palette.idFor(presetValues[j], this);
++                        }
 +                    }
 +
 +                    break;
 +                }
 +
-+                this.data.palette.idFor(presetValue, this);
++                this.data.palette.idFor(presetValues[i], this);
 +            }
 +        }
 +        // Paper end - Anti-Xray
@@ -447,7 +451,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
          this.strategy = strategy;
          this.data = this.createOrReuseData(null, 0);
          this.data.palette.idFor(initialValue, this);
-@@ -103,14 +150,38 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -103,14 +154,38 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return new PalettedContainer.Data<>(dataConfiguration, storage, palette);
      }
  
@@ -488,7 +492,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
  
      public synchronized T getAndSet(final int x, final int y, final int z, final T value) { // Paper - synchronize
          this.acquire();
-@@ -179,24 +250,38 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -179,24 +254,38 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              newData.palette.read(buffer, this.strategy.globalMap());
              buffer.readFixedSizeLongArray(newData.storage.getRaw());
              this.data = newData;
@@ -529,7 +533,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
          List<T> paletteEntries = discData.paletteEntries();
          int entryCount = strategy.entryCount();
          Configuration storedConfiguration = strategy.getConfigurationForPaletteSize(paletteEntries.size());
-@@ -235,7 +320,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -235,7 +324,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              }
          }
  
@@ -538,7 +542,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
      }
  
      // Paper start - optimise PalettedContainer packing
-@@ -382,12 +467,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -382,12 +471,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
  
      @Override
      public PalettedContainer<T> copy() {
@@ -553,7 +557,7 @@ index 268f73d632691656e7e1244972bf9075ad2994dc..80136bf48b7a58af2c9382fc032200f9
      }
  
      @Override
-@@ -433,9 +518,16 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -433,9 +522,16 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              return 1 + this.palette.getSerializedSize(globalMap) + this.storage.getRaw().length * 8;
          }
  

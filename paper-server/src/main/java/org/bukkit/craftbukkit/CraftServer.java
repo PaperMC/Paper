@@ -216,6 +216,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
 import org.bukkit.packs.ResourcePack;
@@ -233,6 +234,7 @@ import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
+import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.permissions.DefaultPermissions;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -1847,7 +1849,6 @@ public final class CraftServer implements Server {
         return CraftItemStack.asBukkitCopy(stack);
     }
 
-    // Paper start - copied from above (uses un-deprecated StructureType type)
     @Override
     public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.StructureType structureType, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
         Preconditions.checkArgument(world != null, "World cannot be null");
@@ -1855,23 +1856,43 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
         Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
 
-        ServerLevel level = ((CraftWorld) world).getHandle();
-        final org.bukkit.util.StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
+        final ServerLevel level = ((CraftWorld) world).getHandle();
+        final StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
         if (structureSearchResult == null) {
             return null;
         }
-        Location structureLocation = structureSearchResult.getLocation();
-        BlockPos structurePos = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
+
+        return this.createExplorerMap(level, structureSearchResult, mapIcon);
+    }
+
+    @Override
+    public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.Structure structure, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
+        Preconditions.checkArgument(world != null, "World cannot be null");
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(structure != null, "Structure cannot be null");
+        Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
+
+        final ServerLevel level = ((CraftWorld) world).getHandle();
+        final StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structure, radius, findUnexplored);
+        if (structureSearchResult == null) {
+            return null;
+        }
+
+        return this.createExplorerMap(level, structureSearchResult, mapIcon);
+    }
+
+    private ItemStack createExplorerMap(final ServerLevel level, final StructureSearchResult structureSearchResult, final MapCursor.Type mapIcon) {
+        final Location structureLocation = structureSearchResult.getLocation();
+        final BlockPos structurePos = CraftLocation.toBlockPos(structureLocation);
 
         // Create map with trackingPosition = true, unlimitedTracking = true
-        net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        final net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
         MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
         MapItemSavedData.addTargetDecoration(stack, structurePos, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
 
         return CraftItemStack.asBukkitCopy(stack);
     }
-    // Paper end
 
     @Override
     public void shutdown() {
