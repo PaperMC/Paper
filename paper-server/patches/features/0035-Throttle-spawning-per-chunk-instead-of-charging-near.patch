@@ -1,0 +1,209 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: rasmus123d <59487370+RasmusKD@users.noreply.github.com>
+Date: Fri, 14 Aug 2026 18:21:27 +0200
+Subject: [PATCH] Throttle spawning per chunk instead of charging nearby
+ players
+
+A plugin that refuses PreCreatureSpawnEvent is charged to a per player
+backoff counter, which is added to the mob cap of every player within
+simulation distance. The refusal is a property of the location, but the
+counter follows the player, so denying spawns on one claim spends the cap
+of anyone standing near it, including players on land that allows mobs.
+
+Behind entities.spawning.throttle-refused-spawns-per-chunk, off by
+default, the counter instead lives on the chunk, keyed by mob category. It
+is charged once per call rather than once per candidate position, only for
+plugin refusals and never for a vanilla placement failure, and it is
+cleared as soon as a spawn gets through, so a chunk that a region only
+partly covers never throttles. A chunk over the threshold is retried on a
+slower interval instead of every cycle.
+
+With the option off nothing is counted and no array is allocated, so a
+server that does not run plugins cancelling this event is unaffected.
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 7e9361407042ddaabe3f66ee8957ae84b6ef2317..95912226552d08250575888eee70f8a2b914fc0b 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -258,24 +258,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+     }
+ 
+     // Paper start - per player mob count backoff
+-    public void updateFailurePlayerMobTypeMap(int chunkX, int chunkZ, net.minecraft.world.entity.MobCategory mobCategory) {
+-        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
+-            return;
+-        }
+-        int idx = mobCategory.ordinal();
+-        final ca.spottedleaf.moonrise.common.list.ReferenceList<ServerPlayer> inRange =
+-            this.level.moonrise$getNearbyPlayers().getPlayersByChunk(chunkX, chunkZ, ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
+-        if (inRange == null) {
+-            return;
+-        }
+-        final ServerPlayer[] backingSet = inRange.getRawDataUnchecked();
+-        for (int i = 0, len = inRange.size(); i < len; i++) {
+-            ++(backingSet[i].mobBackoffCounts[idx]);
+-        }
+-    }
+-    // Paper end - per player mob count backoff
+     public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
+-        return player.mobCounts[mobCategory.ordinal()] + player.mobBackoffCounts[mobCategory.ordinal()]; // Paper - per player mob count backoff
++        return player.mobCounts[mobCategory.ordinal()];
+     }
+     // Paper end - Optional per player mob spawns
+ 
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 075e294333115738b25b64a390df323276cf39f9..d20d64abbda00521a2d939b41c7da86c43b654b1 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -540,17 +540,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+             // re-set mob counts
+             for (ServerPlayer player : this.level.players()) {
+-                // Paper start - per player mob spawning backoff
+-                for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
+-                    player.mobCounts[j] = 0;
+-
+-                    int newBackoff = player.mobBackoffCounts[j] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
+-                    if (newBackoff < 0) {
+-                        newBackoff = 0;
+-                    }
+-                    player.mobBackoffCounts[j] = newBackoff;
+-                }
+-                // Paper end - per player mob spawning backoff
++                java.util.Arrays.fill(player.mobCounts, 0);
+             }
+             spawnCookie = NaturalSpawner.createState(chunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
+         } else {
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 3cd4e850f223100b61ac6831a87dd38f3a3bb58f..a653625c2bbdd40bc83bbe50e85b6784e6d3ed80 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -421,7 +421,6 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
+     public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS];
+     // Paper end - Optional per player mob spawns
+-    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
+     // CraftBukkit start
+     public @Nullable String lastKnownName; // Better rename detection
+     public String displayName;
+diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
+index e193cbed115663e9ca7a611837d5b8540dda03db..98bda082719fc5bf5cf9aaabe1a7a7539316fd7b 100644
+--- a/net/minecraft/world/level/NaturalSpawner.java
++++ b/net/minecraft/world/level/NaturalSpawner.java
+@@ -53,6 +53,15 @@ import org.jspecify.annotations.Nullable;
+ import org.slf4j.Logger;
+ 
+ public final class NaturalSpawner {
++    // Paper start - throttle spawning where a plugin keeps refusing it
++    /** Consecutive refusals before a chunk is retried on the slow interval. */
++    private static final int SPAWN_DENIAL_THRESHOLD = 8;
++    /** How often a throttled chunk is retried, in ticks. */
++    private static final int SPAWN_DENIAL_INTERVAL = 40;
++    /** Ceiling, so a permanently refused chunk cannot grow the counter forever. */
++    private static final int SPAWN_DENIAL_CAP = 16;
++    // Paper end - throttle spawning where a plugin keeps refusing it
++
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int MIN_SPAWN_DISTANCE = 24;
+     public static final int SPAWN_DISTANCE_CHUNK = 8;
+@@ -186,7 +195,19 @@ public final class NaturalSpawner {
+                 }
+ 
+                 maxSpawns = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
+-                canSpawn = maxSpawns > 0;
++                boolean allowed = maxSpawns > 0;
++                // Paper start - throttle spawning where a plugin keeps refusing it
++                // A chunk that keeps being refused is retried on a slow interval instead
++                // of every cycle, so the server stops paying for it without spending
++                // anyone's mob cap. The counter is cleared the moment a spawn gets
++                // through, so a chunk a region only partly covers never throttles.
++                if (allowed && level.paperConfig().entities.spawning.throttleRefusedSpawnsPerChunk
++                    && chunk.getSpawnDenials(mobCategory) >= SPAWN_DENIAL_THRESHOLD
++                    && (level.getGameTime() % SPAWN_DENIAL_INTERVAL) != 0L) {
++                    allowed = false;
++                }
++                canSpawn = allowed;
++                // Paper end - throttle spawning where a plugin keeps refusing it
+             } else {
+                 canSpawn = state.canSpawnForCategoryLocal(mobCategory, chunk.getPos());
+             }
+@@ -265,6 +286,7 @@ public final class NaturalSpawner {
+         // Paper end - Optional per player mob spawns
+         StructureManager structureManager = level.structureManager();
+         ChunkGenerator generator = level.getChunkSource().getGenerator();
++        boolean deniedHere = false; // Paper - throttle spawning where a plugin keeps refusing it
+         int yStart = start.getY();
+         BlockState state = level.getBlockStateIfLoadedAndInBounds(start); // Paper - don't load chunks for mob spawn
+         if (state != null && !state.isRedstoneConductor(chunk, start)) { // Paper - don't load chunks for mob spawn
+@@ -304,11 +326,18 @@ public final class NaturalSpawner {
+ 
+                             // Paper start - PreCreatureSpawnEvent
+                             PreSpawnStatus doSpawning = isValidSpawnPostitionForType(level, mobCategory, structureManager, generator, currentSpawnData, pos, nearestPlayerDistanceSqr);
+-                            // Paper start - per player mob count backoff
+-                            if (doSpawning == PreSpawnStatus.ABORT || doSpawning == PreSpawnStatus.CANCELLED) {
+-                                level.getChunkSource().chunkMap.updateFailurePlayerMobTypeMap(pos.getX() >> 4, pos.getZ() >> 4, mobCategory);
++                            // Paper start - throttle spawning where a plugin keeps refusing it
++                            // Charged to the chunk, once per call rather than once per
++                            // candidate position, so a plain cancel costs what an abort
++                            // costs. A vanilla placement failure is not charged: that is
++                            // the terrain saying no, and it says no every tick without a
++                            // plugin being involved.
++                            if (!deniedHere && level.paperConfig().entities.spawning.throttleRefusedSpawnsPerChunk
++                                && (doSpawning == PreSpawnStatus.ABORT || doSpawning == PreSpawnStatus.CANCELLED)) {
++                                deniedHere = true;
++                                chunk.recordSpawnDenial(mobCategory, SPAWN_DENIAL_CAP);
+                             }
+-                            // Paper end - per player mob count backoff
++                            // Paper end - throttle spawning where a plugin keeps refusing it
+                             if (doSpawning == PreSpawnStatus.ABORT) {
+                                 return;
+                             }
+@@ -332,6 +361,7 @@ public final class NaturalSpawner {
+                                         clusterSize++;
+                                         groupSize++;
+                                         spawnCallback.run(mob, chunk);
++                                        chunk.clearSpawnDenials(mobCategory); // Paper - a spawn got through, so the chunk is not blanket denied
+                                         // Paper start - Optional per player mob spawns
+                                         if (trackEntity != null) {
+                                             trackEntity.accept(mob);
+diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
+index 28f703204afd834cd50335346ef065670d6b37ad..34d0f3df5cac95953c4e505a6433890f95fbf89f 100644
+--- a/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -57,7 +57,35 @@ import net.minecraft.world.ticks.TickContainerAccess;
+ import org.jspecify.annotations.Nullable;
+ import org.slf4j.Logger;
+ 
+-public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk { // Paper - rewrite chunk system
++public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk {
++    // Paper start - throttle spawning where a plugin keeps refusing it
++    // Consecutive refusals of PreCreatureSpawnEvent for this chunk, per mob category.
++    // It lives on the chunk because a refusal is a property of the place, not of
++    // whoever happens to be standing near it. Allocated on the first refusal, so a
++    // chunk that nothing ever denies costs a null reference.
++    private int[] spawnDenials;
++
++    public int getSpawnDenials(final net.minecraft.world.entity.MobCategory category) {
++        return this.spawnDenials == null ? 0 : this.spawnDenials[category.ordinal()];
++    }
++
++    public void recordSpawnDenial(final net.minecraft.world.entity.MobCategory category, final int cap) {
++        if (this.spawnDenials == null) {
++            this.spawnDenials = new int[net.minecraft.world.entity.MobCategory.values().length];
++        }
++        final int index = category.ordinal();
++        if (this.spawnDenials[index] < cap) {
++            ++this.spawnDenials[index];
++        }
++    }
++
++    public void clearSpawnDenials(final net.minecraft.world.entity.MobCategory category) {
++        if (this.spawnDenials != null) {
++            this.spawnDenials[category.ordinal()] = 0;
++        }
++    }
++    // Paper end - throttle spawning where a plugin keeps refusing it
++ // Paper - rewrite chunk system
+     public static final int NO_FILLED_SECTION = -1;
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final LongSet EMPTY_REFERENCE_SET = new LongOpenHashSet();
