@@ -16,6 +16,25 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 public interface Mob extends LivingEntity, Lootable, Leashable {
+    /**
+     * Gets whether this mob has been marked as persistent.
+     * <p>
+     * Persistent mobs are not removed by the normal distance-based
+     * despawning process.
+     *
+     * @return true if this mob is persistent
+     */
+    boolean isPersistenceRequired();
+
+    /**
+     * Sets whether this mob has been marked as persistent.
+     * <p>
+     * Persistent mobs are not removed by the normal distance-based
+     * despawning process.
+     *
+     * @param persistenceRequired whether this mob should be persistent
+     */
+    void setPersistenceRequired(boolean persistenceRequired);
 
     /**
      * Check if a mob should be despawned when the world is set to peaceful difficulty.
