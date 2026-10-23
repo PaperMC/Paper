@@ -53,9 +53,13 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     /**
      * Returns the relative teleportation flags used in this teleportation.
-     * This determines which axis the player will not lose their velocity in.
+     * These determine which parts of the player's current state are kept, such as their velocity,
+     * or used as the reference, such as their client-side position.
+     * <p>
+     * Changing the teleportation destination discards all flags.
      *
      * @return an immutable set of relative teleportation flags
+     * @see TeleportFlag.Relative
      */
     public @Unmodifiable Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
         return this.teleportFlags;
