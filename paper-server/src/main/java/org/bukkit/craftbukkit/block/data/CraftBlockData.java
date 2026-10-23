@@ -27,6 +27,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.sounds.BlockSoundSet;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -507,7 +508,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public SoundGroup getSoundGroup() {
-        return CraftSoundGroup.getSoundGroup(this.state.getSoundType());
+        return new CraftSoundGroup(this.state.getSounds().flatMap(CraftRegistry.getMinecraftRegistry()::get).map(Holder::value).orElse(BlockSoundSet.EMPTY));
     }
 
     @Override

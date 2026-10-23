@@ -1,58 +1,72 @@
 package org.bukkit.craftbukkit;
 
-import java.util.HashMap;
+import java.util.Objects;
+import net.minecraft.world.level.block.sounds.BlockSoundSet;
 import org.bukkit.Sound;
 import org.bukkit.SoundGroup;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
-public class CraftSoundGroup implements SoundGroup {
-
-    private final net.minecraft.world.level.block.SoundType handle;
-    private static final HashMap<SoundType, CraftSoundGroup> SOUND_GROUPS = new HashMap<>();
-
-    public static SoundGroup getSoundGroup(SoundType soundEffectType) {
-        return CraftSoundGroup.SOUND_GROUPS.computeIfAbsent(soundEffectType, CraftSoundGroup::new);
-    }
-
-    private CraftSoundGroup(net.minecraft.world.level.block.SoundType soundEffectType) {
-        this.handle = soundEffectType;
-    }
-
-    public net.minecraft.world.level.block.SoundType getHandle() {
-        return this.handle;
-    }
+@NullMarked
+public record CraftSoundGroup(BlockSoundSet handle) implements SoundGroup {
 
     @Override
     public float getVolume() {
-        return this.getHandle().getVolume();
+        return this.handle().volume();
     }
 
     @Override
     public float getPitch() {
-        return this.getHandle().getPitch();
+        return this.handle().pitch();
     }
 
     @Override
     public Sound getBreakSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().getBreakSound());
+        return Objects.requireNonNullElse(this.breakSound(), Sound.BLOCK_STONE_BREAK);
     }
 
     @Override
     public Sound getStepSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().getStepSound());
+        return Objects.requireNonNullElse(this.stepSound(), Sound.BLOCK_STONE_STEP);
     }
 
     @Override
     public Sound getPlaceSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().getPlaceSound());
+        return Objects.requireNonNullElse(this.placeSound(), Sound.BLOCK_STONE_PLACE);
     }
 
     @Override
     public Sound getHitSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().getHitSound());
+        return Objects.requireNonNullElse(this.hitSound(), Sound.BLOCK_STONE_HIT);
     }
 
     @Override
     public Sound getFallSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().getFallSound());
+        return Objects.requireNonNullElse(this.fallSound(), Sound.BLOCK_STONE_FALL);
+    }
+
+    @Override
+    public @Nullable Sound breakSound() {
+        return this.handle().breakSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public @Nullable Sound stepSound() {
+        return this.handle().stepSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public @Nullable Sound placeSound() {
+        return this.handle().placeSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public @Nullable Sound hitSound() {
+        return this.handle().hitSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public @Nullable Sound fallSound() {
+        return this.handle().fallSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 }

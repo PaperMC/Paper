@@ -680,7 +680,7 @@ public class CraftBlock implements Block {
 
     @Override
     public org.bukkit.SoundGroup getBlockSoundGroup() {
-        return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getBlockState().getSoundType());
+        return new org.bukkit.craftbukkit.CraftSoundGroup(this.getBlockState().getSounds(this.level));
     }
 
     @Override
