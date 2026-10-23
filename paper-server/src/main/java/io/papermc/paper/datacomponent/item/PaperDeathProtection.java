@@ -22,6 +22,11 @@ public record PaperDeathProtection(
         return MCUtil.transformUnmodifiable(this.impl.deathEffects(), PaperConsumableEffect::fromVanilla);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().effects(this.deathEffects());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final List<net.minecraft.world.item.consume_effects.ConsumeEffect> effects = new ArrayList<>();
@@ -37,6 +42,13 @@ public record PaperDeathProtection(
             for (final ConsumeEffect effect : effects) {
                 this.effects.add(PaperConsumableEffect.toVanilla(effect));
             }
+            return this;
+        }
+
+        @Override
+        public Builder effects(final List<ConsumeEffect> effects) {
+            this.effects.clear();
+            this.addEffects(effects);
             return this;
         }
 

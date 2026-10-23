@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.Map;
 import org.bukkit.enchantments.Enchantment;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
  */
 @ApiStatus.NonExtendable
-public interface ItemEnchantments {
+public interface ItemEnchantments extends BuildableDataComponent<ItemEnchantments, ItemEnchantments.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemEnchantments itemEnchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
@@ -60,5 +61,15 @@ public interface ItemEnchantments {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
+
+        /**
+         * Sets enchantments with the given level to this component.
+         *
+         * @param enchantments enchantments
+         * @return the builder for chaining
+         * @see #enchantments()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder enchantments(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
     }
 }

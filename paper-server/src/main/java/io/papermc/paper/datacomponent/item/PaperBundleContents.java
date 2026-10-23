@@ -22,6 +22,11 @@ public record PaperBundleContents(
         return MCUtil.transformUnmodifiable(this.impl.items(), CraftItemStack::asBukkitCopy);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.contents());
+    }
+
     static final class BuilderImpl implements BundleContents.Builder {
 
         private final List<net.minecraft.world.item.ItemStackTemplate> items = new ObjectArrayList<>();
@@ -37,6 +42,14 @@ public record PaperBundleContents(
         @Override
         public BundleContents.Builder addAll(final List<ItemStack> items) {
             items.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public Builder contents(final List<ItemStack> contents) {
+            Preconditions.checkArgument(contents != null, "contents cannot be null");
+            this.items.clear();
+            this.addAll(contents);
             return this;
         }
 

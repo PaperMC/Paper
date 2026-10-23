@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Contract;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER_LOOT
  */
 @ApiStatus.NonExtendable
-public interface SeededContainerLoot {
+public interface SeededContainerLoot extends BuildableDataComponent<SeededContainerLoot, SeededContainerLoot.Builder> {
 
     @Contract(value = "_, _ -> new", pure = true)
     static SeededContainerLoot seededContainerLoot(final Key lootTableKey, final long seed) {
