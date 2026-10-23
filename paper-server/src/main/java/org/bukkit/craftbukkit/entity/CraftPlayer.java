@@ -17,7 +17,9 @@ import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
+import io.papermc.paper.entity.PaperPlayerPostEffects;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
 import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
@@ -323,15 +325,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper end
 
     @Override
-    public InetSocketAddress getAddress() {
+    public SocketAddress getSocketAddress() {
         if (this.getHandle().connection == null) return null;
 
-        SocketAddress addr = this.getHandle().connection.getRemoteAddress();
-        if (addr instanceof InetSocketAddress) {
-            return (InetSocketAddress) addr;
-        } else {
-            return null;
-        }
+        return this.getHandle().connection.getRemoteAddress();
+    }
+
+    @Override
+    public InetSocketAddress getAddress() {
+        SocketAddress addr = this.getSocketAddress();
+        if (addr == null) return null;
+
+        if (addr instanceof InetSocketAddress inet) return inet;
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     // Paper start - Add API to get player's proxy address
@@ -3052,7 +3058,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         public void respawn() {
             if (CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline()) {
                 CraftPlayer.this.server.getServer().getPlayerList().respawn(CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN);
-                CraftPlayer.this.getHandle().connection.restartClientLoadTimerAfterRespawn();
             }
         }
 
@@ -3394,5 +3399,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void unsetFixedPose() {
         this.getHandle().fixedPose = false;
         this.getHandle().updatePlayerPose();
+    }
+
+    @Override
+    public PlayerPostEffects postEffects() {
+        return new PaperPlayerPostEffects(this.getHandle());
     }
 }

@@ -17,6 +17,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.chunk.ChunkGenerationState;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -415,7 +417,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
         final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
         ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
-            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
+            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.BLOCKING, future::complete
         );
         world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
         return future.thenApply(c -> {
@@ -425,6 +427,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return false;
         }).join();
         // Paper end - Fix this method
+    }
+
+    @Override
+    public ChunkGenerationState getChunkGenerationState(final int x, final int z) {
+        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
+        return FeatureHooks.getChunkGenerationState(this.world, x, z);
+    }
+
+    @Override
+    public CompletableFuture<ChunkGenerationState> getChunkGenerationStateAsync(final int x, final int z) {
+        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
+        return FeatureHooks.getChunkGenerationStateAsync(this.world, x, z);
     }
 
     @Override
@@ -949,13 +963,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void addEntityToWorld(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
-        this.getHandle().addFreshEntity(entity, reason);
-    }
-
-    @Override
     public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
-        this.getHandle().tryAddFreshEntityWithPassengers(entity, reason);
+        // Be more lenient than ServerLevel#tryAddFreshEntityWithPassengers and ignore already added entities instead of failing completely.
+        // This otherwise causes problems when an entity already added to the world is added as a passenger inside of the pre-spawn consumer.
+        entity.getSelfAndPassengers()
+            .filter(e -> !e.valid)
+            .forEach(e -> this.getHandle().addFreshEntity(e, reason));
     }
 
     @Override

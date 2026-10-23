@@ -5,10 +5,12 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
 import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -274,7 +276,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the player's address
      */
     @Nullable
-    public InetSocketAddress getAddress();
+    SocketAddress getSocketAddress();
+
+    /**
+     * Returns an instance of {@link InetSocketAddress} associated with the
+     * player's socket address.
+     *
+     * @return the player's {@link InetSocketAddress}, or the loopback address
+     * if the player is connecting through a Unix domain socket
+     */
+    @Nullable
+    InetSocketAddress getAddress();
 
     // Paper start - Add API to get player's proxy address
     /**
@@ -4076,4 +4088,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * clearing any fixed pose in the process.
      */
     void unsetFixedPose();
+
+    /**
+     * Gets the post-effects that can be applied to this player.
+     *
+     * @return the post-effects
+     */
+    PlayerPostEffects postEffects();
 }

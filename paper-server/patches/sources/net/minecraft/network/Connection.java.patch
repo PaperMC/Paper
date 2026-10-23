@@ -65,7 +65,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -100,15 +_,32 @@
+@@ -100,15 +_,45 @@
      }
  
      @Override
@@ -87,6 +87,19 @@
 +        }
 +        // Paper end - Handle large packets disconnecting client
          if (cause instanceof SkipPacketException) {
++            // Paper start - packet limiter
++            if (cause instanceof SkipPacketDecoderException && !this.stopReadingPackets) {
++                this.receivedPackets++;
++                if (this.allPacketCounts != null) {
++                    synchronized (this.PACKET_LIMIT_LOCK) {
++                        this.allPacketCounts.updateAndAdd(1, System.nanoTime());
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
++                            this.killForPacketSpam();
++                        }
++                    }
++                }
++            }
++            // Paper end - packet limiter
              LOGGER.debug("Skipping packet due to errors", cause.getCause());
          } else {
              boolean isFirstFault = !this.handlingFault;
@@ -319,7 +332,7 @@
 +                    /* Player was logged in, either game listener or configuration listener */
 +                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
 +                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(),
-+                        profile.name(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
++                        profile.name(), this.address, false).callEvent();
 +                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
 +                    /* Player is login stage */
 +                    switch (loginListener.state) {
@@ -329,7 +342,7 @@
 +                        case ACCEPTED:
 +                            final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(), profile.name(),
-+                                ((InetSocketAddress) this.address).getAddress(), false).callEvent();
++                                this.address, false).callEvent();
 +                    }
 +                }
 +                // Paper end - Add PlayerConnectionCloseEvent
