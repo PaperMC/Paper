@@ -1,5 +1,6 @@
 package io.papermc.paper.event.block;
 
+import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated use {@link org.bukkit.event.block.BellRingEvent}
  */
 @Deprecated(since = "1.19.4")
+@Warning(propagate = false)
 public class BellRingEvent extends org.bukkit.event.block.BellRingEvent {
 
     @ApiStatus.Internal

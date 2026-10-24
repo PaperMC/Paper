@@ -158,7 +158,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     @Override
     public PotionEffectType.Category getEffectCategory() {
-        return fromNMS(this.getHandle().getCategory());
+        return fromVanilla(this.getHandle().getCategory());
     }
 
     @Override
@@ -166,8 +166,8 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
         return this.getHandle().getDescriptionId();
     }
 
-    public static PotionEffectType.Category fromNMS(MobEffectCategory mobEffectInfo) {
-        return switch (mobEffectInfo) {
+    public static PotionEffectType.Category fromVanilla(MobEffectCategory category) {
+        return switch (category) {
             case BENEFICIAL -> PotionEffectType.Category.BENEFICIAL;
             case HARMFUL -> PotionEffectType.Category.HARMFUL;
             case NEUTRAL -> PotionEffectType.Category.NEUTRAL;

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/NoteBlock.java
 +++ b/net/minecraft/world/level/block/NoteBlock.java
-@@ -64,6 +_,7 @@
+@@ -57,6 +_,7 @@
  
      @Override
      public BlockState getStateForPlacement(final BlockPlaceContext context) {
@@ -8,7 +8,7 @@
          return this.setInstrument(context.getLevel(), context.getClickedPos(), this.defaultBlockState());
      }
  
-@@ -78,6 +_,7 @@
+@@ -71,6 +_,7 @@
          final BlockState neighbourState,
          final RandomSource random
      ) {
@@ -16,7 +16,7 @@
          boolean neighborDirectionSetsInstrument = directionToNeighbour.getAxis() == Direction.Axis.Y;
          return neighborDirectionSetsInstrument
              ? this.setInstrument(level, pos, state)
-@@ -86,12 +_,19 @@
+@@ -79,12 +_,19 @@
  
      @Override
      protected void neighborChanged(
@@ -36,17 +36,17 @@
 +                state = level.getBlockState(pos); // CraftBukkit - SPIGOT-5617: update in case changed in event
              }
  
-             level.setBlock(pos, state.setValue(POWERED, signal), Block.UPDATE_ALL);
-@@ -123,7 +_,7 @@
+             level.setBlockAndUpdate(pos, state.setValue(POWERED, signal));
+@@ -116,7 +_,7 @@
      @Override
      protected InteractionResult useWithoutItem(BlockState state, final Level level, final BlockPos pos, final Player player, final BlockHitResult hitResult) {
          if (!level.isClientSide()) {
 -            state = state.cycle(NOTE);
-+            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) state = state.cycle(NoteBlock.NOTE); // Paper - prevent noteblock note from updating
-             level.setBlock(pos, state, Block.UPDATE_ALL);
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) state = state.cycle(NOTE); // Paper - prevent noteblock note from updating
+             level.setBlockAndUpdate(pos, state);
              this.playNote(player, state, level, pos);
              player.awardStat(Stats.TUNE_NOTEBLOCK);
-@@ -147,9 +_,13 @@
+@@ -140,9 +_,13 @@
      @Override
      protected boolean triggerEvent(final BlockState state, final Level level, final BlockPos pos, final int b0, final int b1) {
          NoteBlockInstrument instrument = state.getValue(INSTRUMENT);
@@ -61,7 +61,7 @@
              pitch = getPitchFromNote(note);
              level.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, note / 24.0, 0.0, 0.0);
          } else {
-@@ -165,7 +_,7 @@
+@@ -158,7 +_,7 @@
  
              soundEvent = Holder.direct(SoundEvent.createVariableRangeEvent(soundId));
          } else {
