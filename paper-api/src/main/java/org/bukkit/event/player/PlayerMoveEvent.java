@@ -6,12 +6,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds information for player movement events
  */
+@NullMarked
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,7 +22,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerMoveEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+    public PlayerMoveEvent(final Player player, final Location from, final Location to) {
         super(player);
         this.from = from;
         this.to = to;
@@ -33,7 +33,6 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved from
      */
-    @NotNull
     public Location getFrom() {
         return this.from;
     }
@@ -43,7 +42,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @param from New location to mark as the players previous location
      */
-    public void setFrom(@NotNull Location from) {
+    public void setFrom(Location from) {
         this.validateLocation(from);
         this.from = from.clone();
     }
@@ -53,7 +52,6 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved to
      */
-    @NotNull // Paper
     public Location getTo() {
         return to;
     }
@@ -63,7 +61,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @param to New Location this player will move to
      */
-    public void setTo(@NotNull Location to) {
+    public void setTo(Location to) {
         this.validateLocation(to);
         this.to = to.clone();
     }
@@ -137,18 +135,16 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    private void validateLocation(@NotNull Location loc) {
+    private void validateLocation(Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
         Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

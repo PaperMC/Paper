@@ -1,5 +1,6 @@
 package io.papermc.paper.command.brigadier;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import org.bukkit.command.CommandSender;
@@ -20,7 +21,7 @@ public interface BasicCommand {
      * @param args the arguments of the command ignoring repeated spaces
      */
     @ApiStatus.OverrideOnly
-    void execute(CommandSourceStack commandSourceStack, String[] args);
+    void execute(CommandSourceStack commandSourceStack, String[] args) throws CommandSyntaxException;
 
     /**
      * Suggests possible completions for the given command {@link CommandSourceStack} and arguments.
