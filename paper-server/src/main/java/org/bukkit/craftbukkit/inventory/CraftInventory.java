@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import io.papermc.paper.util.BoundChecker;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.MerchantContainer;
@@ -51,7 +52,7 @@ public class CraftInventory implements Inventory {
     @Override
     public ItemStack getItem(int index) {
         net.minecraft.world.item.ItemStack item = this.getInventory().getItem(index);
-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+        return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
     }
 
     protected ItemStack[] asCraftMirror(List<net.minecraft.world.item.ItemStack> mcItems) {
@@ -60,7 +61,7 @@ public class CraftInventory implements Inventory {
 
         for (int i = 0; i < size; i++) {
             net.minecraft.world.item.ItemStack mcItem = mcItems.get(i);
-            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asCraftMirror(mcItem);
+            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asBukkitMirror(mcItem);
         }
 
         return items;
@@ -263,10 +264,7 @@ public class CraftInventory implements Inventory {
 
     private int firstPartial(ItemStack item) {
         ItemStack[] inventory = this.getStorageContents();
-        ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
-        if (item == null) {
-            return -1;
-        }
+        ItemStack filteredItem = item.clone();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
             if (cItem != null && cItem.getAmount() < this.getMaxItemStack(cItem) && cItem.isSimilar(filteredItem)) {
@@ -307,7 +305,7 @@ public class CraftInventory implements Inventory {
                         // More than a single stack!
                         int maxAmount = this.getMaxItemStack(item);
                         if (item.getAmount() > maxAmount) {
-                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
+                            ItemStack stack = item.clone();
                             stack.setAmount(maxAmount);
                             this.setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - maxAmount);
@@ -560,6 +558,7 @@ public class CraftInventory implements Inventory {
 
     @Override
     public void setMaxStackSize(int size) {
+        BoundChecker.requireNonNegative(size, "size");
         this.inventory.setMaxStackSize(size);
     }
 
