@@ -32,6 +32,7 @@ final class InnerClassInstanceFactory implements FieldDiscoverer.MutableInstance
     @Override
     public void complete(final Object instance, final Map<Field, DeserializedFieldInfo<?>> intermediate) throws SerializationException {
         // modeled off of native ObjectFieldDiscoverer
+        SerializationException failure = null;
         for (final Map.Entry<Field, DeserializedFieldInfo<?>> entry : intermediate.entrySet()) {
             final boolean hasProcessor = entry.getValue().processor() != null;
             try {
@@ -57,8 +58,16 @@ final class InnerClassInstanceFactory implements FieldDiscoverer.MutableInstance
                 throw new SerializationException(this.targetType.getType(), e);
             } catch (final SerializationException ex) {
                 ex.initType(entry.getValue().fieldType());
-
+                // like ObjectMapperImpl, keep going so every failing field is reported
+                if (failure == null) {
+                    failure = ex;
+                } else {
+                    failure.addSuppressed(ex);
+                }
             }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 

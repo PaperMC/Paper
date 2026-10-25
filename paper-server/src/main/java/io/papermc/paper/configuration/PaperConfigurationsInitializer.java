@@ -1,6 +1,7 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.configuration.mapping.LoadEarly;
 import io.papermc.paper.configuration.transformation.global.LegacyBukkitConfig;
 import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.LegacySpigotConfig;
@@ -13,14 +14,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.Set;
 import joptsimple.OptionSet;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.BasicConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.ConfigurationOptions;
 import org.spongepowered.configurate.serialize.SerializationException;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -44,76 +46,82 @@ public final class PaperConfigurationsInitializer {
         """;
 
     // Also read from contexts that never actually boot a server
-    private static InitializationConfiguration earlyInitialization = new InitializationConfiguration();
+    private static @Nullable GlobalConfiguration earlyGlobalConfig;
 
     /**
-     * Returns the {@code initialization} section of the global config.
+     * Returns the global config to read {@link LoadEarly} fields from, at any point during startup.
      * <p>
-     * Before {@code DedicatedServer#initServer} deserializes the full {@link GlobalConfiguration}
-     * this returns the temporary instance loaded by {@link #load(OptionSet)}.
-     * After that, it returns the section from the fully loaded global config.
+     * Until {@code DedicatedServer#initServer} fully loads the {@link GlobalConfiguration}, this returns the
+     * instance created by {@link #load(OptionSet)}, which only has its {@link LoadEarly} fields populated.
+     * Every other field holds its default or is {@code null}. The full load then populates this same instance.
      *
-     * @return initialization section of the global config
+     * @return global config with at least its early fields loaded
      */
-    public static InitializationConfiguration initialization() {
+    public static GlobalConfiguration earlyGlobalConfig() {
         final GlobalConfiguration global = GlobalConfiguration.get();
-        if (global != null && global.initialization != null) {
-            return global.initialization;
+        //noinspection ConstantValue
+        if (global != null) {
+            return global;
         }
-        return earlyInitialization;
+        if (earlyGlobalConfig == null) {
+            try {
+                earlyGlobalConfig = loadEarlyGlobalConfig(null);
+            } catch (final ConfigurateException ex) {
+                throw new RuntimeException("Could not create the default early global config", ex);
+            }
+        }
+        return earlyGlobalConfig;
     }
 
     /**
-     * Runs the early configuration load for the {@link #initialization()} data.
+     * Runs the early configuration load for the {@link #earlyGlobalConfig()}.
      *
      * @param options startup options
-     * @return init config
      */
-    public static InitializationConfiguration load(final OptionSet options) throws IOException {
+    public static void load(final OptionSet options) throws IOException {
         final Path configDirPath = ((File) options.valueOf("paper-settings-directory")).toPath();
-        final InitializationConfiguration modernConfig = loadInitializationConfiguration(configDirPath.resolve(GLOBAL_CONFIG_FILE_NAME));
-        final InitializationConfiguration configuration = modernConfig != null ? modernConfig : new InitializationConfiguration();
-        if (modernConfig == null) {
-            // Migration only comes later, so we need to manually look into legacy files
-            final Path legacyBukkitConfigPath = ((File) options.valueOf("bukkit-settings")).toPath();
-            if (Files.isRegularFile(legacyBukkitConfigPath)) {
-                final YamlConfiguration bukkit = loadLegacyConfigFile(legacyBukkitConfigPath);
-                configuration.worldContainer = bukkit.getString("settings.world-container", configuration.worldContainer);
-                configuration.updateFolder = bukkit.getString("settings.update-folder", configuration.updateFolder);
-            }
+        final GlobalConfiguration configuration = loadEarlyGlobalConfig(configDirPath.resolve(GLOBAL_CONFIG_FILE_NAME));
 
-            final Path legacySpigotConfigPath = ((File) options.valueOf("spigot-settings")).toPath();
-            if (Files.isRegularFile(legacySpigotConfigPath)) {
-                final YamlConfiguration spigot = loadLegacyConfigFile(legacySpigotConfigPath);
-                if (spigot.contains("advancements.disabled")) {
-                    configuration.disabledAdvancements = Set.copyOf(spigot.getStringList("advancements.disabled"));
-                }
+        // Migration only comes later, so we need to manually look into legacy files that haven't been converted yet
+        final Path legacyBukkitConfigPath = ((File) options.valueOf("bukkit-settings")).toPath();
+        if (needsConverting(legacyBukkitConfigPath)) {
+            final YamlConfiguration bukkit = loadLegacyConfigFile(legacyBukkitConfigPath);
+            configuration.misc.worldContainer = bukkit.getString("settings.world-container", configuration.misc.worldContainer);
+            configuration.misc.updateFolder = bukkit.getString("settings.update-folder", configuration.misc.updateFolder);
+        }
+
+        final Path legacySpigotConfigPath = ((File) options.valueOf("spigot-settings")).toPath();
+        if (needsConverting(legacySpigotConfigPath)) {
+            final YamlConfiguration spigot = loadLegacyConfigFile(legacySpigotConfigPath);
+            if (spigot.contains("advancements.disabled")) {
+                configuration.advancements.disabled = Set.copyOf(spigot.getStringList("advancements.disabled"));
             }
         }
 
-        if (options.has("universe")) { // the launch argument always wins
-            configuration.worldContainer = ((File) options.valueOf("universe")).getPath();
-        }
-
-        earlyInitialization = configuration;
-        return configuration;
+        earlyGlobalConfig = configuration;
     }
 
-    static @Nullable InitializationConfiguration loadInitializationConfiguration(final Path globalConfigFile) throws ConfigurateException {
-        if (Files.notExists(globalConfigFile)) {
-            return null;
+    static GlobalConfiguration loadEarlyGlobalConfig(final @Nullable Path globalConfigFile) throws ConfigurateException {
+        final GlobalConfiguration configuration = new GlobalConfiguration();
+        final ConfigurationNode node;
+        if (globalConfigFile == null || Files.notExists(globalConfigFile)) {
+            node = BasicConfigurationNode.root(PaperConfigurations.earlyGlobalOptions(ConfigurationOptions.defaults(), configuration));
+        } else {
+            node = ConfigurationLoaders.naturallySorted()
+                .defaultOptions(options -> PaperConfigurations.earlyGlobalOptions(options, configuration))
+                .path(globalConfigFile)
+                .build()
+                .load();
+            final ConfigurationNode version = node.node(Configuration.VERSION_FIELD);
+            if (version.virtual()) { // See Configurations#verifyGlobalConfigVersion
+                version.raw(GlobalConfiguration.CURRENT_VERSION);
+            }
+
+            PaperConfigurations.applyEarlyGlobalTransformations(node);
         }
 
-        final ConfigurationNode node = PaperConfigurations.createRegistryFreeGlobalLoader(globalConfigFile).load();
-        final ConfigurationNode version = node.node(Configuration.VERSION_FIELD);
-        if (version.virtual()) { // See Configurations#verifyGlobalConfigVersion
-            version.raw(GlobalConfiguration.CURRENT_VERSION);
-        }
-
-        PaperConfigurations.applyGlobalTransformations(node);
-
-        final ConfigurationNode initNode = node.node("initialization");
-        return initNode.virtual() ? null : initNode.require(InitializationConfiguration.class);
+        node.require(GlobalConfiguration.class); // populates the instance passed to the options
+        return configuration;
     }
 
     public static PaperConfigurations create(final OptionSet options) throws Exception {
@@ -121,7 +129,7 @@ public final class PaperConfigurationsInitializer {
         final Path legacySpigotConfigPath = ((File) options.valueOf("spigot-settings")).toPath();
         final Path legacyPaperConfig = ((File) options.valueOf("paper-settings")).toPath();
         final Path configDirPath = ((File) options.valueOf("paper-settings-directory")).toPath();
-        final Path worldFolder = new File(initialization().worldContainer).toPath();
+        final Path worldFolder = options.has("universe") ? ((File) options.valueOf("universe")).toPath() : Path.of(earlyGlobalConfig().misc.worldContainer); // the launch argument always wins
         convertLegacy(legacyPaperConfig, configDirPath, worldFolder, legacySpigotConfigPath, legacyBukkitConfigPath, worldFolder.resolve(levelName(options)));
         return PaperConfigurations.setup(configDirPath);
     }

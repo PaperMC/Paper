@@ -31,8 +31,8 @@ public final class LegacyBukkitConfig {
 
     public static ConfigurationTransformation toNewFormat() {
         return ConfigurationTransformation.builder()
-            .addAction(settings("world-container"), move(path("initialization", "world-container")))
-            .addAction(settings("update-folder"), move(path("initialization", "update-folder")))
+            .addAction(settings("world-container"), move(path("misc", "world-container")))
+            .addAction(settings("update-folder"), move(path("misc", "update-folder")))
             .addAction(settings("allow-end"), move(path("misc", "enable-end")))
             .addAction(settings("permissions-file"), move(path("misc", "permissions-file")))
             .addAction(settings("connection-throttle"), move(path("misc", "connection-throttle")))

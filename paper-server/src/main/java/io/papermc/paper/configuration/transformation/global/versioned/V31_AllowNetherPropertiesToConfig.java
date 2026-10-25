@@ -1,33 +1,42 @@
 package io.papermc.paper.configuration.transformation.global.versioned;
 
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.dedicated.DedicatedServer;
-import org.spongepowered.configurate.ConfigurateException;
+import io.papermc.paper.configuration.Configurations;
+import io.papermc.paper.configuration.Configurations.ContextKey;
+import io.papermc.paper.configuration.Configurations.ContextMap;
+import io.papermc.paper.configuration.transformation.ContextualTransformation;
+import io.papermc.paper.configuration.transformation.ServerPropertiesAccess;
+import java.util.Set;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 
-import java.util.Properties;
+public final class V31_AllowNetherPropertiesToConfig implements ContextualTransformation {
 
-public class V31_AllowNetherPropertiesToConfig implements ConfigurationTransformation {
     public static final V31_AllowNetherPropertiesToConfig INSTANCE = new V31_AllowNetherPropertiesToConfig();
     private static final int VERSION = 31;
 
-    public static void apply(final ConfigurationTransformation.VersionedBuilder builder) {
-        builder.addVersion(VERSION, INSTANCE);
+    private V31_AllowNetherPropertiesToConfig() {
     }
 
     @Override
-    public void apply(final ConfigurationNode root) throws ConfigurateException {
-        final DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
-        final String raw = server.settings.getProperties().properties.getProperty("allow-nether");
-        if (raw != null) {
-            final ConfigurationNode node = root.node("misc", "enable-nether");
-            node.set(raw.equals("true"));
-            server.settings.update((config) -> {
-                final Properties newProps = new Properties(config.properties);
-                newProps.remove("allow-nether");
-                return config.reload(server.registryAccess(), newProps, server.options);
-            });
-        }
+    public int version() {
+        return VERSION;
+    }
+
+    @Override
+    public Set<ContextKey<?>> requiredContext() {
+        return Set.of(Configurations.SERVER_PROPERTIES);
+    }
+
+    @Override
+    public ConfigurationTransformation create(final ContextMap context) {
+        final ServerPropertiesAccess serverProperties = context.require(Configurations.SERVER_PROPERTIES);
+        return root -> {
+            final String raw = serverProperties.current().properties.getProperty("allow-nether");
+            if (raw != null) {
+                final ConfigurationNode node = root.node("misc", "enable-nether");
+                node.set(raw.equals("true"));
+                serverProperties.update(properties -> properties.remove("allow-nether"));
+            }
+        };
     }
 }

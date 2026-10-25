@@ -28,6 +28,7 @@ public final class LegacySpigotConfig {
     private static final Set<NodePath> KEPT_IN_PLACE = Set.of(
         path("players", "disable-saving"),
         path("advancements", "disable-saving"),
+        path("advancements", "disabled"),
         path("stats", "disable-saving")
     );
 
@@ -146,7 +147,7 @@ public final class LegacySpigotConfig {
             .addAction(messages("restart"), move(miniMessage(), messages("kick", "restart")))
             // players.disable-saving
             // advancements.disable-saving
-            .addAction(path("advancements", "disabled"), move(path("initialization", "disabled-advancements"))) // read before datapacks load
+            // advancements.disabled
             // stats.disable-saving
             .addAction(path("stats", "forced-stats"), rename("forced-custom-stat-values"))
             // settings

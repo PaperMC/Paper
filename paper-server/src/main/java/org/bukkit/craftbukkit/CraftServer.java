@@ -13,7 +13,6 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperConfigurations;
-import io.papermc.paper.configuration.PaperConfigurationsInitializer;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
 import io.papermc.paper.util.MCUtil;
@@ -784,12 +783,12 @@ public final class CraftServer implements Server {
 
     @Override
     public String getUpdateFolder() {
-        return PaperConfigurationsInitializer.initialization().updateFolder;
+        return GlobalConfiguration.get().misc.updateFolder;
     }
 
     @Override
     public File getUpdateFolderFile() {
-        return new File((File) this.console.options.valueOf("plugins"), io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().updateFolder);
+        return new File((File) this.console.options.valueOf("plugins"), GlobalConfiguration.get().misc.updateFolder);
     }
 
     @Override

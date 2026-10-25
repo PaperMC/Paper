@@ -37,7 +37,7 @@ public class PluginInitializerManager {
 
         // This runs before the registries are bootstrapped, so the full global config cannot be read here.
         // The update folder comes from the early initialization pass instead.
-        final String updateDirectoryName = PaperConfigurationsInitializer.initialization().updateFolder;
+        final String updateDirectoryName = PaperConfigurationsInitializer.earlyGlobalConfig().misc.updateFolder;
         if (updateDirectoryName.isBlank()) {
             return new PluginInitializerManager(pluginDirectory, null);
         }

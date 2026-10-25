@@ -5,24 +5,23 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.papermc.paper.configuration.Configurations.ContextMap;
+import io.papermc.paper.configuration.transformation.ContextualTransformation;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Map;
-import java.util.Objects;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
-import org.spongepowered.configurate.transformation.TransformAction;
 
-import static java.util.Objects.requireNonNull;
 import static org.spongepowered.configurate.NodePath.path;
 
-public class V30_PacketIds implements TransformAction {
+public final class V30_PacketIds implements ContextualTransformation {
 
     public static final V30_PacketIds INSTANCE = new V30_PacketIds();
     private static final int VERSION = 30;
@@ -48,16 +47,20 @@ public class V30_PacketIds implements TransformAction {
         MOJANG_TO_ID = builder2.build();
     }
 
-    public static void apply(final ConfigurationTransformation.VersionedBuilder builder) {
-        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), INSTANCE).build());
-    }
-
     private V30_PacketIds() {
     }
 
+    @Override
+    public int version() {
+        return VERSION;
+    }
 
     @Override
-    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) {
+    public ConfigurationTransformation create(final ContextMap context) {
+        return ConfigurationTransformation.builder().addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), V30_PacketIds::renamePacket).build();
+    }
+
+    private static Object @Nullable [] renamePacket(final NodePath path, final ConfigurationNode value) {
         final String oldClassName = path.get(path.size() - 1).toString();
         if (MOJANG_TO_ID.containsKey(oldClassName)) {
             return path.with(path.size() - 1, MOJANG_TO_ID.get(oldClassName).toString()).array();

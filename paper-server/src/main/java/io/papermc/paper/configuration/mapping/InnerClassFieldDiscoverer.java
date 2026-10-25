@@ -2,8 +2,10 @@ package io.papermc.paper.configuration.mapping;
 
 import io.leangen.geantyref.GenericTypeReflector;
 import io.papermc.paper.configuration.ConfigurationPart;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.WorldConfiguration;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SequencedMap;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
@@ -25,11 +28,13 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
     private final InnerClassInstanceSupplier instanceSupplier;
     private final FieldDiscoverer<Map<Field, Object>> delegate;
     private final Map<Class<? extends Annotation>, List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>>> fieldProcessors;
+    private final BiPredicate<AnnotatedType, AnnotatedElement> fieldFilter;
 
-    private InnerClassFieldDiscoverer(final InnerClassInstanceSupplier instanceSupplier, final FieldDiscoverer<Map<Field, Object>> delegate, final Map<Class<? extends Annotation>, List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>>> fieldProcessors) {
+    private InnerClassFieldDiscoverer(final InnerClassInstanceSupplier instanceSupplier, final FieldDiscoverer<Map<Field, Object>> delegate, final Map<Class<? extends Annotation>, List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>>> fieldProcessors, final BiPredicate<AnnotatedType, AnnotatedElement> fieldFilter) {
         this.instanceSupplier = instanceSupplier;
         this.delegate = delegate;
         this.fieldProcessors = fieldProcessors;
+        this.fieldFilter = fieldFilter;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -39,7 +44,7 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
         if (ConfigurationPart.class.isAssignableFrom(clazz)) {
             // we don't care about the returned instance factory, we just need to call it to collect fields
             final Object dummyInstance = this.delegate.<V>discover(target, (name, fieldType, container, deserializer, serializer) -> {
-                if (!erase(fieldType.getType()).equals(clazz.getEnclosingClass())) { // don't collect synth fields for inner classes
+                if (!erase(fieldType.getType()).equals(clazz.getEnclosingClass()) && this.fieldFilter.test(fieldType, container)) { // don't collect synth fields for inner classes
                     FieldProcessor<?> processor = null;
                     processor: for (final Annotation annotation : container.getAnnotations()) {
                         final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> definitions = this.fieldProcessors.get(annotation.annotationType());
@@ -80,14 +85,18 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
     record ImplicitProvider(Supplier<Object> provider) {
     }
 
-    @SuppressWarnings("unchecked")
     private static InnerClassFieldDiscoverer create(final Map<Class<?>, Object> overrides, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
+        return create(overrides, fieldProcessors, (fieldType, container) -> true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static InnerClassFieldDiscoverer create(final Map<Class<?>, Object> overrides, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors, final BiPredicate<AnnotatedType, AnnotatedElement> fieldFilter) {
         final Map<Class<? extends Annotation>, List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>>> processors = new LinkedHashMap<>();
         for (final Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>> definition : fieldProcessors) {
             processors.computeIfAbsent(definition.annotation(), k -> new ArrayList<>()).add(definition);
         }
         final InnerClassInstanceSupplier instanceSupplier = new InnerClassInstanceSupplier(overrides);
-        return new InnerClassFieldDiscoverer(instanceSupplier, (FieldDiscoverer<Map<Field, Object>>) FieldDiscoverer.object(instanceSupplier), processors);
+        return new InnerClassFieldDiscoverer(instanceSupplier, (FieldDiscoverer<Map<Field, Object>>) FieldDiscoverer.object(instanceSupplier), processors, fieldFilter);
     }
 
     public static FieldDiscoverer<?> worldConfig(final WorldConfiguration worldConfiguration, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
@@ -99,5 +108,22 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
 
     public static FieldDiscoverer<?> globalConfig(final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
         return create(Collections.emptyMap(), fieldProcessors);
+    }
+
+    public static FieldDiscoverer<?> globalConfig(final GlobalConfiguration globalConfiguration, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
+        final Map<Class<?>, Object> overrides = Map.of(
+            GlobalConfiguration.class, globalConfiguration
+        );
+        return create(overrides, fieldProcessors);
+    }
+
+    /**
+     * Only discovers {@link LoadEarly} fields, and the sections containing them.
+     */
+    public static FieldDiscoverer<?> earlyGlobalConfig(final GlobalConfiguration globalConfiguration, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
+        final Map<Class<?>, Object> overrides = Map.of(
+            GlobalConfiguration.class, globalConfiguration
+        );
+        return create(overrides, fieldProcessors, LoadEarly.FIELD_FILTER);
     }
 }

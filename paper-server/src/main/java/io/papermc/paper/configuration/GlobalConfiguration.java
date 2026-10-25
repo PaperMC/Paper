@@ -3,6 +3,7 @@ package io.papermc.paper.configuration;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.mapping.LoadEarly;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
@@ -11,8 +12,6 @@ import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Reference2IntMap;
-import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -23,19 +22,17 @@ import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
-import net.minecraft.util.Util;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
-import org.bukkit.Warning;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.bukkit.Warning;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -54,9 +51,6 @@ public class GlobalConfiguration extends ConfigurationPart {
     public static GlobalConfiguration get() {
         return instance;
     }
-
-    @Comment("Settings that are read during server initialization before the rest of this file can be loaded.")
-    public InitializationConfiguration initialization;
 
     public ChunkLoadingBasic chunkLoadingBasic;
 
@@ -458,6 +452,16 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableEnd = true;
         @Comment("File that plugin permissions are loaded from, relative to the server root.")
         public String permissionsFile = "permissions.yml";
+        @LoadEarly
+        @Comment("""
+            The directory inside the plugins folder that plugin updates are loaded from. Set to an empty string to disable auto updating.
+            Read before plugins are discovered, so changes require a restart.""")
+        public String updateFolder = "update";
+        @LoadEarly
+        @Comment("""
+            The directory worlds are stored in, relative to the server root.
+            Read before the world folder is opened, so changes require a restart. Overridden by the --universe launch argument.""")
+        public String worldContainer = ".";
         @Comment("Milliseconds a connecting player must wait before reconnecting. Set to -1 to disable.")
         public int connectionThrottle = 4000;
         @Comment("Whether the plugin list is included in GS4 query responses.")
@@ -539,7 +543,12 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class Advancements extends ConfigurationPart {
         public boolean strictDimensionCheck = false;
         public boolean disableSaving = false;
-        // disabled-advancements list has to be read before datapacks load, so it's part of InitializationConfiguration
+        @LoadEarly
+        @Comment("""
+            Advancements that will not be loaded at all. Accepts '*' to disable every advancement,
+            a namespace to disable all advancements in it, or individual advancement keys.
+            Read before datapacks are loaded, so changes require a restart.""")
+        public Set<String> disabled = Set.of("minecraft:story/disabled");
     }
 
     public Stats stats;

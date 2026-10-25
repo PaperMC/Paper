@@ -1,14 +1,12 @@
 package io.papermc.paper.configuration;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
-import io.papermc.paper.configuration.constraint.Constraint;
-import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.mapping.Definition;
 import io.papermc.paper.configuration.mapping.FieldProcessor;
 import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
+import io.papermc.paper.configuration.mapping.LoadEarly;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
@@ -21,8 +19,8 @@ import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSeria
 import io.papermc.paper.configuration.serializer.collection.map.MapSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
+import io.papermc.paper.configuration.transformation.ContextualTransformation;
 import io.papermc.paper.configuration.transformation.Transformations;
-import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
 import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
@@ -49,24 +47,19 @@ import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import net.kyori.adventure.key.Key;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -74,7 +67,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -85,11 +77,14 @@ import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.ConfigurationOptions;
 import org.spongepowered.configurate.NodePath;
+import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
+import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
+import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.transformation.TransformAction;
+import org.spongepowered.configurate.util.NamingSchemes;
 
-import static com.google.common.base.Preconditions.checkState;
 import static io.leangen.geantyref.GenericTypeReflector.erase;
 
 @SuppressWarnings("Convert2Diamond")
@@ -188,20 +183,34 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
     @Override
     protected ObjectMapper.Factory.Builder createGlobalObjectMapperFactoryBuilder() {
-        return defaultGlobalFactoryBuilder(super.createGlobalObjectMapperFactoryBuilder());
+        // populate the instance the early load created, so it isn't replaced
+        return globalObjectMapperFactoryBuilder(super.createGlobalObjectMapperFactoryBuilder(), PaperConfigurationsInitializer.earlyGlobalConfig());
     }
 
-    private static ObjectMapper.Factory.Builder defaultGlobalFactoryBuilder(ObjectMapper.Factory.Builder builder) {
-        return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig(defaultFieldProcessors()));
+    private static ObjectMapper.Factory.Builder globalObjectMapperFactoryBuilder(final ObjectMapper.Factory.Builder builder, final GlobalConfiguration instance) {
+        return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig(instance, defaultFieldProcessors()));
+    }
+
+    private static ObjectMapper.Factory.Builder earlyGlobalObjectMapperFactoryBuilder(final GlobalConfiguration instance) {
+        // not based on the default builder, it always adds the @PostProcess post-processor
+        return addDefaultConstraints(ObjectMapper.emptyFactoryBuilder())
+            .defaultNamingScheme(NamingSchemes.LOWER_CASE_DASHED)
+            .addNodeResolver(NodeResolver.nodeKey())
+            .addNodeResolver(NodeResolver.keyFromSetting())
+            .addNodeResolver(NodeResolver.nodeFromParent())
+            .addDiscoverer(FieldDiscoverer.emptyConstructorObject())
+            .addDiscoverer(FieldDiscoverer.record())
+            .addDiscoverer(InnerClassFieldDiscoverer.earlyGlobalConfig(instance, defaultFieldProcessors())); // added last, so it's checked first
     }
 
     @Override
-    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(RegistryAccess registryAccess) {
-        return super.createGlobalLoaderBuilder(registryAccess)
-            .defaultOptions((options) -> defaultGlobalOptions(registryAccess, options));
+    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(final ContextMap contextMap) {
+        final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
+        return super.createGlobalLoaderBuilder(contextMap)
+            .defaultOptions((options) -> defaultGlobalOptions(options, access));
     }
 
-    private static ConfigurationOptions defaultGlobalOptions(RegistryAccess registryAccess, ConfigurationOptions options) {
+    private static ConfigurationOptions defaultGlobalOptions(ConfigurationOptions options, RegistryAccess registryAccess) {
         return options
             .header(GLOBAL_HEADER)
             .serializers(builder -> builder
@@ -220,8 +229,8 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     @Override
-    public GlobalConfiguration initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
-        GlobalConfiguration configuration = super.initializeGlobalConfiguration(registryAccess);
+    public GlobalConfiguration initializeGlobalConfiguration(final DedicatedServer server) throws ConfigurateException {
+        GlobalConfiguration configuration = super.initializeGlobalConfiguration(server);
         GlobalConfiguration.set(configuration);
         return configuration;
     }
@@ -277,17 +286,42 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     @Override
-    protected void applyGlobalConfigTransformations(ConfigurationNode node) throws ConfigurateException {
-        applyGlobalTransformations(node);
+    protected void applyGlobalConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
+        applyGlobalTransformations(contextMap, node);
     }
 
     /**
      * Applies removals and versioned transformations for the global config.
      *
+     * @param contextMap context for the transformations, which must contain everything each of them requires
      * @param node configuration node
-     * @see PaperConfigurationsInitializer#loadInitializationConfiguration(Path)
      */
-    static void applyGlobalTransformations(final ConfigurationNode node) throws ConfigurateException {
+    static void applyGlobalTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
+        applyGlobalTransformations(contextMap, node, false);
+    }
+
+    /**
+     * Applies the global transformations that can run before the server exists, for reading {@link LoadEarly} fields.
+     * Every transformation requiring context that isn't available yet is skipped, so the node must never be saved.
+     *
+     * @param node configuration node
+     * @see PaperConfigurationsInitializer#loadEarlyGlobalConfig(Path)
+     */
+    static void applyEarlyGlobalTransformations(final ConfigurationNode node) throws ConfigurateException {
+        applyGlobalTransformations(ContextMap.builder().build(), node, true);
+    }
+
+    private static List<ContextualTransformation> versionedGlobalTransformations() {
+        return List.of(
+            V29_LogIPs.INSTANCE,
+            V30_PacketIds.INSTANCE,
+            V31_AllowNetherPropertiesToConfig.INSTANCE,
+            V32_SpigotConfigCleanup.INSTANCE
+            // ADD FUTURE VERSIONED TRANSFORMS HERE
+        );
+    }
+
+    private static void applyGlobalTransformations(final ContextMap contextMap, final ConfigurationNode node, final boolean skipUnavailable) throws ConfigurateException {
         ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
         for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATHS) {
             builder.addAction(path, TransformAction.remove());
@@ -295,35 +329,31 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         builder.build().apply(node);
 
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
-        V29_LogIPs.apply(versionedBuilder);
-        V30_PacketIds.apply(versionedBuilder);
-        V31_AllowNetherPropertiesToConfig.apply(versionedBuilder);
-        V32_SpigotConfigCleanup.apply(versionedBuilder);
-        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
+        for (final ContextualTransformation transformation : versionedGlobalTransformations()) {
+            final List<String> missing = transformation.requiredContext().stream()
+                .filter(key -> !contextMap.has(key))
+                .map(ContextKey::name)
+                .toList();
+            if (missing.isEmpty()) {
+                versionedBuilder.addVersion(transformation.version(), transformation.create(contextMap));
+            } else if (!skipUnavailable) {
+                // the version is bumped and saved regardless, so the skipped migration would be lost for good
+                throw new IllegalStateException("Global config transformation to version " + transformation.version() + " requires " + String.join(", ", missing));
+            }
+        }
         versionedBuilder.build().apply(node);
     }
 
     /**
-     * A loader for the global config file that is usable before {@code RegistryAccess} exists.
-     * Can only deserialize primitives, strings and primitive collections/sections. See {@link InitializationConfiguration}.
+     * Options for loading the global config file before {@code Bootstrap} has run and {@code RegistryAccess} exists.
+     * Only {@link LoadEarly} fields are deserialized, into the given instance, and no post-processors are run.
      *
-     * @param configFile config file path
-     * @return registry-free global loader
+     * @param options base options
+     * @param instance global config instance to populate
+     * @return early global config options
      */
-    static YamlConfigurationLoader createRegistryFreeGlobalLoader(final Path configFile) {
-        final ObjectMapper.Factory factory = defaultGlobalFactoryBuilder(ObjectMapper.factoryBuilder()
-            .addConstraint(Constraint.class, new Constraint.Factory())
-            .addConstraint(Constraints.Min.class, Number.class, new Constraints.Min.Factory())
-            .addConstraint(Constraints.Max.class, Number.class, new Constraints.Max.Factory())
-        ).build();
-        return ConfigurationLoaders.naturallySorted()
-            .defaultOptions(PaperConfigurations::defaultOptions)
-            .defaultOptions(options -> options.serializers(builder -> builder
-                .register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer())
-                .registerAnnotatedObjects(factory)
-            ))
-            .path(configFile)
-            .build();
+    static ConfigurationOptions earlyGlobalOptions(final ConfigurationOptions options, final GlobalConfiguration instance) {
+        return applyObjectMapperFactory(defaultOptions(options), PaperConfigurations::isConfigPart, earlyGlobalObjectMapperFactoryBuilder(instance).build());
     }
 
     @Override
@@ -346,17 +376,21 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
     @Override
     protected boolean isConfigType(final Type type) {
+        return isConfigPart(type);
+    }
+
+    private static boolean isConfigPart(final Type type) {
         return ConfigurationPart.class.isAssignableFrom(erase(type));
     }
 
-    public void reloadConfigs(MinecraftServer server) {
+    public void reloadConfigs(final DedicatedServer server) {
         try {
-            this.initializeGlobalConfiguration(server.registryAccess(), reloader(this.globalConfigClass, GlobalConfiguration.get()));
+            this.initializeGlobalConfiguration(this.createGlobalContextMap(server).build(), reloader(this.globalConfigClass, GlobalConfiguration.get()));
             this.initializeWorldDefaultsConfiguration(server.registryAccess());
-            for (ServerLevel level : server.getAllLevels()) {
+            for (final ServerLevel level : server.getAllLevels()) {
                 this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.paperConfig()));
             }
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw new RuntimeException("Could not reload paper configuration files", ex);
         }
     }
@@ -402,12 +436,19 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
 
+    /**
+     * Creates the global config with all defaults, the same way {@link #initializeGlobalConfiguration(DedicatedServer)} would.
+     *
+     * @param registryAccess registry access
+     * @return default global config
+     */
     @VisibleForTesting
-    static ConfigurationNode createForTesting(RegistryAccess registryAccess) {
-        ObjectMapper.Factory factory = defaultGlobalFactoryBuilder(ObjectMapper.factoryBuilder()).build();
-        ConfigurationOptions options = defaultGlobalOptions(registryAccess, defaultOptions(ConfigurationOptions.defaults()))
-            .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
-        return BasicConfigurationNode.root(options);
+    static GlobalConfiguration createGlobalForTesting(final RegistryAccess registryAccess) throws SerializationException {
+        final GlobalConfiguration instance = new GlobalConfiguration();
+        final ObjectMapper.Factory factory = globalObjectMapperFactoryBuilder(defaultObjectMapperFactoryBuilder(), instance).build();
+        final ConfigurationOptions options = applyObjectMapperFactory(defaultGlobalOptions(defaultOptions(ConfigurationOptions.defaults()), registryAccess), PaperConfigurations::isConfigPart, factory);
+        BasicConfigurationNode.root(options).require(GlobalConfiguration.class); // populates the instance passed to the factory
+        return instance;
     }
 
     @VisibleForTesting

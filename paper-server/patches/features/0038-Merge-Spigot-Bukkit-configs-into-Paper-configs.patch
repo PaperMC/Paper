@@ -220,14 +220,14 @@ index d9acbf61ecd3d2800402880dd5d4d92239b01223..d4cd0622b79e7b148169784dd423f12f
                  ArgumentBuilder<S, ?> builder = child.createBuilder();
                  // Paper start
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index aa7f2ba4d931f98ce15c52dc2b99f07504149582..439a07e7ed9baf950db92e2891c1483c82026766 100644
+index aa7f2ba4d931f98ce15c52dc2b99f07504149582..c6b725af5b87040ad38f08bda7abf1420819803d 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
 @@ -110,6 +110,7 @@ public class Main {
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-+            io.papermc.paper.configuration.PaperConfigurationsInitializer.load(options); // Paper - load the initialization config section before anything that needs it
++            io.papermc.paper.configuration.PaperConfigurationsInitializer.load(options); // Paper - load the early global config fields before anything that needs them
              io.papermc.paper.plugin.PluginInitializerManager.load(options); // Paper
              Bootstrap.bootStrap();
              Bootstrap.validate();
@@ -265,7 +265,7 @@ index aa7f2ba4d931f98ce15c52dc2b99f07504149582..439a07e7ed9baf950db92e2891c1483c
                  userCacheFile = new File(universePath, Services.USERID_CACHE_FILE);
              } else {
 -                universePath = new File(bukkitConfiguration.getString("settings.world-container", "."));
-+                universePath = new File(io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().worldContainer); // Paper - world container from the initialization config
++                universePath = new File(io.papermc.paper.configuration.PaperConfigurationsInitializer.earlyGlobalConfig().misc.worldContainer); // Paper - world container from the early global config
              }
              // Paper end - fix SPIGOT-5824
              Services services = Services.create(com.destroystokyo.paper.profile.PaperServicesDiscoveryService.create(Proxy.NO_PROXY), universePath, userCacheFile, options); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
@@ -332,14 +332,14 @@ index e70701663abd6f19a506690167d80f0dceab8000..f1f10f65498b522b434352755f37f990
  
          try {
 diff --git a/net/minecraft/server/ServerAdvancementManager.java b/net/minecraft/server/ServerAdvancementManager.java
-index b9c4ae19fc4c7a5921eaea2ace0aa432371a4478..f134aab9303667732f4f85d7f57bbc966c478d07 100644
+index b9c4ae19fc4c7a5921eaea2ace0aa432371a4478..507352c278e2e71c7db7ff0a67c4e0dc35f39bd2 100644
 --- a/net/minecraft/server/ServerAdvancementManager.java
 +++ b/net/minecraft/server/ServerAdvancementManager.java
 @@ -24,10 +24,11 @@ public class ServerAdvancementManager {
      public ServerAdvancementManager(final HolderLookup.Provider registries) {
          HolderLookup.RegistryLookup<Advancement> advancements = registries.lookupOrThrow(Registries.ADVANCEMENT);
          Builder<Identifier, AdvancementHolder> builder = ImmutableMap.builder();
-+        final java.util.Set<String> disabledAdvancements = io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().disabledAdvancements; // Paper - read early, before the global config exists
++        final java.util.Set<String> disabledAdvancements = io.papermc.paper.configuration.PaperConfigurationsInitializer.earlyGlobalConfig().advancements.disabled; // Paper - read early, before the global config exists
          advancements.listElements().forEach(advancement -> {
              // Spigot start
              Identifier id = advancement.key().identifier();
@@ -364,26 +364,26 @@ index 077b2a6442f12d92d56f4356a263abee4831c37d..b123d386a63d277ad75ad4761ae7c70d
              paperConfigurations,
              new io.papermc.paper.profile.PaperFilledProfileCache()
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 68675926ee85f738b3693a76fc29b80b80c717ed..beaa33f874fa62e55ef1497565a1708596c09a53 100644
+index 68675926ee85f738b3693a76fc29b80b80c717ed..ffaaa535b8721b871e3f039d54023219d53b7b98 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -229,15 +229,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              this.setLocalIp(properties.serverIp);
          }
  
--        // Spigot start
--        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        // Paper start - initialize global and world-defaults configuration; has to be before CraftServer
++        this.paperConfigurations.initializeGlobalConfiguration(this);
++        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++        // Paper end - initialize global and world-defaults configuration
+         // Spigot start
+         this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
 -        org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
 -        org.spigotmc.SpigotConfig.registerCommands();
--        // Spigot end
+         // Spigot end
 -        // Paper start - initialize global and world-defaults configuration
-+        // Paper start - initialize global and world-defaults configuration; has to be before CraftServer
-         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
-         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
-         // Paper end - initialize global and world-defaults configuration
-+        // Spigot start
-+        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
-+        // Spigot end
+-        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+-        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+-        // Paper end - initialize global and world-defaults configuration
          this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
          if (this.convertOldUsers()) {

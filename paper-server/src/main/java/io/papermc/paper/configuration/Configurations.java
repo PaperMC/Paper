@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.transformation.ServerPropertiesAccess;
 import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -15,9 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.gamerules.GameRules;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -59,10 +62,18 @@ public abstract class Configurations<G, W> {
     }
 
     protected ObjectMapper.Factory.Builder createObjectMapper() {
-        return ObjectMapper.factoryBuilder()
+        return defaultObjectMapperFactoryBuilder();
+    }
+
+    static ObjectMapper.Factory.Builder defaultObjectMapperFactoryBuilder() {
+        return addDefaultConstraints(ObjectMapper.factoryBuilder());
+    }
+
+    static ObjectMapper.Factory.Builder addDefaultConstraints(final ObjectMapper.Factory.Builder builder) {
+        return builder
             .addConstraint(Constraint.class, new Constraint.Factory())
-            .addConstraint(Constraints.Min.class, Number.class, new Constraints.Min.Factory())
-            .addConstraint(Constraints.Max.class, Number.class, new Constraints.Max.Factory());
+            .addConstraint(Constraints.Min.class, new Constraints.Min.Factory())
+            .addConstraint(Constraints.Max.class, new Constraints.Max.Factory());
     }
 
     protected YamlConfigurationLoader.Builder createLoaderBuilder() {
@@ -80,7 +91,7 @@ public abstract class Configurations<G, W> {
     }
 
     @MustBeInvokedByOverriders
-    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(RegistryAccess registryAccess) {
+    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(final ContextMap contextMap) {
         return this.createLoaderBuilder();
     }
 
@@ -103,8 +114,8 @@ public abstract class Configurations<G, W> {
         };
     }
 
-    public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
-        return this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass, true));
+    public G initializeGlobalConfiguration(final DedicatedServer server) throws ConfigurateException {
+        return this.initializeGlobalConfiguration(this.createGlobalContextMap(server).build(), creator(this.globalConfigClass, true));
     }
 
     private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
@@ -117,9 +128,9 @@ public abstract class Configurations<G, W> {
         }
     }
 
-    protected G initializeGlobalConfiguration(final RegistryAccess registryAccess, final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
+    protected G initializeGlobalConfiguration(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
         final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
-        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder(registryAccess)
+        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder(contextMap)
             .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
             .path(configFile)
             .build();
@@ -132,9 +143,9 @@ public abstract class Configurations<G, W> {
             node = loader.load();
             this.verifyGlobalConfigVersion(node);
         }
-        this.applyGlobalConfigTransformations(node);
+        this.applyGlobalConfigTransformations(contextMap, node);
         final G instance = creator.apply(node);
-        trySaveFileNode(loader, node, configFile.toString());
+        this.trySaveFileNode(loader, node, configFile.toString());
         return instance;
     }
 
@@ -148,7 +159,14 @@ public abstract class Configurations<G, W> {
         }
     }
 
-    protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
+    protected void applyGlobalConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
+    }
+
+    @MustBeInvokedByOverriders
+    protected ContextMap.Builder createGlobalContextMap(final DedicatedServer server) {
+        return ContextMap.builder()
+            .put(REGISTRY_ACCESS, server.registryAccess())
+            .put(SERVER_PROPERTIES, ServerPropertiesAccess.of(server));
     }
 
     @MustBeInvokedByOverriders
@@ -268,8 +286,12 @@ public abstract class Configurations<G, W> {
     }
 
     private UnaryOperator<ConfigurationOptions> applyObjectMapperFactory(final ObjectMapper.Factory factory) {
-        return options -> options.serializers(builder -> builder
-            .register(this::isConfigType, factory.asTypeSerializer())
+        return options -> applyObjectMapperFactory(options, this::isConfigType, factory);
+    }
+
+    static ConfigurationOptions applyObjectMapperFactory(final ConfigurationOptions options, final Predicate<Type> isConfigType, final ObjectMapper.Factory factory) {
+        return options.serializers(builder -> builder
+            .register(isConfigType, factory.asTypeSerializer())
             .registerAnnotatedObjects(factory));
     }
 
@@ -342,6 +364,7 @@ public abstract class Configurations<G, W> {
     public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
     public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
     public static final ContextKey<GameRules> GAME_RULES = new ContextKey<>(GameRules.class, "game rules");
+    public static final ContextKey<ServerPropertiesAccess> SERVER_PROPERTIES = new ContextKey<>(ServerPropertiesAccess.class, "server properties");
 
     public record ContextKey<T>(TypeToken<T> type, String name) {
 
