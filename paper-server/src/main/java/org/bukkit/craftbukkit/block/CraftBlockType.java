@@ -24,7 +24,9 @@ import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.phys.BlockHitResult;
+import org.bukkit.Instrument;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -252,4 +254,10 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         return this.getHandle().hasCollision;
     }
     // Paper end - hasCollision API
+
+    @Override
+    public Instrument getInstrument() {
+        NoteBlockInstrument instrument = this.getHandle().defaultBlockState().instrument();
+        return CraftBlockData.fromVanilla(instrument, Instrument.class);
+    }
 }
