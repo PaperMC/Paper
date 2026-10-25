@@ -40,6 +40,7 @@ import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.configuration.type.number.LongOr;
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
@@ -87,7 +88,6 @@ import org.spongepowered.configurate.NodePath;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.transformation.TransformAction;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.leangen.geantyref.GenericTypeReflector.erase;

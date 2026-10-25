@@ -6,6 +6,7 @@ import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.LegacySpigotConfig;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.LegacySpigotWorldConfig;
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +22,6 @@ import org.slf4j.Logger;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.papermc.paper.configuration.PaperConfigurations.GLOBAL_CONFIG_FILE_NAME;

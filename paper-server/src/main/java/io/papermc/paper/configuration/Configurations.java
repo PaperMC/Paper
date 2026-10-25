@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.AccessDeniedException;
@@ -29,7 +30,6 @@ import org.spongepowered.configurate.ConfigurationOptions;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
 import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.util.CheckedFunction;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 public abstract class Configurations<G, W> {
 

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import io.papermc.paper.datacomponent.item.Tool;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

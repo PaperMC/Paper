@@ -1,11 +1,11 @@
 package io.papermc.paper.configuration;
 
+import io.papermc.paper.configuration.yaml.BlankLineStyle;
+import io.papermc.paper.configuration.yaml.NodeStyle;
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import java.nio.file.Path;
 import org.spongepowered.configurate.loader.HeaderMode;
 import org.spongepowered.configurate.util.MapFactories;
-import org.spongepowered.configurate.yaml.BlankLineStyle;
-import org.spongepowered.configurate.yaml.NodeStyle;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 public final class ConfigurationLoaders {
     private ConfigurationLoaders() {

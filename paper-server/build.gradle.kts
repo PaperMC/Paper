@@ -136,7 +136,7 @@ dependencies {
     implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
-    implementation("org.spongepowered:configurate-yaml:4.3.0-GeyserMC")
+    implementation("org.spongepowered:configurate-core:4.2.0") // plus GeyserMC's yaml loader with comments in io.papermc.paper.configuration.yaml
 
     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
     runtimeOnly("commons-lang:commons-lang:2.6")

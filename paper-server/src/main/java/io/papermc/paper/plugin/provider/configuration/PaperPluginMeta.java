@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableList;
 import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
+import io.papermc.paper.configuration.yaml.NodeStyle;
+import io.papermc.paper.configuration.yaml.YamlConfigurationLoader;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfigurationSerializer;
 import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
@@ -28,8 +30,6 @@ import org.spongepowered.configurate.objectmapping.ObjectMapper;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
 import org.spongepowered.configurate.serialize.SerializationException;
-import org.spongepowered.configurate.yaml.NodeStyle;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.BufferedReader;
 import java.util.EnumMap;
