@@ -263,6 +263,7 @@ public final class CraftServer implements Server {
     final DedicatedServer console;
     private final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<>();
+    private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
     private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().weakValues().makeMap();
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
@@ -401,7 +402,19 @@ public final class CraftServer implements Server {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
         }
 
-        this.applyPaperConfiguration(); // Paper - moved from bukkit.yml and commands.yml
+        this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
+        this.commandsConfiguration.options().copyDefaults(true);
+        // Paper start - don't enforce icanhasbukkit default if alias block exists
+        final YamlConfiguration commandsDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), StandardCharsets.UTF_8));
+        if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
+        this.commandsConfiguration.setDefaults(commandsDefaults);
+        // Paper end - don't enforce icanhasbukkit default if alias block exists
+        this.commandsConfiguration.options().setHeader(commandsDefaults.options().getHeader());
+        this.saveCommandsConfig();
+        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+
+        this.applyPaperConfiguration(); // Paper - moved from bukkit.yml
         this.loadIcon();
         CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
 
@@ -416,8 +429,6 @@ public final class CraftServer implements Server {
 
     public void applyPaperConfiguration() {
         final GlobalConfiguration config = GlobalConfiguration.get();
-        this.overrideAllCommandBlockCommands = config.commands.commandBlockOverrides.contains("*");
-        this.ignoreVanillaPermissions = config.commands.ignoreVanillaPermissions;
         this.console.autosavePeriod = config.misc.autoSaveInterval;
         this.warningState = config.misc.deprecatedVerbose;
         TicketType.PLUGIN_TYPE_TIMEOUT = config.chunkSystem.pluginTicketTimeout;
@@ -434,18 +445,25 @@ public final class CraftServer implements Server {
     }
 
     public void reloadPaperConfiguration() {
-        final Set<String> previousAliases = this.getCommandAliases().keySet().stream()
-            .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
-            .collect(java.util.stream.Collectors.toSet());
         this.console.paperConfigurations.reloadConfigs(this.console);
         this.applyPaperConfiguration();
-        this.getCommandMap().getKnownCommands().keySet().removeIf(previousAliases::contains);
-        this.commandMap.registerServerAliases();
         this.syncCommands();
     }
 
     public boolean getCommandBlockOverride(String command) {
-        return this.overrideAllCommandBlockCommands || GlobalConfiguration.get().commands.commandBlockOverrides.contains(command);
+        return this.overrideAllCommandBlockCommands || this.commandsConfiguration.getStringList("command-block-overrides").contains(command);
+    }
+
+    private File getCommandsConfigFile() {
+        return (File) this.console.options.valueOf("commands-settings");
+    }
+
+    private void saveCommandsConfig() {
+        try {
+            this.commandsConfiguration.save(this.getCommandsConfigFile());
+        } catch (IOException ex) {
+            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + this.getCommandsConfigFile(), ex);
+        }
     }
 
 
@@ -868,6 +886,7 @@ public final class CraftServer implements Server {
         // Paper end - lifecycle events
         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
         this.reloadCount++;
+        this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
 
         this.console.settings = new DedicatedServerSettings(this.console.options);
         DedicatedServerProperties config = this.console.settings.getProperties();
@@ -909,6 +928,8 @@ public final class CraftServer implements Server {
         this.reloadData();
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
+        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
 
         int pollCount = 0;
 
@@ -1563,8 +1584,23 @@ public final class CraftServer implements Server {
 
     @Override
     public Map<String, String[]> getCommandAliases() {
-        final Map<String, String[]> result = new LinkedHashMap<>();
-        GlobalConfiguration.get().commands.aliases.forEach((key, commands) -> result.put(key, commands.toArray(new String[0])));
+        ConfigurationSection section = this.commandsConfiguration.getConfigurationSection("aliases");
+        Map<String, String[]> result = new LinkedHashMap<>();
+
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                List<String> commands;
+
+                if (section.isList(key)) {
+                    commands = section.getStringList(key);
+                } else {
+                    commands = ImmutableList.of(section.getString(key));
+                }
+
+                result.put(key, commands.toArray(new String[commands.size()]));
+            }
+        }
+
         return result;
     }
 
@@ -2715,7 +2751,20 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean reloadCommandAliases() {
-        this.reloadPaperConfiguration();
+        Set<String> removals = getCommandAliases().keySet().stream()
+                .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
+                .collect(java.util.stream.Collectors.toSet());
+        getCommandMap().getKnownCommands().keySet().removeIf(removals::contains);
+        File file = getCommandsConfigFile();
+        try {
+            commandsConfiguration.load(file);
+        } catch (FileNotFoundException ex) {
+            return false;
+        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
+            return false;
+        }
+        commandMap.registerServerAliases();
         return true;
     }
 

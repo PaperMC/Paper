@@ -7,7 +7,6 @@ import java.util.Set;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
-import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.transformation.TransformAction;
 
@@ -28,12 +27,6 @@ public final class LegacyBukkitConfig {
         node.removeChild("ticks-per");
         Transformations.removeUnmigrated(legacy, node, "bukkit.yml", Set.of());
         Transformations.pruneEmptySections(node, "settings", "chunk-gc", "worlds");
-    }
-
-    public static void migrateCommands(final ConfigurationNode node) throws ConfigurateException {
-        final ConfigurationNode legacy = node.copy();
-        commandsToNewFormat().apply(node);
-        Transformations.removeUnmigrated(legacy, node, "commands.yml", Set.of());
     }
 
     public static ConfigurationTransformation toNewFormat() {
@@ -64,31 +57,7 @@ public final class LegacyBukkitConfig {
             .addAction(settings("warn-on-overload"), remove())
             .addAction(settings("plugin-profiling"), remove())
             .addAction(settings("compatibility"), remove()) // CraftServer#loadCompatibilities has been a no-op for years
-            .addAction(path("aliases"), (nodePath, value) -> {
-                if (!value.isMap()) { // the "now-in-commands.yml" stub
-                    value.raw(null);
-                    return null;
-                }
-                for (final ConfigurationNode alias : value.childrenMap().values()) {
-                    normalizeAlias(alias);
-                }
-                return path("commands", "aliases").array();
-            })
             .build();
-    }
-
-    public static ConfigurationTransformation commandsToNewFormat() {
-        return ConfigurationTransformation.builder()
-            .addAction(path("command-block-overrides"), move(path("commands", "command-block-overrides")))
-            .addAction(path("ignore-vanilla-permissions"), move(path("commands", "ignore-vanilla-permissions")))
-            .addAction(path("aliases"), move(path("commands", "aliases")))
-            .build();
-    }
-
-    private static void normalizeAlias(final ConfigurationNode alias) throws SerializationException {
-        if (!alias.isList()) {
-            alias.set(List.of(alias.getString("") + " $1-"));
-        }
     }
 
     private static NodePath settings(final String key) {

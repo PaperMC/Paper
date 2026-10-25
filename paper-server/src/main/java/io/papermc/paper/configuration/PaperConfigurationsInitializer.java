@@ -122,12 +122,11 @@ public final class PaperConfigurationsInitializer {
         final Path legacyPaperConfig = ((File) options.valueOf("paper-settings")).toPath();
         final Path configDirPath = ((File) options.valueOf("paper-settings-directory")).toPath();
         final Path worldFolder = new File(initialization().worldContainer).toPath();
-        convertLegacy(legacyPaperConfig, configDirPath, worldFolder, legacySpigotConfigPath, legacyBukkitConfigPath,
-            ((File) options.valueOf("commands-settings")).toPath(), worldFolder.resolve(levelName(options)));
+        convertLegacy(legacyPaperConfig, configDirPath, worldFolder, legacySpigotConfigPath, legacyBukkitConfigPath, worldFolder.resolve(levelName(options)));
         return PaperConfigurations.setup(configDirPath);
     }
 
-    private static void convertLegacy(final Path legacyPaperConfig, final Path configDir, final Path worldFolder, final Path legacySpigotConfig, final Path legacyBukkitConfig, final Path legacyCommandsConfig, final Path levelFolder) throws Exception {
+    private static void convertLegacy(final Path legacyPaperConfig, final Path configDir, final Path worldFolder, final Path legacySpigotConfig, final Path legacyBukkitConfig, final Path levelFolder) throws Exception {
         if (needsConverting(legacyPaperConfig)) {
             final String legacyFileName = legacyPaperConfig.getFileName().toString();
             try {
@@ -154,13 +153,6 @@ public final class PaperConfigurationsInitializer {
                 throw new RuntimeException("Could not convert '" + legacyFileName + "' to the new configuration format", ex);
             }
 
-        }
-        if (needsConverting(legacyCommandsConfig)) {
-            try {
-                convertLegacyCommandsConfig(makeConfigFileBackup(legacyCommandsConfig, configDir), configDir);
-            } catch (final IOException ex) {
-                throw new RuntimeException("Could not convert '" + legacyCommandsConfig.getFileName() + "' to the new configuration format", ex);
-            }
         }
     }
 
@@ -219,18 +211,6 @@ public final class PaperConfigurationsInitializer {
         globalLoader.save(global);
         LOGGER.info("Converted bukkit.yml into {}", GLOBAL_CONFIG_FILE_NAME);
     }
-
-    private static void convertLegacyCommandsConfig(final Path legacyConfig, final Path configDir) throws Exception {
-        final ConfigurationNode legacy = ConfigurationLoaders.naturallySortedWithoutHeader(legacyConfig).load();
-        LegacyBukkitConfig.migrateCommands(legacy);
-
-        final YamlConfigurationLoader globalLoader = ConfigurationLoaders.naturallySortedWithoutHeader(configDir.resolve(GLOBAL_CONFIG_FILE_NAME));
-        final ConfigurationNode global = globalLoader.load();
-        global.mergeFrom(legacy);
-        globalLoader.save(global);
-        LOGGER.info("Converted commands.yml into {}", GLOBAL_CONFIG_FILE_NAME);
-    }
-
 
     private static void convertLegacyPaperConfig(final Path legacyConfig, final Path configDir, final Path worldFolder, final Path spigotConfig) throws Exception {
         createDirectoriesSymlinkAware(configDir);

@@ -2717,7 +2717,6 @@ public final class Bukkit {
      *
      * @return Whether the reload was successful
      */
-    @Deprecated(forRemoval = true, since = "26.3")
     public static boolean reloadCommandAliases() {
         return server.reloadCommandAliases();
     }

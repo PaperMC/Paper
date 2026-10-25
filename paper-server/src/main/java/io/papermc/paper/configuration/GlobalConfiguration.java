@@ -13,7 +13,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -250,16 +249,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean tabCompletion = true;
         @Comment("Hide command block output from the console, regardless of the commandBlockOutput game rule.")
         public boolean silentCommandBlockConsole = false;
-        @Comment("""
-            Commands that command blocks may run even when a plugin has registered the same name.
-            Use a single '*' entry to allow every command.""")
-        public List<String> commandBlockOverrides = List.of();
-        @Comment("Let plugin-registered permissions take precedence over the vanilla permission level for a command.")
-        public boolean ignoreVanillaPermissions = false;
-        @Comment("""
-            Command aliases, each mapping a name to the commands it runs.
-            '$1-' passes every argument through, '$1' the first, and so on.""")
-        public Map<String, List<String>> aliases = Map.of("icanhasbukkit", List.of("version $1-"));
     }
 
     public Time time;

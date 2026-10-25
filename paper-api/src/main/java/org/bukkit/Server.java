@@ -2476,7 +2476,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @Deprecated(forRemoval = true, since = "26.3")
     void reloadPermissions(); // Paper
 
-    @Deprecated(forRemoval = true, since = "26.3")
     boolean reloadCommandAliases(); // Paper
 
     // Paper start - allow preventing player name suggestions by default
