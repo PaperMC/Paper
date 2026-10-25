@@ -41,6 +41,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -887,7 +888,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void setInvulnerable(boolean flag);
 
-    // Paper start - Temporal invulnerability API
     /**
      * Gets the remaining duration of this entity's temporary invulnerability.
      * <p>
@@ -896,6 +896,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return the remaining temporary invulnerability duration, in ticks
      */
+    @Range(from = 0, to = Integer.MAX_VALUE)
     int getInvulnerableTime();
 
     /**
@@ -907,11 +908,10 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param ticks the temporary invulnerability duration, in ticks
      * @throws IllegalArgumentException if ticks is negative
      */
-    void setInvulnerableTime(int ticks);
-    // Paper end - Temporal invulnerability API
+    void setInvulnerableTime(@Range(from = 0, to = Integer.MAX_VALUE) int ticks);
 
     /**
-     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
+     * Gets the entity's current invulnerability state, including permanent and temporary invulnerability.
      *
      * @return whether the entity is invulnerable
      * @see #isInvulnerableTo(DamageSource)
