@@ -40,8 +40,8 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -896,7 +896,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return the remaining temporary invulnerability duration, in ticks
      */
-    @Range(from = 0, to = Integer.MAX_VALUE)
     int getInvulnerableTime();
 
     /**
@@ -908,7 +907,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param ticks the temporary invulnerability duration, in ticks
      * @throws IllegalArgumentException if ticks is negative
      */
-    void setInvulnerableTime(@Range(from = 0, to = Integer.MAX_VALUE) int ticks);
+    void setInvulnerableTime(@NonNegative int ticks);
 
     /**
      * Gets the entity's current invulnerability state, including permanent and temporary invulnerability.

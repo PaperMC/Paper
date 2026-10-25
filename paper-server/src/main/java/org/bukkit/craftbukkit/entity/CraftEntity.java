@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
@@ -929,8 +931,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setInvulnerableTime(int ticks) {
-        io.papermc.paper.util.BoundChecker.requireNonNegative(ticks, "ticks");
-        this.getHandle().setInvulnerableTime(ticks);
+        this.getHandle().setInvulnerableTime(requireNonNegative(ticks, "ticks"));
     }
 
     @Override
