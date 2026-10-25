@@ -12,8 +12,9 @@ import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
-import io.papermc.paper.configuration.type.Duration;
-import io.papermc.paper.configuration.type.DurationOrDisabled;
+import io.papermc.paper.configuration.type.time.DateTimeFormatterOrDefault;
+import io.papermc.paper.configuration.type.time.Duration;
+import io.papermc.paper.configuration.type.time.DurationOrDisabled;
 import io.papermc.paper.configuration.type.EngineMode;
 import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
 import io.papermc.paper.configuration.type.fallback.AutosavePeriod;
@@ -572,7 +573,8 @@ public class WorldConfiguration extends ConfigurationPart {
     public class CommandBlocks extends ConfigurationPart {
         public int permissionsLevel = 2;
         public boolean forceFollowPermLevel = true;
-        public String timeFormatPattern = "HH:mm:ss";
+        @Comment("The time format to use in command block outputs, accepts any DateTimeFormatter pattern.")
+        public DateTimeFormatterOrDefault timeFormatPattern = DateTimeFormatterOrDefault.USE_DEFAULT;
     }
 
     public Misc misc;
