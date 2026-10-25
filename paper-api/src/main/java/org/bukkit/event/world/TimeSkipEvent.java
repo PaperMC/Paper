@@ -1,5 +1,6 @@
 package org.bukkit.event.world;
 
+import io.papermc.paper.world.WorldClock;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,8 +20,8 @@ public class TimeSkipEvent extends ClockTimeSkipEvent {
     private final World world;
 
     @ApiStatus.Internal
-    public TimeSkipEvent(@NotNull World world, @NotNull SkipReason skipReason, long skipAmount) {
-        super(skipReason, skipAmount);
+    public TimeSkipEvent(@NotNull World world, @NotNull WorldClock clock, @NotNull SkipReason skipReason, long skipAmount) {
+        super(clock, skipReason, skipAmount);
         this.world = world;
     }
 
