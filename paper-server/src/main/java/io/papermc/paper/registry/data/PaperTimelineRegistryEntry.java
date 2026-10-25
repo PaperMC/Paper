@@ -37,7 +37,7 @@ public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
         }
         this.clock = internal.clock();
         this.periodTicks = internal.periodTicks().orElse(null);
-        internal.registerTimeMarkers((key, marker) -> this.timeMarkers.put(PaperAdventure.asAdventure(key.identifier()), new TimeMarker(marker.ticks(), marker.showInCommands())));
+        internal.registerTimeMarkers((key, marker) -> this.timeMarkers.put(PaperAdventure.asAdventure(key.identifier()), TimeMarker.of(marker.ticks(), marker.showInCommands())));
     }
 
     @Override
@@ -83,7 +83,7 @@ public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
         @Override
         public Builder addTimeMarker(final Key key, final @Range(from = 0, to = Integer.MAX_VALUE) int ticks, final boolean showInCommands) {
             Preconditions.checkArgument(ticks >= 0, "ticks must be at least 0, was %s", ticks);
-            this.timeMarkers.put(asArgument(key, "key"), new TimeMarker(ticks, showInCommands));
+            this.timeMarkers.put(asArgument(key, "key"), TimeMarker.of(ticks, showInCommands));
             return this;
         }
 

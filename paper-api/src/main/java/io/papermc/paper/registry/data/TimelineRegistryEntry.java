@@ -11,6 +11,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+
 /**
  * A data-centric version-specific registry entry for the {@link Timeline} type.
  */
@@ -82,8 +84,8 @@ public interface TimelineRegistryEntry {
         /**
          * Adds or replaces a time marker on this timeline.
          *
-         * @param key the time marker key
-         * @param ticks the marker tick
+         * @param key            the time marker key
+         * @param ticks          the marker tick
          * @param showInCommands whether the marker should be suggested in commands
          * @return this builder
          */
@@ -93,10 +95,38 @@ public interface TimelineRegistryEntry {
 
     /**
      * A time marker defined by a timeline.
-     *
-     * @param ticks the tick this marker occurs on
-     * @param showInCommands whether the marker should be suggested in commands
      */
-    record TimeMarker(@Range(from = 0, to = Integer.MAX_VALUE) int ticks, boolean showInCommands) {
+    @ApiStatus.NonExtendable
+    interface TimeMarker {
+
+        /**
+         * Gets the tick this marker occurs on.
+         *
+         * @return the marker tick
+         */
+        @Range(from = 0, to = Integer.MAX_VALUE)
+        int ticks();
+
+        /**
+         * Gets whether this marker should be suggested in commands.
+         *
+         * @return whether the marker should be suggested in commands
+         */
+        boolean showInCommands();
+
+        /**
+         * Creates a new time marker instance based on the passed values.
+         *
+         * @param ticks          the tick this marker occurs on, as returned by {@link #ticks()}
+         * @param showInCommands whether the marker should be suggested in commands, as returned by {@link #showInCommands()}
+         * @return the created instance
+         */
+        @Contract(value = "_, _ -> new", pure = true)
+        static TimeMarker of(@Range(from = 0, to = Integer.MAX_VALUE) final int ticks, final boolean showInCommands) {
+            record Impl(int ticks, boolean showInCommands) implements TimeMarker {
+            }
+
+            return new Impl(requireNonNegative(ticks, "ticks"), showInCommands);
+        }
     }
 }
