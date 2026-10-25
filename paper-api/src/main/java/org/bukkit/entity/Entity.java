@@ -887,6 +887,29 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void setInvulnerable(boolean flag);
 
+    // Paper start - Temporal invulnerability API
+    /**
+     * Gets the remaining duration of this entity's temporary invulnerability.
+     * <p>
+     * This is separate from permanent invulnerability and the damage cooldown
+     * exposed by {@link LivingEntity#getNoDamageTicks()}.
+     *
+     * @return the remaining temporary invulnerability duration, in ticks
+     */
+    int getInvulnerableTime();
+
+    /**
+     * Sets the remaining duration of this entity's temporary invulnerability.
+     * <p>
+     * Setting this to {@code 0} removes temporary invulnerability.
+     * This does not change the entity's permanent invulnerability state.
+     *
+     * @param ticks the temporary invulnerability duration, in ticks
+     * @throws IllegalArgumentException if ticks is negative
+     */
+    void setInvulnerableTime(int ticks);
+    // Paper end - Temporal invulnerability API
+
     /**
      * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
      *

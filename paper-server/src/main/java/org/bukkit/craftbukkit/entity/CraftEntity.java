@@ -922,6 +922,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         this.getHandle().setPermanentlyInvulnerable(flag);
     }
 
+    // Paper start - Temporal invulnerability API
+    @Override
+    public int getInvulnerableTime() {
+        return this.getHandle().getInvulnerableTime();
+    }
+
+    @Override
+    public void setInvulnerableTime(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "Ticks must be non-negative");
+        this.getHandle().setInvulnerableTime(ticks);
+    }
+    // Paper end - Temporal invulnerability API
+
     @Override
     public boolean isMarkedInvulnerable() {
         return this.getHandle().isInvulnerable();
