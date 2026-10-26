@@ -2311,20 +2311,20 @@ public class CraftEventFactory {
 
         public enum Result {
             CANCELLED,
-            REROUTED,
+            ITEM_CHANGE_REROUTED,
             ITEM_CHANGE_NO_REROUTE,
-            NO_CHANGE,
+            NO_REROUTED,
             ;
 
             public boolean preventBehaviour() {
                 return switch (this) {
-                    case CANCELLED, REROUTED -> true;
-                    case ITEM_CHANGE_NO_REROUTE, NO_CHANGE -> false;
+                    case CANCELLED, ITEM_CHANGE_REROUTED -> true;
+                    case ITEM_CHANGE_NO_REROUTE, NO_REROUTED -> false;
                 };
             }
         }
 
-        public Result result = Result.NO_CHANGE;
+        public Result result = Result.NO_REROUTED;
 
         public PaperBlockDispenseEvent(final @NotNull Block block, final org.bukkit.inventory.@NotNull ItemStack item, final @NotNull Vector velocity) {
             super(block, item, velocity);
@@ -2338,8 +2338,8 @@ public class CraftEventFactory {
 
     public static @Nullable ItemStack handleBlockDispenseEvent(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
         return switch (handleBlockDispenseEventInspectable(pointer, to, dispensed, instance).result) {
-            case CANCELLED, REROUTED -> dispensed;
-            case NO_CHANGE, ITEM_CHANGE_NO_REROUTE -> null;
+            case CANCELLED, ITEM_CHANGE_REROUTED -> dispensed;
+            case NO_REROUTED, ITEM_CHANGE_NO_REROUTE -> null;
         };
     }
 
@@ -2358,11 +2358,11 @@ public class CraftEventFactory {
             final DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
             if (itemBehavior != DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
-                return event.withResult(PaperBlockDispenseEvent.Result.REROUTED);
+                return event.withResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_REROUTED);
             }
             return event.withResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
         }
-        return event.withResult(PaperBlockDispenseEvent.Result.NO_CHANGE);
+        return event.withResult(PaperBlockDispenseEvent.Result.NO_REROUTED);
     }
 
     /**
