@@ -228,15 +228,6 @@
          }, this::clearSleepingPos);
          input.read("Brain", Brain.Packed.CODEC).ifPresent(packedBrain -> this.brain = this.makeBrain(packedBrain));
          this.lastHurtByPlayer = EntityReference.read(input, "last_hurt_by_player");
-@@ -841,6 +_,8 @@
-         this.updateDirtyEffects();
-     }
- 
-+    private final java.util.Queue<Runnable> deferredEffectUpdates = new java.util.concurrent.ConcurrentLinkedQueue<>(); // CraftBukkit
-+
-     protected void tickEffects() {
-         if (this.level() instanceof ServerLevel serverLevel) {
-             Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
 @@ -850,6 +_,12 @@
                      Holder<MobEffect> mobEffect = iterator.next();
                      MobEffectInstance effect = this.activeEffects.get(mobEffect);
@@ -250,19 +241,6 @@
                          iterator.remove();
                          this.onEffectsRemoved(List.of(effect));
                      } else if (effect.getDuration() % 600 == 0) {
-@@ -858,6 +_,12 @@
-                 }
-             } catch (ConcurrentModificationException var6) {
-             }
-+            // CraftBukkit start
-+            Runnable task;
-+            while ((task = this.deferredEffectUpdates.poll()) != null) {
-+                task.run();
-+            }
-+            // CraftBukkit end
-         } else {
-             for (MobEffectInstance effect : this.activeEffects.values()) {
-                 effect.tickClient();
 @@ -970,6 +_,11 @@
      }
  
