@@ -1,16 +1,20 @@
 package org.bukkit.entity;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.math.Angle;
+import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.Namespaced;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
-import org.bukkit.Chunk; // Paper
+import org.bukkit.Chunk;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,6 +42,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * Represents a base entity in the world
@@ -154,7 +159,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void setRotation(@NotNull Angle yaw, @NotNull Angle pitch);
 
-    // Paper start - Teleport API
     /**
      * Teleports this entity to the given location.
      * <p>
@@ -205,7 +209,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull LookAnchor entityAnchor) {
         this.lookAt(position.x(), position.y(), position.z(), entityAnchor);
     }
-    // Paper end - Teleport API
 
     /**
      * Teleports this entity to the given location.
@@ -261,7 +264,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
 
-    // Paper start
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
      * <p>
@@ -327,7 +329,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return A future that will be completed with the result of the teleport
      */
     java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
-    // Paper end
 
     /**
      * Returns a list of entities within a bounding box centered around this
@@ -1048,7 +1049,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull
     Pose getPose();
 
-    // Paper start
     /**
      * Returns if the entity is in sneak mode
      *
@@ -1101,7 +1101,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return whether the entity has a fixed {@link Pose}
      */
     boolean hasFixedPose();
-    // Paper end
 
     /**
      * Get the category of spawn to which this entity belongs.
@@ -1161,7 +1160,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @ApiStatus.Experimental
     Entity copy(@NotNull Location to);
 
-    // Spigot start
     public class Spigot extends CommandSender.Spigot {
 
     }
@@ -1169,9 +1167,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull
     @Override
     Spigot spigot();
-    // Spigot end
 
-    // Paper start
     /**
      * Gets the entity's display name formatted with their team prefix/suffix and
      * the entity's default hover/click events.
@@ -1360,9 +1356,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return the entity's yaw
      */
     float getYaw();
-    // Paper end
 
-    // Paper start - Collision API
     /**
      * Checks for any collisions with the entity's bounding box at the provided location.
      * This will check for any colliding entities (boats, shulkers) / worldborder / blocks.
@@ -1382,20 +1376,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return collides or not
      */
     boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
-    // Paper end - Collision API
 
-    // Paper start - Folia schedulers
     /**
      * Returns the task scheduler for this entity. The entity scheduler can be used to schedule tasks
      * that are guaranteed to always execute on the tick thread that owns the entity.
-     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link org.bukkit.Server#getScheduler()} instead.</b></p>
+     *
      * @return the task scheduler for this entity.
      * @see io.papermc.paper.threadedregions.scheduler.EntityScheduler
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
-    // Paper end - Folia schedulers
 
-    // Paper start - entity scoreboard name
     /**
      * Gets the string name of the entity used to track it in {@link org.bukkit.scoreboard.Scoreboard Scoreboards}.
      *
@@ -1404,9 +1394,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @see org.bukkit.scoreboard.Scoreboard#getEntries()
      */
     @NotNull String getScoreboardEntryName();
-    // Paper end - entity scoreboard name
 
-    // Paper start - broadcast hurt animation
     /**
      * Broadcasts a hurt animation. This fakes incoming damage towards the target entity.
      * <p>
@@ -1417,5 +1405,49 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @throws IllegalArgumentException if {@code this} is contained in {@code players}
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
-    // Paper end - broadcast hurt animation
+
+    /**
+     * Gets if the entity is allied to the given entity.
+     *
+     * @param other the other entity
+     * @return {@code true} if the entity is allied to the given entity
+     */
+    boolean isAlliedTo(@NotNull Entity other);
+
+    /**
+     * Gets an immutable map of the current additional rules of alliance with any entity.
+     * <br>
+     * These are additional rules from the vanilla behavior for any entity, like share a team.
+     * <br>
+     * These rules are not (currently) persistent.
+     *
+     * @return an immutable map of the current additional rules of alliance with any entity
+     * @see #addAdditionalAlliedRule(Key, Predicate)
+     */
+    @UnmodifiableView
+    @NotNull Map<Key, Predicate<Entity>> getAdditionalAlliedRules();
+
+    /**
+     * Add a rule of alliance with any entity.
+     * <br>
+     * If a rule with the specified {@link Key} already exists, it will be overwritten.
+     *
+     * @param key the key of the rule
+     * @param predicate the rule of alliance with any entity
+     */
+    void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<Entity> predicate);
+
+    /**
+     * Remove the rule of alliance with any entity.
+     *
+     * @param key the key of the rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Key key);
+
+    /**
+     * Remove the rules of alliance with any entity.
+     *
+     * @param namespaced the namespaced of the rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Namespaced namespaced);
 }
