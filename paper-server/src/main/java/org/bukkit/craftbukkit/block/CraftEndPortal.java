@@ -6,8 +6,8 @@ import org.bukkit.World;
 
 public class CraftEndPortal extends CraftBlockEntityState<TheEndPortalBlockEntity> {
 
-    public CraftEndPortal(World world, TheEndPortalBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftEndPortal(World world, TheEndPortalBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftEndPortal(CraftEndPortal state, Location location) {

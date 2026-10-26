@@ -28,9 +28,11 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.recipebook.ServerPlaceRecipe;
 import org.bukkit.support.environment.VanillaFeature;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @VanillaFeature
+@Disabled("The recipe placement tests are mostly AI generated and require feature patches")
 class RecipeAutofillPlacementTest {
 
     private static final boolean CRAFT_ONE = false;

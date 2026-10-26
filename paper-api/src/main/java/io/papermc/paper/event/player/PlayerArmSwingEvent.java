@@ -8,7 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PlayerArmSwingEvent extends PlayerAnimationEvent { // todo redundant with parent?
+public class PlayerArmSwingEvent extends PlayerAnimationEvent {
 
     private final EquipmentSlot equipmentSlot;
 

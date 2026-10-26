@@ -1,0 +1,29 @@
+--- a/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
++++ b/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
+@@ -47,11 +_,25 @@
+                     MinecraftServer server = this.player.level().getServer();
+                     CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+                     ParseResults<CommandSourceStack> parse = dispatcher.parse(reader, this.player.createCommandSourceStack());
++                    // Paper start - Handle non-recoverable exceptions
++                    if (!parse.getExceptions().isEmpty()
++                        && parse.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
++                        this.player.connection.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++                        return;
++                    }
++                    // Paper end - Handle non-recoverable exceptions
+                     if (this.lastRequest.get() != null) {
+                         return;
+                     }
+ 
+-                    dispatcher.getCompletionSuggestions(parse).thenAccept(suggestions -> request.future.complete(limitSuggestionCount(suggestions)));
++                    // Paper start - Option to disable sending of namespaced commands
++                    dispatcher.getCompletionSuggestions(parse).thenAccept(suggestions -> {
++                        if (!org.spigotmc.SpigotConfig.sendNamespaced && suggestions.getRange().getStart() <= 1) {
++                            suggestions.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
++                        }
++                        request.future.complete(limitSuggestionCount(suggestions));
++                    });
++                    // Paper end - Option to disable sending of namespaced commands
+                 } catch (Exception e) {
+                     LOGGER.error("Failed to resolve command suggestions for {}", this.player.getGameProfile().name(), e);
+                 }

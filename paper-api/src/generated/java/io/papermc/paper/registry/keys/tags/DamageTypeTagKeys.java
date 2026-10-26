@@ -82,6 +82,13 @@ public final class DamageTypeTagKeys {
     public static final TagKey<DamageType> BYPASSES_ARMOR = create(key("bypasses_armor"));
 
     /**
+     * {@code #minecraft:bypasses_cooldown}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> BYPASSES_COOLDOWN = create(key("bypasses_cooldown"));
+
+    /**
      * {@code #minecraft:bypasses_effects}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -227,6 +234,13 @@ public final class DamageTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<DamageType> NO_KNOCKBACK = create(key("no_knockback"));
+
+    /**
+     * {@code #minecraft:no_wolf_retaliation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> NO_WOLF_RETALIATION = create(key("no_wolf_retaliation"));
 
     /**
      * {@code #minecraft:panic_causes}
