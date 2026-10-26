@@ -1,6 +1,5 @@
 package io.papermc.paper.configuration.type.time;
 
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
@@ -12,7 +11,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-@NullMarked
 public class DateTimeFormatterOrDefault {
     public static final Serializer SERIALIZER = new Serializer();
     public static final DateTimeFormatterOrDefault USE_DEFAULT = new DateTimeFormatterOrDefault(Optional.empty(), Serializer.DEFAULT_VALUE);
