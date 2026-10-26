@@ -6,11 +6,11 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -588,34 +588,25 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public boolean bypassesPlayerLimit() {
-        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
-        ServerOpListEntry entry = opList.get(this.nameAndId);
-
-        return entry != null && entry.getBypassesPlayerLimit();
+        return this.server.getHandle().getOps().canBypassPlayerLimit(this.nameAndId);
     }
 
     @Override
     public boolean setBypassesPlayerLimit(boolean bypass) {
-        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
+        ServerOpList opList = this.server.getHandle().getOps();
         ServerOpListEntry existingEntry = opList.get(this.nameAndId);
 
         if (existingEntry == null) {
             return false;
         }
 
-        ServerOpListEntry newEntry = new ServerOpListEntry(
-            this.nameAndId,
-            existingEntry.permissions(),
-            bypass
-        );
-
-        opList.add(newEntry);
+        opList.add(new ServerOpListEntry(this.nameAndId, existingEntry.permissions(), bypass));
         return true;
     }
 
     @Override
     public int getOpLevel() {
-        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
+        ServerOpList opList = this.server.getHandle().getOps();
         ServerOpListEntry entry = opList.get(this.nameAndId);
 
         if (entry == null) {
@@ -630,18 +621,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     public void setOpLevel(int level) {
         Preconditions.checkArgument(level >= 0 && level <= 4, "Operator permission level must be between 0 and 4, got '%s'.", level);
 
-        ServerOpList opList = MinecraftServer.getServer().getPlayerList().getOps();
-        ServerOpListEntry existingEntry = opList.get(this.nameAndId);
+        ServerOpListEntry existingEntry = this.server.getHandle().getOps().get(this.nameAndId);
 
         boolean bypassesLimit = existingEntry != null && existingEntry.getBypassesPlayerLimit();
 
         PermissionLevel permLevel = PermissionLevel.byId(level);
         LevelBasedPermissionSet permSet = LevelBasedPermissionSet.forLevel(permLevel);
 
-        this.server.getHandle().op(
-            this.nameAndId,
-            java.util.Optional.of(permSet),
-            java.util.Optional.of(bypassesLimit)
-        );
+        this.server.getHandle().op(this.nameAndId, Optional.of(permSet), Optional.of(bypassesLimit));
     }
 }
