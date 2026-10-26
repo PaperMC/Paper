@@ -10,6 +10,7 @@ import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
+import io.papermc.paper.event.block.PaperBlockDispenseEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
@@ -157,7 +158,6 @@ import org.bukkit.event.block.BellResonateEvent;
 import org.bukkit.event.block.BellRingEvent;
 import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockDispenseLootEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
@@ -2307,35 +2307,6 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static class PaperBlockDispenseEvent extends BlockDispenseEvent {
-
-        public enum Result {
-            CANCELLED,
-            ITEM_CHANGE_REROUTED,
-            ITEM_CHANGE_NO_REROUTE,
-            NO_REROUTED,
-            ;
-
-            public boolean preventBehaviour() {
-                return switch (this) {
-                    case CANCELLED, ITEM_CHANGE_REROUTED -> true;
-                    case ITEM_CHANGE_NO_REROUTE, NO_REROUTED -> false;
-                };
-            }
-        }
-
-        public Result result = Result.NO_REROUTED;
-
-        public PaperBlockDispenseEvent(final @NotNull Block block, final org.bukkit.inventory.@NotNull ItemStack item, final @NotNull Vector velocity) {
-            super(block, item, velocity);
-        }
-
-        public PaperBlockDispenseEvent withResult(final Result result) {
-            this.result = result;
-            return this;
-        }
-    }
-
     public static @Nullable ItemStack handleBlockDispenseEvent(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
         return switch (handleBlockDispenseEventInspectable(pointer, to, dispensed, instance).result) {
             case CANCELLED, ITEM_CHANGE_REROUTED -> dispensed;
@@ -2349,7 +2320,7 @@ public class CraftEventFactory {
 
         final PaperBlockDispenseEvent event = new PaperBlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
         if (!event.callEvent()) {
-            return event.withResult(PaperBlockDispenseEvent.Result.CANCELLED);
+            return event.trackResult(PaperBlockDispenseEvent.Result.CANCELLED);
         }
 
         if (!event.getItem().equals(craftItem)) {
@@ -2358,11 +2329,11 @@ public class CraftEventFactory {
             final DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
             if (itemBehavior != DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
-                return event.withResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_REROUTED);
+                return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_REROUTED);
             }
-            return event.withResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
+            return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
         }
-        return event.withResult(PaperBlockDispenseEvent.Result.NO_REROUTED);
+        return event.trackResult(PaperBlockDispenseEvent.Result.NO_REROUTED);
     }
 
     /**
