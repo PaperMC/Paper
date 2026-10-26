@@ -228,20 +228,16 @@
          }, this::clearSleepingPos);
          input.read("Brain", Brain.Packed.CODEC).ifPresent(packedBrain -> this.brain = this.makeBrain(packedBrain));
          this.lastHurtByPlayer = EntityReference.read(input, "last_hurt_by_player");
-@@ -841,15 +_,25 @@
+@@ -841,6 +_,8 @@
          this.updateDirtyEffects();
      }
  
-+    private boolean tickingEffects = false; // CraftBukkit
 +    private final java.util.Queue<Runnable> deferredEffectUpdates = new java.util.concurrent.ConcurrentLinkedQueue<>(); // CraftBukkit
 +
      protected void tickEffects() {
          if (this.level() instanceof ServerLevel serverLevel) {
              Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
- 
-+            this.tickingEffects = serverLevel.paperConfig().unsupportedSettings.scheduleConcurrentEffectModifications; // CraftBukkit // Paper
-             try {
-                 while (iterator.hasNext()) {
+@@ -850,6 +_,12 @@
                      Holder<MobEffect> mobEffect = iterator.next();
                      MobEffectInstance effect = this.activeEffects.get(mobEffect);
                      if (!effect.tickServer(serverLevel, this, () -> this.onEffectUpdated(effect, true, null))) {
@@ -254,12 +250,11 @@
                          iterator.remove();
                          this.onEffectsRemoved(List.of(effect));
                      } else if (effect.getDuration() % 600 == 0) {
-@@ -858,6 +_,13 @@
+@@ -858,6 +_,12 @@
                  }
              } catch (ConcurrentModificationException var6) {
              }
 +            // CraftBukkit start
-+            this.tickingEffects = false;
 +            Runnable task;
 +            while ((task = this.deferredEffectUpdates.poll()) != null) {
 +                task.run();
@@ -308,7 +303,7 @@
      }
  
      public Collection<MobEffectInstance> getActiveEffects() {
-@@ -1006,24 +_,69 @@
+@@ -1006,24 +_,65 @@
      }
  
      public final boolean addEffect(final MobEffectInstance newEffect) {
@@ -332,10 +327,6 @@
 +
 +    public boolean addEffect(final MobEffectInstance newEffect, final @Nullable Entity source, final EntityPotionEffectEvent.Cause cause, final boolean fireEvent) {
 +        // Paper end - Don't fire sync event during generation
-+        if (this.tickingEffects) {
-+            this.deferredEffectUpdates.offer(() -> this.addEffect(newEffect, source, cause, fireEvent));
-+            return true;
-+        }
 +        // CraftBukkit end
          if (!this.canBeAffected(newEffect)) {
              return false;
@@ -380,7 +371,7 @@
          }
  
          newEffect.onEffectStarted(this);
-@@ -1057,11 +_,41 @@
+@@ -1057,11 +_,32 @@
      }
  
      public final @Nullable MobEffectInstance removeEffectNoUpdate(final Holder<MobEffect> effect) {
@@ -389,11 +380,6 @@
 +    }
 +
 +    public final @Nullable MobEffectInstance removeEffectNoUpdate(final Holder<MobEffect> effect, final EntityPotionEffectEvent.Cause cause) {
-+        if (this.tickingEffects) {
-+            this.deferredEffectUpdates.offer(() -> this.removeEffectNoUpdate(effect, cause));
-+            return null;
-+        }
-+
 +        MobEffectInstance effectInstance = this.activeEffects.get(effect);
 +        if (effectInstance == null) {
 +            return null;
@@ -409,15 +395,11 @@
  
      public boolean removeEffect(final Holder<MobEffect> effect) {
 -        MobEffectInstance effectInstance = this.removeEffectNoUpdate(effect);
++        // CraftBukkit start
 +        return this.removeEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
 +    }
 +
 +    public boolean removeEffect(final Holder<MobEffect> effect, final EntityPotionEffectEvent.Cause cause) {
-+        if (this.tickingEffects) {
-+            this.deferredEffectUpdates.offer(() -> this.removeEffect(effect, cause));
-+            return true;
-+        }
-+
 +        MobEffectInstance effectInstance = this.removeEffectNoUpdate(effect, cause);
 +        // CraftBukkit end
          if (effectInstance != null) {

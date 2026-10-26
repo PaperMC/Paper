@@ -480,7 +480,6 @@ public class WorldConfiguration extends ConfigurationPart {
     public class UnsupportedSettings extends ConfigurationPart {
         public boolean fixInvulnerableEndCrystalExploit = true;
         public boolean disableWorldTickingWhenEmpty = false;
-        public boolean scheduleConcurrentEffectModifications = true;
         public Ticking ticking;
 
         public class Ticking extends ConfigurationPart {
