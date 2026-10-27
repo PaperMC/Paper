@@ -31,12 +31,13 @@ import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWor
 import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
-import io.papermc.paper.configuration.type.Duration;
-import io.papermc.paper.configuration.type.DurationOrDisabled;
 import io.papermc.paper.configuration.type.EngineMode;
 import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.configuration.type.time.DateTimeFormatterOrDefault;
+import io.papermc.paper.configuration.type.time.Duration;
+import io.papermc.paper.configuration.type.time.DurationOrDisabled;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -193,6 +194,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .register(DurationOrDisabled.SERIALIZER)
             .register(NbtPathSerializer.SERIALIZER)
             .register(IdentifierSerializer.INSTANCE)
+            .register(DateTimeFormatterOrDefault.class, DateTimeFormatterOrDefault.SERIALIZER)
         );
     }
 
