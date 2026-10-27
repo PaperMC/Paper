@@ -45,4 +45,15 @@ public class JavadocParamAlignment {
     public void method_multiline_correct(String a, String superLongParamName) {
     }
 
+    /**
+     * A method that does something
+     *
+     * @param a                  this is a description
+     *                           with a {@link #method(String, String)} link tag
+     * @param superLongParamName a description
+     *                           blabla
+     */
+    public void method_multiline_correct_with_link(String a, String superLongParamName) {
+    }
+
 }
