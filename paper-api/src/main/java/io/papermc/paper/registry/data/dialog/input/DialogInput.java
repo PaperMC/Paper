@@ -4,6 +4,7 @@ import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.index.qual.Positive;
+import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -24,7 +25,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new boolean dialog input instance
      */
     @Contract(pure = true, value = "_, _, _, _, _ -> new")
-    static BooleanDialogInput bool(final String key, final Component label, final boolean initial, final String onTrue, final String onFalse) {
+    static BooleanDialogInput bool(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label, final boolean initial, final String onTrue, final String onFalse) {
         return bool(key, label)
             .initial(initial)
             .onTrue(onTrue)
@@ -40,7 +41,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new builder instance
      */
     @Contract(pure = true, value = "_, _ -> new")
-    static BooleanDialogInput.Builder bool(final String key, final Component label) {
+    static BooleanDialogInput.Builder bool(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label) {
         return DialogInstancesProvider.instance().booleanBuilder(key, label);
     }
 
@@ -59,7 +60,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _, _ -> new")
     static NumberRangeDialogInput numberRange(
-        final String key,
+        @Pattern("^[a-zA-Z0-9_]+$") final String key,
         final @Range(from = 1, to = 1024) int width,
         final Component label,
         final String labelFormat,
@@ -81,7 +82,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new builder instance
      */
     @Contract(pure = true, value = "_, _, _, _ -> new")
-    static NumberRangeDialogInput.Builder numberRange(final String key, final Component label, final float start, final float end) {
+    static NumberRangeDialogInput.Builder numberRange(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label, final float start, final float end) {
         return DialogInstancesProvider.instance().numberRangeBuilder(key, label, start, end);
     }
 
@@ -97,7 +98,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _ -> new")
     static SingleOptionDialogInput singleOption(
-        final String key,
+        @Pattern("^[a-zA-Z0-9_]+$") final String key,
         final @Range(from = 1, to = 1024) int width,
         final List<SingleOptionDialogInput.OptionEntry> entries,
         final Component label,
@@ -115,7 +116,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new builder instance
      */
     @Contract(pure = true, value = "_, _, _ -> new")
-    static SingleOptionDialogInput.Builder singleOption(final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
+    static SingleOptionDialogInput.Builder singleOption(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
         return DialogInstancesProvider.instance().singleOptionBuilder(key, label, entries);
     }
 
@@ -133,7 +134,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _ -> new")
     static TextDialogInput text(
-        final String key,
+        @Pattern("^[a-zA-Z0-9_]+$") final String key,
         final @Range(from = 1, to = 1024) int width,
         final Component label,
         final boolean labelVisible,
@@ -152,7 +153,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new builder instance
      */
     @Contract(value = "_, _ -> new", pure = true)
-    static TextDialogInput.Builder text(final String key, final Component label) {
+    static TextDialogInput.Builder text(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label) {
         return DialogInstancesProvider.instance().textBuilder(key, label);
     }
 
