@@ -3,6 +3,7 @@ package io.papermc.paper.util;
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.BlockPosition;
@@ -23,6 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Vec3i;
@@ -314,5 +316,31 @@ public final class MCUtil {
             throw new RuntimeException(ex);
         }
         return tag;
+    }
+
+    public static MinMaxBounds.Doubles toBounds(final Range<Double> range) {
+        if (range.hasLowerBound() && range.hasUpperBound()) {
+            return MinMaxBounds.Doubles.between(range.lowerEndpoint(), range.upperEndpoint());
+        } else if (range.hasLowerBound()) {
+            return MinMaxBounds.Doubles.atLeast(range.lowerEndpoint());
+        } else if (range.hasUpperBound()) {
+            return MinMaxBounds.Doubles.atMost(range.upperEndpoint());
+        } else {
+            return MinMaxBounds.Doubles.ANY;
+        }
+    }
+
+    public static <C extends Number & Comparable<C>> Range<C> toRange(final MinMaxBounds<? extends C> bounds) {
+        if (bounds.isAny()) {
+            return Range.all();
+        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
+            return Range.closed(bounds.min().get(), bounds.max().get());
+        } else if (bounds.min().isPresent()) {
+            return Range.atLeast(bounds.min().get());
+        } else if (bounds.max().isPresent()) {
+            return Range.atMost(bounds.max().get());
+        } else {
+            throw new IllegalArgumentException("Invalid range: " + bounds);
+        }
     }
 }
