@@ -224,12 +224,13 @@
      }
  
      protected abstract void defineSynchedData(SynchedEntityData.Builder entityData);
-@@ -423,6 +_,48 @@
+@@ -423,6 +_,49 @@
          return this.entityData;
      }
  
 +    // CraftBukkit start
 +    public void refreshEntityData(ServerPlayer to) {
++        if (this.isRemoved()) return; // Paper - Don't send entity data for removed entities
 +        List<SynchedEntityData.DataValue<?>> values = this.entityData.packAll(); // Paper - Update EVERYTHING not just not default
 +
 +        if (to.getBukkitEntity().canSee(this.getBukkitEntity())) { // Paper
@@ -1321,6 +1322,15 @@
          return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
      }
  
+@@ -2861,7 +_,7 @@
+     }
+ 
+     protected boolean considersEntityAsAlly(final Entity other) {
+-        return this.isAlliedTo(other.getTeam());
++        return this.isAlliedTo(other.getTeam()) || this.getBukkitEntity().considersEntityAsAlly0(other.getBukkitEntity()); // Paper - Allies API
+     }
+ 
+     public boolean isAlliedTo(final @Nullable Team other) {
 @@ -2869,7 +_,11 @@
      }
  
@@ -1348,20 +1358,20 @@
  
      public void setAirSupply(final int supply) {
 -        this.entityData.set(DATA_AIR_SUPPLY_ID, supply);
-+        // CraftBukkit start
-+        org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), supply);
++        // Paper start - EntityAirChangeEvent
++        int newAmount = supply;
 +        // Suppress during worldgen
-+        if (this.valid) {
-+            event.getEntity().getServer().getPluginManager().callEvent(event);
-+        }
-+        if (event.isCancelled() && this.getAirSupply() != supply) {
-+            if (this instanceof ServerPlayer player) {
-+                this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_AIR_SUPPLY_ID), player); // todo is that even needed?
++        if (this.valid && org.bukkit.event.entity.EntityAirChangeEvent.getHandlerList().hasListeners() && this.getAirSupply() != supply) {
++            final org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), supply);
++            if (!event.callEvent()) {
++                return;
 +            }
-+            return;
++
++            newAmount = event.getAmount();
 +        }
-+        this.entityData.set(DATA_AIR_SUPPLY_ID, event.getAmount());
-+        // CraftBukkit end
++
++        this.entityData.set(DATA_AIR_SUPPLY_ID, newAmount);
++        // Paper end - EntityAirChangeEvent
      }
  
      public void clearFreeze() {
@@ -1369,7 +1379,7 @@
          this.setTicksFrozen(0);
      }
  
-@@ -2924,11 +_,42 @@
+@@ -2924,11 +_,38 @@
  
      public void thunderHit(final ServerLevel level, final LightningBolt lightningBolt) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -1403,10 +1413,6 @@
 +            if (!hangingEvent.callEvent()) {
 +                return;
 +            }
-+        }
-+
-+        if (this.fireImmune()) {
-+            return;
 +        }
 +
 +        if (!this.hurtServer(level, damageSource, 5.0F)) { // Paper - fix DamageSource API
