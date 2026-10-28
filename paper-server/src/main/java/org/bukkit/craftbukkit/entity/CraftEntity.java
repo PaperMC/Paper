@@ -11,13 +11,19 @@ import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.TeleportFlag;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.math.Angle;
+import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.Namespaced;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -105,6 +111,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected Entity entity;
     private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
+    private final Map<Key, Predicate<org.bukkit.entity.Entity>> additionalAlliedRules = new HashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
     // Paper start - Folia shedulers
     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
@@ -1394,6 +1401,44 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
         return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
+    }
+
+    public boolean considersEntityAsAlly0(final @NotNull org.bukkit.entity.Entity entity) {
+        if (this.additionalAlliedRules.isEmpty()) {
+            return false;
+        }
+        return this.additionalAlliedRules.values().stream().anyMatch(entityPredicate -> entityPredicate.test(entity));
+    }
+
+    @Override
+    public boolean isAlliedTo(final @NotNull org.bukkit.entity.Entity other) {
+        Preconditions.checkArgument(other != null, "other cannot be null");
+        return this.getHandle().isAlliedTo(((CraftEntity)other).getHandle());
+    }
+
+    @Override
+    public @NotNull Map<Key, Predicate<org.bukkit.entity.Entity>> getAdditionalAlliedRules() {
+        return Collections.unmodifiableMap(this.additionalAlliedRules);
+    }
+
+    @Override
+    public void addAdditionalAlliedRule(final @NotNull Key key, final @NotNull Predicate<org.bukkit.entity.Entity> predicate) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        Preconditions.checkArgument(predicate != null, "predicate cannot be null");
+        this.additionalAlliedRules.put(key, predicate);
+    }
+
+    @Override
+    public void removeAdditionalAlliedRule(final @NotNull Key key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        this.additionalAlliedRules.remove(key);
+    }
+
+    @Override
+    public void removeAdditionalAlliedRule(final @NotNull Namespaced nameSpaced) {
+        Preconditions.checkArgument(nameSpaced != null, "nameSpaced cannot be null");
+        this.additionalAlliedRules.entrySet()
+            .removeIf(entry -> entry.getKey().namespace().equals(nameSpaced.namespace()));
     }
 
 }

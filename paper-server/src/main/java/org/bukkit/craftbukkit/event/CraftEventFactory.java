@@ -10,9 +10,12 @@ import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
+import io.papermc.paper.event.block.PaperBlockDispenseEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
@@ -28,6 +31,8 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -112,6 +117,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1605,6 +1611,60 @@ public class CraftEventFactory {
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
     }
 
+    public static void callPlayerBundleItemSelectEvent(final net.minecraft.world.entity.player.Player player, final int slotId, final int selectedIndex) {
+        if (player.isCreative() && player.containerMenu instanceof net.minecraft.world.inventory.InventoryMenu) {
+            // The packet's slotId will always be 0 if this packet is sent for a player selecting an item in a bundle in their creative inventory,
+            // making it unfit for firing an event.
+            return;
+        }
+
+        if (slotId < 0 || slotId >= player.containerMenu.slots.size() || selectedIndex <= net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+            return;
+        }
+
+        final net.minecraft.world.item.ItemStack item = player.containerMenu.slots.get(slotId).getItem();
+        if (!item.is(net.minecraft.tags.ItemTags.BUNDLES)) {
+            return;
+        }
+
+        final net.minecraft.world.item.component.BundleContents contents = item.get(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS);
+        if (contents == null) {
+            return;
+        }
+
+        final int previousIndex = contents.getSelectedItemIndex();
+        if (selectedIndex >= contents.size() || selectedIndex == previousIndex) {
+            return;
+        }
+
+        PlayerBundleItemSelectEvent.Direction direction = PlayerBundleItemSelectEvent.Direction.UNKNOWN;
+        // Scroll direction can only be reliably determined if three or more item stacks are in the bundle,
+        // because we only have access to the before and after selection index.
+        if (contents.size() >= 3) {
+            if (previousIndex == net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+                direction = selectedIndex == 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
+            } else {
+                int diff = selectedIndex - previousIndex;
+                direction = diff > 0 ? PlayerBundleItemSelectEvent.Direction.FORWARD : PlayerBundleItemSelectEvent.Direction.BACKWARD;
+
+                if (Math.abs(diff) == contents.size() - 1) {
+                    direction = direction.flip();
+                }
+            }
+        }
+
+        new PlayerBundleItemSelectEvent(
+            player.containerMenu.getBukkitView(),
+            CraftItemStack.asBukkitMirror(item),
+            slotId,
+            contents.getSelectedItem() != null ? CraftItemStack.asBukkitMirror(contents.getSelectedItem().create()) : org.bukkit.inventory.ItemStack.empty(),
+            CraftItemStack.asBukkitMirror(contents.items().get(selectedIndex).create()),
+            previousIndex,
+            selectedIndex,
+            direction
+        ).callEvent();
+    }
+
     public static ItemStack handleEditBookEvent(ServerPlayer player, int itemInHandIndex, ItemStack itemInHand, ItemStack newBookItem) {
         PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), (itemInHandIndex >= 0 && itemInHandIndex <= 8) ? itemInHandIndex : -1, (BookMeta) CraftItemStack.getItemMeta(itemInHand), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.is(Items.WRITTEN_BOOK));
         player.level().getCraftServer().getPluginManager().callEvent(editBookEvent);
@@ -2109,7 +2169,7 @@ public class CraftEventFactory {
         Location from = bukkitPlayer.getLocation();
         PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
         event.callEvent();
-        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
+        if (event.isCancelled() || event.getTo().getWorld() == null || !player.isAlive()) {
             return null;
         }
 
@@ -2247,25 +2307,33 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static @Nullable ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack dispensed, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
-        org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
-        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+    public static @Nullable ItemStack handleBlockDispenseEvent(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        return switch (handleBlockDispenseEventInspectable(pointer, to, dispensed, instance).result) {
+            case CANCELLED, ITEM_CHANGE_REROUTED -> dispensed;
+            case NO_REROUTED, ITEM_CHANGE_NO_REROUTE -> null;
+        };
+    }
 
-        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
+    public static PaperBlockDispenseEvent handleBlockDispenseEventInspectable(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        final org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
+        final org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+
+        final PaperBlockDispenseEvent event = new PaperBlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
         if (!event.callEvent()) {
-            return dispensed;
+            return event.trackResult(PaperBlockDispenseEvent.Result.CANCELLED);
         }
 
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
-            if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
+            final ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+            final DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
+            if (itemBehavior != DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
-                return dispensed;
+                return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_REROUTED);
             }
+            return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
         }
-        return null;
+        return event.trackResult(PaperBlockDispenseEvent.Result.NO_REROUTED);
     }
 
     /**
@@ -2406,6 +2474,10 @@ public class CraftEventFactory {
             return false;
         }
         return true;
+    }
+
+    public static ItemTransportingEntitySortEvent createItemTransportingEntitySortEvent(PathfinderMob mob, Container container) {
+        return new ItemTransportingEntitySortEvent(mob.getBukkitEntity(), CraftItemStack.asBukkitCopy(mob.getMainHandItem()), new CraftInventory(container));
     }
 
     public static ClockTimeSkipEvent createTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {

@@ -12,14 +12,15 @@ import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
-import io.papermc.paper.configuration.type.Duration;
-import io.papermc.paper.configuration.type.DurationOrDisabled;
 import io.papermc.paper.configuration.type.EngineMode;
 import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
 import io.papermc.paper.configuration.type.fallback.AutosavePeriod;
 import io.papermc.paper.configuration.type.number.BelowZeroToEmpty;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.configuration.type.time.DateTimeFormatterOrDefault;
+import io.papermc.paper.configuration.type.time.Duration;
+import io.papermc.paper.configuration.type.time.DurationOrDisabled;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -34,11 +35,11 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.util.Util;
 import net.minecraft.commands.arguments.NbtPathArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -336,6 +337,8 @@ public class WorldConfiguration extends ConfigurationPart {
             public boolean cooldownFailedBeehiveReleases = true;
             @Comment("The delay before retrying POI acquisition when entity navigation is stuck. This will reduce pathfinding performance impact. Measured in ticks.")
             public IntOr.Disabled stuckEntityPoiRetryDelay = new IntOr.Disabled(OptionalInt.of(200));
+            @Comment("If specified, this setting controls how often to tick inactive mobs' goal selectors. Higher values reduce the performance impact of ticking mobs that are far away. Measured in ticks.")
+            public IntOr.Disabled inactiveMobGoalSelectorThrottleRate = IntOr.Disabled.DISABLED;
         }
 
         public TrackingRangeY trackingRangeY;
@@ -572,6 +575,8 @@ public class WorldConfiguration extends ConfigurationPart {
     public class CommandBlocks extends ConfigurationPart {
         public int permissionsLevel = 2;
         public boolean forceFollowPermLevel = true;
+        @Comment("The time format to use in command block outputs, accepts any DateTimeFormatter pattern.")
+        public DateTimeFormatterOrDefault timeFormatPattern = DateTimeFormatterOrDefault.USE_DEFAULT;
     }
 
     public Misc misc;
