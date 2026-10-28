@@ -31,10 +31,20 @@ public class RedundantNullabilityCheck extends AbstractCheck {
 
     @Override
     public void visitToken(final DetailAST ast) {
-        final boolean pkgIsNullMarked = Util.isPackageInfoAnnotated(Path.of(this.getFilePath()), NullabilityAnnotationsCheck::isNullMarkedAnnotation);
         final DetailAST nullMarkedAnnotation = NullabilityAnnotationsCheck.getNullMarkedAnnotation(ast);
-        if (pkgIsNullMarked && nullMarkedAnnotation != null) {
+        if (nullMarkedAnnotation == null) {
+            return;
+        }
+        final boolean pkgIsNullMarked = Util.isPackageInfoAnnotated(Path.of(this.getFilePath()), NullabilityAnnotationsCheck::isNullMarkedAnnotation);
+        if (pkgIsNullMarked) {
             this.log(nullMarkedAnnotation.getLineNo(), ast.getColumnNo() - 1, "Redundant NullMarked annotation");
+            return;
+        }
+        for (DetailAST parentDef = Util.getEnclosingTypeDeclaration(ast); parentDef != null; parentDef = Util.getEnclosingTypeDeclaration(parentDef)) {
+            if (NullabilityAnnotationsCheck.getNullMarkedAnnotation(parentDef) != null) {
+                this.log(nullMarkedAnnotation.getLineNo(), ast.getColumnNo() - 1, "Redundant NullMarked annotation");
+                return;
+            }
         }
     }
 }
