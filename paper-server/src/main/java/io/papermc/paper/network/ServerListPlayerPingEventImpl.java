@@ -1,8 +1,10 @@
 package io.papermc.paper.network;
 
+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.papermc.paper.adventure.AdventureComponent;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.event.server.ServerListPlayerPingEvent;
+import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.server.MinecraftServer;
@@ -21,7 +23,7 @@ public class ServerListPlayerPingEventImpl extends ServerListPlayerPingEvent {
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
         .setNameFormat("Paper Async Status Handler Thread")
-        .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
+        .setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
         .build()
     );
 
@@ -36,12 +38,12 @@ public class ServerListPlayerPingEventImpl extends ServerListPlayerPingEvent {
 
     @NonNull
     @Override
-    public List<ListedPlayerInfo> getListedPlayers() {
-        List<ListedPlayerInfo> sample = super.getListedPlayers();
+    public List<PaperServerListPingEvent.ListedPlayerInfo> getListedPlayers() {
+        List<PaperServerListPingEvent.ListedPlayerInfo> sample = super.getListedPlayers();
 
         if (this.originalSample != null) {
             for (NameAndId profile : this.originalSample) {
-                sample.add(new ListedPlayerInfo(profile.name(), profile.id()));
+                sample.add(new PaperServerListPingEvent.ListedPlayerInfo(profile.name(), profile.id()));
             }
             this.originalSample = null;
         }
@@ -54,13 +56,13 @@ public class ServerListPlayerPingEventImpl extends ServerListPlayerPingEvent {
             return this.originalSample;
         }
 
-        List<ListedPlayerInfo> entries = super.getListedPlayers();
+        List<PaperServerListPingEvent.ListedPlayerInfo> entries = super.getListedPlayers();
         if (entries.isEmpty()) {
             return Collections.emptyList();
         }
 
         final List<NameAndId> profiles = new ArrayList<>();
-        for (ListedPlayerInfo playerInfo : entries) {
+        for (PaperServerListPingEvent.ListedPlayerInfo playerInfo : entries) {
             profiles.add(new NameAndId(playerInfo.id(), playerInfo.name()));
         }
         return profiles;
@@ -79,7 +81,7 @@ public class ServerListPlayerPingEventImpl extends ServerListPlayerPingEvent {
             // Setup status
 
             // Description
-            final Component description = new AdventureComponent(event.motd());
+            final Component description = PaperAdventure.asVanilla(event.motd());
 
             // Players
             final Optional<ServerStatus.Players> players;

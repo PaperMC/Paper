@@ -1,6 +1,7 @@
 package io.papermc.paper.event.server;
 
 
+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -23,7 +24,7 @@ public class ServerListPlayerPingEvent extends AbstractServerListPingEvent imple
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final @NonNull List<ListedPlayerInfo> listedPlayers = new ArrayList<>();
+    private final @NonNull List<PaperServerListPingEvent.ListedPlayerInfo> listedPlayers = new ArrayList<>();
     private final @NonNull Player player;
 
     private @NonNull String version;
@@ -127,7 +128,7 @@ public class ServerListPlayerPingEvent extends AbstractServerListPingEvent imple
     }
 
     /**
-     * Returns a mutable list of {@link ListedPlayerInfo} that will be displayed
+     * Returns a mutable list of {@link PaperServerListPingEvent.ListedPlayerInfo} that will be displayed
      * as online players on the client.
      * <p>
      * The Vanilla Minecraft client will display them when hovering the
@@ -135,7 +136,7 @@ public class ServerListPlayerPingEvent extends AbstractServerListPingEvent imple
      *
      * @return The mutable player sample list
      */
-    public @NonNull List<ListedPlayerInfo> getListedPlayers() {
+    public @NonNull List<PaperServerListPingEvent.ListedPlayerInfo> getListedPlayers() {
         return this.listedPlayers;
     }
 
