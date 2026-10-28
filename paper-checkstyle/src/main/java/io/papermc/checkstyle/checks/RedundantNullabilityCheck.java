@@ -20,7 +20,7 @@ public class RedundantNullabilityCheck extends AbstractCheck {
 
     @Override
     public int[] getRequiredTokens() {
-        return new int[]{
+        return new int[] {
             TokenTypes.CLASS_DEF,
             TokenTypes.INTERFACE_DEF,
             TokenTypes.ANNOTATION_DEF,

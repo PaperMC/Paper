@@ -43,6 +43,7 @@ public abstract class ImportAwareAbstractCheck extends AbstractCheck {
     @Override
     public void finishTree(final DetailAST rootAST) {
         this.imports.remove();
+        this.simpleImports.remove();
     }
 
     protected boolean hasImportFor(final String type) {

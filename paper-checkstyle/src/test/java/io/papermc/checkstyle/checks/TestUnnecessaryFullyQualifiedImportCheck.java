@@ -32,6 +32,32 @@ class TestUnnecessaryFullyQualifiedImportCheck {
             .addViolation("66:5: Fully qualified import used: testdata.imports.testclasses.subpkg.OtherClass")
             // class literal ".class"
             .addViolation("70:28: Fully qualified import used: testdata.imports.testclasses.subpkg.OtherClass")
+            // throws clause, multiple types
+            .addViolation("74:39: Unnecessary fully qualified import (no conflict): java.io.IOException")
+            .addViolation("74:60: Unnecessary fully qualified import (no conflict): java.io.UncheckedIOException")
+            // type param with multiple bounds
+            .addViolation("77:36: Unnecessary fully qualified import (no conflict): testdata.imports.testclasses.subpkg.OtherInterface")
+            .addViolation("77:89: Unnecessary fully qualified import (no conflict): java.io.Serializable")
+            // implements clause, multiple types
+            .addViolation("80:57: Unnecessary fully qualified import (no conflict): testdata.imports.testclasses.subpkg.OtherInterface")
+            .addViolation("80:109: Unnecessary fully qualified import (no conflict): java.io.Serializable")
+            // static field access
+            .addViolation("84:36: Unnecessary fully qualified import (no conflict): java.util.Locale")
+            .addViolation("85:35: Fully qualified import used: testdata.imports.testclasses.subpkg.OtherClass")
+            // method call through a field
+            .addViolation("86:9: Unnecessary fully qualified import (no conflict): java.lang.System")
+            // method call on a constant, reported without the constant
+            .addViolation("87:29: Unnecessary fully qualified import (no conflict): java.util.Locale")
+            // method and constructor references
+            .addViolation("88:36: Unnecessary fully qualified import (no conflict): java.lang.Thread")
+            .addViolation("89:41: Unnecessary fully qualified import (no conflict): java.util.ArrayList")
+            // no violation for holder.inner.VALUE (91), java.util.Random conflicting with a declared type (103),
+            // or testdata.imports.testclasses.SamePackage conflicting with an unqualified use (108)
+            // reference to the declared type itself
+            .addViolation("104:5: Unnecessary fully qualified import (no conflict): testdata.imports.UnnecessaryFullyQualifiedImport")
+            // same package type, no conflict
+            .addViolation("109:5: Unnecessary fully qualified import (no conflict): testdata.imports.SamePackage")
+            // no violation for testdata.imports.Shadowed (115), the nested Shadowed hides the same package type
             .addCheck(new UnnecessaryFullyQualifiedImportCheck());
     }
 }
