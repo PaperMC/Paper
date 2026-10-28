@@ -69,7 +69,7 @@
      }
  
      public static void serverTick(final ServerLevel level, final BlockPos pos, BlockState state, final AbstractFurnaceBlockEntity entity) {
-@@ -169,33 +_,99 @@
+@@ -169,33 +_,97 @@
                  if (recipe != null) {
                      int maxStackSize = entity.getMaxStackSize();
                      ItemStack burnResult = recipe.value().assemble(input);
@@ -84,16 +84,15 @@
 +                        entity.cookingTotalTime
 +                    );
 +                    preSmeltEvent.callEvent();
-+                    // Paper start - support mutable FurnacePreSmeltEvent recipe
 +                    org.bukkit.inventory.CookingRecipe<?> selectedRecipe = preSmeltEvent.getRecipe();
 +                    boolean replacementApplied = false;
 +                    if (!org.bukkit.craftbukkit.util.CraftNamespacedKey.toResourceKey(
 +                        net.minecraft.core.registries.Registries.RECIPE, selectedRecipe.getKey()
 +                    ).equals(recipe.id())) {
-+                        final var recipeKey = org.bukkit.craftbukkit.util.CraftNamespacedKey.toResourceKey(
++                        final net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> recipeKey = org.bukkit.craftbukkit.util.CraftNamespacedKey.toResourceKey(
 +                            net.minecraft.core.registries.Registries.RECIPE, selectedRecipe.getKey()
 +                        );
-+                        final var replacement = level.recipeAccess().byKey(recipeKey);
++                        final java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<?>> replacement = level.recipeAccess().byKey(recipeKey);
 +                        if (replacement.isEmpty()
 +                            || !(replacement.get().value() instanceof AbstractCookingRecipe cookingRecipe)
 +                            || cookingRecipe.getType() != entity.recipeType) {
@@ -104,7 +103,6 @@
 +                            replacementApplied = true;
 +                        }
 +                    }
-+                    // Paper end - support mutable FurnacePreSmeltEvent recipe
 +                    canBurn = preSmeltEvent.isAllowed() && !burnResult.isEmpty()
 +                        && canBurn(entity.items, maxStackSize, burnResult);
 +                    if (preSmeltEvent.isTotalCookTimeChanged()) {
