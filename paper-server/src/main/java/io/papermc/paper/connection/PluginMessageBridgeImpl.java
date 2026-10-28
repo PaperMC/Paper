@@ -1,21 +1,22 @@
 package io.papermc.paper.connection;
 
 import com.google.common.base.Preconditions;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.jspecify.annotations.NullMarked;
-import java.util.Set;
 
 @NullMarked
 public interface PluginMessageBridgeImpl {
 
-    boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+    boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null;
+    int CHANNEL_LIMIT = Integer.getInteger("paper.pluginMessageChannelLimit", 128);
 
     default boolean addChannel(String channel) {
-        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels().size() < 128, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
+        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels().size() < CHANNEL_LIMIT, "Cannot register channel. Too many channels registered!");
         channel = StandardMessenger.validateAndCorrectChannel(channel);
         if (channels().add(channel)) {
             if (this instanceof CraftPlayer player) {
@@ -37,7 +38,7 @@ public interface PluginMessageBridgeImpl {
         }
 
         return false;
-    };
+    }
 
     Set<String> channels();
 }

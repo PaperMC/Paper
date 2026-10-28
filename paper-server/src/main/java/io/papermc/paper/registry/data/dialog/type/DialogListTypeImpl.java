@@ -1,11 +1,15 @@
 package io.papermc.paper.registry.data.dialog.type;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.set.RegistrySet;
 import net.minecraft.server.dialog.CommonButtonData;
+import org.checkerframework.checker.index.qual.Positive;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record DialogListTypeImpl(
     RegistrySet<Dialog> dialogs,
@@ -32,16 +36,14 @@ public record DialogListTypeImpl(
         }
 
         @Override
-        public DialogListType.Builder columns(final int columns) {
-            Preconditions.checkArgument(columns > 0, "columns must be greater than 0");
-            this.columns = columns;
+        public DialogListType.Builder columns(final @Positive int columns) {
+            this.columns = requirePositive(columns, "columns");
             return this;
         }
 
         @Override
-        public DialogListType.Builder buttonWidth(final int buttonWidth) {
-            Preconditions.checkArgument(buttonWidth >= 1 && buttonWidth <= 1024, "buttonWidth must be between 1 and 1024");
-            this.buttonWidth = buttonWidth;
+        public DialogListType.Builder buttonWidth(final @Range(from = 1, to = 1024) int buttonWidth) {
+            this.buttonWidth = requireRange(buttonWidth, "buttonWidth", 1, 1024);
             return this;
         }
 

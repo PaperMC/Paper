@@ -1,10 +1,12 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Fireworks;
+import io.papermc.paper.datacomponent.item.UseCooldown;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
-import io.papermc.paper.datacomponent.item.UseCooldown;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -20,7 +22,6 @@ import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -439,11 +440,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the cooldown time in ticks remaining for the specified cooldown group.
      *
-     * @param key the cooldown group to check
+     * @param cooldownGroup the cooldown group to check
      * @return the remaining cooldown time in ticks
      * @see UseCooldown#cooldownGroup()
      */
-    public int getCooldown(Key key);
+    public int getCooldown(Key cooldownGroup);
 
     /**
      * Set a cooldown on items with the specified cooldown group for a certain amount of ticks.
@@ -455,11 +456,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Note that cooldowns will not by themselves stop an item from being used
      * for attacking.
      *
-     * @param key cooldown group to set the cooldown for
+     * @param cooldownGroup cooldown group to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
      * @see UseCooldown#cooldownGroup()
      */
-    public void setCooldown(Key key, int ticks);
+    public void setCooldown(Key cooldownGroup, int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.
@@ -534,6 +535,17 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param attackItem item used to attack.
      */
     public void startRiptideAttack(int duration, float attackStrength, @Nullable ItemStack attackItem);
+
+    /**
+     * Check if the player can critical attack the target {@link Entity}.
+     * <br>
+     * Note: When hitting an entity, Minecraft also checks that the result of {@link #getAttackCooldown()} is {@code > 0.9F}
+     * to determine if the critical attack will happen.
+     *
+     * @param entity target entity to check if can critical attack
+     * @return whether they can critical attack the target entity
+     */
+    public boolean canCriticalAttack(Entity entity);
 
     /**
      * Gets the location of the bed the player is currently sleeping in
@@ -980,7 +992,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getStarvationRate();
 
     /**
-     * Get the starvation rate (1 health per x ticks) of
+     * Set the starvation rate (1 health per x ticks) of
      * the HumanEntity. Default is 80.
      *
      * @param ticks the amount of ticks to lose 1 health
@@ -1009,16 +1021,35 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Perform a firework boost.
      * <p>
      * This method will only work such that {@link #isGliding()} is true and
-     * the entity is actively gliding with an elytra. Additionally, the supplied
-     * {@code fireworkItemStack} must be a firework rocket. The power of the boost
-     * will directly correlate to {@link FireworkMeta#getPower()}.
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component.
+     * <p>
+     * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param fireworkItemStack the firework item stack to use to glide
+     * @param boosterItem the item to use to boost
      * @return the attached {@link Firework}, or null if the entity could not
      * be boosted
-     * @throws IllegalArgumentException if the fireworkItemStack is not a firework
      */
     @Nullable
-    public Firework fireworkBoost(ItemStack fireworkItemStack);
+    Firework fireworkBoost(ItemStack boosterItem);
+
+    /**
+     * Perform a firework boost.
+     * <p>
+     * This method will only work such that {@link #isGliding()} is true and
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component.
+     * <p>
+     * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
+     *
+     * @return the attached {@link Firework}, or null if the entity could not
+     * be boosted
+     */
+    @Nullable
+    default Firework fireworkBoost() {
+        return this.fireworkBoost(ItemStack.empty());
+    }
 
 }

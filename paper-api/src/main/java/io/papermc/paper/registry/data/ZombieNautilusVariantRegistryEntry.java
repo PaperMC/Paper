@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.entity.ZombieNautilus.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ZombieNautilusVariantRegistryEntry {
 
@@ -31,14 +30,14 @@ public interface ZombieNautilusVariantRegistryEntry {
     /**
      * Provides the client texture asset of the variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the model of the variant.
      *
-     * @return the model.
+     * @return the model
      */
     Model model();
 
@@ -51,15 +50,14 @@ public interface ZombieNautilusVariantRegistryEntry {
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends ZombieNautilusVariantRegistryEntry, RegistryBuilder<ZombieNautilus.Variant> {
 
         /**
          * Sets the client texture asset of the variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see ZombieNautilusVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -68,8 +66,8 @@ public interface ZombieNautilusVariantRegistryEntry {
         /**
          * Sets the model to use for this variant.
          *
-         * @param model the model.
-         * @return this builder instance.
+         * @param model the model
+         * @return this builder instance
          * @see ZombieNautilusVariantRegistryEntry#model()
          */
         @Contract(value = "_ -> this", mutates = "this")

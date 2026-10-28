@@ -2,7 +2,6 @@ package org.bukkit.support;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
@@ -29,7 +28,6 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
-import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 
@@ -56,8 +54,7 @@ public final class RegistryHelper {
 
     public record SetupContext(
         ReloadableServerResources datapack,
-        RegistryAccess registries,
-        Supplier<PalettedContainerFactory> palettedContainerFactory
+        RegistryAccess registries
     ) {
     }
 
@@ -77,12 +74,12 @@ public final class RegistryHelper {
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
 
-        List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
-        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES);
-        layers = layers.replaceFrom(RegistryLayer.WORLDGEN, worldGenRegistries);
+        List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLD), pendingTags);
+        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLD_REGISTRIES, Util.backgroundExecutor()).join();
+        layers = layers.replaceFrom(RegistryLayer.WORLD, worldGenRegistries);
 
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
-        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES);
+        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         // load registry here to ensure bukkit object registry are correctly delayed if needed
         try {
@@ -104,16 +101,16 @@ public final class RegistryHelper {
         // Register vanilla packs
         ReloadableServerResources datapack = ReloadableServerResources.loadResources(resourceManager, registries.layers(), registries.pendingTags(), enabledFeatures, Commands.CommandSelection.DEDICATED, LevelBasedPermissionSet.ALL_PERMISSIONS, Util.backgroundExecutor(), Runnable::run).join();
         // Bind tags
-        datapack.updateStaticRegistryTags();
+        datapack.updateComponentsAndStaticRegistryTags();
 
         RegistryAccess registryAccess = registries.access();
         setupContext = new SetupContext(
             datapack,
-            registryAccess,
-            () -> PalettedContainerFactory.create(registryAccess)
+            registryAccess
         );
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Keyed> Class<T> getFieldType(Class<T> apiClass, NamespacedKey key) {
         Class<T> fieldType = apiClass;
         // Some registries have extra Typed classes such as BlockType and ItemType.
@@ -138,7 +135,7 @@ public final class RegistryHelper {
 
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
 
-    public static String formatKeyAsField(String path) {
+    private static String formatKeyAsField(String path) {
         return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 }

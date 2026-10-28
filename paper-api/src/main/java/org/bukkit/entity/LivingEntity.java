@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -623,9 +625,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    default boolean addPotionEffect(@NotNull PotionEffect effect) {
-        return this.addPotionEffect(effect, false);
-    }
+    boolean addPotionEffect(@NotNull PotionEffect effect);
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
@@ -639,7 +639,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * now supported.
      */
     @Deprecated(since = "1.15.2")
-    public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
+    default boolean addPotionEffect(@NotNull PotionEffect effect, boolean force) {
+        return this.addPotionEffect(effect);
+    }
 
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
@@ -995,12 +997,35 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
 
     /**
+     * Get the sound volume at which this entity plays its sounds with.
+     *
+     * @return the sound volume of this entity
+     */
+    float getSoundVolume();
+
+    /**
+     * Get the sound pitch at which this entity plays its sounds with.
+     * Might not be constant across all invocations.
+     *
+     * @return the sound pitch of this entity
+     */
+    float getSoundPitch();
+
+    /**
      * Get the {@link Sound} this entity will make when damaged.
      *
      * @return the hurt sound, or null if the entity does not make any sound
      */
     @Nullable
     public Sound getHurtSound();
+
+    /**
+     * Get the {@link Sound} this entity will make when damaged by the given {@link DamageSource}.
+     *
+     * @param damageSource the damage source to get the hurt sound of
+     * @return the hurt sound, or null if the entity does not make any sound
+     */
+    @Nullable Sound getHurtSound(@NotNull DamageSource damageSource);
 
     /**
      * Get the {@link Sound} this entity will make on death.
@@ -1063,7 +1088,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Returns true if this entity can breathe underwater and will not take
-     * suffocation damage when its air supply reaches zero.
+     * drowning damage when its air supply reaches zero.
      *
      * @return <code>true</code> if the entity can breathe underwater
      */
@@ -1199,7 +1224,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param hand the hand that contains the item to be used
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void startUsingItem(@NotNull org.bukkit.inventory.EquipmentSlot hand);
 
     /**
@@ -1210,7 +1234,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * This method does not make any guarantees about the effect of this method
      * as such depends on the entity and its state.
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void completeUsingActiveItem();
 
     /**
@@ -1379,25 +1402,39 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void setHurtDirection(float hurtDirection);
     // Paper end - hurt direction API
 
-    // Paper start - swing hand API
     /**
-     * Makes this entity swing their hand.
+     * Makes this entity swing their hand, using the {@link io.papermc.paper.datacomponent.DataComponentTypes#ATTACK_ANIMATION}
+     * component on the item held in that hand to determine the animation type and duration.
+     * If the held item does not have the component, the default {@link io.papermc.paper.datacomponent.item.SwingAnimation.Animation#WHACK}
+     * animation with a duration of {@code 6} ticks is used.
      *
      * <p>This method does nothing if this entity does not
      * have an animation for swinging their hand.
      *
      * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
-     * @throws IllegalArgumentException if invalid hand is passed
+     * @throws IllegalArgumentException if an invalid hand is passed
      */
     default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
+        Preconditions.checkArgument(hand != null && hand.isHand(), "Expected a valid hand, got \"%s\" instead!", hand);
         if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
             this.swingMainHand();
         } else {
             this.swingOffHand();
         }
     }
-    // Paper end - swing hand API
+
+    /**
+     * Makes this entity swing their hand using the provided {@link io.papermc.paper.datacomponent.item.SwingAnimation},
+     * instead of the swing animation component the held item may have.
+     *
+     * <p>This method does nothing if this entity does not
+     * have an animation for swinging their hand.
+     *
+     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
+     * @param swingAnimation the swing animation to use
+     * @throws IllegalArgumentException if an invalid hand is passed
+     */
+    void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand, @NotNull io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation);
 
     // Paper start - knockback API
     /**
@@ -1496,7 +1533,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the entity's combat tracker
      */
-    @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
 
     /**

@@ -2,6 +2,8 @@ package org.bukkit.event.server;
 
 import com.google.common.base.Preconditions;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Iterator;
 import io.papermc.paper.event.server.AbstractServerListPingEvent;
 import net.kyori.adventure.text.Component;
@@ -28,32 +30,32 @@ public class ServerListPingEvent extends AbstractServerListPingEvent implements 
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
         super(hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), numPlayers, maxPlayers);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
     }
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
+    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final String motd, final int maxPlayers) {
         super(hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), MAGIC_PLAYER_COUNT, maxPlayers);
     }
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
-        this("", address, motd, numPlayers, maxPlayers);
+        this("", new InetSocketAddress(address, 0), motd, numPlayers, maxPlayers);
     }
 
     @ApiStatus.Internal
-    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
         super(hostname, address, motd, numPlayers, maxPlayers);
     }
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final Component motd, final int maxPlayers) {
-        this("", address, motd, maxPlayers);
+        this("", new InetSocketAddress(address, 0), motd, maxPlayers);
     }
 
     /*
@@ -62,7 +64,7 @@ public class ServerListPingEvent extends AbstractServerListPingEvent implements 
      * count.
      */
     @ApiStatus.Internal
-    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final @NotNull Component motd, final int maxPlayers) {
+    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull SocketAddress address, final @NotNull Component motd, final int maxPlayers) {
         super(hostname, address, motd, MAGIC_PLAYER_COUNT, maxPlayers);
     }
 

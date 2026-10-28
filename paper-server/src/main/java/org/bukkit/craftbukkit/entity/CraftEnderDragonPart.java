@@ -32,6 +32,11 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
     }
 
     @Override
+    public void kill(DamageSource damageSource) {
+        this.getParent().kill(damageSource);
+    }
+
+    @Override
     public double getHealth() {
         return this.getParent().getHealth();
     }

@@ -2,6 +2,8 @@ package org.bukkit;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
@@ -19,6 +21,8 @@ public interface JukeboxSong extends Keyed, Translatable {
     JukeboxSong FIVE = get("5");
 
     JukeboxSong BLOCKS = get("blocks");
+
+    JukeboxSong BOUNCE = get("bounce");
 
     JukeboxSong CAT = get("cat");
 
@@ -55,8 +59,8 @@ public interface JukeboxSong extends Keyed, Translatable {
     JukeboxSong WARD = get("ward");
     // End generate - JukeboxSong
 
-    private static JukeboxSong get(String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(NamespacedKey.minecraft(key));
+    private static JukeboxSong get(@KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
