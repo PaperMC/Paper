@@ -5,7 +5,7 @@ import org.bukkit.event.server.ServerEvent;
 import org.bukkit.util.CachedServerIcon;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.util.UUID;
 
 public abstract class AbstractServerListPingEvent extends ServerEvent {
@@ -13,14 +13,14 @@ public abstract class AbstractServerListPingEvent extends ServerEvent {
     protected static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
 
     private final String hostname;
-    private final InetAddress address;
+    private final SocketAddress address;
     protected final int numPlayers;
 
     private Component motd;
     private int maxPlayers;
 
     @ApiStatus.Internal
-    protected AbstractServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
+    protected AbstractServerListPingEvent(@NotNull final String hostname, @NotNull final SocketAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
         super(true);
         this.hostname = hostname;
         this.address = address;
@@ -46,7 +46,7 @@ public abstract class AbstractServerListPingEvent extends ServerEvent {
      * @return the address
      */
     @NotNull
-    public InetAddress getAddress() {
+    public SocketAddress getAddress() {
         return this.address;
     }
 

@@ -37,7 +37,7 @@ public class ServerListPlayerPingEvent extends AbstractServerListPingEvent imple
     @ApiStatus.Internal
     public ServerListPlayerPingEvent(@NonNull Player player, @NonNull Component motd, int numPlayers, int maxPlayers,
                                      @NonNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
-        super("", player.getConnection().getClientAddress().getAddress(), motd, numPlayers, maxPlayers);
+        super("", player.getConnection().getClientAddress(), motd, numPlayers, maxPlayers);
         this.player = player;
         this.numPlayers = numPlayers;
         this.version = version;
