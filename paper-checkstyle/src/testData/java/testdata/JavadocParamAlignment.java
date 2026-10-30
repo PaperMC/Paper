@@ -67,4 +67,15 @@ public class JavadocParamAlignment {
     public void method_line2_starts_with_link(String a, String superLongParamName) {
     }
 
+    /**
+     * A method where line 2 starts with a link tag and is misaligned
+     *
+     * @param a                  this is a description
+     *             {@link #method(String, String)} is misaligned
+     * @param superLongParamName a description
+     *                           blabla
+     */
+    public void method_line2_starts_with_link_misaligned(String a, String superLongParamName) {
+    }
+
 }

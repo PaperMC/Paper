@@ -11,6 +11,7 @@ class TestJavadocAlignParameterDescriptionCheck {
             .addCheck(new JavadocAlignParameterDescriptionCheck())
             .addViolation("10:17: Param description for a should start at column 34")
             .addViolation("30:23: Param description for a should start at column 34")
-            .addViolation("32:30: Param description for superLongParamName should start at column 34");
+            .addViolation("32:30: Param description for superLongParamName should start at column 34")
+            .addViolation("74:20: Param description for a should start at column 34");
     }
 }

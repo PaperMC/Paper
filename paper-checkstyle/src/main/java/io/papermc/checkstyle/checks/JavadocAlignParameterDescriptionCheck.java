@@ -4,7 +4,6 @@ import com.puppycrawl.tools.checkstyle.api.DetailNode;
 import com.puppycrawl.tools.checkstyle.api.JavadocCommentsTokenTypes;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.AbstractJavadocCheck;
 import com.puppycrawl.tools.checkstyle.utils.JavadocUtil;
-import io.papermc.checkstyle.Util;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,16 +25,19 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
 
     @Override
     public void visitJavadocToken(final DetailNode detailNode) {
-        record ParamDesc(DetailNode node, int startCol) {
+        record ParamDesc(DetailNode node, DetailNode paramNameNode, int startCol) {
         }
 
         final List<ParamDesc> params = new ArrayList<>();
         int maxColumn = -1;
-        DetailNode child = detailNode.getFirstChild();
         final Set<Integer> visitedLines = new HashSet<>();
         for (final DetailNode javadocBlock : JavadocUtil.getAllNodesOfType(detailNode, JavadocCommentsTokenTypes.JAVADOC_BLOCK_TAG)) {
             final DetailNode paramBlock = JavadocUtil.findFirstToken(javadocBlock, JavadocCommentsTokenTypes.PARAM_BLOCK_TAG);
             if (paramBlock == null) {
+                continue;
+            }
+            final DetailNode paramNameNode = JavadocUtil.findFirstToken(paramBlock, JavadocCommentsTokenTypes.PARAMETER_NAME);
+            if (paramNameNode == null) {
                 continue;
             }
             final DetailNode paramDescription = JavadocUtil.findFirstToken(paramBlock, JavadocCommentsTokenTypes.DESCRIPTION);
@@ -53,21 +55,16 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
                     paramDescColNum += matcher.group().length();
                 }
                 maxColumn = Math.max(maxColumn, paramDescColNum);
-                params.add(new ParamDesc(textNode, paramDescColNum));
+                params.add(new ParamDesc(textNode, paramNameNode, paramDescColNum));
             }
-            child = child.getNextSibling();
         }
 
         for (final ParamDesc param : params) {
             if (param.startCol() != maxColumn) {
-                final DetailNode paramNameNode = Util.getPreviousSibling(param.node().getParent(), JavadocCommentsTokenTypes.PARAMETER_NAME);
-                if (paramNameNode == null) {
-                    continue;
-                }
                 this.log(
                     param.node().getLineNumber(),
                     param.startCol(),
-                    "Param description for %s should start at column %d".formatted(paramNameNode.getText(), maxColumn + 1)
+                    "Param description for %s should start at column %d".formatted(param.paramNameNode().getText(), maxColumn + 1)
                 );
             }
         }
