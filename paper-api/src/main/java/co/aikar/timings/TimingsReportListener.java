@@ -2,6 +2,10 @@ package co.aikar.timings;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import net.kyori.adventure.audience.ForwardingAudience;
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.chat.SignedMessage;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -61,8 +65,18 @@ public class TimingsReportListener implements net.kyori.adventure.audience.Forwa
     }
 
     @Override
-    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
-        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
+    public void sendMessage(final @NotNull Component message) {
+        ForwardingAudience.super.sendMessage(message);
+    }
+
+    @Override
+    public void sendMessage(final @NotNull Component message, final ChatType.@NotNull Bound boundChatType) {
+        ForwardingAudience.super.sendMessage(message, boundChatType);
+    }
+
+    @Override
+    public void sendMessage(final @NotNull SignedMessage signedMessage, final ChatType.@NotNull Bound boundChatType) {
+        ForwardingAudience.super.sendMessage(signedMessage, boundChatType);
     }
 
     @NotNull

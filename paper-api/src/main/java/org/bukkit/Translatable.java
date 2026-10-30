@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an object with a text representation that can be translated by the
  * Minecraft client.
+ *
  * @deprecated use {@link net.kyori.adventure.translation.Translatable}
  */
 @Deprecated(forRemoval = true) // Paper

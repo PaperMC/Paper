@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * @deprecated use {@link com.destroystokyo.paper.event.inventory.PrepareResultEvent}
  */
-@Deprecated @Warning
+@Deprecated
+@Warning(propagate = false)
 public class PrepareInventoryResultEvent extends InventoryEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

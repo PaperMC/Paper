@@ -1,8 +1,9 @@
 package org.bukkit.map;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -289,6 +290,10 @@ public final class MapCursor {
     public interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - MapCursorType
+        Type ABANDONED_CAMP = getType("abandoned_camp");
+
+        Type ANCIENT_CITY = getType("ancient_city");
+
         Type BANNER_BLACK = getType("banner_black");
 
         Type BANNER_BLUE = getType("banner_blue");
@@ -323,13 +328,19 @@ public final class MapCursor {
 
         Type BLUE_MARKER = getType("blue_marker");
 
+        Type DESERT_PYRAMID = getType("desert_pyramid");
+
         Type FRAME = getType("frame");
 
         Type JUNGLE_TEMPLE = getType("jungle_temple");
 
         Type MANSION = getType("mansion");
 
+        Type MINESHAFT = getType("mineshaft");
+
         Type MONUMENT = getType("monument");
+
+        Type OCEAN_RUIN_WARM = getType("ocean_ruin_warm");
 
         Type PLAYER = getType("player");
 
@@ -361,8 +372,8 @@ public final class MapCursor {
         // End generate - MapCursorType
 
         @NotNull
-        private static Type getType(@NotNull String key) {
-            return Registry.MAP_DECORATION_TYPE.getOrThrow(NamespacedKey.minecraft(key));
+        private static Type getType(@NotNull @KeyPattern.Value String key) {
+            return Registry.MAP_DECORATION_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -398,19 +409,20 @@ public final class MapCursor {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.MAP_DECORATION_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Type type = key == null ? null : Registry.MAP_DECORATION_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No Type found with the name %s", name);
             return type;
         }
 
         /**
          * @return an array of all known map cursor types.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
-            return Lists.newArrayList(Registry.MAP_DECORATION_TYPE).toArray(new Type[0]);
+            return Registry.MAP_DECORATION_TYPE.stream().toArray(Type[]::new);
         }
     }
 

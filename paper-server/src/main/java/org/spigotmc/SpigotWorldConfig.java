@@ -1,23 +1,36 @@
 package org.spigotmc;
 
 import java.util.List;
+
+import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class SpigotWorldConfig {
 
-    private final String worldName;
+    private final String legacyWorldName;
+    private String worldName;
     private final YamlConfiguration config;
     private boolean verbose;
 
-    public SpigotWorldConfig(String worldName) {
-        this.worldName = worldName;
+    public SpigotWorldConfig(String legacyWorldName, Key worldKey) {
+        this.legacyWorldName = legacyWorldName;
+        this.worldName = worldKey.asString();
         this.config = SpigotConfig.config;
         this.init();
     }
 
     public void init() {
         this.verbose = this.getBoolean("verbose", false); // Paper
+        if (SpigotConfig.version <= 12) {
+            ConfigurationSection section = this.config.getConfigurationSection("world-settings." + this.legacyWorldName);
+            if (section != null) {
+                this.config.set("world-settings." + this.legacyWorldName, null);
+                this.config.set("world-settings." + this.worldName, section);
+                Bukkit.getLogger().info("NOTE: Migrated spigot world config %s -> %s".formatted(this.legacyWorldName, this.worldName));
+            }
+        }
 
         this.log("-------- World Settings For [" + this.worldName + "] --------");
         SpigotConfig.readConfig(SpigotWorldConfig.class, this);
@@ -280,7 +293,7 @@ public class SpigotWorldConfig {
     private void arrowDespawnRate() {
         this.arrowDespawnRate = this.getInt("arrow-despawn-rate", 1200);
         this.tridentDespawnRate = this.getInt("trident-despawn-rate", this.arrowDespawnRate);
-        this.log("Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Respawn Rate:" + this.tridentDespawnRate);
+        this.log("Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Despawn Rate:" + this.tridentDespawnRate);
     }
 
     public boolean zombieAggressiveTowardsVillager;
@@ -325,7 +338,6 @@ public class SpigotWorldConfig {
     public int oceanSeed;
     public int outpostSeed;
     public int shipwreckSeed;
-    public int slimeSeed;
     public int endCitySeed;
     public int netherSeed;
     public int mansionSeed;
@@ -334,9 +346,12 @@ public class SpigotWorldConfig {
     public int ancientCitySeed;
     public int trailRuinsSeed;
     public int trialChambersSeed;
+    public int abandonedCampSeed;
+
     public int buriedTreasureSeed;
     public Integer mineshaftSeed;
     public Long strongholdSeed;
+    public int slimeSeed;
 
     private <N extends Number> N getSeed(String path, java.util.function.Function<String, N> toNumberFunc) {
         final String value = this.getString(path, "default");
@@ -354,7 +369,6 @@ public class SpigotWorldConfig {
         this.oceanSeed = this.getInt("seed-ocean", 14357621);
         this.outpostSeed = this.getInt("seed-outpost", 165745296);
         this.endCitySeed = this.getInt("seed-endcity", 10387313);
-        this.slimeSeed = this.getInt("seed-slime", 987234911);
         this.netherSeed = this.getInt("seed-nether", 30084232);
         this.mansionSeed = this.getInt("seed-mansion", 10387319);
         this.fossilSeed = this.getInt("seed-fossil", 14357921);
@@ -362,11 +376,36 @@ public class SpigotWorldConfig {
         this.ancientCitySeed = this.getInt("seed-ancientcity", 20083232);
         this.trailRuinsSeed = this.getInt("seed-trailruins", 83469867);
         this.trialChambersSeed = this.getInt("seed-trialchambers", 94251327);
-        this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // StructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
+        this.abandonedCampSeed = this.getInt("seed-abandonedcamp", 91231127);
+
+        this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // AbstractSpreadingStructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
         this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
         this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
-        this.log("Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
-            + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed);
+        this.slimeSeed = this.getInt("seed-slime", 987234911);
+        this.log("Custom Map Seeds: " +
+            " Village: " + this.villageSeed +
+            " Desert: " + this.desertSeed +
+            " Igloo: " + this.iglooSeed +
+            " Jungle: " + this.jungleSeed +
+            " Swamp: " + this.swampSeed +
+            " Monument: " + this.monumentSeed +
+            " Shipwreck: " + this.shipwreckSeed +
+            " Ocean: " + this.oceanSeed +
+            " Outpost: " + this.outpostSeed +
+            " End City: " + this.endCitySeed +
+            " Nether: " + this.netherSeed +
+            " Mansion: " + this.mansionSeed +
+            " Fossil: " + this.fossilSeed +
+            " Portal: " + this.portalSeed +
+            " Ancient City: " + this.ancientCitySeed +
+            " Trail Ruins: " + this.trailRuinsSeed +
+            " Trial Chambers: " + this.trialChambersSeed +
+            " Abandoned Camp: " + this.abandonedCampSeed +
+            " Buried Treasure: " + this.buriedTreasureSeed +
+            " Mineshaft: " + this.mineshaftSeed +
+            " Stronghold: " + this.strongholdSeed +
+            " Slime: " + this.slimeSeed
+        );
     }
 
     public float jumpWalkExhaustion;

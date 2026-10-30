@@ -7,14 +7,11 @@ import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the effects that will be applied when consuming Suspicious Stew.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#SUSPICIOUS_STEW_EFFECTS
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SuspiciousStewEffects {
 
@@ -39,7 +36,6 @@ public interface SuspiciousStewEffects {
     /**
      * Builder for {@link SuspiciousStewEffects}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<SuspiciousStewEffects> {
 

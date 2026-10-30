@@ -20,8 +20,9 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
             Material.COD_BUCKET,
             Material.PUFFERFISH_BUCKET,
-            Material.SALMON_BUCKET,
             Material.TADPOLE_BUCKET,
+            Material.SALMON_BUCKET,
+            Material.SULFUR_CUBE_BUCKET,
             Material.ITEM_FRAME,
             Material.GLOW_ITEM_FRAME,
             Material.PAINTING
@@ -40,11 +41,11 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         this.entityTag = entity.entityTag;
     }
 
-    CraftMetaEntityTag(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaEntityTag(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTagWithEntityId();
+        getOrEmpty(patch, CraftMetaEntityTag.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
         });
     }
 

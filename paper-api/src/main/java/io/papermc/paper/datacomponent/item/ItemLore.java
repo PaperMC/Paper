@@ -7,14 +7,11 @@ import net.kyori.adventure.text.ComponentLike;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Additional lines to include in an item's tooltip.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemLore {
 
@@ -47,7 +44,6 @@ public interface ItemLore {
     /**
      * Builder for {@link ItemLore}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemLore> {
 

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
  * During the registry loading phase, some values can be references to values to-be-loaded
  * in the future, or inlined, anonymous values that already exist. This type (and subtypes) represent
  * that structure.
+ *
  * @param <API> the registry's type
  * @param <ENTRY> the type of the registry entry (for inlined values)
  */

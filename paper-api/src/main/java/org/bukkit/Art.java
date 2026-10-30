@@ -1,16 +1,12 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
-import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import java.util.Locale;
-import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -129,8 +125,8 @@ public interface Art extends OldEnum<Art>, Keyed {
     // End generate - Art
 
     @NotNull
-    private static Art getArt(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+    private static Art getArt(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -209,7 +205,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     @Deprecated(since = "1.6.2", forRemoval = true)
     @Nullable
     static Art getById(int id) {
-        for (Art art : Registry.ART) {
+        for (Art art : RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT)) {
             if (id == art.getId()) {
                 return art;
             }
@@ -231,8 +227,12 @@ public interface Art extends OldEnum<Art>, Keyed {
     @Nullable
     static Art getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        if (key == null) {
+            return null;
+        }
 
-        return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
     }
 
     /**
@@ -243,18 +243,19 @@ public interface Art extends OldEnum<Art>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
-        Art art = Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        final Art art = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
         Preconditions.checkArgument(art != null, "No art found with the name %s", name);
         return art;
     }
 
     /**
      * @return an array of all known arts.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art[] values() {
-        return Lists.newArrayList(Registry.ART).toArray(new Art[0]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT).stream().toArray(Art[]::new);
     }
 }

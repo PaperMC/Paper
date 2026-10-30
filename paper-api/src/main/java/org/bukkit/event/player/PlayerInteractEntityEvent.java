@@ -10,7 +10,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an event that is called when a player right clicks an entity.
+ *
+ * @apiNote this event is no longer called without being a {@link PlayerInteractAtEntityEvent}, it's therefore
+ * recommended to listen to that event instead which hold more informations.
  */
+@ApiStatus.Obsolete
 public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

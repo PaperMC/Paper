@@ -22,7 +22,6 @@ public interface DataComponentHolder extends DataComponentView {
      * @param <T> value type
      */
     @Utility
-    @ApiStatus.Experimental
     <T> void setData(final DataComponentType.Valued<T> type, final DataComponentBuilder<T> valueBuilder);
 
     /**
@@ -32,7 +31,6 @@ public interface DataComponentHolder extends DataComponentView {
      * @param value value to set
      * @param <T> value type
      */
-    @ApiStatus.Experimental
     <T> void setData(final DataComponentType.Valued<T> type, final T value);
 
     /**
@@ -40,7 +38,6 @@ public interface DataComponentHolder extends DataComponentView {
      *
      * @param type the data component type
      */
-    @ApiStatus.Experimental
     void setData(final DataComponentType.NonValued type);
 
    // TODO: Do we even want to have the concept of overriding here? Not sure what is going on with entity components

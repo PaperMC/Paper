@@ -1,0 +1,25 @@
+--- a/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java
+@@ -12,14 +_,19 @@
+ 
+     @Override
+     protected ItemStack execute(final BlockSource source, final ItemStack dispensed) {
+-        return dispenseBlock(source.level(), source.pos().relative(source.state().getValue(DispenserBlock.FACING)), dispensed)
++        return dispenseBlock(source.level(), source.pos().relative(source.state().getValue(DispenserBlock.FACING)), dispensed, source, this) // Paper - Call BlockDispenseEvent
+             ? dispensed
+             : super.execute(source, dispensed);
+     }
+ 
+-    public static boolean dispenseBlock(final ServerLevel level, final BlockPos pos, final ItemStack dispensed) {
++    public static boolean dispenseBlock(final ServerLevel level, final BlockPos pos, final ItemStack dispensed, final BlockSource source, final @org.jspecify.annotations.Nullable DispenseItemBehavior currentBehavior) { // Paper - Call BlockDispenseEvent
+         for (SulfurCube entity : level.getEntitiesOfClass(SulfurCube.class, new AABB(pos))) {
+-            if (entity.equipItem(dispensed)) {
++            // Paper start - Call BlockDispenseEvent
++            if (entity.canEquipItem(dispensed)) {
++                final io.papermc.paper.event.block.PaperBlockDispenseEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEventInspectable(source, pos, dispensed, currentBehavior);
++                if (event.result.preventBehaviour()) return true; // Pretend that we succeeded this so we do not call the normal flow.
++                entity.equipItem(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
++            // Paper end - Call BlockDispenseEvent
+                 dispensed.shrink(1);
+                 return true;
+             }

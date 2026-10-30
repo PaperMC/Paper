@@ -2,6 +2,9 @@ package io.papermc.paper.command.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.ComponentLike;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -9,15 +12,17 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
-import org.jspecify.annotations.NonNull;
+import org.bukkit.entity.Player;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
 
     net.minecraft.commands.CommandSourceStack getHandle();
 
     @Override
-    default @NonNull Location getLocation() {
+    default Location getLocation() {
         Vec2 rot = this.getHandle().getRotation();
         Vec3 pos = this.getHandle().getPosition();
         Level level = this.getHandle().getLevel();
@@ -26,14 +31,12 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    @NonNull
     default CommandSender getSender() {
         return this.getHandle().getBukkitSender();
     }
 
     @Override
-    @Nullable
-    default Entity getExecutor() {
+    default @Nullable Entity getExecutor() {
         net.minecraft.world.entity.Entity nmsEntity = this.getHandle().getEntity();
         if (nmsEntity == null) {
             return null;
@@ -43,14 +46,42 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    default CommandSourceStack withExecutor(@NonNull Entity executor) {
+    default CommandSourceStack withExecutor(Entity executor) {
         Preconditions.checkNotNull(executor, "Executor cannot be null.");
         return this.getHandle().withEntity(((CraftEntity) executor).getHandle());
     }
 
+    @Override
+    default void sendReply(final ComponentLike message) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendSystemMessage(PaperAdventure.asVanilla(message.asComponent()));
+    }
+
+    @Override
+    default void sendSuccess(final ComponentLike message, final boolean allowInformingAdmins) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendSuccess(() -> PaperAdventure.asVanilla(message.asComponent()), allowInformingAdmins);
+    }
+
+    @Override
+    default void sendFailure(final ComponentLike message) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendFailure(PaperAdventure.asVanilla(message.asComponent()), false);
+    }
+
+    @Override
+    default Player getPlayerOrThrow() throws CommandSyntaxException {
+        return this.getHandle().getPlayerOrException().getBukkitEntity();
+    }
+
+    @Override
+    default Entity getEntityOrThrow() throws CommandSyntaxException {
+        return this.getHandle().getEntityOrException().getBukkitEntity();
+    }
+
     // OLD METHODS
     @Override
-    default org.bukkit.entity.Entity getBukkitEntity() {
+    default @Nullable Entity getBukkitEntity() {
         return this.getExecutor();
     }
 

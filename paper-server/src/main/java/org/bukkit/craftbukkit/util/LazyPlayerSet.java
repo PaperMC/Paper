@@ -23,7 +23,7 @@ public class LazyPlayerSet extends LazyHashSet<Player> {
     }
 
     public static Set<Player> makePlayerSet(final MinecraftServer server) {
-        List<ServerPlayer> players = server.getPlayerList().players;
+        List<ServerPlayer> players = server.getPlayerList().getPlayers();
         Set<Player> reference = new HashSet<>(players.size());
         for (ServerPlayer player : players) {
             reference.add(player.getBukkitEntity());

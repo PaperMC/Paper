@@ -26,11 +26,67 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class FluidTagKeys {
     /**
+     * {@code #minecraft:axolotl_tries_to_find}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> AXOLOTL_TRIES_TO_FIND = create(key("axolotl_tries_to_find"));
+
+    /**
+     * {@code #minecraft:bubble_column_can_occupy}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> BUBBLE_COLUMN_CAN_OCCUPY = create(key("bubble_column_can_occupy"));
+
+    /**
+     * {@code #minecraft:dolphin_tries_to_find}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> DOLPHIN_TRIES_TO_FIND = create(key("dolphin_tries_to_find"));
+
+    /**
+     * {@code #minecraft:entity_floatable}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> ENTITY_FLOATABLE = create(key("entity_floatable"));
+
+    /**
+     * {@code #minecraft:frog_tries_to_find_land_near}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> FROG_TRIES_TO_FIND_LAND_NEAR = create(key("frog_tries_to_find_land_near"));
+
+    /**
      * {@code #minecraft:lava}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Fluid> LAVA = create(key("lava"));
+
+    /**
+     * {@code #minecraft:supports_frogspawn}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_FROGSPAWN = create(key("supports_frogspawn"));
+
+    /**
+     * {@code #minecraft:supports_lily_pad}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_LILY_PAD = create(key("supports_lily_pad"));
+
+    /**
+     * {@code #minecraft:supports_sugar_cane_adjacently}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_SUGAR_CANE_ADJACENTLY = create(key("supports_sugar_cane_adjacently"));
 
     /**
      * {@code #minecraft:water}

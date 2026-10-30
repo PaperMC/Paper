@@ -5,7 +5,7 @@
      private final Player player;
      private final CraftingContainer container;
 +    // CraftBukkit start
-+    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftCrafterView view = null;
++    private org.bukkit.craftbukkit.inventory.view.@org.jspecify.annotations.Nullable CraftCrafterView view = null;
 +
 +    @Override
 +    public org.bukkit.craftbukkit.inventory.view.CraftCrafterView getBukkitView() {
@@ -19,13 +19,30 @@
 +    }
 +    // CraftBukkit end
  
-     public CrafterMenu(int containerId, Inventory playerInventory) {
+     public CrafterMenu(final int containerId, final Inventory inventory) {
          super(MenuType.CRAFTER_3x3, containerId);
 @@ -100,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return this.container.stillValid(player);
      }
  
+@@ -107,7 +_,15 @@
+         if (this.player instanceof ServerPlayer serverPlayer) {
+             ServerLevel level = serverPlayer.level();
+             CraftingInput craftInput = this.container.asCraftInput();
+-            ItemStack result = CrafterBlock.getPotentialResults(level, craftInput).map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY);
++            // Paper start - Fire PrepareItemCraftEvent for Crafter preview
++            final java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> potentialResults = CrafterBlock.getPotentialResults(level, craftInput);
++            ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(
++                this.container,
++                this.resultContainer,
++                potentialResults.map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY),
++                this.getBukkitView(),
++                potentialResults.map(net.minecraft.world.item.crafting.RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe);
++            // Paper end - Fire PrepareItemCraftEvent for Crafter preview
+             this.resultContainer.setItem(0, result);
+         }
+     }

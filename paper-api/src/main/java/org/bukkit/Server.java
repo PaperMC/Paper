@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -60,6 +61,8 @@ import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.generator.structure.Structure;
+import org.bukkit.map.MapCursor;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.CachedServerIcon;
 import org.jetbrains.annotations.ApiStatus;
@@ -212,7 +215,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public String getWorldType();
@@ -792,11 +795,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void setRespawnWorld(@NotNull World world);
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorld(NamespacedKey)}.</p>
+     *
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
+    @ApiStatus.Obsolete
     @Nullable
     public World getWorld(@NotNull String name);
 
@@ -867,8 +874,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Create a new explorer map targeting the closest nearby structure of a
      * given {@link StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -877,9 +883,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type)}
+     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, MapCursor.Type)}
      */
-    @Deprecated // Paper
+    @Deprecated
     @NotNull
     default ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType) {
         return this.createExplorerMap(world, location, structureType, 100, true);
@@ -899,18 +905,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
-     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type, int, boolean)}
+     * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, MapCursor.Type, int, boolean)}
      */
-    @Deprecated // Paper
-    @NotNull
-    public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
-    // Paper start
+    @Deprecated
+    @NotNull ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
+
     /**
      * Create a new explorer map targeting the closest nearby structure of a
-     * given {@link org.bukkit.generator.structure.StructureType}.
+     * given {@link StructureType}.
      * <br>
-     * This method uses implementation default values for radius and
-     * findUnexplored (usually 100, true).
+     * This method uses a radius of 100 and only searches for unexplored structures.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -919,15 +923,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return a newly created item stack or null if it can't find a location
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
-     *      org.bukkit.generator.structure.StructureType, int, boolean)
+     *      StructureType, int, boolean)
      */
-    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull org.bukkit.map.MapCursor.Type mapIcon) {
+    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type mapIcon) {
         return this.createExplorerMap(world, location, structureType, mapIcon, 100, true);
     }
 
     /**
      * Create a new explorer map targeting the closest nearby structure of a
-     * given {@link org.bukkit.generator.structure.StructureType}.
+     * given {@link StructureType}.
      *
      * @param world the world the map will belong to
      * @param location the origin location to find the nearest structure
@@ -939,10 +943,46 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the newly created item stack or null if it can't find a location
      *
      * @see World#locateNearestStructure(org.bukkit.Location,
-     *      org.bukkit.generator.structure.StructureType, int, boolean)
+     *      StructureType, int, boolean)
      */
-    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored);
-    // Paper end
+    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type mapIcon, int radius, boolean findUnexplored);
+
+    /**
+     * Create a new explorer map targeting the closest nearby specific
+     * {@link Structure}.
+     * <br>
+     * This method uses a radius of 100 and only searches for unexplored structures.
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structure the specific structure to find
+     * @param mapIcon the map icon to use on the map
+     * @return a newly created item stack or null if it can't find a location
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      Structure, int, boolean)
+     */
+    default @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull Structure structure, @NotNull MapCursor.Type mapIcon) {
+        return this.createExplorerMap(world, location, structure, mapIcon, 100, true);
+    }
+
+    /**
+     * Create a new explorer map targeting the closest nearby specific
+     * {@link Structure}.
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structure the specific structure to find
+     * @param mapIcon the map icon to use on the map
+     * @param radius radius to search, see World#locateNearestStructure for more
+     *               information
+     * @param findUnexplored whether to find unexplored structures
+     * @return the newly created item stack or null if it can't find a location
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      Structure, int, boolean)
+     */
+    @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull Structure structure, @NotNull MapCursor.Type mapIcon, int radius, boolean findUnexplored);
 
     /**
      * Reloads the server, refreshing settings and plugin information.
@@ -990,7 +1030,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public PluginCommand getPluginCommand(@NotNull String name);
 
@@ -1013,32 +1057,44 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     /**
      * Adds a recipe to the crafting manager.
-     * Recipes added with this method won't be sent to the client automatically.
+     * Recipes added with this method will be sent to the client automatically.
      * <p>
      * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some reason
-     * @see #addRecipe(Recipe, boolean)
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
      */
     @Contract("null -> false")
-    default boolean addRecipe(@Nullable Recipe recipe) {
-        return this.addRecipe(recipe, false);
-    }
+    boolean addRecipe(@Nullable Recipe recipe);
 
-    // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
-     * @apiNote resendRecipes is ignored for now for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
-     * @param resendRecipes true to update the client with the full set of recipes
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @throws IllegalStateException if the recipe is already added to the crafting manager
+     * @deprecated use {@link #addRecipe(Recipe)} instead, as Minecraft always resends recipes on a recipe added
      */
+    @Deprecated(since = "26.3")
     @Contract("null, _ -> false")
-    boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
-    // Paper end - method to send recipes immediately
+    default boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
+        return this.addRecipe(recipe);
+    }
+
+    /**
+     * Adds multiple recipes to the crafting manager at once, resending recipes only once
+     * after all have been added.
+     *
+     * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
+     * @param recipes the recipes to add
+     * @return true if any recipe was added, false if none were for some reason
+     * @throws IllegalStateException if any of the recipes are already added to the crafting manager
+     * @see #addRecipe
+     */
+    boolean addRecipes(@NotNull Iterable<Recipe> recipes);
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1201,6 +1257,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void resetRecipes();
 
     /**
+     * Checks if the server has a recipe
+     *
+     * @param key NamespacedKey of recipe to check for
+     * @return True if there is a recipe with a matching key
+     */
+    boolean hasRecipe(@NotNull NamespacedKey key);
+
+    /**
      * Remove a recipe from the server.
      *
      * <b>Note that removing a recipe may cause permanent loss of data
@@ -1210,11 +1274,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
      */
-    default boolean removeRecipe(@NotNull NamespacedKey key) {
-        return this.removeRecipe(key, false);
-    }
+    boolean removeRecipe(@NotNull NamespacedKey key);
 
-    // Paper start - method to resend recipes
     /**
      * Remove a recipe from the server.
      * <p>
@@ -1223,12 +1284,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * players).</b>
      *
      * @param key NamespacedKey of recipe to remove.
-     * @param resendRecipes true to update all clients on the new recipe list.
-     *                      Will only update if a recipe was actually removed
+     * @param resendRecipes ignored, refer to the deprecation note
      * @return True if recipe was removed
+     * @deprecated use {@link #removeRecipe(NamespacedKey)} instead, as Minecraft always resends recipes on recipe removal
      */
-    boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
-    // Paper end - method to resend recipes
+    @Deprecated(since = "26.3")
+    default boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
+        return this.removeRecipe(key);
+    }
+
+    /**
+     * Remove multiple recipes from the server.
+     *
+     * @apiNote This method differs from {@link #removeRecipe} in that it will only resend the recipe book once instead of once per every recipe removed
+     * @param keys the NamespacedKeys of the recipes to remove
+     * @return true if any recipe was removed, false if none were for some reason
+     * @see #removeRecipe
+     */
+    boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys);
 
     /**
      * Gets a list of command aliases defined in the server properties.
@@ -1375,7 +1448,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
@@ -1565,7 +1637,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     public ConsoleCommandSender getConsoleSender();
 
-    // Paper start
     /**
      * Creates a special {@link CommandSender} which redirects command feedback (in the form of chat messages) to the
      * specified listener. The returned sender will have the same effective permissions as {@link #getConsoleSender()}.
@@ -1575,15 +1646,29 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback);
-    // Paper end
 
     /**
-     * Gets the folder that contains all of the various {@link World}s.
+     * Gets the folder that contains {@link #getLevelDirectory()}.
      *
-     * @return folder that contains all worlds
+     * <p>This is usually the server's current working directory
+     * but can be overridden using command line flags (i.e. {@code --universe} or {@code --world-container}).</p>
+     *
+     * @return folder that contains the level directory
      */
+    @ApiStatus.Obsolete
     @NotNull
     public File getWorldContainer();
+
+    /**
+     * Gets the level directory.
+     *
+     * <p>This is the {@code ./world} directory in a fresh default server. Contains player data, dimensions, datapacks,
+     * and other world data.</p>
+     *
+     * @return the level directory
+     */
+    @NotNull
+    Path getLevelDirectory();
 
     /**
      * Gets every player that has ever played on this server.
@@ -1923,7 +2008,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the server's links
      */
     @NotNull
-    @ApiStatus.Experimental
     ServerLinks getServerLinks();
 
     /**
@@ -2191,7 +2275,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     org.bukkit.command.CommandMap getCommandMap();
 
@@ -2391,9 +2479,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         // Paper start
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-        {
-            throw new UnsupportedOperationException( "Not supported yet." );
+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         /**
@@ -2405,8 +2492,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -2419,8 +2505,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
@@ -2608,7 +2693,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
 
