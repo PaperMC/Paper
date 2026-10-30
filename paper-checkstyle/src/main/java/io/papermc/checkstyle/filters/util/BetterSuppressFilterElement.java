@@ -59,8 +59,14 @@ public class BetterSuppressFilterElement extends SuppressFilterElement {
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
-        return IntStream.range(0, Math.min(this.arguments.size(), args.length)).allMatch(i -> {
+        if (args == null || args.length < this.arguments.size()) {
+            return false;
+        }
+        return IntStream.range(0, this.arguments.size()).allMatch(i -> {
             final Object arg = args[i];
+            if (arg == null) {
+                return false;
+            }
             final Pattern argPattern = this.arguments.get(i);
             return argPattern.matcher(arg.toString()).find();
         });
