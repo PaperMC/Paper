@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Predicate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
@@ -163,7 +162,16 @@ public final class Util {
         return false;
     }
 
-    public static Pair<String, DetailAST> extractFullIdent(final DetailAST lastDot) {
+    /**
+     * A dotted name and the first identifier node it starts at.
+     *
+     * @param name      the full dotted name
+     * @param startNode the first identifier node of the name
+     */
+    public record QualifiedName(String name, DetailAST startNode) {
+    }
+
+    public static QualifiedName extractFullIdent(final DetailAST lastDot) {
         final List<String> parts = new ArrayList<>();
         DetailAST dot = lastDot;
         while (dot.getChildCount(TokenTypes.DOT) > 0) {
@@ -180,6 +188,6 @@ public final class Util {
         }
         parts.addFirst(ident.getText());
 
-        return Pair.of(String.join(".", parts), ident);
+        return new QualifiedName(String.join(".", parts), ident);
     }
 }
