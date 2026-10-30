@@ -57,8 +57,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtException;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.ReportedNbtException;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -754,7 +756,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             try {
                 CompoundTag internalTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
                 this.deserializeInternal(internalTag, map);
-            } catch (IOException ex) {
+            } catch (IOException | ReportedNbtException | NbtException ex) {
                 LOGGER.error("Failed to read internal tag from object", ex);
             }
         }
@@ -783,7 +785,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                         this.removedTags.add(key);
                     }
                 }
-            } catch (IOException ex) {
+            } catch (IOException | ReportedNbtException | NbtException ex) {
                 LOGGER.error("Failed to read unhandled tag for item", ex);
             }
         }
@@ -813,7 +815,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(custom));
             try {
                 this.customTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
-            } catch (IOException ex) {
+            } catch (IOException | ReportedNbtException | NbtException ex) {
                 LOGGER.error("Failed to read custom tag for item", ex);
             }
         }

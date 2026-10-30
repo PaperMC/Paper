@@ -28,7 +28,7 @@ public final class NullabilityAnnotationsCheck extends AbstractCheck {
 
     @Override
     public int[] getRequiredTokens() {
-        return new int[]{
+        return new int[] {
             TokenTypes.METHOD_DEF,
             TokenTypes.PARAMETER_DEF,
             TokenTypes.ANNOTATION_FIELD_DEF,
