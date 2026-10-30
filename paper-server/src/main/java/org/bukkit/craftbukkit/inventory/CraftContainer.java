@@ -72,6 +72,18 @@ public class CraftContainer extends AbstractContainerMenu {
                 return inventory.getType();
             }
 
+            @Override
+            public int getTopSlots() {
+                // A player inventory shown inside a container is laid out as a generic
+                // chest (whole rows of 9), so the armour and off-hand slots that
+                // getSize() counts are not rendered. Use the number of slots actually
+                // laid out so the raw-slot mapping matches the open menu.
+                if (inventory.getType() == InventoryType.PLAYER) {
+                    return (inventory.getSize() / 9) * 9;
+                }
+                return inventory.getSize();
+            }
+
             // Paper start
             @Override
             public net.kyori.adventure.text.Component title() {
