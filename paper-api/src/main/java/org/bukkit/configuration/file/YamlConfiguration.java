@@ -118,7 +118,13 @@ public class YamlConfiguration extends FileConfiguration {
             adjustNodeComments(node);
             options().setHeader(loadHeader(getCommentLines(node.getBlockComments())));
             options().setFooter(getCommentLines(node.getEndComments()));
-            fromNodeTree(node, this);
+            // Paper start - drop the node tree after loading
+            try {
+                fromNodeTree(node, this);
+            } finally {
+                constructor.clearCache();
+            }
+            // Paper end - drop the node tree after loading
         }
     }
 
