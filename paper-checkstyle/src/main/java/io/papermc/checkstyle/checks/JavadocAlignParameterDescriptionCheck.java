@@ -21,7 +21,7 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
 
     @Override
     public int[] getDefaultJavadocTokens() {
-        return new int[]{JavadocCommentsTokenTypes.JAVADOC_CONTENT};
+        return new int[] {JavadocCommentsTokenTypes.JAVADOC_CONTENT};
     }
 
     @Override
