@@ -1,6 +1,26 @@
 --- a/net/minecraft/server/level/PlayerSpawnFinder.java
 +++ b/net/minecraft/server/level/PlayerSpawnFinder.java
-@@ -48,7 +_,7 @@
+@@ -32,6 +_,7 @@
+     private final BlockPos spawnSuggestion;
+     private final int radius;
+     private final int candidateCount;
++    private final int candidateArea; // Paper - Sample respawn candidates from the whole square (MC-302446)
+     private final int coprime;
+     private final int offset;
+     private int nextCandidateIndex;
+@@ -42,13 +_,16 @@
+         this.spawnSuggestion = spawnSuggestion;
+         this.radius = radius;
+         long squareSide = radius * 2L + 1L;
+-        this.candidateCount = (int)Math.min(1024L, squareSide * squareSide);
+-        this.coprime = getCoprime(this.candidateCount);
+-        this.offset = RandomSource.createThreadLocalInstance().nextInt(this.candidateCount);
++        // Paper start - Sample respawn candidates from the whole square (MC-302446); only the number of attempts is capped
++        this.candidateArea = (int)Math.min(Integer.MAX_VALUE, squareSide * squareSide);
++        this.candidateCount = Math.min(ABSOLUTE_MAX_ATTEMPTS, this.candidateArea);
++        this.coprime = getCoprime(this.candidateArea);
++        this.offset = RandomSource.createThreadLocalInstance().nextInt(this.candidateArea);
++        // Paper end - Sample respawn candidates from the whole square (MC-302446)
      }
  
      public static CompletableFuture<Vec3> findSpawn(final ServerLevel level, final BlockPos spawnSuggestion) {
@@ -9,3 +29,30 @@
              return CompletableFuture.completedFuture(fixupSpawnHeight(level, spawnSuggestion));
          }
  
+@@ -70,7 +_,7 @@
+     private void scheduleNext() {
+         int candidateIndex = this.nextCandidateIndex++;
+         if (candidateIndex < this.candidateCount) {
+-            int value = (this.offset + this.coprime * candidateIndex) % this.candidateCount;
++            int value = (int)((this.offset + (long)this.coprime * candidateIndex) % this.candidateArea); // Paper - Sample respawn candidates from the whole square (MC-302446)
+             int deltaX = value % (this.radius * 2 + 1);
+             int deltaZ = value / (this.radius * 2 + 1);
+             int targetX = this.spawnSuggestion.getX() + deltaX - this.radius;
+@@ -108,7 +_,16 @@
+     }
+ 
+     private static int getCoprime(final int possibleOrigins) {
+-        return possibleOrigins <= 16 ? possibleOrigins - 1 : 17;
++        // Paper start - Sample respawn candidates from the whole square (MC-302446); 17 divides some areas, e.g. 51 * 51
++        if (possibleOrigins <= 16) {
++            return possibleOrigins - 1;
++        }
++        int coprime = 17;
++        while (com.google.common.math.IntMath.gcd(coprime, possibleOrigins) != 1) {
++            coprime++;
++        }
++        return coprime;
++        // Paper end - Sample respawn candidates from the whole square (MC-302446)
+     }
+ 
+     private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<Optional<Vec3>> candidateChecker) {

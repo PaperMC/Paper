@@ -6,7 +6,9 @@ import com.puppycrawl.tools.checkstyle.checks.javadoc.AbstractJavadocCheck;
 import com.puppycrawl.tools.checkstyle.utils.JavadocUtil;
 import io.papermc.checkstyle.Util;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +21,7 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
 
     @Override
     public int[] getDefaultJavadocTokens() {
-        return new int[]{JavadocCommentsTokenTypes.JAVADOC_CONTENT};
+        return new int[] {JavadocCommentsTokenTypes.JAVADOC_CONTENT};
     }
 
     @Override
@@ -30,6 +32,7 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
         final List<ParamDesc> params = new ArrayList<>();
         int maxColumn = -1;
         DetailNode child = detailNode.getFirstChild();
+        final Set<Integer> visitedLines = new HashSet<>();
         for (final DetailNode javadocBlock : JavadocUtil.getAllNodesOfType(detailNode, JavadocCommentsTokenTypes.JAVADOC_BLOCK_TAG)) {
             final DetailNode paramBlock = JavadocUtil.findFirstToken(javadocBlock, JavadocCommentsTokenTypes.PARAM_BLOCK_TAG);
             if (paramBlock == null) {
@@ -41,6 +44,9 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
             }
             // iterate over all text nodes (multiline)
             for (final DetailNode textNode : JavadocUtil.getAllNodesOfType(paramDescription, JavadocCommentsTokenTypes.TEXT)) {
+                if (!visitedLines.add(textNode.getLineNumber())) {
+                    continue;
+                }
                 final Matcher matcher = SPACE_PREFIX.matcher(textNode.getText());
                 int paramDescColNum = textNode.getColumnNumber();
                 if (matcher.find()) {
