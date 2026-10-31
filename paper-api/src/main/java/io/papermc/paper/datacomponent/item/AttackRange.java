@@ -4,10 +4,7 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface AttackRange {
 
@@ -42,7 +39,6 @@ public interface AttackRange {
     /**
      * Builder for {@link AttackRange}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<AttackRange> {
 

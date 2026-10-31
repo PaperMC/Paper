@@ -8,23 +8,15 @@ import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Normal
 public class EffectCategoryTest {
 
     @Test
-    public void testEffectCategoriesExist() {
-        for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
-            assertNotNull(CraftPotionEffectType.fromNMS(mobEffectInfo), mobEffectInfo + " is missing a bukkit equivalent");
-        }
-    }
-
-    @Test
     public void testCategoryHasEquivalentColors() {
-        for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
-            PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromNMS(mobEffectInfo);
-            assertEquals(bukkitEffectCategory.getColor(), NamedTextColor.NAMES.value(net.minecraft.network.chat.TextColor.fromLegacyFormat(mobEffectInfo.getTooltipFormatting()).toString()), mobEffectInfo.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
+        for (MobEffectCategory category : MobEffectCategory.values()) {
+            PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromVanilla(category);
+            assertEquals(bukkitEffectCategory.getColor(), NamedTextColor.NAMES.value(net.minecraft.network.chat.TextColor.fromLegacyFormat(category.getTooltipFormatting()).toString()), category.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
         }
     }
 }

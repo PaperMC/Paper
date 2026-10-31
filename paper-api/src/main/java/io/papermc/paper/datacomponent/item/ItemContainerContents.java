@@ -6,14 +6,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the contents of an item container.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER
  */
-@NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemContainerContents {
 
@@ -35,7 +32,6 @@ public interface ItemContainerContents {
     @Contract(value = "-> new", pure = true)
     @Unmodifiable List<ItemStack> contents();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemContainerContents> {
 

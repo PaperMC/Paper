@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * A mutable builder that may be used to collect and register all {@link ClassPathLibrary} instances a
  * {@link PluginLoader} aims to provide to its plugin at runtime.
  */
-@ApiStatus.Experimental
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginClasspathBuilder {

@@ -13,8 +13,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox {
 
-    public CraftShulkerBox(World world, ShulkerBoxBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftShulkerBox(World world, ShulkerBoxBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftShulkerBox(CraftShulkerBox state, Location location) {

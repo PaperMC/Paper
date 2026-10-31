@@ -1,0 +1,13 @@
+package org.bukkit.craftbukkit.entity.boat;
+
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftBoat;
+import org.bukkit.entity.boat.PoplarBoat;
+
+public class CraftPoplarBoat extends CraftBoat implements PoplarBoat {
+
+    public CraftPoplarBoat(CraftServer server, AbstractBoat entity) {
+        super(server, entity);
+    }
+}

@@ -29,3 +29,20 @@
          return this.container.stillValid(player);
      }
  
+@@ -107,7 +_,15 @@
+         if (this.player instanceof ServerPlayer serverPlayer) {
+             ServerLevel level = serverPlayer.level();
+             CraftingInput craftInput = this.container.asCraftInput();
+-            ItemStack result = CrafterBlock.getPotentialResults(level, craftInput).map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY);
++            // Paper start - Fire PrepareItemCraftEvent for Crafter preview
++            final java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> potentialResults = CrafterBlock.getPotentialResults(level, craftInput);
++            ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(
++                this.container,
++                this.resultContainer,
++                potentialResults.map(recipe -> recipe.value().assemble(craftInput)).orElse(ItemStack.EMPTY),
++                this.getBukkitView(),
++                potentialResults.map(net.minecraft.world.item.crafting.RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe);
++            // Paper end - Fire PrepareItemCraftEvent for Crafter preview
+             this.resultContainer.setItem(0, result);
+         }
+     }

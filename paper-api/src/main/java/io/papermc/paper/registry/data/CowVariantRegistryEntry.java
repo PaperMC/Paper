@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Cow.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CowVariantRegistryEntry {
 
@@ -64,7 +63,6 @@ public interface CowVariantRegistryEntry {
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends CowVariantRegistryEntry, RegistryBuilder<Cow.Variant> {
 

@@ -16,8 +16,8 @@ import org.bukkit.entity.Bee;
 
 public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> implements Beehive {
 
-    public CraftBeehive(World world, BeehiveBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftBeehive(World world, BeehiveBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftBeehive(CraftBeehive state, Location location) {

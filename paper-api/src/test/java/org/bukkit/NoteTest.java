@@ -41,13 +41,7 @@ public class NoteTest {
             assertThat(Note.Tone.getById(data), is(nullValue()));
 
             for (Note.Tone tone : Note.Tone.values()) {
-                try {
-                    tone.isSharped(data);
-
-                    fail(data + " should throw IllegalArgumentException");
-                } catch (IllegalArgumentException e) {
-                    assertNotNull(e);
-                }
+                assertThrows(IllegalArgumentException.class, () -> tone.isSharped(data));
             }
         }
     }
@@ -112,7 +106,7 @@ public class NoteTest {
         Note note = new Note(1, Note.Tone.F, false).sharped();
         assertTrue(note.isSharped());
         assertThat(note.getTone(), is(Note.Tone.F));
-        assertEquals(note.getOctave(), 2);
+        assertEquals(2, note.getOctave());
     }
 
     @Test
@@ -123,13 +117,13 @@ public class NoteTest {
     @Test
     public void testHighest() {
         Note note = new Note(2, Note.Tone.F, true);
-        assertEquals(note.getId(), (byte) 24);
+        assertEquals((byte) 24, note.getId());
     }
 
     @Test
     public void testLowest() {
         Note note = new Note(0, Note.Tone.F, true);
-        assertEquals(note.getId(), (byte) 0);
+        assertEquals((byte) 0, note.getId());
     }
 
     @Test

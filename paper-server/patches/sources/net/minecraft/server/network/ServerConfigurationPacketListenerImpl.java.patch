@@ -47,13 +47,14 @@
 +        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
-         if (!serverLinks.isEmpty()) {
+-        if (!serverLinks.isEmpty()) {
 -            this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
-+            // Paper start
-+            org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
-+            new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++        // Paper start
++        org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
++        new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++        if (!links.getServerLinks().isEmpty()) {
 +            this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
-+            // Paper end
++        // Paper end
          }
  
          LayeredRegistryAccess<RegistryLayer> registries = this.server.registries();
@@ -71,6 +72,35 @@
          this.configurationTasks.add(this.prepareSpawnTask);
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
+@@ -109,17 +_,26 @@
+ 
+     private void addOptionalTasks() {
+         Map<String, String> codeOfConducts = this.server.getCodeOfConducts();
+-        if (!codeOfConducts.isEmpty()) {
++        if (io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent.getHandlerList().getRegisteredListeners().length > 0 || !codeOfConducts.isEmpty()) { // Paper - Code of Conduct event - Fire even if empty, if there are event listeners to potentially send one
+             this.configurationTasks.add(new ServerCodeOfConductConfigurationTask(() -> {
+                 String codeOfConduct = codeOfConducts.get(this.clientInformation.language().toLowerCase(Locale.ROOT));
+                 if (codeOfConduct == null) {
+                     codeOfConduct = codeOfConducts.get("en_us");
+                 }
+ 
+-                if (codeOfConduct == null) {
++                if (codeOfConduct == null && !codeOfConducts.isEmpty()) { // Paper - Code of Conduct event - Only if there are any - needed because we make this lambda run even if it's empty
+                     codeOfConduct = codeOfConducts.values().iterator().next();
+                 }
+ 
++                // Paper start - Code of Conduct event
++                io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
++                event.callEvent();
++                codeOfConduct = event.getCodeOfConduct();
++                if (codeOfConduct == null) {
++                    // Immediately bail out of this task. On MC updates, double check it's still okay to finish task within startNextTask.
++                    this.finishCurrentTask(ServerCodeOfConductConfigurationTask.TYPE);
++                }
++                // Paper end - Code of Conduct event
+                 return codeOfConduct;
+             }));
+         }
 @@ -130,12 +_,14 @@
      @Override
      public void handleClientInformation(final ServerboundClientInformationPacket packet) {
