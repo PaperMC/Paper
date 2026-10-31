@@ -25,7 +25,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
     private double fallDistance;
 
     @ApiStatus.Internal
-    public EntityLandEvent(final Entity entity, final Block block, double fallDistance) {
+    public EntityLandEvent(final Entity entity, final Block block, final double fallDistance) {
         super(entity);
         this.block = block;
         this.fallDistance = fallDistance;
@@ -69,7 +69,7 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
      * @return the fall distance
      */
     public double getFallDistance() {
-        return fallDistance;
+        return this.fallDistance;
     }
 
     /**

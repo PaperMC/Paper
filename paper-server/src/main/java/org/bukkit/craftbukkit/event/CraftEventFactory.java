@@ -2498,11 +2498,11 @@ public class CraftEventFactory {
         return event.getFuseTime();
     }
 
-    public static double callEntityLandEvent(Level level, BlockPos pos, Entity entity, double fallDistance) {
-        if (EntityLandEvent.getHandlerList().getRegisteredListeners().length == 0) {
+    public static double callEntityLandEvent(final Level level, final BlockPos pos, final Entity entity, final double fallDistance) {
+        if (!EntityLandEvent.getHandlerList().hasListeners()) {
             return fallDistance; // No listeners, skip event creation
         }
-        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
+        final EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
         return event.callEvent() ? event.getFallDistance() : -1;
     }
 }
