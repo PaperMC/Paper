@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.Map;
 import org.bukkit.map.MapCursor;
@@ -13,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MAP_DECORATIONS
  */
 @ApiStatus.NonExtendable
-public interface MapDecorations {
+public interface MapDecorations extends BuildableDataComponent<MapDecorations, MapDecorations.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static MapDecorations mapDecorations(final Map<String, DecorationEntry> entries) {

@@ -15,5 +15,4 @@ public record PaperMapId(
     public int id() {
         return this.impl.id();
     }
-
 }
