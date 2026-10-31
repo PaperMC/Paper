@@ -4,9 +4,11 @@ import io.papermc.generator.utils.ClassHelper;
 import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.BlockTransformerRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
@@ -69,6 +71,7 @@ import net.minecraft.world.item.Instruments;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.JukeboxSongs;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.trim.TrimMaterials;
 import net.minecraft.world.item.equipment.trim.TrimPatterns;
@@ -213,7 +216,8 @@ public final class RegistryEntries {
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCubeArchetypes.class, SulfurCube.Archetype.class).writableApiRegistryBuilder(SulfurCubeArchetypeRegistryEntry.Builder.class, "PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder"),
-        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
+        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
+        entry(Registries.BLOCK_TRANSFORMER, BlockTransformers.class, BlockTransformer.class, "Paper").allowDirect().writableApiRegistryBuilder(BlockTransformerRegistryEntry.Builder.class, "PaperBlockTransformerRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
