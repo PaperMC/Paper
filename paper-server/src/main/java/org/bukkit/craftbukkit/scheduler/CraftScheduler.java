@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 import java.util.logging.Level;
+import io.papermc.paper.util.concurrent.TimingWheel;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -75,16 +76,7 @@ public class CraftScheduler implements BukkitScheduler {
     /**
      * Main thread logic only
      */
-    final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10, // Paper
-            new Comparator<CraftTask>() {
-                @Override
-                public int compare(final CraftTask o1, final CraftTask o2) {
-                    int value = Long.compare(o1.getNextRun(), o2.getNextRun());
-
-                    // If the tasks should run on the same tick they should be run FIFO
-                    return value != 0 ? value : Long.compare(o1.getCreatedAt(), o2.getCreatedAt());
-                }
-            });
+    final TimingWheel<CraftTask> pending = new TimingWheel<>(12);
     /**
      * Main thread logic only
      */
@@ -458,54 +450,59 @@ public class CraftScheduler implements BukkitScheduler {
         }
         // Paper end
         final List<CraftTask> temp = this.temp;
-        this.parsePending();
-        while (this.isReady(this.currentTick)) {
-            final CraftTask task = this.pending.remove();
-            if (task.getPeriod() < CraftTask.NO_REPEATING) {
+        while (true) {
+            this.parsePending();
+
+            final List<CraftTask> tasks = this.pending.popValid(this.currentTick);
+            if (tasks.isEmpty()) break;
+
+            for (CraftTask task : tasks) {
+                if (task.getPeriod() < CraftTask.NO_REPEATING) {
+                    if (task.isSync()) {
+                        this.runners.remove(task.getTaskId(), task);
+                    }
+                    this.parsePending();
+                    continue;
+                }
                 if (task.isSync()) {
-                    this.runners.remove(task.getTaskId(), task);
-                }
-                this.parsePending();
-                continue;
-            }
-            if (task.isSync()) {
-                this.currentTask = task;
-                try {
-                    task.run();
-                } catch (final Throwable throwable) {
-                    // Paper start
-                    final String logMessage = String.format(
-                        "Task #%s for %s generated an exception",
-                        task.getTaskId(),
-                        task.getOwner().getDescription().getFullName());
-                    task.getOwner().getLogger().log(
+                    this.currentTask = task;
+                    try {
+                        task.run();
+                    } catch (final Throwable throwable) {
+                        // Paper start
+                        final String logMessage = String.format(
+                            "Task #%s for %s generated an exception",
+                            task.getTaskId(),
+                            task.getOwner().getDescription().getFullName());
+                        task.getOwner().getLogger().log(
                             Level.WARNING,
-                        logMessage,
+                            logMessage,
                             throwable);
-                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
-                    // Paper end
-                } finally {
-                    this.currentTask = null;
+                        org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
+                            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
+                        // Paper end
+                    } finally {
+                        this.currentTask = null;
+                    }
+                    this.parsePending();
+                } else {
+                    // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                    task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
+                    // We don't need to parse pending
+                    // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
                 }
-                this.parsePending();
-            } else {
-                // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
-                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
-                // We don't need to parse pending
-                // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+                final long period = task.getPeriod(); // State consistency
+                if (period > 0) {
+                    task.setNextRun(this.currentTick + period);
+                    temp.add(task);
+                } else if (task.isSync()) {
+                    this.runners.remove(task.getTaskId());
+                }
             }
-            final long period = task.getPeriod(); // State consistency
-            if (period > 0) {
-                task.setNextRun(this.currentTick + period);
-                temp.add(task);
-            } else if (task.isSync()) {
-                this.runners.remove(task.getTaskId());
-            }
+            this.pending.addAll(temp, this.currentTick);
+            temp.clear();
+            //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
         }
-        this.pending.addAll(temp);
-        temp.clear();
-        //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
     }
 
     protected void addTask(final CraftTask task) {
@@ -550,7 +547,7 @@ public class CraftScheduler implements BukkitScheduler {
             if (task.getTaskId() == -1) {
                 task.run();
             } else if (task.getPeriod() >= CraftTask.NO_REPEATING) {
-                this.pending.add(task);
+                this.pending.add(task, this.currentTick);
                 this.runners.put(task.getTaskId(), task);
             }
         }
@@ -564,7 +561,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private boolean isReady(final int currentTick) {
-        return !this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick;
+        return this.pending.isReady(currentTick);
     }
 
     @Override
