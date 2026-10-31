@@ -245,8 +245,7 @@ public class MaterialTags {
     public static final MaterialSetTag ORES = new MaterialSetTag(keyFor("ores"))
         .add(Tag.COAL_ORES, Tag.COPPER_ORES, Tag.IRON_ORES, Tag.GOLD_ORES,
             Tag.LAPIS_ORES, Tag.REDSTONE_ORES, Tag.DIAMOND_ORES, Tag.EMERALD_ORES)
-        .add(Material.ANCIENT_DEBRIS, Material.NETHER_QUARTZ_ORE)
-        .ensureSize("ORES", 10).lock();
+        .add(Material.ANCIENT_DEBRIS, Material.NETHER_QUARTZ_ORE).lock();
 
     /**
      * Covers all piston typed items and blocks including the piston head and moving piston.
