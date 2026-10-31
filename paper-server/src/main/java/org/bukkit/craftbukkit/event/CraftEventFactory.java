@@ -10,6 +10,7 @@ import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
+import io.papermc.paper.event.block.PaperBlockDispenseEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
@@ -30,6 +31,8 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -1123,8 +1126,6 @@ public class CraftEventFactory {
         DamageCause cause;
         if (source.knownCause() != null) {
             cause = source.knownCause();
-        } else if (source.is(DamageTypes.IN_FIRE)) { // todo could be called above
-            cause = DamageCause.FIRE;
         } else if (source.is(DamageTypes.STARVE)) {
             cause = DamageCause.STARVATION;
         } else if (source.is(DamageTypes.WITHER)) {
@@ -2166,7 +2167,7 @@ public class CraftEventFactory {
         Location from = bukkitPlayer.getLocation();
         PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
         event.callEvent();
-        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
+        if (event.isCancelled() || event.getTo().getWorld() == null || !player.isAlive()) {
             return null;
         }
 
@@ -2304,25 +2305,33 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static @Nullable ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack dispensed, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
-        org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
-        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+    public static @Nullable ItemStack handleBlockDispenseEvent(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        return switch (handleBlockDispenseEventInspectable(pointer, to, dispensed, instance).result) {
+            case CANCELLED, ITEM_CHANGE_REROUTED -> dispensed;
+            case NO_REROUTED, ITEM_CHANGE_NO_REROUTE -> null;
+        };
+    }
 
-        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
+    public static PaperBlockDispenseEvent handleBlockDispenseEventInspectable(final BlockSource pointer, final BlockPos to, final ItemStack dispensed, final DispenseItemBehavior instance) {
+        final org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
+        final org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitMirror(dispensed.isDamageableItem() ? dispensed : dispensed.copyWithCount(1));
+
+        final PaperBlockDispenseEvent event = new PaperBlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
         if (!event.callEvent()) {
-            return dispensed;
+            return event.trackResult(PaperBlockDispenseEvent.Result.CANCELLED);
         }
 
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
-            if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
+            final ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+            final DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
+            if (itemBehavior != DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
-                return dispensed;
+                return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_REROUTED);
             }
+            return event.trackResult(PaperBlockDispenseEvent.Result.ITEM_CHANGE_NO_REROUTE);
         }
-        return null;
+        return event.trackResult(PaperBlockDispenseEvent.Result.NO_REROUTED);
     }
 
     /**
