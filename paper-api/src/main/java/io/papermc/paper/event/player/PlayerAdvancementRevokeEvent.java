@@ -3,8 +3,8 @@ package io.papermc.paper.event.player;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -12,24 +12,18 @@ import org.jspecify.annotations.NullMarked;
  * An event fired when a {@link Player} has an advancement revoked
  */
 @NullMarked
-public final class PlayerAdvancementRevokeEvent extends Event implements Cancellable {
+public final class PlayerAdvancementRevokeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private boolean cancelled;
 
-    private final Player player;
     private final Advancement advancement;
 
     @ApiStatus.Internal
     public PlayerAdvancementRevokeEvent(final Player player, Advancement advancement) {
-        this.player = player;
+        super(player);
         this.advancement = advancement;
-    }
-
-    public Player getPlayer()
-    {
-        return this.player;
     }
 
     public Advancement getAdvancement() {
