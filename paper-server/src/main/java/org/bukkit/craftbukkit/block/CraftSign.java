@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
@@ -47,46 +46,6 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     @Override
-    public List<net.kyori.adventure.text.Component> lines() {
-        return this.front.lines();
-    }
-
-    @Override
-    public net.kyori.adventure.text.Component line(final int index) {
-        return this.front.line(index);
-    }
-
-    @Override
-    public void line(final int index, final net.kyori.adventure.text.Component line) {
-        this.front.line(index, line);
-    }
-
-    @Override
-    public String[] getLines() {
-        return this.front.getLines();
-    }
-
-    @Override
-    public String getLine(final int index) throws IndexOutOfBoundsException {
-        return this.front.getLine(index);
-    }
-
-    @Override
-    public void setLine(final int index, final String line) throws IndexOutOfBoundsException {
-        this.front.setLine(index, line);
-    }
-
-    @Override
-    public boolean isEditable() {
-        return !this.isWaxed();
-    }
-
-    @Override
-    public void setEditable(final boolean editable) {
-        this.setWaxed(!editable);
-    }
-
-    @Override
     public boolean isWaxed() {
         return this.getSnapshot().isWaxed();
     }
@@ -94,16 +53,6 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public void setWaxed(final boolean waxed) {
         this.getSnapshot().setWaxed(waxed);
-    }
-
-    @Override
-    public boolean isGlowingText() {
-        return this.front.isGlowingText();
-    }
-
-    @Override
-    public void setGlowingText(final boolean glowing) {
-        this.front.setGlowingText(glowing);
     }
 
     @Override
@@ -136,16 +85,6 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped BlockEntity
         final UUID id = this.getBlockEntity().getPlayerWhoMayEdit();
         return (id == null) ? null : Bukkit.getPlayer(id);
-    }
-
-    @Override
-    public @Nullable DyeColor getColor() {
-        return this.front.getColor();
-    }
-
-    @Override
-    public void setColor(final DyeColor color) {
-        this.front.setColor(color);
     }
 
     @Override

@@ -26,7 +26,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
      */
     @Deprecated(since = "1.20")
-    List<Component> lines();
+    default List<Component> lines() {
+        return this.getSide(Side.FRONT).lines();
+    }
 
     /**
      * Gets the line of text at the specified index on the {@link Side#FRONT}.
@@ -39,7 +41,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
      */
     @Deprecated(since = "1.20")
-    Component line(int index) throws IndexOutOfBoundsException;
+    default Component line(int index) throws IndexOutOfBoundsException {
+        return this.getSide(Side.FRONT).line(index);
+    }
 
     /**
      * Sets the line of text at the specified index on the {@link Side#FRONT}.
@@ -53,7 +57,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, Component)}.
      */
     @Deprecated(since = "1.20")
-    void line(int index, Component line) throws IndexOutOfBoundsException;
+    default void line(int index, Component line) throws IndexOutOfBoundsException {
+        this.getSide(Side.FRONT).line(index, line);
+    }
 
     /**
      * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
@@ -62,7 +68,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
      */
     @Deprecated(since = "1.20")
-    String[] getLines();
+    default String[] getLines() {
+        return this.getSide(Side.FRONT).getLines();
+    }
 
     /**
      * Gets the line of text at the specified index.
@@ -75,7 +83,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
      */
     @Deprecated(since = "1.20")
-    String getLine(int index) throws IndexOutOfBoundsException;
+    default String getLine(int index) throws IndexOutOfBoundsException {
+        return this.getSide(Side.FRONT).getLine(index);
+    }
 
     /**
      * Sets the line of text at the specified index.
@@ -89,7 +99,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
      */
     @Deprecated(since = "1.20")
-    void setLine(int index, String line) throws IndexOutOfBoundsException;
+    default void setLine(int index, String line) throws IndexOutOfBoundsException {
+        this.getSide(Side.FRONT).setLine(index, line);
+    }
 
     /**
      * Marks whether this sign can be edited by players.
@@ -98,7 +110,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated use {@link #isWaxed()} instead
      */
     @Deprecated(since = "1.20.1")
-    boolean isEditable();
+    default boolean isEditable() {
+        return !this.isWaxed();
+    }
 
     /**
      * Marks whether this sign can be edited by players.
@@ -107,7 +121,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated use {@link #setWaxed(boolean)} instead
      */
     @Deprecated(since = "1.20.1")
-    void setEditable(boolean editable);
+    default void setEditable(boolean editable) {
+        this.setWaxed(!editable);
+    }
 
     /**
      * Gets whether or not this sign has been waxed. If a sign has been waxed, it
@@ -132,7 +148,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#isGlowingText()}.
      */
     @Deprecated(since = "1.20")
-    boolean isGlowingText();
+    default boolean isGlowingText() {
+        return this.getSide(Side.FRONT).isGlowingText();
+    }
 
     /**
      * Sets whether this sign has glowing text. Only affects the {@link Side#FRONT}.
@@ -141,7 +159,9 @@ public interface Sign extends TileState, Colorable {
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setGlowingText(boolean)}.
      */
     @Deprecated(since = "1.20")
-    void setGlowingText(boolean glowing);
+    default void setGlowingText(boolean glowing) {
+        this.getSide(Side.FRONT).setGlowingText(glowing);
+    }
 
     /**
      * {@inheritDoc}
@@ -150,7 +170,9 @@ public interface Sign extends TileState, Colorable {
      */
     @Override
     @Deprecated(since = "1.20")
-    @Nullable DyeColor getColor();
+    default @Nullable DyeColor getColor() {
+        return this.getSide(Side.FRONT).getColor();
+    }
 
     /**
      * {@inheritDoc}
@@ -159,7 +181,9 @@ public interface Sign extends TileState, Colorable {
      */
     @Override
     @Deprecated(since = "1.20")
-    void setColor(DyeColor color);
+    default void setColor(DyeColor color) {
+        this.getSide(Side.FRONT).setColor(color);
+    }
 
     /**
      * Return the side of the sign.
