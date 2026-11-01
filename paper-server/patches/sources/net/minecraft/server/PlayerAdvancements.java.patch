@@ -25,6 +25,39 @@
                  LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", id, this.playerSavePath);
              } else {
                  this.startProgress(advancement, progress);
+@@ -169,14 +_,30 @@
+         AdvancementProgress progress = this.getOrStartProgress(holder);
+         boolean wasDone = progress.isDone();
+         if (progress.grantProgress(criterion)) {
++            // Paper start - Add PlayerAdvancementCriterionGrantEvent
++            if (!new com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent(this.player.getBukkitEntity(), holder.toBukkit(), criterion).callEvent()) {
++                progress.revokeProgress(criterion);
++                return false;
++            }
++            // Paper end - Add PlayerAdvancementCriterionGrantEvent
+             this.unregisterListeners(holder);
+             this.progressChanged.add(holder);
+             result = true;
+             if (!wasDone && progress.isDone()) {
++                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                final net.kyori.adventure.text.Component message = holder.value().display()
++                    .filter(net.minecraft.advancements.DisplayInfo::announceToChat)
++                    .map(display -> io.papermc.paper.adventure.PaperAdventure.asAdventure(display.type().createAnnouncement(holder, this.player)))
++                    .orElse(null);
++                final org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), holder.toBukkit(), message);
++                this.player.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                // Paper end 
+                 holder.value().rewards().grant(this.player);
+                 holder.value().display().ifPresent(display -> {
+-                    if (display.announceToChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
+-                        this.playerList.broadcastSystemMessage(display.type().createAnnouncement(holder, this.player), false);
++                    // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                    if (event.message() != null && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
++                        this.playerList.broadcastSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
++                        // Paper end
+                     }
+                 });
+             }
 @@ -239,7 +_,7 @@
      public void flushDirty(final ServerPlayer player, final boolean showAdvancements) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
