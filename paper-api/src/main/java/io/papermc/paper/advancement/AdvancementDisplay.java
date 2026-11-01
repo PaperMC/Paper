@@ -7,7 +7,6 @@ import net.kyori.adventure.translation.Translatable;
 import net.kyori.adventure.util.Index;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -16,7 +15,6 @@ import org.jspecify.annotations.Nullable;
  * The display is used in the chat, in the toast messages and the advancements
  * screen.
  */
-@NullMarked
 public interface AdvancementDisplay {
 
     /**

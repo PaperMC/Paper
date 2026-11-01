@@ -1,5 +1,7 @@
 package org.bukkit.plugin;
 
+import io.papermc.paper.plugin.configuration.PluginMeta;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
@@ -9,17 +11,20 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class BukkitTestPlugin extends PluginBase {
     private boolean enabled = true;
 
     private final String pluginName;
 
-    public BukkitTestPlugin(String pluginName) {
+    public BukkitTestPlugin(final String pluginName) {
         this.pluginName = pluginName;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -30,12 +35,13 @@ public class BukkitTestPlugin extends PluginBase {
 
     @Override
     public PluginDescriptionFile getDescription() {
-        return new PluginDescriptionFile(pluginName, "1.0", "test.test");
+        return new PluginDescriptionFile(this.pluginName, "1.0", "test.test");
     }
+
     // Paper start
     @Override
-    public io.papermc.paper.plugin.configuration.PluginMeta getPluginMeta() {
-        return getDescription();
+    public PluginMeta getPluginMeta() {
+        return this.getDescription();
     }
     // Paper end
 
@@ -45,7 +51,7 @@ public class BukkitTestPlugin extends PluginBase {
     }
 
     @Override
-    public InputStream getResource(String filename) {
+    public @Nullable InputStream getResource(final String filename) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
@@ -60,7 +66,7 @@ public class BukkitTestPlugin extends PluginBase {
     }
 
     @Override
-    public void saveResource(String resourcePath, boolean replace) {
+    public void saveResource(final String resourcePath, final boolean replace) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
@@ -86,7 +92,7 @@ public class BukkitTestPlugin extends PluginBase {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return this.enabled;
     }
 
     @Override
@@ -110,33 +116,33 @@ public class BukkitTestPlugin extends PluginBase {
     }
 
     @Override
-    public void setNaggable(boolean canNag) {
+    public void setNaggable(final boolean canNag) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
-    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
+    public @Nullable ChunkGenerator getDefaultWorldGenerator(final String worldName, final @Nullable String id) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
-    public BiomeProvider getDefaultBiomeProvider(String worldName, String id) {
+    public @Nullable BiomeProvider getDefaultBiomeProvider(final String worldName, final @Nullable String id) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, final Command command, final String label, final String[] args) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public @Nullable List<String> onTabComplete(final CommandSender sender, final Command command, final String alias, final String[] args) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
     // Paper start - lifecycle events
     @Override
-    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<Plugin> getLifecycleManager() {
+    public LifecycleEventManager<Plugin> getLifecycleManager() {
         throw new UnsupportedOperationException("Not supported.");
     }
     // Paper end - lifecycle events

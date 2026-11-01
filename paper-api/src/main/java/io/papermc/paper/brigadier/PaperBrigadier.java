@@ -5,7 +5,6 @@ import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TextComponent;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Helper methods to bridge the gaps between Brigadier and Paper-MojangAPI.
@@ -28,7 +27,7 @@ public final class PaperBrigadier {
      * @param componentLike The {@link ComponentLike} to use for the {@link Message} contents
      * @return A new Brigadier {@link Message}
      */
-    public static @NonNull Message message(final @NonNull ComponentLike componentLike) {
+    public static Message message(final ComponentLike componentLike) {
         return MessageComponentSerializer.message().serialize(componentLike.asComponent());
     }
 
@@ -42,7 +41,7 @@ public final class PaperBrigadier {
      * @param message The {@link Message} to create a {@link Component} from
      * @return The created {@link Component}
      */
-    public static @NonNull Component componentFromMessage(final @NonNull Message message) {
+    public static Component componentFromMessage(final Message message) {
         return MessageComponentSerializer.message().deserialize(message);
     }
 }

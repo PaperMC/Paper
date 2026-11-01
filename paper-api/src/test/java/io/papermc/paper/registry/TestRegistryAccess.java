@@ -2,19 +2,20 @@ package io.papermc.paper.registry;
 
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class TestRegistryAccess implements RegistryAccess {
 
     @Override
     @Deprecated(since = "1.20.6", forRemoval = true)
-    public @Nullable <T extends Keyed> Registry<T> getRegistry(final @NotNull Class<T> type) {
+    public <T extends Keyed> @Nullable Registry<T> getRegistry(final Class<T> type) {
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
-    public @NotNull <T extends Keyed> Registry<T> getRegistry(final @NotNull RegistryKey<T> registryKey) {
+    public <T extends Keyed> Registry<T> getRegistry(final RegistryKey<T> registryKey) {
         throw new UnsupportedOperationException("Not supported");
     }
 }

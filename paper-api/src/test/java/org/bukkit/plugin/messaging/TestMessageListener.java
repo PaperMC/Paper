@@ -1,30 +1,34 @@
 package org.bukkit.plugin.messaging;
 
-import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NullMarked;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@NullMarked
 public class TestMessageListener implements PluginMessageListener {
     private final String channel;
     private final byte[] message;
     private boolean received = false;
 
-    public TestMessageListener(String channel, byte[] message) {
+    public TestMessageListener(final String channel, final byte[] message) {
         this.channel = channel;
         this.message = message;
     }
 
     @Override
-    public void onPluginMessageReceived(String channel, Player player, byte[] message) {
+    public void onPluginMessageReceived(final String channel, final Player player, final byte[] message) {
         assertEquals(this.channel, channel);
         assertArrayEquals(this.message, message);
         this.received = true;
     }
 
     public boolean hasReceived() {
-        return received;
+        return this.received;
     }
 
     public void reset() {
-        received = false;
+        this.received = false;
     }
 }

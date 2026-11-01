@@ -8,8 +8,7 @@ import java.util.UUID;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a key used for accessing memory values of a
@@ -17,21 +16,22 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> the class type of the memory value
  */
+// MEMORY_KEYS has to be initialized before the constants, as each key registers itself in it
+@SuppressWarnings("checkstyle:DeclarationOrder")
 public final class MemoryKey<T> implements Keyed {
 
     private final NamespacedKey namespacedKey;
     private final Class<T> tClass;
 
-    private MemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
+    private MemoryKey(final NamespacedKey namespacedKey, final Class<T> tClass) {
         this.namespacedKey = namespacedKey;
         this.tClass = tClass;
         MEMORY_KEYS.put(namespacedKey, this);
     }
 
-    @NotNull
     @Override
     public NamespacedKey getKey() {
-        return namespacedKey;
+        return this.namespacedKey;
     }
 
     /**
@@ -39,9 +39,8 @@ public final class MemoryKey<T> implements Keyed {
      *
      * @return the class of value objects
      */
-    @NotNull
     public Class<T> getMemoryClass() {
-        return tClass;
+        return this.tClass;
     }
 
     private static final Map<NamespacedKey, MemoryKey<?>> MEMORY_KEYS = new HashMap<>();
@@ -136,23 +135,24 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Integer> VISIBLE_ADULT_PIGLIN_COUNT = new MemoryKey<>(NamespacedKey.minecraft("visible_adult_piglin_count"), Integer.class);
     // End generate - MemoryKey
     /**
+     * Memory of the positions a sniffer has explored.
+     *
      * @deprecated this constant uses the wrong generic type, the sniffer now stores different positions
-     * from possibly different worlds. Use the relevant methods in {@link org.bukkit.entity.Sniffer} directly
-     * for now.
+     *     from possibly different worlds. Use the relevant methods in {@link org.bukkit.entity.Sniffer} directly
+     *     for now.
      */
     @Deprecated // Paper
     public static final MemoryKey<Location> SNIFFER_EXPLORED_POSITIONS = new MemoryKey<>(NamespacedKey.minecraft("sniffer_explored_positions"), Location.class);
 
     /**
-     * Returns a {@link MemoryKey} by a {@link NamespacedKey}.
+     * Returns a MemoryKey by a {@link NamespacedKey}.
      *
-     * @param namespacedKey the {@link NamespacedKey} referencing a
-     * {@link MemoryKey}
-     * @return the {@link MemoryKey} or null when no {@link MemoryKey} is
-     * available under that key
+     * @param namespacedKey the {@link NamespacedKey} referencing a MemoryKey
+     *
+     * @return the MemoryKey or null when no MemoryKey is
+     *     available under that key
      */
-    @Nullable
-    public static MemoryKey<?> getByKey(@NotNull NamespacedKey namespacedKey) {
+    public static @Nullable MemoryKey<?> getByKey(final NamespacedKey namespacedKey) {
         return MEMORY_KEYS.get(namespacedKey);
     }
 
@@ -161,7 +161,6 @@ public final class MemoryKey<T> implements Keyed {
      *
      * @return the memoryKeys
      */
-    @NotNull
     public static Set<MemoryKey<?>> values() {
         return new HashSet<>(MEMORY_KEYS.values());
     }

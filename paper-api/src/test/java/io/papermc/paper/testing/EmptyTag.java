@@ -5,8 +5,9 @@ import java.util.Set;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public record EmptyTag(NamespacedKey key) implements Tag<Keyed> {
 
     @SuppressWarnings("deprecation")
@@ -15,17 +16,17 @@ public record EmptyTag(NamespacedKey key) implements Tag<Keyed> {
     }
 
     @Override
-    public @NotNull NamespacedKey getKey() {
+    public NamespacedKey getKey() {
         return this.key;
     }
 
     @Override
-    public boolean isTagged(@NotNull final Keyed item) {
+    public boolean isTagged(final Keyed item) {
         return false;
     }
 
     @Override
-    public @NotNull Set<Keyed> getValues() {
+    public Set<Keyed> getValues() {
         return Collections.emptySet();
     }
 }

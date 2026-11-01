@@ -2,7 +2,6 @@ package io.papermc.paper.plugin.provider.entrypoint;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A dependency context is a read-only abstraction of a type/concept that can resolve dependencies between plugins.
@@ -10,7 +9,6 @@ import org.jspecify.annotations.NullMarked;
  * This may for example be the server wide plugin manager itself, capable of validating if a dependency exists between
  * two {@link PluginMeta} instances, however the implementation is not limited to such a concrete use-case.
  */
-@NullMarked
 @ApiStatus.Internal
 public interface DependencyContext {
 

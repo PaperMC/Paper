@@ -8,7 +8,6 @@ import net.kyori.adventure.text.object.ObjectContents;
 import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.profile.PlayerTextures;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
@@ -16,40 +15,42 @@ import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
 /**
  * Represents a players profile for the game, such as UUID, Name, and textures.
  */
-@NullMarked
 public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerHeadObjectContents.SkinSource, ObjectContentsLike {
 
     /**
+     * Gets the name of this profile.
+     *
      * @return The players name, if set
      */
     @Override
-    @Nullable
-    String getName();
+    @Nullable String getName();
 
     /**
-     * Sets this profiles Name
+     * Sets this profiles Name.
      *
      * @param name The new Name
      * @return The previous Name
+     * @deprecated create a new profile with {@link org.bukkit.Server#createProfile(UUID, String)} instead
      */
     @Deprecated(forRemoval = true, since = "1.18.1")
-    String setName(@Nullable String name);
+    @Nullable String setName(@Nullable String name);
 
     /**
+     * Gets the unique identifier of this profile.
+     *
      * @return The players unique identifier, if set
      */
-    @Nullable
-    UUID getId();
+    @Nullable UUID getId();
 
     /**
-     * Sets this profiles UUID
+     * Sets this profiles UUID.
      *
      * @param uuid The new UUID
      * @return The previous UUID
+     * @deprecated create a new profile with {@link org.bukkit.Server#createProfile(UUID, String)} instead
      */
     @Deprecated(forRemoval = true, since = "1.18.1")
-    @Nullable
-    UUID setId(@Nullable UUID uuid);
+    @Nullable UUID setId(@Nullable UUID uuid);
 
     /**
      * Gets the {@link PlayerTextures} of this profile.
@@ -65,19 +66,21 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
      * Copies the given textures.
      *
      * @param textures the textures to copy, or {@code null} to clear the
-     * textures
+     *                 textures
      */
     @Override
     void setTextures(@Nullable PlayerTextures textures);
 
     /**
+     * Gets the properties of this profile.
+     *
      * @return A Mutable set of this player's properties, such as textures.
-     * Values specified here are subject to implementation details.
+     *     Values specified here are subject to implementation details.
      */
     Set<ProfileProperty> getProperties();
 
     /**
-     * Check if the Profile has the specified property
+     * Check if the Profile has the specified property.
      *
      * @param property Property name to check
      * @return If the property is set
@@ -85,7 +88,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     boolean hasProperty(@Nullable String property);
 
     /**
-     * Sets a property. If the property already exists, the previous one will be replaced
+     * Sets a property. If the property already exists, the previous one will be replaced.
      *
      * @param property Property to set.
      * @throws IllegalArgumentException if setting the property results in more than 16 properties
@@ -93,7 +96,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     void setProperty(ProfileProperty property);
 
     /**
-     * Sets multiple properties. If any of the set properties already exist, it will be replaced
+     * Sets multiple properties. If any of the set properties already exist, it will be replaced.
      *
      * @param properties The properties to set
      * @throws IllegalArgumentException if the number of properties exceeds 16
@@ -101,7 +104,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     void setProperties(Collection<ProfileProperty> properties);
 
     /**
-     * Removes a specific property from this profile
+     * Removes a specific property from this profile.
      *
      * @param property The property to remove
      * @return If a property was removed
@@ -109,7 +112,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     boolean removeProperty(@Nullable String property);
 
     /**
-     * Removes a specific property from this profile
+     * Removes a specific property from this profile.
      *
      * @param property The property to remove
      * @return If a property was removed
@@ -119,7 +122,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     }
 
     /**
-     * Removes all properties in the collection
+     * Removes all properties in the collection.
      *
      * @param properties The properties to remove
      * @return If any property was removed
@@ -135,11 +138,13 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     }
 
     /**
-     * Clears all properties on this profile
+     * Clears all properties on this profile.
      */
     void clearProperties();
 
     /**
+     * Checks whether this profile has both a unique identifier and a name.
+     *
      * @return If the profile is now complete (has UUID and Name)
      */
     @Override
@@ -203,7 +208,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
      * <p>
      * Optionally will also fill textures.
      *
-     * @param textures controls if we should fill the profile with texture properties
+     * @param textures   controls if we should fill the profile with texture properties
      * @param onlineMode Treat this server as online mode or not
      * @return If the profile is now complete (has UUID and Name) (if you get rate limited, this operation may fail)
      */
@@ -241,7 +246,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     CompletableFuture<PlayerProfile> update();
 
     /**
-     * Whether this Profile has textures associated to it
+     * Whether this Profile has textures associated to it.
      *
      * @return If it has a textures property
      */
