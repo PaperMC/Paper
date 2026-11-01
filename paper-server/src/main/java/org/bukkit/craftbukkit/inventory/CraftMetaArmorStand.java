@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
 import java.util.Objects;
@@ -11,6 +12,9 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
+import org.bukkit.entity.EntitySnapshot;
+import org.jspecify.annotations.Nullable;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaArmorStand extends CraftMetaItem implements com.destroystokyo.paper.inventory.meta.ArmorStandMeta {
@@ -233,5 +237,19 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
     public void setMarker(boolean marker) {
         populateTagIfNull();
         this.entityTag.putBoolean(MARKER.NBT, marker);
+    }
+
+    @Override
+    public @Nullable EntitySnapshot getSpawnedEntity() {
+        if (this.entityTag == null) {
+            return null;
+        }
+        return CraftEntitySnapshot.create(this.entityTag.copy());
+    }
+
+    @Override
+    public void setSpawnedEntity(final EntitySnapshot snapshot) {
+        Preconditions.checkArgument(snapshot.getEntityType() == org.bukkit.entity.EntityType.ARMOR_STAND, "Entity is not an armor stand");
+        this.entityTag = ((CraftEntitySnapshot) snapshot).getData().copy();
     }
 }
