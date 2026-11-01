@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -186,8 +187,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     public static Component[] sanitizeLines(final List<? extends net.kyori.adventure.text.Component> lines) {
-        Component[] components = new Component[4];
-        for (int i = 0; i < 4; i++) {
+        Component[] components = new Component[SignText.LINES];
+        for (int i = 0; i < SignText.LINES; i++) {
             if (i < lines.size() && lines.get(i) != null) {
                 components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
             } else {
@@ -226,9 +227,9 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     public static Component[] sanitizeLines(final String[] lines) {
-        final Component[] components = new Component[4];
+        final Component[] components = new Component[SignText.LINES];
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < SignText.LINES; i++) {
             if (i < lines.length && lines[i] != null) {
                 components[i] = CraftChatMessage.fromString(lines[i])[0];
             } else {
