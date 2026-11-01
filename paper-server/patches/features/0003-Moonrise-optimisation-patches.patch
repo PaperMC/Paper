@@ -300,10 +300,10 @@ index 0000000000000000000000000000000000000000..fff7a796a61542213bdaa417d44e25cd
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index aa14dd369d5d2c5c843839f289afdc39c200f0c3..76f990f150f040b1ad6d7d5b91cfb34ebd6f436a 100644
+index e8043e52b64ed565128bb18240694ad078911eed..26e252d229dd1a63afa70b41299bc92fc367afdf 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-@@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
+@@ -14,6 +14,7 @@ import net.minecraft.server.level.FullChunkStatus;
  import net.minecraft.server.level.GenerationChunkHolder;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
@@ -311,7 +311,7 @@ index aa14dd369d5d2c5c843839f289afdc39c200f0c3..76f990f150f040b1ad6d7d5b91cfb34e
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
  import net.minecraft.world.level.BlockGetter;
-@@ -150,7 +151,15 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+@@ -156,7 +157,15 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
  
      @Override
      public long[] getCounterTypesUncached(final net.minecraft.server.level.TicketType type) {
@@ -328,7 +328,7 @@ index aa14dd369d5d2c5c843839f289afdc39c200f0c3..76f990f150f040b1ad6d7d5b91cfb34e
      }
  
      @Override
-@@ -249,7 +258,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+@@ -260,7 +269,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
      @Override
      public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
          try (final net.minecraft.util.ProblemReporter.ScopedCollector scopedCollector = new net.minecraft.util.ProblemReporter.ScopedCollector(chunk.problemPath(), LOGGER)) {
@@ -876,10 +876,10 @@ index 0000000000000000000000000000000000000000..5916388854ba79ea1261f071c0712e0a
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccess.java b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..89e75b454695e174c5619104eeb15eb923a2d9a7
+index 0000000000000000000000000000000000000000..ad0ef11297ff8875dd08e81a8376b37d81b0a20d
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccess.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +package ca.spottedleaf.moonrise.patches.blockstate_propertyaccess;
 +
 +public interface PropertyAccess<T> {
@@ -891,6 +891,8 @@ index 0000000000000000000000000000000000000000..89e75b454695e174c5619104eeb15eb9
 +    public T moonrise$getById(final int id);
 +
 +    public void moonrise$setById(final T[] values);
++
++    public void moonrise$ensureById();
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccessStateHolder.java b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/PropertyAccessStateHolder.java
 new file mode 100644
@@ -911,10 +913,10 @@ index 0000000000000000000000000000000000000000..5c9f02e82a9ce3511e710d8d00fc03bb
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/util/ZeroCollidingReferenceStateTable.java b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/util/ZeroCollidingReferenceStateTable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6bb4008f2a09f0acd47dc7fd21c5a6d6f2c294fd
+index 0000000000000000000000000000000000000000..fc41e96de69d5bab8ae1cffb24a5f43e4a137161
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/blockstate_propertyaccess/util/ZeroCollidingReferenceStateTable.java
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,167 @@
 +package ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.util;
 +
 +import ca.spottedleaf.common.util.IntegerUtil;
@@ -951,6 +953,7 @@ index 0000000000000000000000000000000000000000..6bb4008f2a09f0acd47dc7fd21c5a6d6
 +
 +        int currentMultiple = 1;
 +        for (final Property<?> property : sortedProperties) {
++            ((PropertyAccess<?>)property).moonrise$ensureById();
 +            final int totalValues = property.getPossibleValues().size();
 +
 +            this.propertyToIndexer.put(
@@ -1425,17 +1428,20 @@ index 0000000000000000000000000000000000000000..b9b8b4cef442b2788770957c7ecb169c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f8470639ba02
+index 0000000000000000000000000000000000000000..66dd1a6844db8bbf0ca6f752e1f53402eaaa929b
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_gen/noise/NoiseGradients.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,134 @@
 +package ca.spottedleaf.moonrise.patches.chunk_gen.noise;
 +
++import ca.spottedleaf.moonrise.common.util.FMA;
 +import net.minecraft.world.level.levelgen.synth.GradientNoise;
 +
 +public final class NoiseGradients {
 +
 +    public static final boolean DEBUG_NOISE = false;
++
++    public static final boolean USE_FMA = FMA.isFMASupported();
 +
 +    public static final int PERM_SHIFT = 8;
 +    public static final int PERM_SIZE = 1 << PERM_SHIFT;
@@ -1486,7 +1492,7 @@ index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f847
 +        final float gz = GRADIENTF_FLAT[(hash << 2) + 2];
 +        final float gy = GRADIENTF_FLAT[(hash << 2) + 1];
 +        final float gx = GRADIENTF_FLAT[(hash << 2) + 0];
-+        if (false) {
++        if (USE_FMA) {
 +            return Math.fma(gz, z, Math.fma(gy, y, gx * x));
 +        } else {
 +            return gx * x + gy * y + gz * z;
@@ -1496,7 +1502,7 @@ index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f847
 +    public static float dotXz(final int hash, final float x, final float z) {
 +        final float gz = GRADIENTF_FLAT[(hash << 2) + 2];
 +        final float gx = GRADIENTF_FLAT[(hash << 2) + 0];
-+        if (false) {
++        if (USE_FMA) {
 +            return Math.fma(gz, z, gx * x);
 +        } else {
 +            return gx * x + gz * z;
@@ -1509,14 +1515,14 @@ index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f847
 +
 +    public record GradientF(float x, float y, float z) {
 +        public float dot(final float x, final float y, final float z) {
-+            if (false) {
++            if (USE_FMA) {
 +                return Math.fma(this.z, z, Math.fma(this.y, y, this.x * x));
 +            } else {
 +                return this.x * x + this.y * y + this.z * z;
 +            }
 +        }
 +        public float dotXz(final float x, final float z) {
-+            if (false) {
++            if (USE_FMA) {
 +                return Math.fma(this.z, z, this.x * x);
 +            } else {
 +                return this.x * x + this.z * z;
@@ -1542,7 +1548,7 @@ index 0000000000000000000000000000000000000000..15c0893979c86a1295928e3e5687f847
 +
 +    public record GradientD(double x, double y, double z) {
 +        public double dot(final double x, final double y, final double z) {
-+            if (false) {
++            if (USE_FMA) {
 +                return Math.fma(this.z, z, Math.fma(this.y, y, this.x * x));
 +            } else {
 +                return this.x * x + this.y * y + this.z * z;
@@ -10460,10 +10466,10 @@ index 0000000000000000000000000000000000000000..7f75cc224d1dea04405f19880b6a1b57
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a0006f9b56d1e43b06f9f7452e1b5bb0ec53e72
+index 0000000000000000000000000000000000000000..1dc745d058d605dde0d10dea82c31b3303d670be
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1986 @@
+@@ -0,0 +1,1992 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.CallbackCompletable;
@@ -11718,6 +11724,7 @@ index 0000000000000000000000000000000000000000..7a0006f9b56d1e43b06f9f7452e1b5bb
 +                        this.changeEntityChunkStatus(FullChunkStatus.FULL);
 +                        PlatformHooks.get().onChunkBorder(chunk, this.vanillaChunkHolder);
 +                        this.onFullChunkLoadChange(true, changedFullStatus);
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.INACCESSIBLE, FullChunkStatus.FULL);
 +                        this.completeFullStatusConsumers(FullChunkStatus.FULL, chunk);
 +                    }
 +
@@ -11725,6 +11732,7 @@ index 0000000000000000000000000000000000000000..7a0006f9b56d1e43b06f9f7452e1b5bb
 +                        this.updateCurrentState(FullChunkStatus.BLOCK_TICKING);
 +                        this.changeEntityChunkStatus(FullChunkStatus.BLOCK_TICKING);
 +                        PlatformHooks.get().onChunkTicking(chunk, this.vanillaChunkHolder);
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.FULL, FullChunkStatus.BLOCK_TICKING);
 +                        this.completeFullStatusConsumers(FullChunkStatus.BLOCK_TICKING, chunk);
 +                    }
 +
@@ -11732,22 +11740,26 @@ index 0000000000000000000000000000000000000000..7a0006f9b56d1e43b06f9f7452e1b5bb
 +                        this.updateCurrentState(FullChunkStatus.ENTITY_TICKING);
 +                        this.changeEntityChunkStatus(FullChunkStatus.ENTITY_TICKING);
 +                        PlatformHooks.get().onChunkEntityTicking(chunk, this.vanillaChunkHolder);
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.BLOCK_TICKING, FullChunkStatus.ENTITY_TICKING);
 +                        this.completeFullStatusConsumers(FullChunkStatus.ENTITY_TICKING, chunk);
 +                    }
 +                } else {
 +                    if (current.isOrAfter(FullChunkStatus.ENTITY_TICKING) && !pending.isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.ENTITY_TICKING, FullChunkStatus.BLOCK_TICKING);
 +                        this.changeEntityChunkStatus(FullChunkStatus.BLOCK_TICKING);
 +                        PlatformHooks.get().onChunkNotEntityTicking(chunk, this.vanillaChunkHolder);
 +                        this.updateCurrentState(FullChunkStatus.BLOCK_TICKING);
 +                    }
 +
 +                    if (current.isOrAfter(FullChunkStatus.BLOCK_TICKING) && !pending.isOrAfter(FullChunkStatus.BLOCK_TICKING)) {
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.BLOCK_TICKING, FullChunkStatus.FULL);
 +                        this.changeEntityChunkStatus(FullChunkStatus.FULL);
 +                        PlatformHooks.get().onChunkNotTicking(chunk, this.vanillaChunkHolder);
 +                        this.updateCurrentState(FullChunkStatus.FULL);
 +                    }
 +
 +                    if (current.isOrAfter(FullChunkStatus.FULL) && !pending.isOrAfter(FullChunkStatus.FULL)) {
++                        PlatformHooks.get().onFullChunkStatusChange(chunk, FullChunkStatus.FULL, FullChunkStatus.INACCESSIBLE);
 +                        this.onFullChunkLoadChange(false, changedFullStatus);
 +                        this.changeEntityChunkStatus(FullChunkStatus.INACCESSIBLE);
 +                        PlatformHooks.get().onChunkNotBorder(chunk, this.vanillaChunkHolder);
@@ -32059,7 +32071,7 @@ index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc74
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5fb9ac4b0fdd245207c15677795566c81b629a20..5c7b5a4e78457b691bae727844d63212949e7cf6 100644
+index 5fb9ac4b0fdd245207c15677795566c81b629a20..02ddc534e534311c9f9b752007b30f16ff69a740 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
@@ -32384,7 +32396,7 @@ index 5fb9ac4b0fdd245207c15677795566c81b629a20..5c7b5a4e78457b691bae727844d63212
 +
 +        final double stepHeight;
 +
-+        if ((!collidedDownwards && !this.onGround) || (!collidedX && !collidedZ) || (stepHeight = (double)this.maxUpStep()) <= 0.0) {
++        if ((!collidedDownwards && !this.onGround()) || (!collidedX && !collidedZ) || (stepHeight = (double)this.maxUpStep()) <= 0.0) {
 +            return collided;
 +        }
 +
@@ -32606,7 +32618,7 @@ index 5fb9ac4b0fdd245207c15677795566c81b629a20..5c7b5a4e78457b691bae727844d63212
  
      @Override
 diff --git a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 81ad9099d2325a07b0b853b99e1d67b0caebd951..e2eb02d8a0a9481be2308c9052582591bc4f9850 100644
+index 81ad9099d2325a07b0b853b99e1d67b0caebd951..019a5cbef59465147cbc59e2b8580624cac379e8 100644
 --- a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -94,12 +94,16 @@ public class AcquirePoi {
@@ -32621,7 +32633,7 @@ index 81ad9099d2325a07b0b853b99e1d67b0caebd951..e2eb02d8a0a9481be2308c9052582591
 -                            .collect(Collectors.toSet());
 +                        // Paper start - optimise POI searches
 +                        java.util.List<Pair<Holder<PoiType>, BlockPos>> poiPositionsRaw = new java.util.ArrayList<>();
-+                        ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiPositions(poiManager, poiType, cacheTest, body.blockPosition(), SCAN_RANGE, Double.MAX_VALUE, PoiManager.Occupancy.HAS_SPACE, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING, 5, poiPositionsRaw);
++                        ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiPositions(poiManager, poiType, cacheTest, body.blockPosition(), SCAN_RANGE, (double)((long)SCAN_RANGE * (long)SCAN_RANGE), PoiManager.Occupancy.HAS_SPACE, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING, 5, poiPositionsRaw);
 +                        Set<Pair<Holder<PoiType>, BlockPos>> poiPositions = new java.util.HashSet<>(poiPositionsRaw.size());
 +                        for (Pair<Holder<PoiType>, BlockPos> pair : poiPositionsRaw) {
 +                            if (validPoi.test(level, pair.getSecond())) {
@@ -33213,7 +33225,7 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..cc938f43c4a5e947ed87ca2001cbaca4
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f83bfcaca787e74125763cb893b9c162031463ad..a828576457e0bb932750dba507bdef7e8903e144 100644
+index f83bfcaca787e74125763cb893b9c162031463ad..c356736c779fc20b6a77ddd442b71b6ecb9745c2 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -85,6 +85,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -33264,7 +33276,7 @@ index f83bfcaca787e74125763cb893b9c162031463ad..a828576457e0bb932750dba507bdef7e
 +    }
 +
 +    @Override
-+    public final <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
++    public <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
 +        Profiler.get().incrementCounter("getEntities");
 +        final List<T> ret = new java.util.ArrayList<>();
 +
@@ -35679,7 +35691,7 @@ index 1338213c0c918301a8fbc232b25d55804bda9cf9..8e89405ed73e68b641fd8a47963c60a1
  
      @Override
 diff --git a/net/minecraft/world/level/block/state/properties/Property.java b/net/minecraft/world/level/block/state/properties/Property.java
-index b95665559d646ab8de313a19dadc197a1e8be02c..b82b935272efbc7a7518e148f665f4f24fa96814 100644
+index b95665559d646ab8de313a19dadc197a1e8be02c..5d249a6197c4b18bf92e180fb318636e5ae5d203 100644
 --- a/net/minecraft/world/level/block/state/properties/Property.java
 +++ b/net/minecraft/world/level/block/state/properties/Property.java
 @@ -10,7 +10,7 @@ import java.util.stream.Stream;
@@ -35691,7 +35703,7 @@ index b95665559d646ab8de313a19dadc197a1e8be02c..b82b935272efbc7a7518e148f665f4f2
      private final Class<T> clazz;
      private final String name;
      private @Nullable Integer hashCode;
-@@ -23,9 +23,38 @@ public abstract class Property<T extends Comparable<T>> {
+@@ -23,9 +23,66 @@ public abstract class Property<T extends Comparable<T>> {
          );
      private final Codec<Property.Value<T>> valueCodec = this.codec.xmap(this::value, Property.Value::value);
  
@@ -35699,6 +35711,7 @@ index b95665559d646ab8de313a19dadc197a1e8be02c..b82b935272efbc7a7518e148f665f4f2
 +    private static final java.util.concurrent.atomic.AtomicInteger ID_GENERATOR = new java.util.concurrent.atomic.AtomicInteger();
 +    private final int id;
 +    private T[] byId;
++    private volatile boolean byIdInitialised;
 +
 +    @Override
 +    public final int moonrise$getId() {
@@ -35717,10 +35730,37 @@ index b95665559d646ab8de313a19dadc197a1e8be02c..b82b935272efbc7a7518e148f665f4f2
 +            throw new IllegalStateException();
 +        }
 +        this.byId = byId;
++        this.byIdInitialised = true;
 +    }
 +
 +    @Override
-+    public abstract int moonrise$getIdFor(final T value);
++    public final void moonrise$ensureById() {
++        if (this.byIdInitialised) {
++            return;
++        }
++        // properties without a specialised implementation (i.e. custom Property subclasses) build their table here,
++        // as subclass fields are not yet initialised when the Property constructor returns
++        synchronized (this) {
++            if (this.byIdInitialised) {
++                return;
++            }
++            final List<T> values = this.getPossibleValues();
++            final T[] byId = (T[])values.toArray(new Comparable[0]);
++            for (int i = 0; i < byId.length; ++i) {
++                final int id = this.moonrise$getIdFor(byId[i]);
++                if (id != i) {
++                    throw new IllegalStateException("Property " + this + " returned internal index " + id + " for value " + byId[i] + ", expected " + i);
++                }
++            }
++            this.moonrise$setById(byId);
++        }
++    }
++
++    @Override
++    public int moonrise$getIdFor(final T value) {
++        // fallback for properties without a specialised implementation (i.e. custom Property subclasses)
++        return this.getInternalIndex(value);
++    }
 +    // Paper end - optimise blockstate property access
 +
      protected Property(final String name, final Class<T> clazz) {
@@ -35978,7 +36018,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08
  
      public static ProblemReporter.PathElement problemPath(final ChunkPos pos) {
 diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 3061b7335af71453dd75ee98539cc7535df747ae..cc4800823c20e8ecbf0b4d74fd85a22bcb70c74c 100644
+index 3061b7335af71453dd75ee98539cc7535df747ae..221657b7387f4ab0a1862127c90499f97bcc2276 100644
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
 @@ -130,11 +130,14 @@ public abstract class ChunkGenerator {
@@ -36041,6 +36081,105 @@ index 3061b7335af71453dd75ee98539cc7535df747ae..cc4800823c20e8ecbf0b4d74fd85a22b
                  }
              });
              possibleBiomes.retainAll(this.biomeSource.possibleBiomes());
+@@ -480,7 +499,98 @@ public abstract class ChunkGenerator {
+                 throw new ReportedException(report);
+             }
+         }
++        this.fixSnow(level, chunk); // Paper - fix MC-119599
+     }
++
++    // Paper start - fix MC-119599
++    private static final int FEATURES_RADIUS = 1;
++
++    private void fixSnow(final WorldGenLevel level, final ChunkAccess center) {
++        final ChunkPos centerPos = center.getPos();
++        if (SharedConstants.debugVoidTerrain(centerPos)) {
++            return;
++        }
++        if (!ca.spottedleaf.moonrise.common.PlatformHooks.get().configFixMC119599(level.getLevel())) {
++            return;
++        }
++
++        final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++
++        final int cx = centerPos.x();
++        final int cz = centerPos.z();
++
++        // Biome lookups use the same zoom as Vanilla's level.getBiome, which reads noise biomes up to one chunk
++        // outside the chunk being processed, so up to 2 chunks from the center. The region only allows status
++        // checked access to its direct dependencies (TERRAIN within radius 1), so read the cached chunks directly:
++        // FEATURES requires TERRAIN at radius 1, which requires BIOMES at radius 1, so every chunk within
++        // radius 2 has completed BIOMES.
++        final BiomeManager biomeManager = new BiomeManager((final int quartX, final int quartY, final int quartZ) -> {
++            final int chunkX = QuartPos.toSection(quartX);
++            final int chunkZ = QuartPos.toSection(quartZ);
++            if (Math.max(Math.abs(chunkX - cx), Math.abs(chunkZ - cz)) > (FEATURES_RADIUS + 1)) {
++                throw new IllegalStateException("Biome lookup at chunk (" + chunkX + "," + chunkZ + ") is outside radius " + (FEATURES_RADIUS + 1) + " of (" + cx + "," + cz + ")");
++            }
++            return level.getChunk(chunkX, chunkZ).getNoiseBiome(quartX, quartY, quartZ);
++        }, BiomeManager.obfuscateSeed(level.getSeed()));
++        for (int dz = -FEATURES_RADIUS; dz <= FEATURES_RADIUS; ++dz) {
++            for (int dx = -FEATURES_RADIUS; dx <= FEATURES_RADIUS; ++dx) {
++                final int chunkX = dx + cx;
++                final int chunkZ = dz + cz;
++                final ChunkAccess chunk = level.getChunk(chunkX, chunkZ);
++
++                if (!(chunk instanceof ProtoChunk protoChunk) || (protoChunk instanceof ImposterProtoChunk || protoChunk.isUpgrading())
++                    || ((dx != 0 || dz != 0) && protoChunk.getPersistedStatus().isBefore(ChunkStatus.FEATURES))) {
++                    continue;
++                }
++
++                final int seaLevel = level.getSeaLevel();
++                final net.minecraft.world.level.block.state.BlockState defaultSnowBlock = net.minecraft.world.level.block.Blocks.SNOW.defaultBlockState();
++                for (int lz = 0; lz < 16; ++lz) {
++                    for (int lx = 0; lx < 16; ++lx) {
++                        final int blockX = (chunkX << 4) | lx;
++                        final int blockZ = (chunkZ << 4) | lz;
++
++                        final int heightWithoutLeaves = protoChunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, blockX, blockZ) + 1;
++
++                        pos.set(blockX, heightWithoutLeaves, blockZ);
++
++                        final Biome biome = biomeManager.getBiome(pos).value();
++
++                        if (biome.getPrecipitationAt(pos, seaLevel) != Biome.Precipitation.SNOW) {
++                            continue;
++                        }
++
++                        final int heightWithLeaves = protoChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, blockX, blockZ) + 1;
++
++                        boolean first = true;
++                        for (int y = heightWithoutLeaves; y <= heightWithLeaves; ++y) {
++                            pos.setY(y);
++
++                            final net.minecraft.world.level.block.state.BlockState current = protoChunk.getBlockState(pos);
++
++                            // note: light is not generated here (TERRAIN), so really it's 0...
++                            if (!current.isAir() || !defaultSnowBlock.canSurvive(level, pos)) {
++                                continue;
++                            }
++
++                            level.setBlock(pos, defaultSnowBlock, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
++
++                            if (first) {
++                                first = false;
++                                pos.setY(y - 1);
++                                final net.minecraft.world.level.block.state.BlockState below = protoChunk.getBlockState(pos);
++                                if (below.hasProperty(net.minecraft.world.level.block.SnowyBlock.SNOWY)) {
++                                    level.setBlock(pos, below.setValue(net.minecraft.world.level.block.SnowyBlock.SNOWY, true), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++    // Paper end - fix MC-119599
++
+     // CraftBukkit start
+     public void applyBiomeDecoration(final WorldGenLevel level, final ChunkAccess chunk, final StructureManager structureManager) {
+         this.applyBiomeDecoration(level, chunk, structureManager, true);
 diff --git a/net/minecraft/world/level/chunk/Configuration.java b/net/minecraft/world/level/chunk/Configuration.java
 index 35e8ea13af811742f0e44afe66b53c3a513f210c..2521b46b128f175d82a9c8d8991346180583588b 100644
 --- a/net/minecraft/world/level/chunk/Configuration.java
@@ -39465,16 +39604,17 @@ index d7b2a91df8c5c0ce480bc537b3457fcd144162e1..6da4d95f6a5f6043aaea6d62c550cd9f
              return this.x * x + this.y * y + this.z * z;
          }
 diff --git a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
-index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb4c7ee1b3 100644
+index ecbd95204e4650b514d341f79c5756430e08e70f..12be06b795343d0f61cd908dd3f62fab70592a81 100644
 --- a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
 +++ b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
-@@ -6,13 +6,39 @@ import net.minecraft.util.Mth;
+@@ -6,13 +6,40 @@ import net.minecraft.util.Mth;
  import net.minecraft.util.RandomSource;
  import net.minecraft.world.level.levelgen.densityfunction.DensityBuffer;
  import net.minecraft.world.level.levelgen.densityfunction.DensityVolume;
 +// Paper start - optimise chunk generation
 +import ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.DEBUG_NOISE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.USE_FMA;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_MASK;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SIZE;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SHIFT;
@@ -39509,7 +39649,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
      }
  
      @Override
-@@ -52,7 +78,55 @@ public class PerlinNoise extends GradientNoise {
+@@ -52,7 +79,55 @@ public class PerlinNoise extends GradientNoise {
          return this.sampleWithDerivative(floorX, floorY, floorZ, relativeX, relativeY, relativeZ, derivativeOut);
      }
  
@@ -39566,7 +39706,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
          final int x, final int y, final int z, final float relativeX, final float relativeY, final float relativeZ, final float originalRelativeY
      ) {
          int x0 = this.permute(x);
-@@ -75,8 +149,172 @@ public class PerlinNoise extends GradientNoise {
+@@ -75,8 +150,186 @@ public class PerlinNoise extends GradientNoise {
          return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
      }
  
@@ -39615,7 +39755,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
 +        for (int x = 0; x < sX; ++x, xv += xi) {
 +            final double val = wrap(xv * xzScale) + this.offsetX;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final float relative = (float)(val - floorD);
 +            final float alpha = Mth.smoothstep(relative);
 +
@@ -39629,7 +39769,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
 +        for (int y = 0; y < sY; ++y, yv += yi) {
 +            final double val = wrap(yv * yScale) + this.offsetY;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final float relative = (float)(val - floorD);
 +            final float alpha = Mth.smoothstep(relative);
 +
@@ -39643,7 +39783,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
 +        for (int z = 0; z < sZ; ++z, zv += zi) {
 +            final double val = wrap(zv * xzScale) + this.offsetZ;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final float relative = (float)(val - floorD);
 +            final float alpha = Mth.smoothstep(relative);
 +
@@ -39723,7 +39863,21 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
 +                        g111y = NoiseGradients.gradY(g111);
 +                    }
 +
-+                    buffer.values[index++] += (amplitude * Mth.lerp3(alphaX, alphaY, alphaZ, d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F), d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY, d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)));
++                    if (USE_FMA) {
++                        buffer.values[index++] += amplitude * Mth.lerp3(
++                            alphaX, alphaY, alphaZ,
++                            Math.fma(g000y, relativeY, d000xz), Math.fma(g100y, relativeY, d100xz), Math.fma(g010y, (relativeY - 1.0F), d010xz),
++                            Math.fma(g110y, (relativeY - 1.0F), d110xz), Math.fma(g001y, relativeY, d001xz), Math.fma(g101y, relativeY, d101xz),
++                            Math.fma(g011y, (relativeY - 1.0F), d011xz), Math.fma(g111y, (relativeY - 1.0F), d111xz)
++                        );
++                    } else {
++                        buffer.values[index++] += amplitude * Mth.lerp3(
++                            alphaX, alphaY, alphaZ,
++                            d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F),
++                            d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY,
++                            d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)
++                        );
++                    }
 +                }
 +            }
 +        }
@@ -39741,16 +39895,17 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..8e5ba8f7bed5754b6b657db30cba92fb
          float d100xz = 0.0F;
          float d010xz = 0.0F;
 diff --git a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
-index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da6551f6ecc08 100644
+index 4884b35596ea7ab327f75f0537affab97df492be..e8eafc7063c7563b0e97ec508dd5401efa3d2b31 100644
 --- a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
 +++ b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
-@@ -5,6 +5,13 @@ import net.minecraft.util.Mth;
+@@ -5,6 +5,14 @@ import net.minecraft.util.Mth;
  import net.minecraft.util.RandomSource;
  import net.minecraft.world.level.levelgen.densityfunction.DensityBuffer;
  import net.minecraft.world.level.levelgen.densityfunction.DensityVolume;
 +// Paper start - optimise chunk generation
 +import ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.DEBUG_NOISE;
++import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.USE_FMA;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_MASK;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SIZE;
 +import static ca.spottedleaf.moonrise.patches.chunk_gen.noise.NoiseGradients.PERM_SHIFT;
@@ -39758,7 +39913,7 @@ index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da655
  
  @Deprecated
  public class SmearedPerlinNoise extends PerlinNoise {
-@@ -51,8 +58,175 @@ public class SmearedPerlinNoise extends PerlinNoise {
+@@ -51,8 +59,189 @@ public class SmearedPerlinNoise extends PerlinNoise {
          return Mth.floor(fudgeLimit / this.fudgeYScale + 1.0E-7F) * this.fudgeYScale;
      }
  
@@ -39808,7 +39963,7 @@ index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da655
 +        for (int x = 0; x < sX; ++x, xv += xi) {
 +            final double val = wrap(xv * xzScale) + this.offsetX;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final float relative = (float)(val - floorD);
 +            final float alpha = Mth.smoothstep(relative);
 +
@@ -39823,7 +39978,7 @@ index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da655
 +            final double original = yv * yScale;
 +            final double val = wrap(original) + this.offsetY;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final double relative = val - floorD;
 +            final float fudgedRelative = (float)(relative - this.computeFudgeY(original, relative));
 +            final float alpha = Mth.smoothstep((float)relative);
@@ -39838,7 +39993,7 @@ index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da655
 +        for (int z = 0; z < sZ; ++z, zv += zi) {
 +            final double val = wrap(zv * xzScale) + this.offsetZ;
 +            final double floorD = Math.floor(val);
-+            final int floor = (int)floorD;
++            final int floor = (int)(long)floorD;
 +            final float relative = (float)(val - floorD);
 +            final float alpha = Mth.smoothstep(relative);
 +
@@ -39918,7 +40073,21 @@ index 4884b35596ea7ab327f75f0537affab97df492be..64868bdc6554dea2b1b45fbdac8da655
 +                        g111y = NoiseGradients.gradY(g111);
 +                    }
 +
-+                    buffer.values[index++] += (amplitude * Mth.lerp3(alphaX, alphaY, alphaZ, d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F), d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY, d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)));
++                    if (USE_FMA) {
++                        buffer.values[index++] += amplitude * Mth.lerp3(
++                            alphaX, alphaY, alphaZ,
++                            Math.fma(g000y, relativeY, d000xz), Math.fma(g100y, relativeY, d100xz), Math.fma(g010y, (relativeY - 1.0F), d010xz),
++                            Math.fma(g110y, (relativeY - 1.0F), d110xz), Math.fma(g001y, relativeY, d001xz), Math.fma(g101y, relativeY, d101xz),
++                            Math.fma(g011y, (relativeY - 1.0F), d011xz), Math.fma(g111y, (relativeY - 1.0F), d111xz)
++                        );
++                    } else {
++                        buffer.values[index++] += amplitude * Mth.lerp3(
++                            alphaX, alphaY, alphaZ,
++                            d000xz + g000y * relativeY, d100xz + g100y * relativeY, d010xz + g010y * (relativeY - 1.0F),
++                            d110xz + g110y * (relativeY - 1.0F), d001xz + g001y * relativeY, d101xz + g101y * relativeY,
++                            d011xz + g011y * (relativeY - 1.0F), d111xz + g111y * (relativeY - 1.0F)
++                        );
++                    }
 +                }
 +            }
 +        }
