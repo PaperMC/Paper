@@ -26,6 +26,11 @@ public final class PlayerAdvancementRevokeEvent extends PlayerEvent implements C
         this.advancement = advancement;
     }
 
+    /**
+     * Gets the advancement associated with this event.
+     *
+     * @return the advancement being revoked
+     */
     public Advancement getAdvancement() {
         return this.advancement;
     }

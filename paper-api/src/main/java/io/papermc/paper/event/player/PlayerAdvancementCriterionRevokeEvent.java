@@ -28,10 +28,20 @@ public final class PlayerAdvancementCriterionRevokeEvent extends PlayerEvent imp
         this.criterion = criterion;
     }
 
+    /**
+     * Gets the advancement associated with this event.
+     *
+     * @return the advancement being revoked
+     */
     public Advancement getAdvancement() {
         return this.advancement;
     }
 
+    /**
+     * Gets the criterion associated with this event.
+     *
+     * @return the criterion being revoked
+     */
     public String getCriterion() {
         return this.criterion;
     }
