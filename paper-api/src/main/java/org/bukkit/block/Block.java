@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import java.util.Collection;
 import org.bukkit.Chunk;
+import org.bukkit.Fluid;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -492,6 +493,15 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return true if block is replaceable
      */
     boolean isReplaceable();
+
+    /**
+     * Checks if this block can be immediately replaced by a specific fluid
+     *
+     * @param fluid the fluid to be replaceable with
+     * @return true if the block can be replaced
+     */
+    boolean isFluidReplaceable(@NotNull Fluid fluid);
+
     /**
      * Check if this block is solid
      * <p>
