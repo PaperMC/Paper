@@ -34,8 +34,8 @@ public class StandardMessengerTest {
         assertTrue(messenger.isReservedChannel("minecraft:register"));
         assertFalse(messenger.isReservedChannel("test:register"));
         assertTrue(messenger.isReservedChannel("minecraft:unregister"));
-        assertFalse(messenger.isReservedChannel("test:unregister")); // Paper - fix typo
-        assertFalse(messenger.isReservedChannel("minecraft:something")); // Paper - now less strict
+        assertFalse(messenger.isReservedChannel("test:unregister"));
+        assertFalse(messenger.isReservedChannel("minecraft:something"));
         assertFalse(messenger.isReservedChannel("minecraft:brand"));
     }
 

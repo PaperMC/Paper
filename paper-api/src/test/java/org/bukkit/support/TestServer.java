@@ -25,8 +25,6 @@ public final class TestServer {
         final Thread creatingThread = Thread.currentThread();
         when(instance.isPrimaryThread()).then(_ -> Thread.currentThread().equals(creatingThread));
 
-        // Paper - remove plugin manager for Paper Plugins
-
         final Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
         when(instance.getLogger()).thenReturn(logger);
 
@@ -36,17 +34,13 @@ public final class TestServer {
 
         when(instance.getBukkitVersion()).thenReturn("BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion());
 
-        // Paper start - RegistryAccess
-        when(instance.getRegistry(any())).then(invocationOnMock -> RegistryAccess.registryAccess().getRegistry(((Class<Keyed>) invocationOnMock.getArgument(0))));
-        // Paper end - RegistryAccess
+        when(instance.getRegistry(any())).then(invocationOnMock -> RegistryAccess.registryAccess().getRegistry(invocationOnMock.<Class<Keyed>>getArgument(0)));
 
         final UnsafeValues unsafeValues = mock(withSettings().stubOnly());
         when(instance.getUnsafe()).thenReturn(unsafeValues);
 
-        // Paper start - testing changes
         when(instance.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new EmptyTag());
         when(instance.getScoreboardCriteria(anyString())).thenReturn(null);
-        // Paper end - testing changes
 
         Bukkit.setServer(instance);
     }

@@ -141,7 +141,7 @@ public final class MemoryKey<T> implements Keyed {
      *     from possibly different worlds. Use the relevant methods in {@link org.bukkit.entity.Sniffer} directly
      *     for now.
      */
-    @Deprecated // Paper
+    @Deprecated
     public static final MemoryKey<Location> SNIFFER_EXPLORED_POSITIONS = new MemoryKey<>(NamespacedKey.minecraft("sniffer_explored_positions"), Location.class);
 
     /**

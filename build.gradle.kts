@@ -19,7 +19,7 @@ subprojects {
         }
     }
 
-    val tempDisabled = setOf("paper-server", "paper-generator", "test-plugin")
+    val tempDisabled = setOf("paper-generator", "test-plugin")
 
     if (name !in tempDisabled) {
         apply { plugin("io.papermc.paperweight.paper-checkstyle") }

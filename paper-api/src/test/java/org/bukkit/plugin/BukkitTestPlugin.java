@@ -38,12 +38,10 @@ public class BukkitTestPlugin extends PluginBase {
         return new PluginDescriptionFile(this.pluginName, "1.0", "test.test");
     }
 
-    // Paper start
     @Override
     public PluginMeta getPluginMeta() {
         return this.getDescription();
     }
-    // Paper end
 
     @Override
     public FileConfiguration getConfig() {
@@ -140,10 +138,8 @@ public class BukkitTestPlugin extends PluginBase {
         throw new UnsupportedOperationException("Not supported.");
     }
 
-    // Paper start - lifecycle events
     @Override
     public LifecycleEventManager<Plugin> getLifecycleManager() {
         throw new UnsupportedOperationException("Not supported.");
     }
-    // Paper end - lifecycle events
 }

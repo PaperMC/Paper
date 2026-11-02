@@ -44,6 +44,7 @@ public interface PlayerTextures {
      * @param skinUrl the URL of the player's skin, or
      *                {@code null} to unset it
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setSkin(@Nullable URL skinUrl);
 
     /**
@@ -62,6 +63,7 @@ public interface PlayerTextures {
      * @param skinModel the skin model, ignored if the skin URL is
      *                  {@code null}
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setSkin(@Nullable URL skinUrl, @Nullable SkinModel skinModel);
 
     /**
@@ -91,6 +93,7 @@ public interface PlayerTextures {
      * @param capeUrl the URL of the player's cape, or {@code null} to
      *                unset it
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setCape(@Nullable URL capeUrl);
 
     /**

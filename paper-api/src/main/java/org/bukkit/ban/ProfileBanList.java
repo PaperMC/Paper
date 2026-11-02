@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A {@link BanList} targeting player profile bans.
  */
-public interface ProfileBanList extends BanList<com.destroystokyo.paper.profile.PlayerProfile> { // Paper
+public interface ProfileBanList extends BanList<com.destroystokyo.paper.profile.PlayerProfile> {
 
     /**
      * Adds a ban to this list. If a previous ban exists, this will

@@ -221,7 +221,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
      * properties (name, unique id, textures, etc.), and updates existing
      * properties (e.g. name, textures, etc.) to their official and up-to-date
      * values. This operation does not alter the current profile, but produces a
-     * new updated {@link PlayerProfile}.
+     * new updated {@code PlayerProfile}.
      * <p>
      * If no player exists for the unique id or name of this profile, this
      * operation yields a profile that is equal to the current profile, which
@@ -267,6 +267,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
         return ObjectContents.playerHead(this);
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Override
     default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
         if (this.getProperties().isEmpty()) {

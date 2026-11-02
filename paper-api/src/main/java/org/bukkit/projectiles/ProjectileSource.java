@@ -42,8 +42,6 @@ public interface ProjectileSource {
         return this.launchProjectile(projectile, velocity, null);
     }
 
-    // Paper start - add consumer to launchProjectile
-
     /**
      * Launches a {@link Projectile} from the ProjectileSource with an
      * initial velocity, with the supplied function run before the
@@ -64,5 +62,4 @@ public interface ProjectileSource {
      * @return the launched projectile
      */
     <T extends Projectile> T launchProjectile(Class<? extends T> projectile, @Nullable Vector velocity, @Nullable Consumer<? super T> function);
-    // Paper end - add consumer to launchProjectile
 }

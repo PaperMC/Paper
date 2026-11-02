@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @deprecated see {@link com.destroystokyo.paper.profile.PlayerProfile}
  */
-@Deprecated(since = "1.18.1") // Paper
+@Deprecated(since = "1.18.1")
 public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
 
     /**
@@ -27,7 +27,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
      * @return the player's unique id, or {@code null} if not available
      * @deprecated use {@link com.destroystokyo.paper.profile.PlayerProfile#getId()}
      */
-    @Deprecated(since = "1.18.1") // Paper
+    @Deprecated(since = "1.18.1")
     @Nullable UUID getUniqueId();
 
     /**
@@ -93,7 +93,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
      * @return a completable future that gets completed with the updated
      *     PlayerProfile once it is available
      */
-    CompletableFuture<? extends PlayerProfile> update(); // Paper
+    CompletableFuture<? extends PlayerProfile> update();
 
     /**
      * Creates a copy of this profile.

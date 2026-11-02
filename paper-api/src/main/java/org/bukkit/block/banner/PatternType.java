@@ -107,8 +107,6 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     PatternType TRIANGLES_TOP = getType("triangles_top");
     // End generate - PatternType
 
-    // Paper start - deprecate getKey
-
     /**
      * Gets the key of this pattern type.
      *
@@ -130,7 +128,6 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      *     and {@link RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
-    // Paper end - deprecate getKey
     @Override
     NamespacedKey getKey();
 
@@ -181,7 +178,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @Deprecated(since = "1.21", forRemoval = true)
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // will be removed via asm-utils
     static PatternType valueOf(final String name) {
         final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
         final PatternType type = key == null ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(key);
@@ -196,7 +193,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      * @deprecated use {@link Registry#stream()}.
      */
     @Deprecated(since = "1.21", forRemoval = true)
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // will be removed via asm-utils
     static PatternType[] values() {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).stream().toArray(PatternType[]::new);
     }

@@ -140,7 +140,7 @@ public class SpawnerEntry {
          * @param dropChances        the drop chances for each slot of the entity
          */
         public Equipment(final LootTable equipmentLootTable, final Map<EquipmentSlot, Float> dropChances) {
-            Preconditions.checkArgument(equipmentLootTable != null, "table cannot be null"); // Paper
+            Preconditions.checkArgument(equipmentLootTable != null, "table cannot be null");
             this.equipmentLootTable = equipmentLootTable;
             this.dropChances = dropChances;
         }
@@ -153,7 +153,7 @@ public class SpawnerEntry {
          * @param table this {@link org.bukkit.entity.Mob} will have.
          */
         public void setEquipmentLootTable(final LootTable table) {
-            Preconditions.checkArgument(table != null, "table cannot be null"); // Paper
+            Preconditions.checkArgument(table != null, "table cannot be null");
             this.equipmentLootTable = table;
         }
 
