@@ -40,7 +40,7 @@ public interface DependencyContext {
      *
      * @param pluginIdentifier the unique identifier of the dependency with which to probe this dependency context.
      * @return a plain boolean flag indicating if this dependency context is aware of a potential dependency with the
-     * passed identifier.
+     *     passed identifier.
      */
     boolean hasDependency(String pluginIdentifier);
 

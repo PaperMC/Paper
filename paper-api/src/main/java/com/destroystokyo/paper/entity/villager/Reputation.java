@@ -1,9 +1,7 @@
 package com.destroystokyo.paper.entity.villager;
 
 import com.google.common.base.Preconditions;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.Unmodifiable;
@@ -70,6 +68,6 @@ public final class Reputation {
      * @return A set of {@link ReputationType types}.
      */
     public @Unmodifiable Set<ReputationType> getReputationsSet() {
-        return EnumSet.copyOf(this.reputation.keySet());
+        return Set.copyOf(this.reputation.keySet());
     }
 }

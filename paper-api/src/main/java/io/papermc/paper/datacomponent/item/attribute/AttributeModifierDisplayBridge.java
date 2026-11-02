@@ -6,10 +6,12 @@ import net.kyori.adventure.text.ComponentLike;
 
 interface AttributeModifierDisplayBridge {
 
-    Optional<AttributeModifierDisplayBridge> BRIDGE = ServiceLoader.load(AttributeModifierDisplayBridge.class, AttributeModifierDisplayBridge.class.getClassLoader()).findFirst();
-
     static AttributeModifierDisplayBridge bridge() {
-        return BRIDGE.orElseThrow();
+        final class Holder {
+            static final Optional<AttributeModifierDisplayBridge> BRIDGE = ServiceLoader.load(AttributeModifierDisplayBridge.class, AttributeModifierDisplayBridge.class.getClassLoader()).findFirst();
+        }
+
+        return Holder.BRIDGE.orElseThrow();
     }
 
     AttributeModifierDisplay.Default reset();

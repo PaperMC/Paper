@@ -1,6 +1,8 @@
 package org.bukkit.support;
 
 import org.hamcrest.Matcher;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Custom assertThat methods, where the reason is put at the end of the method call.
@@ -18,19 +20,21 @@ import org.hamcrest.Matcher;
  *         """, material));
  * </pre>
  */
+@NullMarked
 public final class MatcherAssert {
 
-    private MatcherAssert() {}
+    private MatcherAssert() {
+    }
 
-    public static <T> void assertThat(T actual, Matcher<? super T> matcher) {
+    public static <T extends @Nullable Object> void assertThat(final T actual, final Matcher<? super T> matcher) {
         org.hamcrest.MatcherAssert.assertThat(actual, matcher);
     }
 
-    public static <T> void assertThat(T actual, Matcher<? super T> matcher, String reason) {
+    public static <T extends @Nullable Object> void assertThat(final T actual, final Matcher<? super T> matcher, final String reason) {
         org.hamcrest.MatcherAssert.assertThat(reason, actual, matcher);
     }
 
-    public static void assertThat(boolean assertion, String reason) {
+    public static void assertThat(final boolean assertion, final String reason) {
         org.hamcrest.MatcherAssert.assertThat(reason, assertion);
     }
 }

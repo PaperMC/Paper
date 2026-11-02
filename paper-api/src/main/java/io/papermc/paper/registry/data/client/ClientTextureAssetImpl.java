@@ -2,13 +2,14 @@ package io.papermc.paper.registry.data.client;
 
 import net.kyori.adventure.key.Key;
 import org.intellij.lang.annotations.Subst;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Package local implementation of the {@link ClientTextureAsset} type.
  * Chosen over bridging into server internals as no internal types are required for this.
+ *
+ * @param identifier  the identifier of the client texture asset
+ * @param texturePath the path of the texture on the client
  */
-@NullMarked
 record ClientTextureAssetImpl(
     Key identifier,
     Key texturePath

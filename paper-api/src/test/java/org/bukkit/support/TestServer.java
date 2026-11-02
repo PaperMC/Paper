@@ -1,35 +1,33 @@
 package org.bukkit.support;
 
-import static org.mockito.Mockito.*;
-import com.google.common.base.Preconditions;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.testing.EmptyTag;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.UnsafeValues;
-import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.SimplePluginManager;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
+@NullMarked
 public final class TestServer {
 
     static {
-        Server instance = mock(withSettings().stubOnly());
+        final Server instance = mock(withSettings().stubOnly());
 
-        Thread creatingThread = Thread.currentThread();
-        when(instance.isPrimaryThread()).then(mock -> Thread.currentThread().equals(creatingThread));
+        final Thread creatingThread = Thread.currentThread();
+        when(instance.isPrimaryThread()).then(_ -> Thread.currentThread().equals(creatingThread));
 
         // Paper - remove plugin manager for Paper Plugins
 
-        Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
+        final Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
         when(instance.getLogger()).thenReturn(logger);
 
         when(instance.getName()).thenReturn(TestServer.class.getSimpleName());
@@ -39,16 +37,14 @@ public final class TestServer {
         when(instance.getBukkitVersion()).thenReturn("BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion());
 
         // Paper start - RegistryAccess
-        when(instance.getRegistry(any())).then(invocationOnMock -> {
-            return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(((Class<Keyed>)invocationOnMock.getArgument(0)));
-        });
+        when(instance.getRegistry(any())).then(invocationOnMock -> RegistryAccess.registryAccess().getRegistry(((Class<Keyed>) invocationOnMock.getArgument(0))));
         // Paper end - RegistryAccess
 
-        UnsafeValues unsafeValues = mock(withSettings().stubOnly());
+        final UnsafeValues unsafeValues = mock(withSettings().stubOnly());
         when(instance.getUnsafe()).thenReturn(unsafeValues);
 
         // Paper start - testing changes
-        when(instance.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.testing.EmptyTag());
+        when(instance.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new EmptyTag());
         when(instance.getScoreboardCriteria(anyString())).thenReturn(null);
         // Paper end - testing changes
 

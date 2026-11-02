@@ -43,7 +43,7 @@ public final class ProviderUtil {
      * @param onError   a runnable that is executed before any unknown exception is raised through a sneaky throw.
      * @param <T>       the generic type of the parent class the created object will be cast to
      * @return the object instantiated from the class found at the provided fully qualified class name, cast to the
-     * parent type
+     *     parent type
      * @throws AssertionError if the sneaky rethrow of a loading failure unexpectedly returns
      */
     public static <T> T loadClass(final String clazz, final Class<T> classType, final ClassLoader loader, final @Nullable Runnable onError) {

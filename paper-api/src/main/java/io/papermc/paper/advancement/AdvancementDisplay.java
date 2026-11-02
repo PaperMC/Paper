@@ -63,7 +63,7 @@ public interface AdvancementDisplay {
      *
      * @return {@code true} if a message should be sent
      * @see org.bukkit.event.player.PlayerAdvancementDoneEvent#message() to edit
-     * the message
+     *     the message
      */
     boolean doesAnnounceToChat();
 
