@@ -9,35 +9,30 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * An event fired when a {@link Player} has an advancement revoked
+ * An event fired when a {@link Player} has an advancement revoked.
  */
 @NullMarked
 public final class PlayerAdvancementRevokeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private boolean cancelled;
-
     private final Advancement advancement;
 
+    private boolean cancelled;
+
     @ApiStatus.Internal
-    public PlayerAdvancementRevokeEvent(final Player player, Advancement advancement) {
+    public PlayerAdvancementRevokeEvent(final Player player, final Advancement advancement) {
         super(player);
         this.advancement = advancement;
     }
 
     /**
-     * Gets the advancement associated with this event.
+     * Get the advancement which has been revoked.
      *
-     * @return the advancement being revoked
+     * @return revoked advancement
      */
     public Advancement getAdvancement() {
         return this.advancement;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
     }
 
     public boolean isCancelled() {
@@ -46,6 +41,11 @@ public final class PlayerAdvancementRevokeEvent extends PlayerEvent implements C
 
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return HANDLER_LIST;
     }
 
     public static HandlerList getHandlerList() {
