@@ -8,6 +8,6 @@ public enum CookingBookCategory {
     // Start generate - CookingBookCategory
     FOOD,
     BLOCKS,
-    MISC
+    MISC;
     // End generate - CookingBookCategory
 }

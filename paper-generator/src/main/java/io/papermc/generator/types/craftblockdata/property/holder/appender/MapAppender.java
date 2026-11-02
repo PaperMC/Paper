@@ -21,9 +21,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.block.data.type.RedstoneWire;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class MapAppender implements DataAppender {
 
     private static final Map<String, String> INDEX_NAMES = ImmutableMap.<String, String>builder()
@@ -50,6 +48,7 @@ public class MapAppender implements DataAppender {
         return DataHolderType.MAP;
     }
 
+    // CHECKSTYLE.OFF: AvoidNestedBlocks - the blocks group the code for each generated method and mirror its control flow
     @Override
     public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase childConverter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming) {
         if (childConverter.getApiType() == Boolean.TYPE) {
@@ -82,4 +81,5 @@ public class MapAppender implements DataAppender {
             builder.addMethod(methodBuilder.build());
         }
     }
+    // CHECKSTYLE.ON: AvoidNestedBlocks
 }

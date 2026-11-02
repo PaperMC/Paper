@@ -7,9 +7,7 @@ import com.squareup.javapoet.TypeName;
 import io.papermc.generator.utils.BlockStateMapping;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class EnumPropertyWriter<T extends Enum<T> & StringRepresentable> extends PropertyWriter<T> {
 
     protected EnumPropertyWriter(EnumProperty<T> property) {

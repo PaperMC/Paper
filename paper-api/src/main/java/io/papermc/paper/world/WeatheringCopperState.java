@@ -8,6 +8,6 @@ public enum WeatheringCopperState {
     UNAFFECTED,
     EXPOSED,
     WEATHERED,
-    OXIDIZED
+    OXIDIZED;
     // End generate - WeatheringCopperState
 }

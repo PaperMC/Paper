@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class CraftBlockDataBootstrapper {
 
     public static void bootstrap(List<SourceGenerator> generators) {
@@ -19,5 +17,8 @@ public final class CraftBlockDataBootstrapper {
 
             generators.add(new CraftBlockDataGenerator<>(entry.getKey(), entry.getValue(), api));
         }
+    }
+
+    private CraftBlockDataBootstrapper() {
     }
 }
