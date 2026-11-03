@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.Container;
 import org.bukkit.inventory.ItemStack;
 
@@ -18,6 +20,24 @@ public class CraftResultInventory extends CraftInventory {
 
     public Container getIngredientsInventory() {
         return this.inventory;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.getIngredientsInventory().isEmpty() && this.getResultInventory().isEmpty();
+    }
+
+    @Override
+    public ItemStack[] getStorageContents() {
+        return this.asCraftMirror(this.getIngredientsInventory().getContents());
+    }
+
+    @Override
+    public ItemStack[] getContents() {
+        final List<net.minecraft.world.item.ItemStack> contents = new ArrayList<>();
+        contents.addAll(this.getIngredientsInventory().getContents());
+        contents.addAll(this.getResultInventory().getContents());
+        return this.asCraftMirror(contents);
     }
 
     @Override
@@ -42,6 +62,6 @@ public class CraftResultInventory extends CraftInventory {
 
     @Override
     public int getSize() {
-        return this.getResultInventory().getContainerSize() + this.getIngredientsInventory().getContainerSize();
+        return this.getIngredientsInventory().getContainerSize() + this.getResultInventory().getContainerSize();
     }
 }
