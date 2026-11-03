@@ -23,7 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @deprecated use {@link RegistryEvents#compose(RegistryKey)} and {@link RegistryEvents#entryAdd(RegistryKey)}
  */
 @ApiStatus.NonExtendable
-@Deprecated(forRemoval = true, since = "26.3")
+@Deprecated(forRemoval = true, since = "26.4")
 public interface RegistryEventProvider<T extends RegistryElement.Buildable<T, ?, B>, B extends RegistryBuilder<T>> {
 
     /**

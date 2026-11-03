@@ -13,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @deprecated use {@link RegistryHolderSetBuilder}
  */
 @ApiStatus.NonExtendable
-@Deprecated(since = "26.3", forRemoval = true)
+@Deprecated(since = "26.4", forRemoval = true)
 public interface RegistryValueSetBuilder<API, ENTRY_BUILDER extends RegistryBuilder<API>> {
 
     /**

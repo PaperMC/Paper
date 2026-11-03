@@ -514,7 +514,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Tag#resolve()
      * @deprecated use {@link Tag#resolve()} on the fetched tag
      */
-    @Deprecated(since = "26.3", forRemoval = true)
+    @Deprecated(since = "26.4", forRemoval = true)
     default Collection<T> getTagValues(final TagKey<T> key) {
         final Tag<T> tag = this.getTag(key);
         return tag.resolve();

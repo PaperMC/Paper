@@ -51,7 +51,7 @@ public interface DialogRegistryEntry {
          * @deprecated use {@link io.papermc.paper.registry.event.RegistryFactory} on the registry event and {@link io.papermc.paper.registry.set.RegistryHolderSetBuilder}
          */
         @Contract(value = "-> new", pure = true)
-        @Deprecated(since = "26.3", forRemoval = true)
+        @Deprecated(since = "26.4", forRemoval = true)
         RegistryValueSetBuilder<Dialog, DialogRegistryEntry.Builder> registryValueSet();
 
         /**

@@ -47,8 +47,8 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * @see RegistryKeySet#values()
      * @deprecated use {@link #resolve()}, the registry is not needed
      */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default @Unmodifiable Collection<T> resolve(Registry<T> registry) {
+    @Deprecated(since = "26.4", forRemoval = true)
+    default @Unmodifiable Collection<T> resolve(final Registry<T> ignored) {
         return this.resolve();
     }
 

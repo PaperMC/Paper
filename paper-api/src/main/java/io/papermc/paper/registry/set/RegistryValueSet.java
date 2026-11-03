@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @param <T> registry value type
  * @deprecated use {@link RegistryHolderSet} and {@link RegistryHolderSetBuilder}
  */
-@Deprecated(since = "26.3", forRemoval = true)
+@Deprecated(since = "26.4", forRemoval = true)
 public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
 
     @Override
