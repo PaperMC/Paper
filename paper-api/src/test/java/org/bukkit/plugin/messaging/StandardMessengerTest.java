@@ -3,7 +3,6 @@ package org.bukkit.plugin.messaging;
 import java.util.Collection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.BukkitTestPlugin;
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
 import static org.bukkit.support.MatcherAssert.assertThat;
@@ -15,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@NullMarked
 public class StandardMessengerTest {
     private int count = 0;
 

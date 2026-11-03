@@ -1,7 +1,6 @@
 package org.bukkit.support;
 
 import org.hamcrest.Matcher;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -20,7 +19,6 @@ import org.jspecify.annotations.Nullable;
  *         """, material));
  * </pre>
  */
-@NullMarked
 public final class MatcherAssert {
 
     private MatcherAssert() {

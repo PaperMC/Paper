@@ -4,7 +4,6 @@ import java.lang.annotation.Annotation;
 import java.util.stream.Stream;
 import org.bukkit.support.test.ClassNodeTest;
 import org.bukkit.support.test.ClassReaderTest;
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
@@ -14,7 +13,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
-@NullMarked
 public class ClassNodeArgumentProvider implements ArgumentsProvider, AnnotationConsumer<ClassNodeTest> {
 
     private Class<?>[] excludedClasses = new Class<?>[0];

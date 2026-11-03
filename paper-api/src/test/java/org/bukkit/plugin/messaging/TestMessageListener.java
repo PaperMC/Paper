@@ -1,12 +1,10 @@
 package org.bukkit.plugin.messaging;
 
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.NullMarked;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@NullMarked
 public class TestMessageListener implements PluginMessageListener {
     private final String channel;
     private final byte[] message;

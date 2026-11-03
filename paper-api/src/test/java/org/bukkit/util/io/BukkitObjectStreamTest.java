@@ -12,7 +12,6 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.FireworkEffect.Type;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.Vector;
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -22,7 +21,6 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import static org.bukkit.support.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@NullMarked
 @SuppressWarnings("deprecation")
 public class BukkitObjectStreamTest {
 

@@ -8,7 +8,6 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.UnsafeValues;
-import org.jspecify.annotations.NullMarked;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -16,7 +15,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-@NullMarked
 public final class TestServer {
 
     static {

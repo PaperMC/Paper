@@ -2,14 +2,12 @@ package org.bukkit.event;
 
 import com.google.common.collect.ImmutableList;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
 import static org.bukkit.support.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 
-@NullMarked
 public class PlayerChatTabCompleteEventTest {
 
     @Test

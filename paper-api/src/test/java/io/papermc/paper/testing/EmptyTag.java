@@ -5,9 +5,7 @@ import java.util.Set;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public record EmptyTag(NamespacedKey key) implements Tag<Keyed> {
 
     @SuppressWarnings("deprecation")

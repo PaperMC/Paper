@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.configuration.MemoryConfigurationTest;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -15,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@NullMarked
 public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     @TempDir
     File testFolder;

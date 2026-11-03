@@ -19,12 +19,10 @@ import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-@NullMarked
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // one instance for all tests, so the constructor only runs once
 public class BlockStatePropertyTest {
 

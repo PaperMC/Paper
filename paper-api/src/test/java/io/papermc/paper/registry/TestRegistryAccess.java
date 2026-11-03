@@ -2,10 +2,8 @@ package io.papermc.paper.registry;
 
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public class TestRegistryAccess implements RegistryAccess {
 
     @Override
