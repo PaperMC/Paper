@@ -5,16 +5,21 @@ import com.google.common.collect.Multimap;
 import com.mojang.logging.LogUtils;
 import io.papermc.generator.Main;
 import io.papermc.generator.utils.Formatting;
+import it.unimi.dsi.fastutil.Pair;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.registries.TradeRebalanceRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
@@ -24,8 +29,8 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.BuiltInPackSource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
+import org.jetbrains.annotations.UnknownNullability;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 @NullMarked
@@ -33,48 +38,71 @@ public final class ExperimentalCollector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
-        .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
+    private static final Map<ResourceKey<? extends Registry<?>>, List<RegistrySetBuilder.RegistryStub>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.WORLD_BUILDER.entries.stream()
+        .flatMap(s -> s.requiredRegistries().map(k -> Pair.of(k, s)))
+        .collect(Collectors.groupingBy(Pair::key, Collectors.mapping(Pair::value, Collectors.toList())));
 
     private static final Map<RegistrySetBuilder, SingleFlagHolder> EXPERIMENTAL_REGISTRY_FLAGS = Map.of(
         // Update for Experimental API
-        TradeRebalanceRegistries.BUILDER, FlagHolders.TRADE_REBALANCE
+        TradeRebalanceRegistries.WORLD_BUILDER, FlagHolders.TRADE_REBALANCE
     );
 
-    private static final Multimap<ResourceKey<? extends Registry<?>>, Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryBootstrap<?>>> EXPERIMENTAL_REGISTRY_ENTRIES;
+    private static final Multimap<ResourceKey<? extends Registry<?>>, Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub>> EXPERIMENTAL_REGISTRY_ENTRIES;
+
     static {
         EXPERIMENTAL_REGISTRY_ENTRIES = HashMultimap.create();
         for (Map.Entry<RegistrySetBuilder, SingleFlagHolder> entry : EXPERIMENTAL_REGISTRY_FLAGS.entrySet()) {
-            for (RegistrySetBuilder.RegistryStub<?> stub : entry.getKey().entries) {
-                EXPERIMENTAL_REGISTRY_ENTRIES.put(stub.key(), Map.entry(entry.getValue(), stub.bootstrap()));
+            for (RegistrySetBuilder.RegistryStub stub : entry.getKey().entries) {
+                stub.requiredRegistries().forEach(registry -> EXPERIMENTAL_REGISTRY_ENTRIES.put(registry, Map.entry(entry.getValue(), stub)));
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     public static <T> Map<ResourceKey<T>, SingleFlagHolder> collectDataDrivenElementIds(Registry<T> registry) {
-        Collection<Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryBootstrap<?>>> experimentalEntries = EXPERIMENTAL_REGISTRY_ENTRIES.get(registry.key());
+        Collection<Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub>> experimentalEntries = EXPERIMENTAL_REGISTRY_ENTRIES.get(registry.key());
         if (experimentalEntries.isEmpty()) {
             return Collections.emptyMap();
         }
 
+        HolderLookup.Provider staticRegistries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        HolderLookup.Provider vanillaWorldAccess = VanillaRegistries.createWorldLookup();
+
         Map<ResourceKey<T>, SingleFlagHolder> result = new IdentityHashMap<>();
-        for (Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryBootstrap<?>> experimentalEntry : experimentalEntries) {
-            RegistrySetBuilder.RegistryBootstrap<T> experimentalBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) experimentalEntry.getValue();
-            Set<ResourceKey<T>> experimental = Collections.newSetFromMap(new IdentityHashMap<>());
-            CollectingContext<T> experimentalCollector = new CollectingContext<>(experimental, registry);
-            experimentalBootstrap.run(experimentalCollector);
-            result.putAll(experimental.stream().collect(Collectors.toMap(key -> key, key -> experimentalEntry.getKey())));
+        for (Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub> entry : experimentalEntries) {
+            RegistrySetBuilder.BootstrappedRegistryState<?> additions = getRegistryAdditions(registry, entry.getValue(), staticRegistries, vanillaWorldAccess);
+            result.putAll(additions.registeredValues().keySet().stream().collect(Collectors.toMap(k -> (ResourceKey<T>) k, _ -> entry.getKey())));
         }
 
-        RegistrySetBuilder.@Nullable RegistryBootstrap<T> vanillaBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) VANILLA_REGISTRY_ENTRIES.get(registry.key());
-        if (vanillaBootstrap != null) {
-            Set<ResourceKey<T>> vanilla = Collections.newSetFromMap(new IdentityHashMap<>());
-            CollectingContext<T> vanillaCollector = new CollectingContext<>(vanilla, registry);
-            vanillaBootstrap.run(vanillaCollector);
-            result.keySet().removeAll(vanilla);
+        List<RegistrySetBuilder.RegistryStub> vanillaStubs = VANILLA_REGISTRY_ENTRIES.get(registry.key());
+        if (vanillaStubs == null || vanillaStubs.isEmpty()) return result;
+
+        for (RegistrySetBuilder.RegistryStub stub : vanillaStubs) {
+            RegistrySetBuilder.BootstrappedRegistryState<T> additions = getRegistryAdditions(registry, stub, staticRegistries, vanillaWorldAccess);
+            additions.registeredValues().keySet().forEach(result::remove);
         }
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> RegistrySetBuilder.@UnknownNullability BootstrappedRegistryState<T> getRegistryAdditions(
+        Registry<T> registry,
+        RegistrySetBuilder.RegistryStub stub,
+        HolderLookup.Provider staticRegistries,
+        HolderLookup.Provider vanillaWorldAccess
+    ) {
+        Set<ResourceKey<? extends Registry<?>>> registriesMissingFromPatch = RegistrySetBuilder.findRegistriesMissingFromPatch(
+            staticRegistries,
+            vanillaWorldAccess,
+            List.of(stub)
+        );
+        List<RegistrySetBuilder.RegistryStub> stubs = Stream.concat(
+            Stream.of(stub),
+            registriesMissingFromPatch.stream().map(RegistrySetBuilder::placeholderStub)
+        ).toList();
+
+        RegistrySetBuilder.BuildState buildState = RegistrySetBuilder.BuildState.createAndApply(staticRegistries, stubs);
+        return (RegistrySetBuilder.BootstrappedRegistryState<T>) buildState.bootstrappedRegistries().get(registry.key());
     }
 
     // collect all the tags by grabbing the json from the data-packs

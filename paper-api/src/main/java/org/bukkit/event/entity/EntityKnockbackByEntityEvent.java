@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent}
  */
 @Deprecated(forRemoval = true) // Paper
+@Warning(propagate = false)
 public class EntityKnockbackByEntityEvent extends EntityKnockbackEvent {
 
     private final Entity source;

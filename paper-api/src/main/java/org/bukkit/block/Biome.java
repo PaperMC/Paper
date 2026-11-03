@@ -43,6 +43,8 @@ public interface Biome extends RegistryElement<Biome>, OldEnum<Biome>, Keyed, ne
 
     Biome CRIMSON_FOREST = getBiome("crimson_forest");
 
+    Biome DAPPLED_FOREST = getBiome("dappled_forest");
+
     Biome DARK_FOREST = getBiome("dark_forest");
 
     Biome DEEP_COLD_OCEAN = getBiome("deep_cold_ocean");

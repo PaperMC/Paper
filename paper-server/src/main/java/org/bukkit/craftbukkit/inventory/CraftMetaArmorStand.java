@@ -53,7 +53,7 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
             java.io.ByteArrayInputStream buf = new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(entityTag));
             try {
                 this.entityTag = net.minecraft.nbt.NbtIo.readCompressed(buf, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-            } catch (java.io.IOException ex) {
+            } catch (java.io.IOException | net.minecraft.nbt.ReportedNbtException | net.minecraft.nbt.NbtException ex) {
                 java.util.logging.Logger.getLogger(CraftMetaItem.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             }
             return;

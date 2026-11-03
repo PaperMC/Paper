@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -23,7 +24,9 @@ import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.phys.BlockHitResult;
+import org.bukkit.Instrument;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -174,7 +177,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
     @Override
     public boolean isSolid() {
-        return this.getHandle().defaultBlockState().blocksMotion();
+        return this.getHandle().defaultBlockState().is(BlockTags.BLOCKS_MOTION);
     }
 
     @Override
@@ -251,4 +254,10 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         return this.getHandle().hasCollision;
     }
     // Paper end - hasCollision API
+
+    @Override
+    public Instrument getInstrument() {
+        NoteBlockInstrument instrument = this.getHandle().defaultBlockState().instrument();
+        return CraftBlockData.fromVanilla(instrument, Instrument.class);
+    }
 }

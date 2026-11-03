@@ -1,13 +1,15 @@
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/net/minecraft/world/level/block/BaseFireBlock.java
-@@ -136,12 +_,13 @@
+@@ -133,12 +_,14 @@
          final InsideBlockEffectApplier effectApplier,
          final boolean isPrecise
      ) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
++        final BlockPos savedPos = pos.immutable(); // Paper - track fire contact
          effectApplier.apply(InsideBlockEffectType.CLEAR_FREEZE);
          effectApplier.apply(InsideBlockEffectType.FIRE_IGNITE);
-         effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, e -> e.hurt(e.level().damageSources().inFire(), this.fireDamage));
+-        effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, e -> e.hurt(e.level().damageSources().inFire(), this.fireDamage));
++        effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, e -> e.hurt(e.level().damageSources().inFire().eventBlockDamager(level, savedPos), this.fireDamage)); // Paper
      }
  
 -    public static void fireIgnite(final Entity entity) {
@@ -15,7 +17,7 @@
          if (!entity.fireImmune()) {
              if (entity.getRemainingFireTicks() < 0) {
                  entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
-@@ -151,30 +_,41 @@
+@@ -148,30 +_,41 @@
              }
  
              if (entity.getRemainingFireTicks() >= 0) {
@@ -62,9 +64,9 @@
      }
  
      @Override
-@@ -219,4 +_,12 @@
-             : Direction.Plane.HORIZONTAL.getRandomAxis(level.getRandom());
-         return PortalShape.findEmptyPortalShape(level, pos, preferredAxis).isPresent();
+@@ -211,4 +_,12 @@
+ 
+         return false;
      }
 +
 +    // CraftBukkit start

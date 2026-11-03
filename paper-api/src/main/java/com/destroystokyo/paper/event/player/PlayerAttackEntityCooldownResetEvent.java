@@ -1,5 +1,6 @@
 package com.destroystokyo.paper.event.player;
 
+import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -19,6 +20,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @Deprecated(since = "26.1", forRemoval = true)
+@Warning(value = true, propagate = false)
 public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

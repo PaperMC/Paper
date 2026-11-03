@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
@@ -11,6 +12,7 @@ import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DecoratedPotPatternRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
@@ -53,92 +55,97 @@ public final class RegistryEvents {
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<TrimMaterial, TrimMaterialRegistryEntry.Builder> TRIM_MATERIAL = create(RegistryKey.TRIM_MATERIAL);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<TrimPattern, TrimPatternRegistryEntry.Builder> TRIM_PATTERN = create(RegistryKey.TRIM_PATTERN);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<DamageType, DamageTypeRegistryEntry.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Wolf.Variant, WolfVariantRegistryEntry.Builder> WOLF_VARIANT = create(RegistryKey.WOLF_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<JukeboxSong, JukeboxSongRegistryEntry.Builder> JUKEBOX_SONG = create(RegistryKey.JUKEBOX_SONG);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<PatternType, BannerPatternRegistryEntry.Builder> BANNER_PATTERN = create(RegistryKey.BANNER_PATTERN);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
+    public static final RegistryEventProvider<PotPatternType, DecoratedPotPatternRegistryEntry.Builder> DECORATED_POT_PATTERN = create(RegistryKey.DECORATED_POT_PATTERN);
+    /**
+     * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
+     */
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Art, PaintingVariantRegistryEntry.Builder> PAINTING_VARIANT = create(RegistryKey.PAINTING_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<MusicInstrument, InstrumentRegistryEntry.Builder> INSTRUMENT = create(RegistryKey.INSTRUMENT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Cat.Type, CatTypeRegistryEntry.Builder> CAT_VARIANT = create(RegistryKey.CAT_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Frog.Variant, FrogVariantRegistryEntry.Builder> FROG_VARIANT = create(RegistryKey.FROG_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Chicken.Variant, ChickenVariantRegistryEntry.Builder> CHICKEN_VARIANT = create(RegistryKey.CHICKEN_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Cow.Variant, CowVariantRegistryEntry.Builder> COW_VARIANT = create(RegistryKey.COW_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<ZombieNautilus.Variant, ZombieNautilusVariantRegistryEntry.Builder> ZOMBIE_NAUTILUS_VARIANT = create(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<SulfurCube.Archetype, SulfurCubeArchetypeRegistryEntry.Builder> SULFUR_CUBE_ARCHETYPE = create(RegistryKey.SULFUR_CUBE_ARCHETYPE);
     /**
      * @deprecated use {@link #entryAdd(RegistryKey)} and {@link #compose(RegistryKey)}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(forRemoval = true, since = "26.4")
     public static final RegistryEventProvider<Dialog, DialogRegistryEntry.Builder> DIALOG = create(RegistryKey.DIALOG);
 
     /**

@@ -9,8 +9,8 @@ import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.resources.RegistryOps;
 import org.bukkit.Keyed;
 
 public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(

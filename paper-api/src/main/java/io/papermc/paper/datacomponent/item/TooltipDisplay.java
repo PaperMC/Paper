@@ -6,9 +6,7 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 @ApiStatus.NonExtendable
 public interface TooltipDisplay {
 

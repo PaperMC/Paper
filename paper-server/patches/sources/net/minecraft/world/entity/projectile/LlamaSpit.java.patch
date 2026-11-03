@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/LlamaSpit.java
 +++ b/net/minecraft/world/entity/projectile/LlamaSpit.java
-@@ -44,15 +_,15 @@
+@@ -44,16 +_,16 @@
          super.tick();
          Vec3 movement = this.getDeltaMovement();
          HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
@@ -10,7 +10,8 @@
          double y = this.getY() + movement.y;
          double z = this.getZ() + movement.z;
          this.updateRotation();
-         if (this.level().getBlockStates(this.getBoundingBox()).noneMatch(BlockBehaviour.BlockStateBase::isAir)) {
+         boolean touchesNoAir = this.level().findBlocksIn(this.getBoundingBox()).filterState(BlockBehaviour.BlockStateBase::isAir).noneMatched();
+         if (touchesNoAir) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (this.isInWater()) {
@@ -19,7 +20,7 @@
          } else {
              this.setDeltaMovement(movement.scale(this.getAirDrag()));
              this.applyGravity();
-@@ -81,7 +_,7 @@
+@@ -82,7 +_,7 @@
      protected void onHitBlock(final BlockHitResult hitResult) {
          super.onHitBlock(hitResult);
          if (!this.level().isClientSide()) {

@@ -13,6 +13,8 @@ import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.persistence.PaperPersistentDataKey;
+import io.papermc.paper.persistence.PersistentDataKey;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager;
 import io.papermc.paper.util.MCUtil;
@@ -20,15 +22,21 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.Random;
+import java.util.function.Predicate;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.minecraft.Optionull;
+import net.minecraft.core.Holder;
+import net.minecraft.core.IdMap;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.util.RandomSource;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -39,11 +47,14 @@ import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.inventory.EnchantmentMenu;
+import net.minecraft.world.item.enchantment.Enchantment;
+import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
 import org.bukkit.attribute.Attributable;
-import org.bukkit.block.Biome;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftStatistic;
@@ -51,24 +62,28 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
+import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.enchantments.EnchantmentOffer;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMannequin;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-import org.bukkit.damage.DamageEffect;
-import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
@@ -125,15 +140,15 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate, final boolean restricted) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate, @Override boolean restricted) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
             @Override
             public boolean test(final CommandSourceStack commandSourceStack) {
                 return this.predicate.test(commandSourceStack);
             }
         }
 
-        return new RestrictedPredicate(predicate);
+        return new RestrictedPredicate(predicate, restricted);
     }
 
     @Override
@@ -223,7 +238,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public ItemStack createEmptyStack() {
-        return CraftItemStack.asCraftMirror(null);
+        return CraftItemStack.asBukkitMirror(null);
     }
 
     @Override
@@ -256,5 +271,38 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ComponentFlattener componentFlattener() {
         return PaperAdventure.FLATTENER;
+    }
+
+    @Override
+    public <C> PersistentDataKey<C> createPersistentDataKey(final Key key, final PersistentDataType<?, C> type) {
+        final NamespacedKey namespacedKey = key instanceof NamespacedKey thisKey
+            ? thisKey
+            : new NamespacedKey(key.namespace(), key.value());
+        return new PaperPersistentDataKey<>(namespacedKey, type);
+    }
+
+    @Override
+    public @Nullable EnchantmentOffer[] rollEnchantmentOffers(final ItemStack targetStack, final int seed, final int bookshelfCount, final int offerAmount) {
+        final int[] costs = new int[offerAmount];
+        final int[] enchantClue = new int[offerAmount];
+        final int[] levelClue = new int[offerAmount];
+
+        final RandomSource randomSource = new RandomSourceWrapper(new Random());
+        EnchantmentMenu.fillEnchantmentOffers(randomSource, seed, bookshelfCount, CraftItemStack.unwrap(targetStack), CraftRegistry.getMinecraftRegistry(), costs, enchantClue, levelClue);
+
+        final IdMap<Holder<Enchantment>> holderIdMap = CraftRegistry.getMinecraftRegistry()
+            .lookupOrThrow(Registries.ENCHANTMENT)
+            .asHolderIdMap();
+
+        final @Nullable EnchantmentOffer[] offers = new EnchantmentOffer[offerAmount];
+        for (int i = 0; i < costs.length; i++) {
+            if (enchantClue[i] < 0) {
+                continue;
+            }
+
+            offers[i] = new EnchantmentOffer(CraftEnchantment.minecraftHolderToBukkit(holderIdMap.byId(enchantClue[i])), levelClue[i], costs[i]);
+        }
+
+        return offers;
     }
 }

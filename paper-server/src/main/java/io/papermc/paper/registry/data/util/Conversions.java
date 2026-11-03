@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
@@ -77,7 +78,7 @@ public class Conversions implements RegistryFactory {
 
     public <M> Holder.Reference<M> getReferenceHolder(final ResourceKey<M> key) {
         try {
-            return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
+            return this.lookup.lookup(key.registryKey()).orElseThrow().getOrThrow(key);
         } catch (final IllegalStateException ex) {
             throw new IllegalStateException("Did you try to create a reference holder for a registry in a later layer? Try a inlined holder instead.", ex);
         }
@@ -130,8 +131,8 @@ public class Conversions implements RegistryFactory {
 
     @Override
     public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
-        final RegistryOps.RegistryInfo<Object> registryInfo = this.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
-        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+        final HolderGetter<Object> holderGetter = this.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+        final HolderSet.Named<?> tagSet = holderGetter.getOrThrow(PaperRegistries.toNms(tagKey));
         return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
     }
 

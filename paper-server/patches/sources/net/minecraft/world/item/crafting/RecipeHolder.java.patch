@@ -1,15 +1,33 @@
 --- a/net/minecraft/world/item/crafting/RecipeHolder.java
 +++ b/net/minecraft/world/item/crafting/RecipeHolder.java
-@@ -10,6 +_,12 @@
+@@ -5,10 +_,29 @@
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.resources.ResourceKey;
+ 
+-public record RecipeHolder<T extends Recipe<?>>(ResourceKey<Recipe<?>> id, T value) {
++// Paper start - track runtime added recipe holders
++// This includes any recipe holder added to the server via the added net.minecraft.world.item.crafting.RecipeMap#addRecipe
++// method.
++// As vanilla recipes cannot be re-registered, no vanilla recipe holder should ever show up in the recipe manager with
++// the runtimeAddedRecipe flag marked.
++public record RecipeHolder<T extends Recipe<?>>(ResourceKey<Recipe<?>> id, T value, boolean runtimeAddedRecipe) {
++    public RecipeHolder<T> asRuntimeAddedRecipe() {
++        return new RecipeHolder<>(id, value, true);
++    }
++    public RecipeHolder(final net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id, final T value) {
++        this(id, value, false);
++    }
++// Paper end - track runtime added recipe holders
++
+     public static final StreamCodec<RegistryFriendlyByteBuf, RecipeHolder<?>> STREAM_CODEC = StreamCodec.composite(
          ResourceKey.streamCodec(Registries.RECIPE), RecipeHolder::id, Recipe.STREAM_CODEC, RecipeHolder::value, RecipeHolder::new
      );
- 
++
 +    // CraftBukkit start
 +    public org.bukkit.inventory.Recipe toBukkitRecipe() {
 +        return this.value.toBukkitRecipe(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.id.identifier()));
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public boolean equals(final Object obj) {
-         return this == obj || obj instanceof RecipeHolder<?> holder && this.id == holder.id;

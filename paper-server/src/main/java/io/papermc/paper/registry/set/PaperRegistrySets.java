@@ -9,6 +9,7 @@ import io.papermc.paper.util.Holderable;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.RegistryOps;
@@ -21,10 +22,8 @@ public final class PaperRegistrySets {
         if (registryKeySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registryKeySet).namedSet();
         } else {
-            final RegistryOps.RegistryInfo<M> registryInfo = lookup.lookup(resourceKey).orElseThrow();
-            return HolderSet.direct(key -> {
-                return registryInfo.getter().getOrThrow(PaperRegistries.toNms(key));
-            }, registryKeySet.values());
+            final HolderGetter<M> registryInfo = lookup.lookup(resourceKey).orElseThrow();
+            return HolderSet.direct(key -> registryInfo.getOrThrow(PaperRegistries.toNms(key)), registryKeySet.values());
         }
     }
 
@@ -43,10 +42,10 @@ public final class PaperRegistrySets {
             }
             return HolderSet.direct(directs);
         } else if (registrySet instanceof final RegistryKeySet<A> keySet) {
-            final RegistryOps.RegistryInfo<M> registryInfo = conversions.lookup().lookup(resourceKey).orElseThrow();
+            final HolderGetter<M> holderGetter = conversions.lookup().lookup(resourceKey).orElseThrow();
             return HolderSet.direct(
                 key -> {
-                    return registryInfo.getter().getOrThrow(PaperRegistries.toNms(key));
+                    return holderGetter.getOrThrow(PaperRegistries.toNms(key));
                 }, keySet.values()
             );
         } else if (registrySet instanceof final RegistryHolderSet<A, ?> registryHolderSet) {

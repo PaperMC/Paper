@@ -182,9 +182,14 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
                 boolean reschedule = false;
                 if (!repeating) {
                     this.setStateVolatile(STATE_FINISHED);
-                } else if (STATE_EXECUTING == this.compareAndExchangeStateVolatile(STATE_EXECUTING, STATE_IDLE)) {
-                    reschedule = true;
-                } // else: cancelled repeating task
+                } else {
+                    final int previousState = this.compareAndExchangeStateVolatile(STATE_EXECUTING, STATE_IDLE);
+                    if (previousState == STATE_EXECUTING) {
+                        reschedule = true;
+                    } else if (previousState == STATE_EXECUTING_CANCELLED) {
+                        this.setStateVolatile(STATE_CANCELLED);
+                    }
+                }
 
                 if (!reschedule) {
                     this.run = null;

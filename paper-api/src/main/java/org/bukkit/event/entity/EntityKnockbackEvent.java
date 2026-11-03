@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import com.google.common.base.Preconditions;
+import org.bukkit.Warning;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link io.papermc.paper.event.entity.EntityKnockbackEvent}
  */
 @Deprecated(forRemoval = true) // Paper
+@Warning(propagate = false)
 public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

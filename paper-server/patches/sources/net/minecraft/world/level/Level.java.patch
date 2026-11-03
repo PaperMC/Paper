@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -89,8 +_,19 @@
+@@ -87,8 +_,19 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -20,7 +20,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
-@@ -133,6 +_,55 @@
+@@ -131,6 +_,55 @@
      private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
@@ -76,7 +76,7 @@
      protected Level(
          final WritableLevelData levelData,
          final ResourceKey<Level> dimension,
-@@ -142,7 +_,25 @@
+@@ -140,7 +_,25 @@
          final boolean isDebug,
          final long biomeZoomSeed,
          final int maxChainedNeighborUpdates
@@ -102,7 +102,7 @@
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
          this.dimension = dimension;
-@@ -160,6 +_,46 @@
+@@ -158,6 +_,46 @@
          return 0;
      }
  
@@ -149,7 +149,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -170,8 +_,15 @@
+@@ -168,8 +_,15 @@
          return null;
      }
  
@@ -166,7 +166,7 @@
      }
  
      public boolean isInValidBounds(final BlockPos pos) {
-@@ -183,7 +_,7 @@
+@@ -181,7 +_,7 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(final BlockPos pos) {
@@ -175,7 +175,7 @@
      }
  
      private static boolean isInValidBoundsHorizontal(final BlockPos pos) {
-@@ -196,14 +_,78 @@
+@@ -194,14 +_,78 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -258,7 +258,7 @@
  
      @Override
      public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
-@@ -222,6 +_,22 @@
+@@ -215,6 +_,22 @@
  
      @Override
      public boolean setBlock(final BlockPos pos, final BlockState blockState, final @Block.UpdateFlags int updateFlags, final int updateLimit) {
@@ -281,7 +281,7 @@
          if (!this.isInValidBounds(pos)) {
              return false;
          }
-@@ -232,12 +_,32 @@
+@@ -225,12 +_,32 @@
  
          LevelChunk chunk = this.getChunkAt(pos);
          Block block = blockState.getBlock();
@@ -314,7 +314,7 @@
          if (newState == blockState) {
              if (oldState != newState) {
                  this.setBlocksDirty(pos, oldState, newState);
-@@ -265,9 +_,64 @@
+@@ -258,9 +_,64 @@
  
              this.updatePOIOnBlockStateChange(pos, oldState, newState);
          }
@@ -379,7 +379,7 @@
  
      public void updatePOIOnBlockStateChange(final BlockPos pos, final BlockState oldState, final BlockState newState) {
      }
-@@ -279,20 +_,38 @@
+@@ -272,19 +_,41 @@
      }
  
      @Override
@@ -390,12 +390,11 @@
              return false;
          }
  
-         FluidState fluidState = this.getFluidState(pos);
--        if (!(blockState.getBlock() instanceof BaseFireBlock)) {
--            this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
+-        blockState.getBlock().spawnDestroyParticles(this, pos, blockState);
 +        // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
 +        // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +        // it doesn't imply destruction of a block that plays a sound effect / drops an item.
++        FluidState fluidState = this.getFluidState(pos);
 +        boolean playEffect = true;
 +        BlockState effectType = blockState;
 +        int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
@@ -410,10 +409,10 @@
 +            xp = event.getExpToDrop();
 +        }
 +        // Paper end - BlockDestroyEvent
-+        if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
-+            this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
-         }
- 
++        if (playEffect) { // Paper - BlockDestroyEvent
++            effectType.getBlock().spawnDestroyParticles(this, pos, effectType); // Paper - BlockDestroyEvent
++        }
++
          if (dropResources) {
              BlockEntity blockEntity = blockState.hasBlockEntity() ? this.getBlockEntity(pos) : null;
 -            Block.dropResources(blockState, this, pos, blockEntity, breaker, ItemStack.EMPTY);
@@ -421,8 +420,12 @@
 +            blockState.getBlock().popExperience((ServerLevel) this, pos, xp, breaker); // Paper - Properly handle xp dropping; custom amount
          }
  
+-        FluidState fluidState = this.getFluidState(pos);
++        // FluidState fluidState = this.getFluidState(pos); // Paper - move up
          boolean destroyed = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, updateLimit);
-@@ -366,11 +_,19 @@
+         if (destroyed) {
+             this.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(breaker, blockState));
+@@ -352,11 +_,19 @@
  
      @Override
      public BlockState getBlockState(final BlockPos pos) {
@@ -443,7 +446,7 @@
          return chunk.getBlockState(pos);
      }
  
-@@ -530,6 +_,7 @@
+@@ -527,6 +_,7 @@
      }
  
      public void addBlockEntityTicker(final TickingBlockEntity ticker) {
@@ -451,7 +454,7 @@
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
      }
  
-@@ -540,18 +_,23 @@
+@@ -537,18 +_,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -479,7 +482,7 @@
          this.tickingBlockEntities = false;
      }
  
-@@ -559,12 +_,23 @@
+@@ -556,12 +_,23 @@
          try {
              tick.accept(entity);
          } catch (Throwable t) {
@@ -507,7 +510,7 @@
  
      public boolean shouldTickDeath(final Entity entity) {
          return true;
-@@ -698,6 +_,12 @@
+@@ -695,6 +_,12 @@
  
      @Override
      public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
@@ -520,7 +523,7 @@
          if (!this.isInValidBounds(pos)) {
              return null;
          } else {
-@@ -710,6 +_,12 @@
+@@ -707,6 +_,12 @@
      public void setBlockEntity(final BlockEntity blockEntity) {
          BlockPos pos = blockEntity.getBlockPos();
          if (this.isInValidBounds(pos)) {
@@ -533,7 +536,7 @@
              this.getChunkAt(pos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1121,7 +_,8 @@
+@@ -1125,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),
@@ -543,7 +546,7 @@
  
          public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
          private final String id;
-@@ -1135,4 +_,16 @@
+@@ -1139,4 +_,16 @@
              return this.id;
          }
      }

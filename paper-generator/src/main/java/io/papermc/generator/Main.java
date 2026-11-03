@@ -84,9 +84,9 @@ public class Main implements Callable<Integer> {
 
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
-        List<HolderLookup.RegistryLookup<?>> worldGenLayer = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
-        RegistryAccess.Frozen frozenWorldgenRegistries = RegistryDataLoader.load(resourceManager, worldGenLayer, RegistryDataLoader.WORLDGEN_REGISTRIES, Util.backgroundExecutor()).join();
-        layers = layers.replaceFrom(RegistryLayer.WORLDGEN, frozenWorldgenRegistries);
+        List<HolderLookup.RegistryLookup<?>> worldGenLayer = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLD), pendingTags);
+        RegistryAccess.Frozen frozenWorldgenRegistries = RegistryDataLoader.load(resourceManager, worldGenLayer, RegistryDataLoader.WORLD_REGISTRIES, Util.backgroundExecutor()).join();
+        layers = layers.replaceFrom(RegistryLayer.WORLD, frozenWorldgenRegistries);
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(worldGenLayer.stream(), frozenWorldgenRegistries.listRegistries()).toList();
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);

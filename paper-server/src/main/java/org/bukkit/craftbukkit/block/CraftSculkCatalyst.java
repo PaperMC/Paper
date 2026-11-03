@@ -10,8 +10,8 @@ import org.bukkit.block.SculkCatalyst;
 
 public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlockEntity> implements SculkCatalyst {
 
-    public CraftSculkCatalyst(World world, SculkCatalystBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftSculkCatalyst(World world, SculkCatalystBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftSculkCatalyst(CraftSculkCatalyst state, Location location) {

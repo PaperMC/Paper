@@ -8,11 +8,7 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.Sound;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Internal
 interface ConsumableTypesBridge {
 
     Optional<ConsumableTypesBridge> BRIDGE = ServiceLoader.load(ConsumableTypesBridge.class, ConsumableTypesBridge.class.getClassLoader()).findFirst();
@@ -29,5 +25,5 @@ interface ConsumableTypesBridge {
 
     ConsumeEffect.PlaySound playSoundEffect(Sound sound);
 
-    ConsumeEffect.TeleportRandomly teleportRandomlyEffect(float diameter);
+    ConsumeEffect.TeleportRandomly teleportRandomlyEffect(float diameter, boolean directionalParticles);
 }

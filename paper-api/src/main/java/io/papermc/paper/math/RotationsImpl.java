@@ -1,8 +1,5 @@
 package io.papermc.paper.math;
 
-import org.jspecify.annotations.NullMarked;
-
-@NullMarked
 record RotationsImpl(double x, double y, double z) implements Rotations {
 
     @Override
