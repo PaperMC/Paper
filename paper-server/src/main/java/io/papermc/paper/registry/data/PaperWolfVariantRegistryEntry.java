@@ -3,11 +3,15 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
 import io.papermc.paper.util.MCUtil;
+import java.util.List;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Wolf;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -15,6 +19,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
+    protected final Conversions conversions;
     protected ClientAsset.@Nullable ResourceTexture angryClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture wildClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture tameClientTextureAsset;
@@ -24,9 +29,10 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
     protected SpawnPrioritySelectors spawnConditions;
 
     public PaperWolfVariantRegistryEntry(
-        final Conversions ignoredConversions,
+        final Conversions conversions,
         final @Nullable WolfVariant internal
     ) {
+        this.conversions = conversions;
         if (internal == null) {
             this.spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
@@ -71,6 +77,11 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         return MCUtil.toTextureAsset(asConfigured(this.babyTameClientTextureAsset, "babyTameClientTextureAsset"));
     }
 
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
+    }
+
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
 
         public PaperBuilder(final Conversions conversions, final @Nullable WolfVariant internal) {
@@ -110,6 +121,12 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         @Override
         public Builder babyTameClientTextureAsset(final ClientTextureAsset babyTameClientTextureAsset) {
             this.babyTameClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyTameClientTextureAsset, "babyTameClientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 

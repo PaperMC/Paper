@@ -1,3 +1,6 @@
+/**
+ * This package contains client-side registry entry types.
+ */
 @NullMarked
 @MinecraftVersionDependent
 package io.papermc.paper.registry.data.client;
