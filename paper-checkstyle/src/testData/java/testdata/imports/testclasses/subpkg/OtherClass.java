@@ -2,6 +2,8 @@ package testdata.imports.testclasses.subpkg;
 
 public class OtherClass {
 
+    public static final int CONSTANT = 0;
+
     public static class InnerClass {
     }
 

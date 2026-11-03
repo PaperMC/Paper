@@ -234,7 +234,8 @@ public class MaterialTags {
      * Covers all music disc items.
      */
     public static final MaterialSetTag MUSIC_DISCS = new MaterialSetTag(keyFor("music_discs"))
-        .startsWith("MUSIC_DISC_").lock();
+        .startsWith("MUSIC_DISC_")
+        .ensureSize("MUSIC_DISCS", 22).lock();
 
     /**
      * Covers all ores.

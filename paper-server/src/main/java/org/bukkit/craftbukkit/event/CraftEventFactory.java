@@ -13,6 +13,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.block.PaperBlockDispenseEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.EntityLandEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntitySortEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
@@ -1126,8 +1127,6 @@ public class CraftEventFactory {
         DamageCause cause;
         if (source.knownCause() != null) {
             cause = source.knownCause();
-        } else if (source.is(DamageTypes.IN_FIRE)) { // todo could be called above
-            cause = DamageCause.FIRE;
         } else if (source.is(DamageTypes.STARVE)) {
             cause = DamageCause.STARVATION;
         } else if (source.is(DamageTypes.WITHER)) {
@@ -2497,5 +2496,13 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static double callEntityLandEvent(final Level level, final BlockPos pos, final Entity entity, final double fallDistance) {
+        if (!EntityLandEvent.getHandlerList().hasListeners()) {
+            return fallDistance; // No listeners, skip event creation
+        }
+        final EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
+        return event.callEvent() ? event.getFallDistance() : -1;
     }
 }
