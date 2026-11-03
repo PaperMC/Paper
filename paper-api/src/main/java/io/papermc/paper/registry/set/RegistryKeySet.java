@@ -42,7 +42,7 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * Resolve this set into a collection of values. Prefer using
      * {@link #values()}.
      *
-     * @param registry the registry to resolve the values from (must match {@link #registryKey()})
+     * @param ignored the registry to resolve the values from (must match {@link #registryKey()})
      * @return the resolved values
      * @see RegistryKeySet#values()
      * @deprecated use {@link #resolve()}, the registry is not needed
