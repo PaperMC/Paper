@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.entry;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -16,7 +17,6 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.ApiVersion;
 
 public sealed interface RegistryEntryMeta<M, A extends Keyed> permits RegistryEntryMeta.ApiOnly, RegistryEntryMeta.ServerSide { // TODO remove Keyed
 
