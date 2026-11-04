@@ -30,7 +30,8 @@ public enum ClickType {
      */
     WINDOW_BORDER_RIGHT,
     /**
-     * The middle mouse button, or a "scrollwheel click".
+     * The middle click action, bound to the middle mouse button by default.
+     * This may also be triggered by another key if rebound by the client.
      */
     MIDDLE,
     /**

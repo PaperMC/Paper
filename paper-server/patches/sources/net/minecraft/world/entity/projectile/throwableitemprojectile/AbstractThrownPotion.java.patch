@@ -1,5 +1,16 @@
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java
+@@ -47,9 +_,7 @@
+         return 0.05;
+     }
+ 
+-    @Override
+-    protected void onHitBlock(final BlockHitResult hitResult) {
+-        super.onHitBlock(hitResult);
++    protected void extinguishFires(final BlockHitResult hitResult) { // Paper - move after PotionSplashEvent call to prevent putting out fires for cancelled events
+         if (!this.level().isClientSide()) {
+             ItemStack potionItemStack = this.getItem();
+             Direction hitDirection = hitResult.getDirection();
 @@ -70,14 +_,21 @@
      @Override
      protected void onHit(final HitResult hitResult) {
@@ -25,7 +36,7 @@
              if (potion.potion().isPresent() && potion.potion().get().value().hasInstantEffects()) {
                  level.levelEvent(LevelEvent.PARTICLES_INSTANT_POTION_SPLASH, this.blockPosition(), potion.getColor());
                  if (!this.isSilent()) {
-@@ -89,49 +_,84 @@
+@@ -89,49 +_,88 @@
                      level.levelEvent(LevelEvent.SOUND_SPELL_POTION_SPLASH, this.blockPosition(), 0);
                  }
              }
@@ -82,6 +93,10 @@
 +            this, hitResult, affected, rehydrate, extinguish
 +        );
 +        if (!event.isCancelled()) {
++            if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
++                this.extinguishFires((BlockHitResult) hitResult);
++            }
++
 +            for (org.bukkit.entity.LivingEntity affectedEntity : event.getToDamage()) {
 +                ((org.bukkit.craftbukkit.entity.CraftLivingEntity) affectedEntity).getHandle().hurtServer(level, this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
 +            }

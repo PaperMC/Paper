@@ -10,7 +10,6 @@ import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -162,92 +161,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public boolean generateTree(WorldGenLevel access, ChunkGenerator chunkGenerator, BlockPos pos, RandomSource random, TreeType treeType) {
-        ResourceKey<Feature> gen;
-        switch (treeType) {
-            case BIG_TREE:
-                gen = TreeFeatures.FANCY_OAK;
-                break;
-            case BIRCH:
-                gen = TreeFeatures.BIRCH;
-                break;
-            case REDWOOD:
-                gen = TreeFeatures.SPRUCE;
-                break;
-            case TALL_REDWOOD:
-                gen = TreeFeatures.PINE;
-                break;
-            case JUNGLE:
-                gen = TreeFeatures.MEGA_JUNGLE_TREE;
-                break;
-            case SMALL_JUNGLE:
-                gen = TreeFeatures.JUNGLE_TREE_NO_VINE;
-                break;
-            case COCOA_TREE:
-                gen = TreeFeatures.JUNGLE_TREE;
-                break;
-            case JUNGLE_BUSH:
-                gen = TreeFeatures.JUNGLE_BUSH;
-                break;
-            case RED_MUSHROOM:
-                gen = TreeFeatures.HUGE_RED_MUSHROOM;
-                break;
-            case BROWN_MUSHROOM:
-                gen = TreeFeatures.HUGE_BROWN_MUSHROOM;
-                break;
-            case SWAMP:
-                gen = TreeFeatures.SWAMP_OAK;
-                break;
-            case ACACIA:
-                gen = TreeFeatures.ACACIA;
-                break;
-            case DARK_OAK:
-                gen = TreeFeatures.DARK_OAK;
-                break;
-            case MEGA_REDWOOD:
-                gen = TreeFeatures.MEGA_SPRUCE;
-                break;
-            case MEGA_PINE:
-                gen = TreeFeatures.MEGA_PINE;
-                break;
-            case TALL_BIRCH:
-                gen = TreeFeatures.SUPER_BIRCH_BEES_0002;
-                break;
-            case CHORUS_PLANT:
-                ChorusFlowerBlock.generatePlant(access, pos, random, 8);
-                return true;
-            case CRIMSON_FUNGUS:
-                gen = this.isNormalWorld() ? TreeFeatures.CRIMSON_FUNGUS_PLANTED : TreeFeatures.CRIMSON_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
-                break;
-            case WARPED_FUNGUS:
-                gen = this.isNormalWorld() ? TreeFeatures.WARPED_FUNGUS_PLANTED : TreeFeatures.WARPED_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
-                break;
-            case AZALEA:
-                gen = TreeFeatures.AZALEA_TREE;
-                break;
-            case MANGROVE:
-                gen = TreeFeatures.MANGROVE;
-                break;
-            case TALL_MANGROVE:
-                gen = TreeFeatures.TALL_MANGROVE;
-                break;
-            case CHERRY:
-                gen = TreeFeatures.CHERRY;
-                break;
-            case PALE_OAK:
-                gen = TreeFeatures.PALE_OAK;
-                break;
-            case PALE_OAK_CREAKING:
-                gen = TreeFeatures.PALE_OAK_CREAKING;
-                break;
-            case POPLAR:
-                gen = TreeFeatures.ORANGE_POPLAR;
-                break;
-            case TREE:
-            default:
-                gen = TreeFeatures.OAK;
-                break;
+        if (treeType == TreeType.CHORUS_PLANT) {
+            ChorusFlowerBlock.generatePlant(access, pos, random, 8);
+            return true;
         }
 
+        ResourceKey<Feature> gen = CraftTreeType.toFeature(treeType, this.isNormalWorld());
         Holder<Feature> holder = access.registryAccess().lookupOrThrow(Registries.FEATURE).get(gen).orElse(null);
         return holder != null && holder.value().place(access, chunkGenerator, random, pos);
     }

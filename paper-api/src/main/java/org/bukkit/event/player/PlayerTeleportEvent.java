@@ -7,15 +7,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
 import java.util.Collections;
 import java.util.Set;
 
 /**
  * Holds information for player teleport events
  */
+@NullMarked
 public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -24,19 +24,19 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     private TeleportCause cause = TeleportCause.UNKNOWN;
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+    public PlayerTeleportEvent(final Player player, final Location from, final Location to) {
         super(player, from, to);
         this.teleportFlags = Collections.emptySet();
     }
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause) {
+    public PlayerTeleportEvent(final Player player, final Location from, final Location to, final TeleportCause cause) {
         this(player, from, to);
         this.cause = cause;
     }
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, @NotNull Set<TeleportFlag.Relative> teleportFlags) {
+    public PlayerTeleportEvent(final Player player, final Location from, final Location to, final TeleportCause cause, Set<TeleportFlag.Relative> teleportFlags) {
         super(player, from, to);
         this.cause = cause;
         this.teleportFlags = teleportFlags;
@@ -47,7 +47,6 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      *
      * @return Cause of the event
      */
-    @NotNull
     public TeleportCause getCause() {
         return this.cause;
     }
@@ -58,7 +57,6 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      *
      * @return an immutable set of relative teleportation flags
      */
-    @NotNull
     public @Unmodifiable Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
         return this.teleportFlags;
     }
@@ -75,13 +73,11 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
         return true;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

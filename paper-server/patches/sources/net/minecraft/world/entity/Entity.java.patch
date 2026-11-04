@@ -224,12 +224,13 @@
      }
  
      protected abstract void defineSynchedData(SynchedEntityData.Builder entityData);
-@@ -423,6 +_,48 @@
+@@ -423,6 +_,49 @@
          return this.entityData;
      }
  
 +    // CraftBukkit start
 +    public void refreshEntityData(ServerPlayer to) {
++        if (this.isRemoved()) return; // Paper - Don't send entity data for removed entities
 +        List<SynchedEntityData.DataValue<?>> values = this.entityData.packAll(); // Paper - Update EVERYTHING not just not default
 +
 +        if (to.getBukkitEntity().canSee(this.getBukkitEntity())) { // Paper
@@ -604,6 +605,27 @@
                              state.getFluidState().entityInside(this.level(), blockIntersection, this, effectCollector);
                          }
  
+@@ -1594,7 +_,11 @@
+ 
+         if (onGround) {
+             if (this.fallDistance > 0.0) {
+-                onState.getBlock().fallOn(this.level(), onState, pos, this, this.fallDistance);
++                // Paper start - Add EntityLandEvent
++                double distance = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityLandEvent(this.level(), pos, this, this.fallDistance);
++                if (distance > 0) {
++                onState.getBlock().fallOn(this.level(), onState, pos, this, distance);
++                // Paper end - Add EntityLandEvent
+                 this.level()
+                     .gameEvent(
+                         GameEvent.HIT_GROUND,
+@@ -1603,6 +_,7 @@
+                             this, this.mainSupportingBlockPos.<BlockState>map(blockPos -> this.level().getBlockState(blockPos)).orElse(onState)
+                         )
+                     );
++                } // Paper - Add EntityLandEvent
+             }
+ 
+             this.resetFallDistance();
 @@ -1818,6 +_,7 @@
          this.setXRot(Mth.clamp(xRot, -90.0F, 90.0F) % 360.0F);
          this.yRotO = this.getYRot();
@@ -1321,6 +1343,15 @@
          return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
      }
  
+@@ -2861,7 +_,7 @@
+     }
+ 
+     protected boolean considersEntityAsAlly(final Entity other) {
+-        return this.isAlliedTo(other.getTeam());
++        return this.isAlliedTo(other.getTeam()) || this.getBukkitEntity().considersEntityAsAlly0(other.getBukkitEntity()); // Paper - Allies API
+     }
+ 
+     public boolean isAlliedTo(final @Nullable Team other) {
 @@ -2869,7 +_,11 @@
      }
  

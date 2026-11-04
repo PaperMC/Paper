@@ -154,6 +154,8 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
         try (final java.io.DataInputStream dataInput = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))) {
             final net.minecraft.nbt.CompoundTag compound = net.minecraft.nbt.NbtIo.read(dataInput);
             this.putAll(compound);
+        } catch (final net.minecraft.nbt.ReportedNbtException | net.minecraft.nbt.NbtException ex) {
+            throw new java.io.IOException("Invalid NBT data", ex);
         }
     }
 

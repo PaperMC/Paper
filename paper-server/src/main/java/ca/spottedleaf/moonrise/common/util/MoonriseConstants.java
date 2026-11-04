@@ -9,7 +9,8 @@ public final class MoonriseConstants {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final int MAX_VIEW_DISTANCE = Integer.getInteger(PlatformHooks.get().getBrand() + ".MaxViewDistance", 32);
+    // note: only allows increasing the max view distance, as lower values are smaller than the chunk generation radius
+    public static final int MAX_VIEW_DISTANCE = Math.max(32, Integer.getInteger(PlatformHooks.get().getBrand() + ".MaxViewDistance", 32));
     public static final boolean NUMA_ENABLE;
     static {
         final boolean numaScheduling = Boolean.getBoolean(PlatformHooks.get().getBrand() + ".NumaScheduling");
