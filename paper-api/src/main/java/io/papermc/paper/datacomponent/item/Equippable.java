@@ -8,14 +8,12 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the equippable properties of an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#EQUIPPABLE
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Equippable extends BuildableDataComponent<Equippable, Equippable.Builder> {
 

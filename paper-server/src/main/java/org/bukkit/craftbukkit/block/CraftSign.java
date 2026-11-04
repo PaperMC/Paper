@@ -1,11 +1,14 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.event.player.PlayerOpenSignEvent;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Sign;
@@ -18,68 +21,28 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<T> implements Sign {
 
     private @MonotonicNonNull CraftSignSide front;
     private @MonotonicNonNull CraftSignSide back;
 
-    public CraftSign(World world, T blockEntity) {
-        super(world, blockEntity);
+    public CraftSign(final World world, final T blockEntity, final boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
-    protected CraftSign(CraftSign<T> state, Location location) {
+    protected CraftSign(final CraftSign<T> state, final @Nullable Location location) {
         super(state, location);
     }
 
     @Override
-    protected void load(T blockEntity) {
+    protected void load(final T blockEntity) {
         super.load(blockEntity);
-        this.front = new CraftSignSide(blockEntity.getFrontText());
-        this.back = new CraftSignSide(blockEntity.getBackText());
-    }
-
-    // Paper start
-    @Override
-    public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
-        return this.front.lines();
-    }
-
-    @Override
-    public net.kyori.adventure.text.@NotNull Component line(int index) {
-        return this.front.line(index);
-    }
-
-    @Override
-    public void line(int index, net.kyori.adventure.text.@NotNull Component line) {
-        this.front.line(index, line);
-    }
-    // Paper end
-
-    @Override
-    public String[] getLines() {
-        return this.front.getLines();
-    }
-
-    @Override
-    public String getLine(int index) throws IndexOutOfBoundsException {
-        return this.front.getLine(index);
-    }
-
-    @Override
-    public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        this.front.setLine(index, line);
-    }
-
-    @Override
-    public boolean isEditable() {
-        return !this.isWaxed();
-    }
-
-    @Override
-    public void setEditable(boolean editable) {
-        this.setWaxed(!editable);
+        this.front = new CraftSignSide(blockEntity.getText(SignTextSlot.FRONT));
+        this.back = new CraftSignSide(blockEntity.getText(SignTextSlot.BACK));
     }
 
     @Override
@@ -88,41 +51,27 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     @Override
-    public void setWaxed(boolean waxed) {
+    public void setWaxed(final boolean waxed) {
         this.getSnapshot().setWaxed(waxed);
     }
 
     @Override
-    public boolean isGlowingText() {
-        return this.front.isGlowingText();
-    }
-
-    @Override
-    public void setGlowingText(boolean glowing) {
-        this.front.setGlowingText(glowing);
-    }
-
-    @NotNull
-    @Override
-    public SignSide getSide(Side side) {
+    public SignSide getSide(final Side side) {
         Preconditions.checkArgument(side != null, "side == null");
 
-        switch (side) {
-            case FRONT:
-                return this.front;
-            case BACK:
-                return this.back;
-            default:
-                throw new IllegalArgumentException();
-        }
+        return switch (side) {
+            case FRONT -> this.front;
+            case BACK -> this.back;
+            default -> throw new IllegalArgumentException("Unknown side: " + side);
+        };
     }
 
     @Override
-    public SignSide getTargetSide(Player player) {
+    public SignSide getTargetSide(final Player player) {
         this.ensureNoWorldGeneration();
         Preconditions.checkArgument(player != null, "player cannot be null");
 
-        if (this.getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
+        if (this.getSnapshot().getSlotPlayerIsFacing(((CraftPlayer) player).getHandle()) == SignTextSlot.FRONT) {
             return this.front;
         }
 
@@ -130,68 +79,55 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     @Override
-    public Player getAllowedEditor() {
+    public @Nullable Player getAllowedEditor() {
         this.ensureNoWorldGeneration();
 
         // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped BlockEntity
-        UUID id = this.getBlockEntity().getPlayerWhoMayEdit();
+        final UUID id = this.getBlockEntity().getPlayerWhoMayEdit();
         return (id == null) ? null : Bukkit.getPlayer(id);
     }
 
     @Override
-    public DyeColor getColor() {
-        return this.front.getColor();
-    }
-
-    @Override
-    public void setColor(DyeColor color) {
-        this.front.setColor(color);
-    }
-
-    @Override
-    public void applyTo(T blockEntity) {
-        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), true);
-        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), false);
+    public void applyTo(final T blockEntity) {
+        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), SignTextSlot.FRONT);
+        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), SignTextSlot.BACK);
 
         super.applyTo(blockEntity);
     }
 
     @Override
     public CraftSign<T> copy() {
-        return new CraftSign<T>(this, null);
+        return new CraftSign<>(this, null);
     }
 
     @Override
-    public CraftSign<T> copy(Location location) {
-        return new CraftSign<T>(this, location);
+    public CraftSign<T> copy(final Location location) {
+        return new CraftSign<>(this, location);
     }
 
-    public static void openSign(Sign sign, Player player, Side side) {
+    public static void openSign(final Sign sign, final Player player, final Side side) {
         Preconditions.checkArgument(sign != null, "sign == null");
         Preconditions.checkArgument(side != null, "side == null");
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
-        // Paper start - Add PlayerOpenSignEvent
-        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent((Player) player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
+        final PlayerOpenSignEvent event = new PlayerOpenSignEvent(player, sign, side, PlayerOpenSignEvent.Cause.PLUGIN);;
         if (!event.callEvent()) return;
-        if (PlayerSignOpenEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            // Paper end - Add PlayerOpenSignEvent
-        if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
-            return;
+        if (PlayerSignOpenEvent.getHandlerList().hasListeners()) {
+            if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
+                return;
+            }
         }
-        } // Paper - Add PlayerOpenSignEvent
 
-        SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
+        final SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
         blockEntity.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, Side.FRONT == side);
+        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, CraftSignSide.toVanilla(side));
     }
 
-    // Paper start
-    public static Component[] sanitizeLines(java.util.List<? extends net.kyori.adventure.text.Component> lines) {
-        Component[] components = new Component[4];
-        for (int i = 0; i < 4; i++) {
+    public static Component[] sanitizeLines(final List<? extends net.kyori.adventure.text.Component> lines) {
+        Component[] components = new Component[SignText.LINES];
+        for (int i = 0; i < SignText.LINES; i++) {
             if (i < lines.size() && lines.get(i) != null) {
                 components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
             } else {
@@ -200,17 +136,15 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         }
         return components;
     }
-    // Paper end
 
-    // Paper start - More Sign Block API
     @Override
-    public java.util.UUID getAllowedEditorUniqueId() {
+    public @Nullable UUID getAllowedEditorUniqueId() {
         this.ensureNoWorldGeneration();
         return this.getBlockEntity().getPlayerWhoMayEdit();
     }
 
     @Override
-    public void setAllowedEditorUniqueId(java.util.UUID uuid) {
+    public void setAllowedEditorUniqueId(final @Nullable UUID uuid) {
         this.ensureNoWorldGeneration();
         this.getBlockEntity().setAllowedPlayerEditor(uuid);
     }
@@ -218,14 +152,23 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public Side getInteractableSideFor(final double x, final double z) {
         this.requirePlaced();
-        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
+        return CraftSignSide.fromVanilla(this.getSnapshot().getSlotPlayerIsFacing(x, z));
     }
-    // Paper end - More Sign Block API
 
-    public static Component[] sanitizeLines(String[] lines) {
-        Component[] components = new Component[4];
+    @Override
+    public void setOperatorFeaturesAllowed(final boolean allowed) {
+        this.getSnapshot().allowOpFeatures = allowed;
+    }
 
-        for (int i = 0; i < 4; i++) {
+    @Override
+    public boolean isOperatorFeaturesAllowed() {
+        return this.getSnapshot().allowOpFeatures;
+    }
+
+    public static Component[] sanitizeLines(final String[] lines) {
+        final Component[] components = new Component[SignText.LINES];
+
+        for (int i = 0; i < SignText.LINES; i++) {
             if (i < lines.length && lines[i] != null) {
                 components[i] = CraftChatMessage.fromString(lines[i])[0];
             } else {
@@ -236,15 +179,15 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         return components;
     }
 
-    public static String[] revertComponents(Component[] components) {
-        String[] lines = new String[components.length];
+    public static String[] revertComponents(final Component[] components) {
+        final String[] lines = new String[components.length];
         for (int i = 0; i < lines.length; i++) {
             lines[i] = CraftSign.revertComponent(components[i]);
         }
         return lines;
     }
 
-    private static String revertComponent(Component component) {
+    private static String revertComponent(final Component component) {
         return CraftChatMessage.fromComponent(component);
     }
 }

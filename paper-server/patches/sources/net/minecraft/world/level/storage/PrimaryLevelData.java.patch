@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/PrimaryLevelData.java
 +++ b/net/minecraft/world/level/storage/PrimaryLevelData.java
-@@ -35,6 +_,8 @@
+@@ -37,6 +_,8 @@
      private final PrimaryLevelData.SpecialWorldProperty specialWorldProperty;
      private final Lifecycle worldGenSettingsLifecycle;
      private LevelData.RespawnData respawnData;
@@ -9,7 +9,7 @@
      private long gameTime;
      private final @Nullable UUID singlePlayerUUID;
      private final int version;
-@@ -93,7 +_,7 @@
+@@ -99,7 +_,7 @@
      ) {
          long gameTime = input.get("Time").asLong(0L);
          LevelVersion levelVersion = LevelVersion.parse(input);
@@ -18,9 +18,9 @@
              input.get("singleplayer_uuid").flatMap(UUIDUtil.CODEC::parse).result().orElse(null),
              input.get("WasModded").asBoolean(false),
              input.get("spawn").read(LevelData.RespawnData.CODEC).result().orElse(LevelData.RespawnData.DEFAULT),
-@@ -106,6 +_,13 @@
-             specialWorldProperty,
-             worldGenSettingsLifecycle
+@@ -113,6 +_,13 @@
+             worldGenSettingsLifecycle,
+             input.get("version_history").orElseEmptyList().asList(d -> d.asInt(-1))
          );
 +        // Paper start
 +        data.respawnDimension = input.get(PAPER_RESPAWN_DIMENSION)
@@ -32,9 +32,9 @@
      }
  
      @Override
-@@ -128,20 +_,22 @@
- 
+@@ -136,20 +_,22 @@
          writeVersionTag(tag);
+         this.writeVersionHistory(tag);
          NbtUtils.addCurrentDataVersion(tag);
 -        tag.putInt("GameType", this.settings.gameType().getId());
 -        tag.store("spawn", LevelData.RespawnData.CODEC, this.respawnData);
@@ -60,7 +60,7 @@
      }
  
      public static void writeLastPlayed(final CompoundTag tag) {
-@@ -327,6 +_,14 @@
+@@ -346,6 +_,14 @@
      public LevelSettings getLevelSettings() {
          return this.settings.copy();
      }

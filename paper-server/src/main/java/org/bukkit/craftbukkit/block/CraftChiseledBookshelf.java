@@ -11,8 +11,8 @@ import org.bukkit.util.Vector;
 
 public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookShelfBlockEntity> implements ChiseledBookshelf, CraftSelectable<ChiseledBookShelfBlock> {
 
-    public CraftChiseledBookshelf(World world, ChiseledBookShelfBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftChiseledBookshelf(World world, ChiseledBookShelfBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftChiseledBookshelf(CraftChiseledBookshelf state, Location location) {

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated use {@link org.bukkit.event.inventory.PrepareGrindstoneEvent}
  */
 @Deprecated(since = "1.16.1")
-@Warning
+@Warning(propagate = false)
 public class PrepareGrindstoneEvent extends PrepareResultEvent {
 
     @ApiStatus.Internal

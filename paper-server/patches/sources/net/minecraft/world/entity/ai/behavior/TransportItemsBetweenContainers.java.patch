@@ -12,3 +12,37 @@
          return isValidTarget ? transportItemTarget : null;
      }
  
+@@ -377,8 +_,17 @@
+     }
+ 
+     private boolean targetHasNotChanged(final Level level, final TransportItemsBetweenContainers.TransportItemTarget target) {
+-        return target.blockEntity.equals(level.getBlockEntity(target.pos));
+-    }
++        // Paper start
++        return target.blockEntity.equals(level.getBlockEntity(target.pos)) && !isContainerRemoved(target.container);
++    }
++
++    private static boolean isContainerRemoved(final Container container) {
++        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++            return isContainerRemoved(compoundContainer.container1) || isContainerRemoved(compoundContainer.container2);
++        }
++        return container instanceof BlockEntity blockEntity && blockEntity.isRemoved();
++    }
++    // Paper end
+ 
+     private Stream<TransportItemsBetweenContainers.TransportItemTarget> getConnectedTargets(
+         final TransportItemsBetweenContainers.TransportItemTarget target, final Level level
+@@ -505,6 +_,13 @@
+     }
+ 
+     private static boolean matchesLeavingItemsRequirement(final PathfinderMob body, final Container container) {
++        // Paper start - Add event for container assessment
++        final io.papermc.paper.event.entity.ItemTransportingEntitySortEvent sortEvent = org.bukkit.craftbukkit.event.CraftEventFactory.createItemTransportingEntitySortEvent(body, container);
++        sortEvent.callEvent();
++        if (sortEvent.getResult() != org.bukkit.event.Event.Result.DEFAULT) {
++            return sortEvent.getResult() == org.bukkit.event.Event.Result.ALLOW;
++        }
++        // Paper end - Add event for container assessment
+         return container.isEmpty() || hasItemMatchingHandItem(body, container);
+     }
+ 

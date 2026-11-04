@@ -7,8 +7,8 @@ import org.bukkit.block.DaylightDetector;
 
 public class CraftDaylightDetector extends CraftBlockEntityState<DaylightDetectorBlockEntity> implements DaylightDetector {
 
-    public CraftDaylightDetector(World world, DaylightDetectorBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftDaylightDetector(World world, DaylightDetectorBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftDaylightDetector(CraftDaylightDetector state, Location location) {

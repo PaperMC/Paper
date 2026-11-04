@@ -5,6 +5,7 @@ import com.google.common.net.InetAddresses;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
+import io.netty.buffer.ByteBuf;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import java.net.InetAddress;
 import java.security.InvalidKeyException;
@@ -14,7 +15,6 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.login.custom.CustomQueryPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.ProfilePublicKey;
 
@@ -79,8 +79,8 @@ public class VelocityProxy {
         return new PropertyMap(propertiesMap);
     }
 
-    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
-        return new ProfilePublicKey.Data(buf);
+    public static ProfilePublicKey.Data readForwardedKey(ByteBuf buf) {
+        return ProfilePublicKey.Data.STREAM_CODEC.decode(buf);
     }
 
     public static UUID readSignerUuidOrElse(FriendlyByteBuf buf, UUID orElse) {

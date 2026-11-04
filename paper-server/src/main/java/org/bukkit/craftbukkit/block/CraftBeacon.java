@@ -25,8 +25,8 @@ import org.bukkit.potion.PotionEffectType;
 
 public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implements Beacon {
 
-    public CraftBeacon(World world, BeaconBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftBeacon(World world, BeaconBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftBeacon(CraftBeacon state, Location location) {

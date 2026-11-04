@@ -1,0 +1,24 @@
+name: Test Results
+
+on:
+  workflow_run:
+    workflows: [ "Build Paper" ]
+    types:
+      - completed
+
+permissions:
+  actions: read
+  checks: write
+
+jobs:
+  test-results:
+    name: Test Results
+    if: github.event.workflow_run.conclusion != 'skipped'
+    runs-on: namespace-profile-linux-small
+    steps:
+      - uses: papermc/ci/publish-test-results@main
+        with:
+          event: ${{ github.event.workflow_run.event }}
+          commit: ${{ github.event.workflow_run.head_sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run_id: ${{ github.event.workflow_run.id }}

@@ -26,6 +26,34 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class PotionTypeTagKeys {
     /**
+     * {@code #minecraft:douses_fire}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<PotionType> DOUSES_FIRE = create(key("douses_fire"));
+
+    /**
+     * {@code #minecraft:extinguishes_entities}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<PotionType> EXTINGUISHES_ENTITIES = create(key("extinguishes_entities"));
+
+    /**
+     * {@code #minecraft:hurts_water_sensitive_entities}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<PotionType> HURTS_WATER_SENSITIVE_ENTITIES = create(key("hurts_water_sensitive_entities"));
+
+    /**
+     * {@code #minecraft:rehydrates_axolotls}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<PotionType> REHYDRATES_AXOLOTLS = create(key("rehydrates_axolotls"));
+
+    /**
      * {@code #minecraft:tradeable}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

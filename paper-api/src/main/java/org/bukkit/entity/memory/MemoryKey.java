@@ -85,8 +85,6 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Boolean> IS_PANICKING = new MemoryKey<>(NamespacedKey.minecraft("is_panicking"), Boolean.class);
 
-    public static final MemoryKey<Boolean> IS_TEMPTED = new MemoryKey<>(NamespacedKey.minecraft("is_tempted"), Boolean.class);
-
     public static final MemoryKey<Integer> ITEM_PICKUP_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("item_pickup_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Location> JOB_SITE = new MemoryKey<>(NamespacedKey.minecraft("job_site"), Location.class);

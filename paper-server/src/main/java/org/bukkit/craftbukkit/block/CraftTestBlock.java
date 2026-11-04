@@ -7,8 +7,8 @@ import org.bukkit.block.TestBlock;
 
 public class CraftTestBlock extends CraftBlockEntityState<TestBlockEntity> implements TestBlock {
 
-    public CraftTestBlock(World world, TestBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftTestBlock(World world, TestBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftTestBlock(CraftTestBlock state, Location location) {

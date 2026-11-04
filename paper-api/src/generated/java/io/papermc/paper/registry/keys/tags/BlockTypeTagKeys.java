@@ -208,6 +208,55 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> BIRCH_LOGS = create(key("birch_logs"));
 
     /**
+     * {@code #minecraft:blocks_dolphin_jump}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_DOLPHIN_JUMP = create(key("blocks_dolphin_jump"));
+
+    /**
+     * {@code #minecraft:blocks_fluid_flow}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_FLUID_FLOW = create(key("blocks_fluid_flow"));
+
+    /**
+     * {@code #minecraft:blocks_lava_fire_spread}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_LAVA_FIRE_SPREAD = create(key("blocks_lava_fire_spread"));
+
+    /**
+     * {@code #minecraft:blocks_motion}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_MOTION = create(key("blocks_motion"));
+
+    /**
+     * {@code #minecraft:blocks_motion_in_heightmap}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_MOTION_IN_HEIGHTMAP = create(key("blocks_motion_in_heightmap"));
+
+    /**
+     * {@code #minecraft:blocks_motion_in_heightmap_no_leaves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_MOTION_IN_HEIGHTMAP_NO_LEAVES = create(key("blocks_motion_in_heightmap_no_leaves"));
+
+    /**
+     * {@code #minecraft:blocks_motion_no_leaves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BLOCKS_MOTION_NO_LEAVES = create(key("blocks_motion_no_leaves"));
+
+    /**
      * {@code #minecraft:blocks_wind_charge_explosions}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -264,6 +313,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CANDLES = create(key("candles"));
 
     /**
+     * {@code #minecraft:cannot_place_basalt_pillar_on}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CANNOT_PLACE_BASALT_PILLAR_ON = create(key("cannot_place_basalt_pillar_on"));
+
+    /**
      * {@code #minecraft:cannot_replace_below_tree_trunk}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -292,6 +348,27 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CANNOT_SUPPORT_SNOW_LAYER = create(key("cannot_support_snow_layer"));
 
     /**
+     * {@code #minecraft:cat_does_not_teleport_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAT_DOES_NOT_TELEPORT_TO = create(key("cat_does_not_teleport_to"));
+
+    /**
+     * {@code #minecraft:cats_can_lie_on}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CATS_CAN_LIE_ON = create(key("cats_can_lie_on"));
+
+    /**
+     * {@code #minecraft:cats_can_sit_on}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CATS_CAN_SIT_ON = create(key("cats_can_sit_on"));
+
+    /**
      * {@code #minecraft:cauldrons}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -311,6 +388,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> CAUSES_PERIODIC_GEYSER_ERUPTIONS = create(key("causes_periodic_geyser_eruptions"));
+
+    /**
+     * {@code #minecraft:causes_suffocation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAUSES_SUFFOCATION = create(key("causes_suffocation"));
 
     /**
      * {@code #minecraft:cave_vines}
@@ -383,11 +467,32 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CONCRETE_POWDERS = create(key("concrete_powders"));
 
     /**
-     * {@code #minecraft:convertable_to_mud}
+     * {@code #minecraft:concrete_slabs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<BlockType> CONVERTABLE_TO_MUD = create(key("convertable_to_mud"));
+    public static final TagKey<BlockType> CONCRETE_SLABS = create(key("concrete_slabs"));
+
+    /**
+     * {@code #minecraft:concrete_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CONCRETE_STAIRS = create(key("concrete_stairs"));
+
+    /**
+     * {@code #minecraft:conduit_effect_block}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CONDUIT_EFFECT_BLOCK = create(key("conduit_effect_block"));
+
+    /**
+     * {@code #minecraft:convertible_to_mud}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CONVERTIBLE_TO_MUD = create(key("convertible_to_mud"));
 
     /**
      * {@code #minecraft:copper}
@@ -460,11 +565,25 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CRYSTAL_SOUND_BLOCKS = create(key("crystal_sound_blocks"));
 
     /**
+     * {@code #minecraft:cushion_uses_collision_shape}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CUSHION_USES_COLLISION_SHAPE = create(key("cushion_uses_collision_shape"));
+
+    /**
      * {@code #minecraft:dampens_vibrations}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> DAMPENS_VIBRATIONS = create(key("dampens_vibrations"));
+
+    /**
+     * {@code #minecraft:dangerous_for_teleportation}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> DANGEROUS_FOR_TELEPORTATION = create(key("dangerous_for_teleportation"));
 
     /**
      * {@code #minecraft:dark_oak_logs}
@@ -579,11 +698,25 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> ENCHANTMENT_POWER_TRANSMITTER = create(key("enchantment_power_transmitter"));
 
     /**
+     * {@code #minecraft:enderman_does_not_teleport_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> ENDERMAN_DOES_NOT_TELEPORT_TO = create(key("enderman_does_not_teleport_to"));
+
+    /**
      * {@code #minecraft:enderman_holdable}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> ENDERMAN_HOLDABLE = create(key("enderman_holdable"));
+
+    /**
+     * {@code #minecraft:entities_can_teleport_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> ENTITIES_CAN_TELEPORT_TO = create(key("entities_can_teleport_to"));
 
     /**
      * {@code #minecraft:fall_damage_resetting}
@@ -726,6 +859,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> HAPPY_GHAST_AVOIDS = create(key("happy_ghast_avoids"));
 
     /**
+     * {@code #minecraft:height_specific_ore_replaceables}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> HEIGHT_SPECIFIC_ORE_REPLACEABLES = create(key("height_specific_ore_replaceables"));
+
+    /**
      * {@code #minecraft:hoglin_repellents}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -752,6 +892,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> ICE = create(key("ice"));
+
+    /**
+     * {@code #minecraft:ice_melts_when_destroyed_above}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> ICE_MELTS_WHEN_DESTROYED_ABOVE = create(key("ice_melts_when_destroyed_above"));
 
     /**
      * {@code #minecraft:ice_spike_replaceable}
@@ -1034,11 +1181,11 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> NEEDS_STONE_TOOL = create(key("needs_stone_tool"));
 
     /**
-     * {@code #minecraft:nether_carver_replaceables}
+     * {@code #minecraft:nether_portal_frame}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<BlockType> NETHER_CARVER_REPLACEABLES = create(key("nether_carver_replaceables"));
+    public static final TagKey<BlockType> NETHER_PORTAL_FRAME = create(key("nether_portal_frame"));
 
     /**
      * {@code #minecraft:nylium}
@@ -1062,18 +1209,18 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> OCCLUDES_VIBRATION_SIGNALS = create(key("occludes_vibration_signals"));
 
     /**
+     * {@code #minecraft:ores}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> ORES = create(key("ores"));
+
+    /**
      * {@code #minecraft:overrides_mushroom_light_requirement}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT = create(key("overrides_mushroom_light_requirement"));
-
-    /**
-     * {@code #minecraft:overworld_carver_replaceables}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> OVERWORLD_CARVER_REPLACEABLES = create(key("overworld_carver_replaceables"));
 
     /**
      * {@code #minecraft:overworld_natural_logs}
@@ -1123,6 +1270,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> POLAR_BEARS_SPAWNABLE_ON_ALTERNATE = create(key("polar_bears_spawnable_on_alternate"));
+
+    /**
+     * {@code #minecraft:poplar_logs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> POPLAR_LOGS = create(key("poplar_logs"));
 
     /**
      * {@code #minecraft:portals}
@@ -1195,6 +1349,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> REPLACEABLE_BY_TREES = create(key("replaceable_by_trees"));
 
     /**
+     * {@code #minecraft:required_for_poplar_leaf_ambience}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> REQUIRED_FOR_POPLAR_LEAF_AMBIENCE = create(key("required_for_poplar_leaf_ambience"));
+
+    /**
      * {@code #minecraft:sand}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1207,6 +1368,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SAPLINGS = create(key("saplings"));
+
+    /**
+     * {@code #minecraft:sculk_growth_inhibitors}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SCULK_GROWTH_INHIBITORS = create(key("sculk_growth_inhibitors"));
 
     /**
      * {@code #minecraft:sculk_replaceable}
@@ -1251,11 +1419,25 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> SHULKER_BOXES = create(key("shulker_boxes"));
 
     /**
+     * {@code #minecraft:shulker_does_not_teleport_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SHULKER_DOES_NOT_TELEPORT_TO = create(key("shulker_does_not_teleport_to"));
+
+    /**
      * {@code #minecraft:signs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SIGNS = create(key("signs"));
+
+    /**
+     * {@code #minecraft:skulls}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SKULLS = create(key("skulls"));
 
     /**
      * {@code #minecraft:slabs}
@@ -1326,6 +1508,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SOUL_SPEED_BLOCKS = create(key("soul_speed_blocks"));
+
+    /**
+     * {@code #minecraft:speeds_up_zombie_villager_curing}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SPEEDS_UP_ZOMBIE_VILLAGER_CURING = create(key("speeds_up_zombie_villager_curing"));
 
     /**
      * {@code #minecraft:speleothems}
@@ -1699,6 +1888,27 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> TRIGGERS_AMBIENT_DRIED_GHAST_BLOCK_SOUNDS = create(key("triggers_ambient_dried_ghast_block_sounds"));
 
     /**
+     * {@code #minecraft:turns_into_dirt_path}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TURNS_INTO_DIRT_PATH = create(key("turns_into_dirt_path"));
+
+    /**
+     * {@code #minecraft:turns_into_farmland}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TURNS_INTO_FARMLAND = create(key("turns_into_farmland"));
+
+    /**
+     * {@code #minecraft:uncarvable}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> UNCARVABLE = create(key("uncarvable"));
+
+    /**
      * {@code #minecraft:underwater_bonemeals}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1725,6 +1935,20 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> VIBRATION_RESONATORS = create(key("vibration_resonators"));
+
+    /**
+     * {@code #minecraft:villager_babies_can_jump_on_bed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> VILLAGER_BABIES_CAN_JUMP_ON_BED = create(key("villager_babies_can_jump_on_bed"));
+
+    /**
+     * {@code #minecraft:villagers_can_sleep_on_bed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> VILLAGERS_CAN_SLEEP_ON_BED = create(key("villagers_can_sleep_on_bed"));
 
     /**
      * {@code #minecraft:wall_corals}
@@ -1774,6 +1998,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> WART_BLOCKS = create(key("wart_blocks"));
+
+    /**
+     * {@code #minecraft:washed_away_by_fluids}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WASHED_AWAY_BY_FLUIDS = create(key("washed_away_by_fluids"));
 
     /**
      * {@code #minecraft:wither_immune}
@@ -1879,6 +2110,20 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> WOOL_CARPETS = create(key("wool_carpets"));
+
+    /**
+     * {@code #minecraft:wool_slabs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WOOL_SLABS = create(key("wool_slabs"));
+
+    /**
+     * {@code #minecraft:wool_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WOOL_STAIRS = create(key("wool_stairs"));
 
     private BlockTypeTagKeys() {
     }
