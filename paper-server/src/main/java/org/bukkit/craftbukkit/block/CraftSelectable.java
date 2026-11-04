@@ -20,7 +20,7 @@ public interface CraftSelectable<T extends BaseEntityBlock & SelectableSlotConta
     default int getSlot(final Vector clickVector) {
         Preconditions.checkArgument(clickVector != null, "clickVector cannot be null");
         clickVector.checkFinite();
-        Preconditions.checkState(this.getBlockEntity().isValidBlockState(this.getHandle()), "Block data is no longer valid to call this method!");
+        Preconditions.checkState(this.getBlockEntity().isValidBlockState(this.getHandle()), "Block state is no longer valid for this block entity!");
 
         final Direction facing = this.getHandle().getValue(BlockStateProperties.HORIZONTAL_FACING);
         final Vec2 hitCoords = switch (facing) {
