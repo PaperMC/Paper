@@ -37,7 +37,8 @@ record RegistryKeySetImpl<T extends Keyed>(RegistryKey<T> registryKey, List<Type
     }
 
     @Override
-    public Collection<T> resolve(final Registry<T> registry) {
+    public Collection<T> resolve() {
+        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(this.registryKey);
         final List<T> values = new ArrayList<>(this.values.size());
         for (final TypedKey<T> key : this.values) {
             final T value = registry.get(key.key());

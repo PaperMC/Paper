@@ -31,11 +31,11 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 @NullMarked
-public class GeneratedTagKeyType extends SimpleGenerator {
+public class GeneratedTagKeyType<T> extends SimpleGenerator {
 
-    private final RegistryEntry<?> entry;
+    private final RegistryEntry<T> entry;
 
-    public GeneratedTagKeyType(RegistryEntry<?> entry, String packageName) {
+    public GeneratedTagKeyType(RegistryEntry<T> entry, String packageName) {
         super(entry.keyClassName().concat("TagKeys"), packageName);
         this.entry = entry;
     }
