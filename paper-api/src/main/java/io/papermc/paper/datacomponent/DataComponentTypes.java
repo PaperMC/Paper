@@ -49,6 +49,7 @@ import io.papermc.paper.datacomponent.item.VillagerFood;
 import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
 import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
@@ -215,6 +216,10 @@ public final class DataComponentTypes {
      * Controls the behavior of the item as a tool.
      */
     public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
+    /**
+     * Controls how an item transforms blocks when used on them.
+     */
+    public static final DataComponentType.Valued<BlockTransformer> BLOCK_TRANSFORMER = valued("block_transformer");
     public static final DataComponentType.Valued<Weapon> WEAPON = valued("weapon");
     public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
     public static final DataComponentType.Valued<Enchantable> ENCHANTABLE = valued("enchantable");

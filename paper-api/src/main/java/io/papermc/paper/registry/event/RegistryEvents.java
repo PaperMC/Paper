@@ -1,9 +1,11 @@
 package io.papermc.paper.registry.event;
 
 import io.papermc.paper.block.pot.PotPatternType;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.BlockTransformerRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
@@ -68,6 +70,7 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<ZombieNautilus.Variant, ZombieNautilusVariantRegistryEntry.Builder> ZOMBIE_NAUTILUS_VARIANT = create(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
     public static final RegistryEventProvider<SulfurCube.Archetype, SulfurCubeArchetypeRegistryEntry.Builder> SULFUR_CUBE_ARCHETYPE = create(RegistryKey.SULFUR_CUBE_ARCHETYPE);
     public static final RegistryEventProvider<Dialog, DialogRegistryEntry.Builder> DIALOG = create(RegistryKey.DIALOG);
+    public static final RegistryEventProvider<BlockTransformer, BlockTransformerRegistryEntry.Builder> BLOCK_TRANSFORMER = create(RegistryKey.BLOCK_TRANSFORMER);
     // End generate - RegistryEvents
 
     private RegistryEvents() {

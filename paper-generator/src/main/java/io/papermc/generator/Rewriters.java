@@ -24,6 +24,10 @@ import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewrit
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformers;
+import io.papermc.paper.datacomponent.item.blocktransformer.DropStrategy;
+import io.papermc.paper.datacomponent.item.blocktransformer.TransformParticle;
+import io.papermc.paper.datacomponent.item.blocktransformer.TransformType;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.RemovalReason;
@@ -180,6 +184,9 @@ public final class Rewriters {
                     );
                 }
             })
+            .register("DropStrategy", DropStrategy.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.DropStrategy.class))
+            .register("TransformParticle", TransformParticle.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.TransformParticle.class))
+            .register("TransformType", TransformType.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.TransformType.class))
             .register(Material.class, composite(
                 holder("Blocks", new MaterialRewriter.Blocks()),
                 //holder("Material#isTransparent", MaterialRewriter.IsTransparent()),
@@ -249,7 +256,8 @@ public final class Rewriters {
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
-            .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());
+            .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter())
+            .register("BlockTransformer", BlockTransformers.class, new RegistryFieldRewriter<>(Registries.BLOCK_TRANSFORMER, "getBlockTransformer"));
         RegistryBootstrapper.bootstrapApi(sourceSet);
     }
 
