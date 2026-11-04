@@ -1,4 +1,4 @@
-package io.papermc.paper.configuration.type;
+package io.papermc.paper.configuration.type.time;
 
 import java.lang.reflect.Type;
 import java.util.Optional;

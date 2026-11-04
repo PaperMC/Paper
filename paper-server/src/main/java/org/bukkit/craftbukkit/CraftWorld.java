@@ -17,6 +17,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.chunk.ChunkGenerationState;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -425,6 +427,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return false;
         }).join();
         // Paper end - Fix this method
+    }
+
+    @Override
+    public ChunkGenerationState getChunkGenerationState(final int x, final int z) {
+        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
+        return FeatureHooks.getChunkGenerationState(this.world, x, z);
+    }
+
+    @Override
+    public CompletableFuture<ChunkGenerationState> getChunkGenerationStateAsync(final int x, final int z) {
+        warnUnsafeChunk("checking the generation state of a faraway chunk", x, z);
+        return FeatureHooks.getChunkGenerationStateAsync(this.world, x, z);
     }
 
     @Override

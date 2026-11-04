@@ -1426,7 +1426,7 @@
                      String message = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -2077,10 +_,52 @@
+@@ -2077,10 +_,51 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1448,18 +1448,17 @@
          @Override
          public void onTrackingEnd(final Entity entity) {
 +            org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
-+            // Spigot start // TODO I don't think this is needed anymore
++            // Spigot start
 +            if (entity instanceof Player player) {
-+                for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
-+                    for (final Optional<net.minecraft.world.level.saveddata.SavedData> savedData : level.getDataStorage().cache.values()) {
-+                        if (savedData.isEmpty() || !(savedData.get() instanceof MapItemSavedData map)) {
-+                            continue;
-+                        }
++                SavedDataStorage storage = getServer().getDataStorage();
++                for (final Optional<net.minecraft.world.level.saveddata.SavedData> savedData : storage.cache.values()) {
++                    if (savedData.isEmpty() || !(savedData.get() instanceof MapItemSavedData map)) {
++                        continue;
++                    }
 +
-+                        map.carriedByPlayers.remove(player);
-+                        if (map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player)) {
-+                            map.decorations.remove(player.getName().getString());
-+                        }
++                    net.minecraft.world.level.saveddata.maps.MapItemSavedData.HoldingPlayer holder = map.carriedByPlayers.remove(player);
++                    if (holder != null && map.carriedBy.remove(holder)) {
++                        map.decorations.remove(player.getName().getString());
 +                    }
 +                }
 +            }

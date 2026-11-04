@@ -16,6 +16,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
+import org.spigotmc.AsyncCatcher;
 
 @DefaultQualifier(NonNull.class)
 public class PaperPotionBrewer implements PotionBrewer {
@@ -48,6 +49,7 @@ public class PaperPotionBrewer implements PotionBrewer {
 
     @Override
     public void resetPotionMixes() {
+        AsyncCatcher.catchOp("Resetting potion mixes");
         final RecipeManager recipeManager = this.server.getRecipeManager();
         final RegistryAccess registryAccess = this.server.registryAccess();
 

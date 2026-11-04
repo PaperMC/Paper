@@ -218,6 +218,7 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         @PostProcess
         private void postProcess() {
+            ca.spottedleaf.moonrise.common.util.FMA.init();
             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
         }
     }
