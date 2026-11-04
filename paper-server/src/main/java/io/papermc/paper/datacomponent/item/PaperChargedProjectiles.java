@@ -32,23 +32,23 @@ public record PaperChargedProjectiles(
         private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 
         @Override
-        public ChargedProjectiles.Builder add(final ItemStack item) {
-            Preconditions.checkArgument(item != null, "item cannot be null");
-            Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty");
-            this.items.add(CraftItemStack.asNMSCopy(item));
+        public ChargedProjectiles.Builder add(final ItemStack projectile) {
+            Preconditions.checkArgument(projectile != null, "projectile cannot be null");
+            Preconditions.checkArgument(!projectile.isEmpty(), "projectile cannot be empty");
+            this.items.add(CraftItemStack.asNMSCopy(projectile));
             return this;
         }
 
         @Override
-        public ChargedProjectiles.Builder addAll(final List<ItemStack> items) {
-            items.forEach(this::add);
+        public ChargedProjectiles.Builder addAll(final List<ItemStack> projectiles) {
+            projectiles.forEach(this::add);
             return this;
         }
 
         @Override
-        public Builder items(final List<ItemStack> stacks) {
+        public Builder projectiles(final List<ItemStack> projectiles) {
             this.items.clear();
-            stacks.forEach(this::add);
+            projectiles.forEach(this::add);
             return this;
         }
 

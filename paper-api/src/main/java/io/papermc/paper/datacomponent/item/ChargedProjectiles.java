@@ -42,31 +42,31 @@ public interface ChargedProjectiles extends BuildableDataComponent<ChargedProjec
         /**
          * Adds a projectile to be loaded in this builder.
          *
-         * @param item projectile
+         * @param projectile projectile
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder add(ItemStack item);
+        Builder add(ItemStack projectile);
 
         /**
          * Adds projectiles to be loaded in this builder.
          *
-         * @param items projectiles
+         * @param projectiles projectiles
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addAll(List<ItemStack> items);
+        Builder addAll(List<ItemStack> projectiles);
 
         /**
          * Sets the projectiles to be loaded in this builder.
          *
-         * @param items projectiles
+         * @param projectiles projectiles
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder items(List<ItemStack> items);
+        Builder projectiles(List<ItemStack> projectiles);
     }
 }
