@@ -5,6 +5,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
+import io.papermc.paper.item.PaperItemStackTemplate;
 import io.papermc.paper.persistence.PaperPersistentDataContainerView;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import io.papermc.paper.util.MCUtil;
@@ -759,4 +760,9 @@ public final class CraftItemStack extends ItemStack {
     }
 
     // Paper end - data component API
+
+    @Override
+    public io.papermc.paper.item.ItemStackTemplate getAsTemplate() {
+        return PaperItemStackTemplate.fromNMS(ItemStackTemplate.fromNonEmptyStack(this.handle));
+    }
 }

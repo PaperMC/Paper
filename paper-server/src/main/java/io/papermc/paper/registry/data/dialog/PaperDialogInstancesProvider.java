@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data.dialog;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.item.ItemStackTemplate;
 import io.papermc.paper.registry.data.dialog.action.CommandTemplateActionImpl;
 import io.papermc.paper.registry.data.dialog.action.CustomClickActionImpl;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
@@ -40,7 +41,6 @@ import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
-import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 public final class PaperDialogInstancesProvider implements DialogInstancesProvider {
@@ -79,8 +79,8 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     }
 
     @Override
-    public ItemDialogBody.Builder itemDialogBodyBuilder(final ItemStack itemStack) {
-        return new ItemDialogBodyImpl.BuilderImpl(itemStack);
+    public ItemDialogBody.Builder itemDialogBodyBuilder(final ItemStackTemplate template) {
+        return new ItemDialogBodyImpl.BuilderImpl(template);
     }
 
     @Override

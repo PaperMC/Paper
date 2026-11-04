@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import io.papermc.paper.item.PaperItemStackTemplate;
 import io.papermc.paper.registry.HolderableBase;
 import java.util.List;
 import java.util.function.Consumer;
@@ -119,6 +120,16 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
             mirror.editMeta(this.getItemMetaClass(), metaConfigurator);
         }
         return mirror;
+    }
+
+    @Override
+    public io.papermc.paper.item.ItemStackTemplate createItemStackTemplate() {
+        return new PaperItemStackTemplate(this.getHolder(), 1);
+    }
+
+    @Override
+    public io.papermc.paper.item.ItemStackTemplate createItemStackTemplate(final int amount) {
+        return new PaperItemStackTemplate(this.getHolder(), amount);
     }
 
     public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {

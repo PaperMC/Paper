@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.datacomponent.DataComponentHolder;
+import io.papermc.paper.item.ItemStackTemplate;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import java.util.Map;
@@ -1361,4 +1362,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
     }
     // Paper end - data component API
+
+    public ItemStackTemplate getAsTemplate() {
+        return this.craftDelegate.getAsTemplate();
+    }
 }

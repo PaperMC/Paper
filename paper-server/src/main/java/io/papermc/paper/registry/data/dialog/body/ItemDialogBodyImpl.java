@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import io.papermc.paper.item.ItemStackTemplate;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Range;
@@ -8,20 +9,19 @@ import org.jspecify.annotations.Nullable;
 import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record ItemDialogBodyImpl(
-    ItemStack item, @Nullable PlainMessageDialogBody description, boolean showDecorations, boolean showTooltip, int width, int height
+    ItemStackTemplate itemTemplate, @Nullable PlainMessageDialogBody description, boolean showDecorations, boolean showTooltip, int width, int height
 ) implements ItemDialogBody {
 
     public static final class BuilderImpl implements ItemDialogBody.Builder {
 
-        private final ItemStack item;
+        private final ItemStackTemplate item;
         private @Nullable PlainMessageDialogBody description;
         private boolean showDecorations = true;
         private boolean showTooltip = true;
         private int width = 16;
         private int height = 16;
 
-        public BuilderImpl(final ItemStack item) {
-            net.minecraft.world.item.ItemStack.validateStrict(CraftItemStack.unwrap(item)).getOrThrow();
+        public BuilderImpl(final ItemStackTemplate item) {
             this.item = item;
         }
 

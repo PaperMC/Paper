@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import io.papermc.paper.item.ItemStackTemplate;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Server;
@@ -219,6 +220,9 @@ public interface ItemFactory {
      */
     @NotNull
     net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
+
+    @NotNull
+    net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStackTemplate template, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
 
     /**
      * Get the formatted display name of the {@link ItemStack}.

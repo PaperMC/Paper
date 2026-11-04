@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.papermc.paper.item.ItemStackTemplate;
+import io.papermc.paper.item.PaperItemStackTemplate;
 import io.papermc.paper.registry.data.util.Conversions;
 import java.util.Optional;
 import net.minecraft.commands.arguments.item.ItemParser;
@@ -207,6 +209,17 @@ public final class CraftItemFactory implements ItemFactory {
                 item.getType().getKey(),
                 item.getAmount(),
                 io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.unwrap(item).getComponentsPatch())) // unwrap is fine here because the components patch will be safely copied
+        ));
+    }
+
+    @Override
+    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStackTemplate template, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
+        Preconditions.checkArgument(template.count() > 0 && template.count() <= Item.ABSOLUTE_MAX_STACK_SIZE, "ItemStackTemplate amount must be between 1 and %s but was %s", Item.ABSOLUTE_MAX_STACK_SIZE, template.count());
+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
+            net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
+                template.type().getKey(),
+                template.count(),
+                io.papermc.paper.adventure.PaperAdventure.asAdventure(((PaperItemStackTemplate) template).componentPatch()))
         ));
     }
 
