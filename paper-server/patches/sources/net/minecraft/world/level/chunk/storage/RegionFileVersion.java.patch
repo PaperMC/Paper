@@ -9,3 +9,27 @@
      );
      public static final RegionFileVersion VERSION_DEFLATE = register(
          new RegionFileVersion(
+@@ -37,11 +_,20 @@
+             4, "lz4", in -> new FastBufferedInputStream(new LZ4BlockInputStream(in)), out -> new BufferedOutputStream(new LZ4BlockOutputStream(out))
+         )
+     );
+-    public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, in -> {
+-        throw new UnsupportedOperationException();
+-    }, out -> {
++    public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, io.papermc.paper.world.storage.CustomRegionCompression::wrapInput, out -> { // Paper - Custom region compression formats; dispatch custom streams by their identifier
+         throw new UnsupportedOperationException();
+     }));
++    // Paper start - Custom region compression formats
++    // Shares id 127 with VERSION_CUSTOM (so it is only registered by name): the stream starts with the "paper:zstd" identifier.
++    public static final RegionFileVersion VERSION_PAPER_ZSTD = registerByName(
++        new RegionFileVersion(127, "zstd", io.papermc.paper.world.storage.CustomRegionCompression::wrapInput, io.papermc.paper.world.storage.CustomRegionCompression::wrapZstdOutput)
++    );
++
++    private static RegionFileVersion registerByName(final RegionFileVersion version) {
++        VERSIONS_BY_NAME.put(java.util.Objects.requireNonNull(version.optionName), version);
++        return version;
++    }
++    // Paper end - Custom region compression formats
+     public static final RegionFileVersion DEFAULT = VERSION_DEFLATE;
+     private static volatile RegionFileVersion selected = DEFAULT;
+     private final int id;

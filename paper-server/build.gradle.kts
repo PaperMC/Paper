@@ -139,6 +139,7 @@ dependencies {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
+    implementation("com.github.luben:zstd-jni:1.5.7-23") // zstd region file compression
     implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
