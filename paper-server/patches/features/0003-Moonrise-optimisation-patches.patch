@@ -300,7 +300,7 @@ index 0000000000000000000000000000000000000000..fff7a796a61542213bdaa417d44e25cd
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index e8043e52b64ed565128bb18240694ad078911eed..26e252d229dd1a63afa70b41299bc92fc367afdf 100644
+index e8043e52b64ed565128bb18240694ad078911eed..26e252d229dd1a63afa70b41299bc92fc367afdf 100755
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -14,6 +14,7 @@ import net.minecraft.server.level.FullChunkStatus;
@@ -338,7 +338,7 @@ index e8043e52b64ed565128bb18240694ad078911eed..26e252d229dd1a63afa70b41299bc92f
      }
  
 diff --git a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
-index 15c181961eb669a0ffde86c256078859f4419f23..4baf46256e90a87d684e57ff623076a8e9395f31 100644
+index 15c181961eb669a0ffde86c256078859f4419f23..4baf46256e90a87d684e57ff623076a8e9395f31 100755
 --- a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
 @@ -1,38 +1,23 @@
@@ -14282,10 +14282,10 @@ index 0000000000000000000000000000000000000000..4538ccfaea83d217ed85eaf16e82393c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7463cf5bf871033a0e5f6d54dd0d427c474d7cd4
+index 0000000000000000000000000000000000000000..3d662d740fee69dbb452564f84b843f2d97abbbb
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java
-@@ -0,0 +1,494 @@
+@@ -0,0 +1,504 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -14627,6 +14627,7 @@ index 0000000000000000000000000000000000000000..7463cf5bf871033a0e5f6d54dd0d427c
 +            }
 +
 +            try {
++                final int storedVersion = data.getIntOr("DataVersion", -1);
 +                // run converters
 +                final CompoundTag converted = this.world.getChunkSource().chunkMap.upgradeChunkTag(data);
 +
@@ -14644,6 +14645,15 @@ index 0000000000000000000000000000000000000000..7463cf5bf871033a0e5f6d54dd0d427c
 +                    this.world, this.world.getPoiManager(), this.world.getChunkSource().chunkMap.storageInfo(),
 +                    new ChunkPos(this.chunkX, this.chunkZ)
 +                );
++
++                // reading the chunk marks it unsaved, even when nothing changed
++                // clear that for up-to-date full chunks so they are not serialised and written again on unload or autosave
++                if (chunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk imposter
++                    && storedVersion == net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version()
++                    && chunkData.lightCorrect() && imposter.getUpgradeData().isEmpty() && imposter.getBlendingData() == null
++                    && chunkData.heightmaps().keySet().containsAll(net.minecraft.world.level.chunk.status.ChunkStatus.FULL.heightmapsAfter())) {
++                    imposter.getWrapped().tryMarkSaved();
++                }
 +
 +                return new TaskResult<>(new ReadChunk(chunk, chunkData), null);
 +            } catch (final Throwable thr2) {
@@ -25124,7 +25134,7 @@ index 0000000000000000000000000000000000000000..29b484232961238a2438b943adfe506a
 +
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index b711c1fba85d866a2cae702e26942744da5d744e..7a04214fcb23ca8cbf9ef7d50cfb28584ac4dc5f 100644
+index b711c1fba85d866a2cae702e26942744da5d744e..7a04214fcb23ca8cbf9ef7d50cfb28584ac4dc5f 100755
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -25890,7 +25900,7 @@ index 0000000000000000000000000000000000000000..8424cf9d4617b4732d44cc460d25b044
 +
 +}
 diff --git a/net/minecraft/core/Direction.java b/net/minecraft/core/Direction.java
-index 40060ac752a0c19a27dfeb48865d6415062b81f6..c0fdc0a577f34159dc7d047790e26a7c0d4a0d79 100644
+index 40060ac752a0c19a27dfeb48865d6415062b81f6..c0fdc0a577f34159dc7d047790e26a7c0d4a0d79 100755
 --- a/net/minecraft/core/Direction.java
 +++ b/net/minecraft/core/Direction.java
 @@ -29,7 +29,7 @@ import org.joml.Vector3f;
@@ -25999,7 +26009,7 @@ index 40060ac752a0c19a27dfeb48865d6415062b81f6..c0fdc0a577f34159dc7d047790e26a7c
 +    // Paper end - optimise collisions
  }
 diff --git a/net/minecraft/core/MappedRegistry.java b/net/minecraft/core/MappedRegistry.java
-index 098af940bf4d626c98f5e64d2aac2d9df0a9e128..6405c8c92795232fd2ac3a4d7e2fb5e460c18d02 100644
+index 098af940bf4d626c98f5e64d2aac2d9df0a9e128..6405c8c92795232fd2ac3a4d7e2fb5e460c18d02 100755
 --- a/net/minecraft/core/MappedRegistry.java
 +++ b/net/minecraft/core/MappedRegistry.java
 @@ -58,6 +58,19 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
@@ -26031,7 +26041,7 @@ index 098af940bf4d626c98f5e64d2aac2d9df0a9e128..6405c8c92795232fd2ac3a4d7e2fb5e4
      }
  
 diff --git a/net/minecraft/nbt/ByteArrayTag.java b/net/minecraft/nbt/ByteArrayTag.java
-index 4fc0cfeabf60d4bd0dcfd9814d13858454bc39da..47fb1762fa95cce3e2024bba6485ff91990e26c8 100644
+index 4fc0cfeabf60d4bd0dcfd9814d13858454bc39da..47fb1762fa95cce3e2024bba6485ff91990e26c8 100755
 --- a/net/minecraft/nbt/ByteArrayTag.java
 +++ b/net/minecraft/nbt/ByteArrayTag.java
 @@ -8,7 +8,29 @@ import java.util.Optional;
@@ -26066,7 +26076,7 @@ index 4fc0cfeabf60d4bd0dcfd9814d13858454bc39da..47fb1762fa95cce3e2024bba6485ff91
          @Override
          public ByteArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/ByteTag.java b/net/minecraft/nbt/ByteTag.java
-index 265ebcb4727e6d27eeb6f0cb3fe454427df10348..86f87b2965da082b2c1f286db83d0d480ca74b16 100644
+index 265ebcb4727e6d27eeb6f0cb3fe454427df10348..86f87b2965da082b2c1f286db83d0d480ca74b16 100755
 --- a/net/minecraft/nbt/ByteTag.java
 +++ b/net/minecraft/nbt/ByteTag.java
 @@ -5,7 +5,27 @@ import java.io.DataOutput;
@@ -26099,7 +26109,7 @@ index 265ebcb4727e6d27eeb6f0cb3fe454427df10348..86f87b2965da082b2c1f286db83d0d48
          @Override
          public ByteTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/CompoundTag.java b/net/minecraft/nbt/CompoundTag.java
-index b9f6aa790159b2df712244c44c55d6393c837d16..f9eb0c985fe67df8acb5a933ed7a66f3af40b5f2 100644
+index b9f6aa790159b2df712244c44c55d6393c837d16..f9eb0c985fe67df8acb5a933ed7a66f3af40b5f2 100755
 --- a/net/minecraft/nbt/CompoundTag.java
 +++ b/net/minecraft/nbt/CompoundTag.java
 @@ -35,7 +35,34 @@ public final class CompoundTag implements Tag {
@@ -26148,7 +26158,7 @@ index b9f6aa790159b2df712244c44c55d6393c837d16..f9eb0c985fe67df8acb5a933ed7a66f3
      }
  
 diff --git a/net/minecraft/nbt/DoubleTag.java b/net/minecraft/nbt/DoubleTag.java
-index 981d3b2ba7b8d3ab6c753c9d9b9ebb987a3ba433..bc74df24fdef6b630d7684c63a0e7c6bf1f391ec 100644
+index 981d3b2ba7b8d3ab6c753c9d9b9ebb987a3ba433..bc74df24fdef6b630d7684c63a0e7c6bf1f391ec 100755
 --- a/net/minecraft/nbt/DoubleTag.java
 +++ b/net/minecraft/nbt/DoubleTag.java
 @@ -6,7 +6,27 @@ import java.io.IOException;
@@ -26181,7 +26191,7 @@ index 981d3b2ba7b8d3ab6c753c9d9b9ebb987a3ba433..bc74df24fdef6b630d7684c63a0e7c6b
      public static final TagType<DoubleTag> TYPE = new TagType.StaticSize<DoubleTag>() {
          @Override
 diff --git a/net/minecraft/nbt/EndTag.java b/net/minecraft/nbt/EndTag.java
-index 49969555a0634b3fc6250931842a22f13c429e10..4b9c859d3de51fea955b9180dd4ebd3f88c0a78f 100644
+index 49969555a0634b3fc6250931842a22f13c429e10..4b9c859d3de51fea955b9180dd4ebd3f88c0a78f 100755
 --- a/net/minecraft/nbt/EndTag.java
 +++ b/net/minecraft/nbt/EndTag.java
 @@ -5,6 +5,21 @@ import java.io.DataOutput;
@@ -26207,7 +26217,7 @@ index 49969555a0634b3fc6250931842a22f13c429e10..4b9c859d3de51fea955b9180dd4ebd3f
      public static final TagType<EndTag> TYPE = new TagType<EndTag>() {
          @Override
 diff --git a/net/minecraft/nbt/FloatTag.java b/net/minecraft/nbt/FloatTag.java
-index a3cf69eaebc067cc19fed940631d8d9fed509ad1..a32ad9a5346119b3719dedf1e25ab1dd9a096f01 100644
+index a3cf69eaebc067cc19fed940631d8d9fed509ad1..a32ad9a5346119b3719dedf1e25ab1dd9a096f01 100755
 --- a/net/minecraft/nbt/FloatTag.java
 +++ b/net/minecraft/nbt/FloatTag.java
 @@ -6,7 +6,27 @@ import java.io.IOException;
@@ -26240,7 +26250,7 @@ index a3cf69eaebc067cc19fed940631d8d9fed509ad1..a32ad9a5346119b3719dedf1e25ab1dd
      public static final TagType<FloatTag> TYPE = new TagType.StaticSize<FloatTag>() {
          @Override
 diff --git a/net/minecraft/nbt/IntArrayTag.java b/net/minecraft/nbt/IntArrayTag.java
-index 8ed91b84eb90cfe31993fa32b35263e7adea918e..ab00ff3a05c2f1430b7b7fb7d7b816cedc2b318d 100644
+index 8ed91b84eb90cfe31993fa32b35263e7adea918e..ab00ff3a05c2f1430b7b7fb7d7b816cedc2b318d 100755
 --- a/net/minecraft/nbt/IntArrayTag.java
 +++ b/net/minecraft/nbt/IntArrayTag.java
 @@ -8,7 +8,29 @@ import java.util.Optional;
@@ -26275,7 +26285,7 @@ index 8ed91b84eb90cfe31993fa32b35263e7adea918e..ab00ff3a05c2f1430b7b7fb7d7b816ce
          @Override
          public IntArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/IntTag.java b/net/minecraft/nbt/IntTag.java
-index 345ac3791ddc86fd003c8280135c2051d6642f6d..31deb91480b81b2aed423144d6f0a4e5e84fa463 100644
+index 345ac3791ddc86fd003c8280135c2051d6642f6d..31deb91480b81b2aed423144d6f0a4e5e84fa463 100755
 --- a/net/minecraft/nbt/IntTag.java
 +++ b/net/minecraft/nbt/IntTag.java
 @@ -5,7 +5,27 @@ import java.io.DataOutput;
@@ -26308,7 +26318,7 @@ index 345ac3791ddc86fd003c8280135c2051d6642f6d..31deb91480b81b2aed423144d6f0a4e5
          @Override
          public IntTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/ListTag.java b/net/minecraft/nbt/ListTag.java
-index 73b50aa596c5ce163d1130d2afac2940aefb95bc..607a1a7f0cd5c42c4ab7fa30a47282b7a9a8a64c 100644
+index 73b50aa596c5ce163d1130d2afac2940aefb95bc..607a1a7f0cd5c42c4ab7fa30a47282b7a9a8a64c 100755
 --- a/net/minecraft/nbt/ListTag.java
 +++ b/net/minecraft/nbt/ListTag.java
 @@ -15,7 +15,74 @@ import org.jspecify.annotations.Nullable;
@@ -26388,7 +26398,7 @@ index 73b50aa596c5ce163d1130d2afac2940aefb95bc..607a1a7f0cd5c42c4ab7fa30a47282b7
          @Override
          public ListTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/LongArrayTag.java b/net/minecraft/nbt/LongArrayTag.java
-index fdc315d7877b3fbd6aa470ab7b17a38dfdeddf22..202ce0d0465517e51207a33b86c24c030bedd64a 100644
+index fdc315d7877b3fbd6aa470ab7b17a38dfdeddf22..202ce0d0465517e51207a33b86c24c030bedd64a 100755
 --- a/net/minecraft/nbt/LongArrayTag.java
 +++ b/net/minecraft/nbt/LongArrayTag.java
 @@ -8,7 +8,29 @@ import java.util.Optional;
@@ -26423,7 +26433,7 @@ index fdc315d7877b3fbd6aa470ab7b17a38dfdeddf22..202ce0d0465517e51207a33b86c24c03
          @Override
          public LongArrayTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/LongTag.java b/net/minecraft/nbt/LongTag.java
-index f157c6de001b4680f12e09bd310f55103f2fa874..9118a43337748ecf7355f63306856531ccf8cfa2 100644
+index f157c6de001b4680f12e09bd310f55103f2fa874..9118a43337748ecf7355f63306856531ccf8cfa2 100755
 --- a/net/minecraft/nbt/LongTag.java
 +++ b/net/minecraft/nbt/LongTag.java
 @@ -5,7 +5,27 @@ import java.io.DataOutput;
@@ -26456,7 +26466,7 @@ index f157c6de001b4680f12e09bd310f55103f2fa874..9118a43337748ecf7355f63306856531
          @Override
          public LongTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/NbtIo.java b/net/minecraft/nbt/NbtIo.java
-index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..a4c411730c605920e79af2b9b9b6482de542caef 100644
+index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..a4c411730c605920e79af2b9b9b6482de542caef 100755
 --- a/net/minecraft/nbt/NbtIo.java
 +++ b/net/minecraft/nbt/NbtIo.java
 @@ -22,6 +22,14 @@ import net.minecraft.util.DelegateDataOutput;
@@ -26617,7 +26627,7 @@ index 5c03b51bcdea77560ac9e4c1791e66cc1e990a95..a4c411730c605920e79af2b9b9b6482d
      public static void writeUnnamedTagWithFallback(final Tag tag, final DataOutput output) throws IOException {
          writeUnnamedTag(tag, new NbtIo.StringFallbackDataOutput(output));
 diff --git a/net/minecraft/nbt/ShortTag.java b/net/minecraft/nbt/ShortTag.java
-index e2bb75b4b6ffdad1f4f9933d11ed5cc01cd09f92..aa7d51539f26507b54fb07529886429d9ccaa36a 100644
+index e2bb75b4b6ffdad1f4f9933d11ed5cc01cd09f92..aa7d51539f26507b54fb07529886429d9ccaa36a 100755
 --- a/net/minecraft/nbt/ShortTag.java
 +++ b/net/minecraft/nbt/ShortTag.java
 @@ -5,7 +5,27 @@ import java.io.DataOutput;
@@ -26650,7 +26660,7 @@ index e2bb75b4b6ffdad1f4f9933d11ed5cc01cd09f92..aa7d51539f26507b54fb07529886429d
          @Override
          public ShortTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/StringTag.java b/net/minecraft/nbt/StringTag.java
-index c4aa87a9ae15e6f169977644e4ccf379e845f32b..78659fb7014a4aa31c5d0e788059f34bc04392ed 100644
+index c4aa87a9ae15e6f169977644e4ccf379e845f32b..78659fb7014a4aa31c5d0e788059f34bc04392ed 100755
 --- a/net/minecraft/nbt/StringTag.java
 +++ b/net/minecraft/nbt/StringTag.java
 @@ -6,7 +6,27 @@ import java.io.IOException;
@@ -26683,7 +26693,7 @@ index c4aa87a9ae15e6f169977644e4ccf379e845f32b..78659fb7014a4aa31c5d0e788059f34b
          @Override
          public StringTag load(final DataInput input, final NbtAccounter accounter) throws IOException {
 diff --git a/net/minecraft/nbt/Tag.java b/net/minecraft/nbt/Tag.java
-index efc744e8b0bd10aec4172d8d903e1695556b41f1..ed127c89667c27c125e33c84b63c6e126c614b98 100644
+index efc744e8b0bd10aec4172d8d903e1695556b41f1..ed127c89667c27c125e33c84b63c6e126c614b98 100755
 --- a/net/minecraft/nbt/Tag.java
 +++ b/net/minecraft/nbt/Tag.java
 @@ -4,7 +4,7 @@ import java.io.DataOutput;
@@ -26696,7 +26706,7 @@ index efc744e8b0bd10aec4172d8d903e1695556b41f1..ed127c89667c27c125e33c84b63c6e12
      int ARRAY_HEADER = 12;
      int OBJECT_REFERENCE = 4;
 diff --git a/net/minecraft/network/FriendlyByteBuf.java b/net/minecraft/network/FriendlyByteBuf.java
-index b63d24683f7b3b1f11e927cf4261ff2d05cdbd38..4f2bd2e89f683bbc148e49cc8262c9b1f4544031 100644
+index b63d24683f7b3b1f11e927cf4261ff2d05cdbd38..4f2bd2e89f683bbc148e49cc8262c9b1f4544031 100755
 --- a/net/minecraft/network/FriendlyByteBuf.java
 +++ b/net/minecraft/network/FriendlyByteBuf.java
 @@ -466,14 +466,81 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -26786,7 +26796,7 @@ index b63d24683f7b3b1f11e927cf4261ff2d05cdbd38..4f2bd2e89f683bbc148e49cc8262c9b1
      public @Nullable Tag readNbt(final NbtAccounter accounter) {
          return readNbt(this, accounter);
 diff --git a/net/minecraft/resources/Identifier.java b/net/minecraft/resources/Identifier.java
-index df28b83ab34b2e44a6ce2dbb903ef94db5496aaa..f961326218d56f1455df8d3b7b6079e2126fb8ed 100644
+index df28b83ab34b2e44a6ce2dbb903ef94db5496aaa..f961326218d56f1455df8d3b7b6079e2126fb8ed 100755
 --- a/net/minecraft/resources/Identifier.java
 +++ b/net/minecraft/resources/Identifier.java
 @@ -15,7 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
@@ -26819,7 +26829,7 @@ index df28b83ab34b2e44a6ce2dbb903ef94db5496aaa..f961326218d56f1455df8d3b7b6079e2
          assert isValidNamespace(namespace);
          assert isValidPath(path);
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 7bc5221da2707b53f0d710f80ea4bfa838195ad4..07ba0aeefec186d7befe60c86dc5180e3131de51 100644
+index 7bc5221da2707b53f0d710f80ea4bfa838195ad4..07ba0aeefec186d7befe60c86dc5180e3131de51 100755
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -187,7 +187,7 @@ import net.minecraft.world.scores.ScoreboardSaveData;
@@ -27074,7 +27084,7 @@ index 7bc5221da2707b53f0d710f80ea4bfa838195ad4..07ba0aeefec186d7befe60c86dc5180e
      // CraftBukkit start
      public boolean isDebugging() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 4f25b583fe53a989a3f02a897cb94fb104902f67..68675926ee85f738b3693a76fc29b80b80c717ed 100644
+index 4f25b583fe53a989a3f02a897cb94fb104902f67..68675926ee85f738b3693a76fc29b80b80c717ed 100755
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -408,9 +408,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -27124,7 +27134,7 @@ index 4f25b583fe53a989a3f02a897cb94fb104902f67..68675926ee85f738b3693a76fc29b80b
      }
  
 diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
-index e3df851be4b31950018406dfa74f06635d636f51..cd5a325d37f617431ceb568a655701601618198f 100644
+index e3df851be4b31950018406dfa74f06635d636f51..cd5a325d37f617431ceb568a655701601618198f 100755
 --- a/net/minecraft/server/level/ChunkHolder.java
 +++ b/net/minecraft/server/level/ChunkHolder.java
 @@ -29,27 +29,112 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -27588,7 +27598,7 @@ index e3df851be4b31950018406dfa74f06635d636f51..cd5a325d37f617431ceb568a65570160
  
      @FunctionalInterface
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f4771d6b142 100644
+index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f4771d6b142 100755
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -124,10 +124,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
@@ -28875,7 +28885,7 @@ index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f47
  
          public void updatePlayers(final List<ServerPlayer> players) {
 diff --git a/net/minecraft/server/level/DistanceManager.java b/net/minecraft/server/level/DistanceManager.java
-index 31badcd3a478f770e1a8d296dbb5d9e4b529ae7d..63cc7970b9df5e84743084ca99650bc3d13b970e 100644
+index 31badcd3a478f770e1a8d296dbb5d9e4b529ae7d..63cc7970b9df5e84743084ca99650bc3d13b970e 100755
 --- a/net/minecraft/server/level/DistanceManager.java
 +++ b/net/minecraft/server/level/DistanceManager.java
 @@ -31,94 +31,79 @@ import net.minecraft.world.level.chunk.LevelChunk;
@@ -29148,7 +29158,7 @@ index 31badcd3a478f770e1a8d296dbb5d9e4b529ae7d..63cc7970b9df5e84743084ca99650bc3
 +    }*/  // Paper - rewrite chunk system
  }
 diff --git a/net/minecraft/server/level/GenerationChunkHolder.java b/net/minecraft/server/level/GenerationChunkHolder.java
-index bd140f2d39307d4f909b11cc78da84e03aa4c3ca..75686eb990d7275b442e16df39b7b2e181c0048f 100644
+index bd140f2d39307d4f909b11cc78da84e03aa4c3ca..75686eb990d7275b442e16df39b7b2e181c0048f 100755
 --- a/net/minecraft/server/level/GenerationChunkHolder.java
 +++ b/net/minecraft/server/level/GenerationChunkHolder.java
 @@ -26,12 +26,7 @@ public abstract class GenerationChunkHolder {
@@ -29474,7 +29484,7 @@ index bd140f2d39307d4f909b11cc78da84e03aa4c3ca..75686eb990d7275b442e16df39b7b2e1
      }
  }
 diff --git a/net/minecraft/server/level/LoadingChunkTracker.java b/net/minecraft/server/level/LoadingChunkTracker.java
-index 1cd13461a4229eae64ea11f7a5711ce044432719..36defbdc77c0d2b04729e9a69241046f575a3209 100644
+index 1cd13461a4229eae64ea11f7a5711ce044432719..36defbdc77c0d2b04729e9a69241046f575a3209 100755
 --- a/net/minecraft/server/level/LoadingChunkTracker.java
 +++ b/net/minecraft/server/level/LoadingChunkTracker.java
 @@ -38,7 +38,7 @@ public class LoadingChunkTracker extends ChunkTracker {
@@ -29487,7 +29497,7 @@ index 1cd13461a4229eae64ea11f7a5711ce044432719..36defbdc77c0d2b04729e9a69241046f
          }
      }
 diff --git a/net/minecraft/server/level/PlayerSpawnFinder.java b/net/minecraft/server/level/PlayerSpawnFinder.java
-index 3e9ed8217b04993b30ee43fea08db30dc980b3cf..f9778d150f9499fac1faa4a53d5d91ee5d64066d 100644
+index 3e9ed8217b04993b30ee43fea08db30dc980b3cf..f9778d150f9499fac1faa4a53d5d91ee5d64066d 100755
 --- a/net/minecraft/server/level/PlayerSpawnFinder.java
 +++ b/net/minecraft/server/level/PlayerSpawnFinder.java
 @@ -128,9 +128,9 @@ public class PlayerSpawnFinder {
@@ -29513,7 +29523,7 @@ index 3e9ed8217b04993b30ee43fea08db30dc980b3cf..f9778d150f9499fac1faa4a53d5d91ee
      }
  
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index d5772303296142bb6497c23806cd1bf27c99fcca..8f2c37a3a534b3b0d4f3ffd2a0d7013a9b454244 100644
+index d5772303296142bb6497c23806cd1bf27c99fcca..8f2c37a3a534b3b0d4f3ffd2a0d7013a9b454244 100755
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -54,7 +54,7 @@ import net.minecraft.world.level.storage.SavedDataStorage;
@@ -30063,7 +30073,7 @@ index d5772303296142bb6497c23806cd1bf27c99fcca..8f2c37a3a534b3b0d4f3ffd2a0d7013a
      }
  }
 diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
-index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b379e2738 100644
+index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b379e2738 100755
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
 @@ -103,6 +103,11 @@ public class ServerEntity {
@@ -30079,7 +30089,7 @@ index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b
          List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 9193fc073a6dbf0f7dcdd2b06ddf59a4e4355428..5090c9780ada3c8a7fd070bc6aec3ff1af034d73 100644
+index 9193fc073a6dbf0f7dcdd2b06ddf59a4e4355428..5090c9780ada3c8a7fd070bc6aec3ff1af034d73 100755
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,7 +183,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -30867,7 +30877,7 @@ index 9193fc073a6dbf0f7dcdd2b06ddf59a4e4355428..5090c9780ada3c8a7fd070bc6aec3ff1
              "Server weather",
              () -> String.format(
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 60ee67ac745ea3e693c2ef6e8a94e74e3f6f0ed9..beb0135d0c292e5b879fac5d55e5889b761d5d0a 100644
+index 60ee67ac745ea3e693c2ef6e8a94e74e3f6f0ed9..beb0135d0c292e5b879fac5d55e5889b761d5d0a 100755
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -210,7 +210,7 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -30926,7 +30936,7 @@ index 60ee67ac745ea3e693c2ef6e8a94e74e3f6f0ed9..beb0135d0c292e5b879fac5d55e5889b
      }
  
 diff --git a/net/minecraft/server/level/ThreadedLevelLightEngine.java b/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 9579dd385417752b07c2ad8d074025f9143bfe85..948a8a2b38d8ba3a2ea61cb2c85c3039bb938f2d 100644
+index 9579dd385417752b07c2ad8d074025f9143bfe85..948a8a2b38d8ba3a2ea61cb2c85c3039bb938f2d 100755
 --- a/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -23,15 +23,144 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -31278,7 +31288,7 @@ index 9579dd385417752b07c2ad8d074025f9143bfe85..948a8a2b38d8ba3a2ea61cb2c85c3039
  
      private enum TaskType {
 diff --git a/net/minecraft/server/level/Ticket.java b/net/minecraft/server/level/Ticket.java
-index 40f97e3657a1672d3865ab915c7f36d3dbf88c6e..b075d7f68a263422cfa1f35b1f896038d3c712dd 100644
+index 40f97e3657a1672d3865ab915c7f36d3dbf88c6e..b075d7f68a263422cfa1f35b1f896038d3c712dd 100755
 --- a/net/minecraft/server/level/Ticket.java
 +++ b/net/minecraft/server/level/Ticket.java
 @@ -7,7 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
@@ -31382,7 +31392,7 @@ index 40f97e3657a1672d3865ab915c7f36d3dbf88c6e..b075d7f68a263422cfa1f35b1f896038
  
      public TicketType getType() {
 diff --git a/net/minecraft/server/level/TicketType.java b/net/minecraft/server/level/TicketType.java
-index 7460b6071a59530719769b6d3ec6736a73b69e95..fed2a68bf1a9e9a169c0235e129346b9b624170b 100644
+index 7460b6071a59530719769b6d3ec6736a73b69e95..fed2a68bf1a9e9a169c0235e129346b9b624170b 100755
 --- a/net/minecraft/server/level/TicketType.java
 +++ b/net/minecraft/server/level/TicketType.java
 @@ -7,7 +7,45 @@ import java.lang.annotation.Target;
@@ -31488,7 +31498,7 @@ index 7460b6071a59530719769b6d3ec6736a73b69e95..fed2a68bf1a9e9a169c0235e129346b9
          return this == PLUGIN ? PLUGIN_TYPE_TIMEOUT : this.timeout;
      }
 diff --git a/net/minecraft/server/level/WorldGenRegion.java b/net/minecraft/server/level/WorldGenRegion.java
-index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f3b53b40df0263656dc195c82265de8374155d2 100644
+index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f3b53b40df0263656dc195c82265de8374155d2 100755
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
 @@ -86,6 +86,36 @@ public class WorldGenRegion implements WorldGenLevel {
@@ -31564,7 +31574,7 @@ index 10b24490c47c86bb59f876a88ce47560cd283d5f..6f3b53b40df0263656dc195c82265de8
  
      @Override
 diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
-index a46b89895a9ce86b6f5fabd373a4e91919d88033..22b10500ef74694243a4fec40822bb54ef96cc0c 100644
+index a46b89895a9ce86b6f5fabd373a4e91919d88033..22b10500ef74694243a4fec40822bb54ef96cc0c 100755
 --- a/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/net/minecraft/server/network/PlayerChunkSender.java
 @@ -78,7 +78,7 @@ public class PlayerChunkSender {
@@ -31577,7 +31587,7 @@ index a46b89895a9ce86b6f5fabd373a4e91919d88033..22b10500ef74694243a4fec40822bb54
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
 diff --git a/net/minecraft/server/network/config/PrepareSpawnTask.java b/net/minecraft/server/network/config/PrepareSpawnTask.java
-index 3271c83bd103bea9b9ffcd6882b52896ea4da770..f6601bc30fa37a309923ea9883b04233f83b2c0b 100644
+index 3271c83bd103bea9b9ffcd6882b52896ea4da770..f6601bc30fa37a309923ea9883b04233f83b2c0b 100755
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java
 +++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
 @@ -165,7 +165,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
@@ -31603,7 +31613,7 @@ index 3271c83bd103bea9b9ffcd6882b52896ea4da770..f6601bc30fa37a309923ea9883b04233
                  PrepareSpawnTask.this.loadListener.updateFocus(this.spawnLevel.dimension(), spawnChunk);
              }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 3798b820166e8b3a8e09e94a8a339c212d6620e0..8957b3957d67ac2b1d2cfadc86ce729a485a68e2 100644
+index 3798b820166e8b3a8e09e94a8a339c212d6620e0..8957b3957d67ac2b1d2cfadc86ce729a485a68e2 100755
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -987,8 +987,8 @@ public abstract class PlayerList {
@@ -31636,7 +31646,7 @@ index 3798b820166e8b3a8e09e94a8a339c212d6620e0..8957b3957d67ac2b1d2cfadc86ce729a
          for (ServerLevel level : this.server.getAllLevels()) {
              level.getChunkSource().setSimulationDistance(simulationDistance);
 diff --git a/net/minecraft/tags/TagKey.java b/net/minecraft/tags/TagKey.java
-index fa1009e4543927d53d28bf21a72cf7fa0bf5e24d..c8f09fc2d2ed990bb6581b678eea52ce9341ee1f 100644
+index fa1009e4543927d53d28bf21a72cf7fa0bf5e24d..c8f09fc2d2ed990bb6581b678eea52ce9341ee1f 100755
 --- a/net/minecraft/tags/TagKey.java
 +++ b/net/minecraft/tags/TagKey.java
 @@ -35,7 +35,7 @@ public record TagKey<T>(ResourceKey<? extends Registry<T>> registry, Identifier
@@ -31670,7 +31680,7 @@ index fa1009e4543927d53d28bf21a72cf7fa0bf5e24d..c8f09fc2d2ed990bb6581b678eea52ce
      public String toString() {
          return "TagKey[" + this.registry.identifier() + " / " + this.location + "]";
 diff --git a/net/minecraft/util/BitStorage.java b/net/minecraft/util/BitStorage.java
-index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..a8205af32cf1f19670b8aa140727528eafb0e940 100644
+index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..a8205af32cf1f19670b8aa140727528eafb0e940 100755
 --- a/net/minecraft/util/BitStorage.java
 +++ b/net/minecraft/util/BitStorage.java
 @@ -2,7 +2,7 @@ package net.minecraft.util;
@@ -31725,7 +31735,7 @@ index f55813d8faa4d36437b5c48a4ba3f9ea28f57509..a8205af32cf1f19670b8aa140727528e
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/util/DelegateDataOutput.java b/net/minecraft/util/DelegateDataOutput.java
-index d3a4b5f3f981a4e5f06a4975fe30e33da2c7c862..7166d7064e7f323d0c7cd52cfa5af4ef26168da3 100644
+index d3a4b5f3f981a4e5f06a4975fe30e33da2c7c862..7166d7064e7f323d0c7cd52cfa5af4ef26168da3 100755
 --- a/net/minecraft/util/DelegateDataOutput.java
 +++ b/net/minecraft/util/DelegateDataOutput.java
 @@ -5,7 +5,7 @@ import java.io.IOException;
@@ -31738,7 +31748,7 @@ index d3a4b5f3f981a4e5f06a4975fe30e33da2c7c862..7166d7064e7f323d0c7cd52cfa5af4ef
      public DelegateDataOutput(final DataOutput parent) {
          this.parent = parent;
 diff --git a/net/minecraft/util/SimpleBitStorage.java b/net/minecraft/util/SimpleBitStorage.java
-index acdca907c54bf89a1018ee9f299680e8890b3c3b..bc48900cc4aa557852a9279649aac4e336f32007 100644
+index acdca907c54bf89a1018ee9f299680e8890b3c3b..bc48900cc4aa557852a9279649aac4e336f32007 100755
 --- a/net/minecraft/util/SimpleBitStorage.java
 +++ b/net/minecraft/util/SimpleBitStorage.java
 @@ -209,6 +209,20 @@ public class SimpleBitStorage implements BitStorage {
@@ -31943,7 +31953,7 @@ index acdca907c54bf89a1018ee9f299680e8890b3c3b..bc48900cc4aa557852a9279649aac4e3
          private InitializationException(final String message) {
              super(message);
 diff --git a/net/minecraft/util/SortedArraySet.java b/net/minecraft/util/SortedArraySet.java
-index c08c8388b6a81f861caf6716c0c999205e1ae487..295b29ba4e46aa438813180802e6c452392c7109 100644
+index c08c8388b6a81f861caf6716c0c999205e1ae487..295b29ba4e46aa438813180802e6c452392c7109 100755
 --- a/net/minecraft/util/SortedArraySet.java
 +++ b/net/minecraft/util/SortedArraySet.java
 @@ -8,12 +8,88 @@ import java.util.Iterator;
@@ -32037,7 +32047,7 @@ index c08c8388b6a81f861caf6716c0c999205e1ae487..295b29ba4e46aa438813180802e6c452
          this.comparator = comparator;
          if (initialCapacity < 0) {
 diff --git a/net/minecraft/util/ZeroBitStorage.java b/net/minecraft/util/ZeroBitStorage.java
-index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc7413ad9482 100644
+index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc7413ad9482 100755
 --- a/net/minecraft/util/ZeroBitStorage.java
 +++ b/net/minecraft/util/ZeroBitStorage.java
 @@ -67,4 +67,29 @@ public class ZeroBitStorage implements BitStorage {
@@ -32071,7 +32081,7 @@ index e3644ac93ffc2cfdc5e788456e9d54a9975272f3..6111ecdfaac7c003859040d49d91cc74
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5fb9ac4b0fdd245207c15677795566c81b629a20..02ddc534e534311c9f9b752007b30f16ff69a740 100644
+index 5fb9ac4b0fdd245207c15677795566c81b629a20..02ddc534e534311c9f9b752007b30f16ff69a740 100755
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -166,7 +166,7 @@ public abstract class Entity
@@ -32618,7 +32628,7 @@ index 5fb9ac4b0fdd245207c15677795566c81b629a20..02ddc534e534311c9f9b752007b30f16
  
      @Override
 diff --git a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 81ad9099d2325a07b0b853b99e1d67b0caebd951..019a5cbef59465147cbc59e2b8580624cac379e8 100644
+index 81ad9099d2325a07b0b853b99e1d67b0caebd951..019a5cbef59465147cbc59e2b8580624cac379e8 100755
 --- a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -94,12 +94,16 @@ public class AcquirePoi {
@@ -32645,7 +32655,7 @@ index 81ad9099d2325a07b0b853b99e1d67b0caebd951..019a5cbef59465147cbc59e2b8580624
                          if (path != null && path.canReach()) {
                              BlockPos targetPos = path.getTarget();
 diff --git a/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 1f8cbb20a21b081c9fb38cce178c66891de64aed..3b07e731e8d16c2b71cb55b85163029cf56fd02e 100644
+index 1f8cbb20a21b081c9fb38cce178c66891de64aed..3b07e731e8d16c2b71cb55b85163029cf56fd02e 100755
 --- a/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -40,12 +40,137 @@ import net.minecraft.world.level.chunk.storage.SectionStorage;
@@ -33049,7 +33059,7 @@ index 1f8cbb20a21b081c9fb38cce178c66891de64aed..3b07e731e8d16c2b71cb55b85163029c
      }
  
 diff --git a/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index 789547baacfaed25ea99406edc77f1a5901eb9bc..c708f4517ba1274db7046810044e69da4cc26b89 100644
+index 789547baacfaed25ea99406edc77f1a5901eb9bc..c708f4517ba1274db7046810044e69da4cc26b89 100755
 --- a/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -25,13 +25,27 @@ import net.minecraft.util.debug.DebugPoiInfo;
@@ -33083,7 +33093,7 @@ index 789547baacfaed25ea99406edc77f1a5901eb9bc..c708f4517ba1274db7046810044e69da
          this(setDirty, true, ImmutableList.of());
      }
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 6fd266a9d05f6681ba9319d5eccbea4daa44a8f2..b842fa8de45c0b25912e40baa7ede5ebc259fa81 100644
+index 6fd266a9d05f6681ba9319d5eccbea4daa44a8f2..b842fa8de45c0b25912e40baa7ede5ebc259fa81 100755
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -207,7 +207,7 @@ public class ArmorStand extends LivingEntity {
@@ -33096,7 +33106,7 @@ index 6fd266a9d05f6681ba9319d5eccbea4daa44a8f2..b842fa8de45c0b25912e40baa7ede5eb
                  entity.push(this);
              }
 diff --git a/net/minecraft/world/level/ClipContext.java b/net/minecraft/world/level/ClipContext.java
-index fbcd6dd3753a65fed36ed24fd3322802684995e0..322c9e416d7fa3b567be8e67b8fa0b8995a78a16 100644
+index fbcd6dd3753a65fed36ed24fd3322802684995e0..322c9e416d7fa3b567be8e67b8fa0b8995a78a16 100755
 --- a/net/minecraft/world/level/ClipContext.java
 +++ b/net/minecraft/world/level/ClipContext.java
 @@ -22,7 +22,7 @@ public class ClipContext {
@@ -33109,7 +33119,7 @@ index fbcd6dd3753a65fed36ed24fd3322802684995e0..322c9e416d7fa3b567be8e67b8fa0b89
  
      public ClipContext(final Vec3 from, final Vec3 to, final ClipContext.Block block, final ClipContext.Fluid fluid, final Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 892b338a2b0a185511c352ca2bb76ee3890836fd..cc938f43c4a5e947ed87ca2001cbaca4084bf64c 100644
+index 892b338a2b0a185511c352ca2bb76ee3890836fd..cc938f43c4a5e947ed87ca2001cbaca4084bf64c 100755
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.Shapes;
@@ -33225,7 +33235,7 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..cc938f43c4a5e947ed87ca2001cbaca4
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f83bfcaca787e74125763cb893b9c162031463ad..c356736c779fc20b6a77ddd442b71b6ecb9745c2 100644
+index f83bfcaca787e74125763cb893b9c162031463ad..c356736c779fc20b6a77ddd442b71b6ecb9745c2 100755
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -85,6 +85,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -34129,7 +34139,7 @@ index f83bfcaca787e74125763cb893b9c162031463ad..c356736c779fc20b6a77ddd442b71b6e
      // Paper end - allow patching this logic
  }
 diff --git a/net/minecraft/world/level/LevelReader.java b/net/minecraft/world/level/LevelReader.java
-index b4646a4067f5c028f53a04952e4ef404111b1582..ad225fe3eccf6d649566c47f8d6fd162fe92d6f5 100644
+index b4646a4067f5c028f53a04952e4ef404111b1582..ad225fe3eccf6d649566c47f8d6fd162fe92d6f5 100755
 --- a/net/minecraft/world/level/LevelReader.java
 +++ b/net/minecraft/world/level/LevelReader.java
 @@ -27,7 +27,17 @@ import net.minecraft.world.level.levelgen.Heightmap;
@@ -34152,7 +34162,7 @@ index b4646a4067f5c028f53a04952e4ef404111b1582..ad225fe3eccf6d649566c47f8d6fd162
  
      @Nullable ChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
 diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
-index 048190a69c69d309f884256ddb588087de6bd779..a2893f4298af62177fc3621603d465e24fe1e2eb 100644
+index 048190a69c69d309f884256ddb588087de6bd779..a2893f4298af62177fc3621603d465e24fe1e2eb 100755
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
 @@ -54,6 +54,249 @@ public class ServerExplosion implements Explosion {
@@ -34600,7 +34610,7 @@ index 048190a69c69d309f884256ddb588087de6bd779..a2893f4298af62177fc3621603d465e2
          }
  
 diff --git a/net/minecraft/world/level/TicketStorage.java b/net/minecraft/world/level/TicketStorage.java
-index 5d6e4e74483068bdf17ecf0623f0ae1dc9d2002c..d966a073ba74ff881941aba79d23d8135bac119b 100644
+index 5d6e4e74483068bdf17ecf0623f0ae1dc9d2002c..d966a073ba74ff881941aba79d23d8135bac119b 100755
 --- a/net/minecraft/world/level/TicketStorage.java
 +++ b/net/minecraft/world/level/TicketStorage.java
 @@ -30,7 +30,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
@@ -34991,7 +35001,7 @@ index 5d6e4e74483068bdf17ecf0623f0ae1dc9d2002c..d966a073ba74ff881941aba79d23d813
      // Paper end
  }
 diff --git a/net/minecraft/world/level/biome/Biome.java b/net/minecraft/world/level/biome/Biome.java
-index 2d9945049008766b60cc1f261ab152a478836c8a..63d05bee70be495a3ec993fae6c2b42b7da6f5e5 100644
+index 2d9945049008766b60cc1f261ab152a478836c8a..63d05bee70be495a3ec993fae6c2b42b7da6f5e5 100755
 --- a/net/minecraft/world/level/biome/Biome.java
 +++ b/net/minecraft/world/level/biome/Biome.java
 @@ -122,20 +122,7 @@ public final class Biome {
@@ -35017,7 +35027,7 @@ index 2d9945049008766b60cc1f261ab152a478836c8a..63d05bee70be495a3ec993fae6c2b42b
  
      public boolean shouldFreeze(final LevelReader level, final BlockPos pos) {
 diff --git a/net/minecraft/world/level/biome/BiomeManager.java b/net/minecraft/world/level/biome/BiomeManager.java
-index 0c1cbc03be2be78db5387d14a10f3c16067f32c9..65ac39fd0e481b83cb9fad00b6482051dce20759 100644
+index 0c1cbc03be2be78db5387d14a10f3c16067f32c9..65ac39fd0e481b83cb9fad00b6482051dce20759 100755
 --- a/net/minecraft/world/level/biome/BiomeManager.java
 +++ b/net/minecraft/world/level/biome/BiomeManager.java
 @@ -105,7 +105,6 @@ public class BiomeManager {
@@ -35030,7 +35040,7 @@ index 0c1cbc03be2be78db5387d14a10f3c16067f32c9..65ac39fd0e481b83cb9fad00b6482051
      }
  }
 diff --git a/net/minecraft/world/level/biome/Climate.java b/net/minecraft/world/level/biome/Climate.java
-index 1f0c020207b5b1eb989ddad742e006a2c7fc2b01..54b608c5d2e36c5dec0fc2cbb1c074da946f6d7a 100644
+index 1f0c020207b5b1eb989ddad742e006a2c7fc2b01..54b608c5d2e36c5dec0fc2cbb1c074da946f6d7a 100755
 --- a/net/minecraft/world/level/biome/Climate.java
 +++ b/net/minecraft/world/level/biome/Climate.java
 @@ -166,8 +166,22 @@ public class Climate {
@@ -35159,7 +35169,7 @@ index 1f0c020207b5b1eb989ddad742e006a2c7fc2b01..54b608c5d2e36c5dec0fc2cbb1c074da
  
              @Override
 diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
-index d6b840af9729234a51052a8ed57fd5de864cf142..1b89d481168347f8edd078a8ac190b38a4390a6f 100644
+index d6b840af9729234a51052a8ed57fd5de864cf142..1b89d481168347f8edd078a8ac190b38a4390a6f 100755
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
 @@ -363,7 +363,7 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -35172,7 +35182,7 @@ index d6b840af9729234a51052a8ed57fd5de864cf142..1b89d481168347f8edd078a8ac190b38
  
      public void animateTick(final BlockState state, final Level level, final BlockPos pos, final RandomSource random) {
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..44fcc919a2de54c3ceb0fd0875aadaea083fabad 100644
+index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..44fcc919a2de54c3ceb0fd0875aadaea083fabad 100755
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -436,7 +436,7 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -35371,7 +35381,7 @@ index 591f6a4ffcf7507c1d6f8f70cb747f59eb077b4d..44fcc919a2de54c3ceb0fd0875aadaea
          @Deprecated
          public boolean isSolid() {
 diff --git a/net/minecraft/world/level/block/state/StateDefinition.java b/net/minecraft/world/level/block/state/StateDefinition.java
-index e6953b5371aa94be4173857d5bae48c41cec6b7c..a93b55f5543d3624c39a4335c52e025e5675fa14 100644
+index e6953b5371aa94be4173857d5bae48c41cec6b7c..a93b55f5543d3624c39a4335c52e025e5675fa14 100755
 --- a/net/minecraft/world/level/block/state/StateDefinition.java
 +++ b/net/minecraft/world/level/block/state/StateDefinition.java
 @@ -66,10 +66,19 @@ public class StateDefinition<O, S extends StateHolder<O, S>> {
@@ -35414,7 +35424,7 @@ index e6953b5371aa94be4173857d5bae48c41cec6b7c..a93b55f5543d3624c39a4335c52e025e
  
      private static <S extends StateHolder<?, ?>> S[][] emptyNeighbors() {
 diff --git a/net/minecraft/world/level/block/state/StateHolder.java b/net/minecraft/world/level/block/state/StateHolder.java
-index 335754e3b3dc60ed0991a2ecaf49a51aa3051f48..cbdef9d6325a3f9ace1e739d85b747b55f728ee4 100644
+index 335754e3b3dc60ed0991a2ecaf49a51aa3051f48..cbdef9d6325a3f9ace1e739d85b747b55f728ee4 100755
 --- a/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/net/minecraft/world/level/block/state/StateHolder.java
 @@ -13,20 +13,48 @@ import java.util.stream.Stream;
@@ -35562,7 +35572,7 @@ index 335754e3b3dc60ed0991a2ecaf49a51aa3051f48..cbdef9d6325a3f9ace1e739d85b747b5
  
      public static <T extends Comparable<T>> Property.Value<T> createValue(final Property<T> propertyKey, final Comparable<?> propertyValue) { // Paper - public
 diff --git a/net/minecraft/world/level/block/state/properties/BooleanProperty.java b/net/minecraft/world/level/block/state/properties/BooleanProperty.java
-index 87b922c2aa4ef44a2a3469314f599dd63ee97baa..eac3775777060809b0e2ed118c12e647c4de8194 100644
+index 87b922c2aa4ef44a2a3469314f599dd63ee97baa..eac3775777060809b0e2ed118c12e647c4de8194 100755
 --- a/net/minecraft/world/level/block/state/properties/BooleanProperty.java
 +++ b/net/minecraft/world/level/block/state/properties/BooleanProperty.java
 @@ -3,13 +3,23 @@ package net.minecraft.world.level.block.state.properties;
@@ -35591,7 +35601,7 @@ index 87b922c2aa4ef44a2a3469314f599dd63ee97baa..eac3775777060809b0e2ed118c12e647
  
      @Override
 diff --git a/net/minecraft/world/level/block/state/properties/EnumProperty.java b/net/minecraft/world/level/block/state/properties/EnumProperty.java
-index d00bb7c0e2dcfa75a2a62ad99bb843d9fc24e49c..665915290911a2a9390062c109103d9a1a6e4bde 100644
+index d00bb7c0e2dcfa75a2a62ad99bb843d9fc24e49c..665915290911a2a9390062c109103d9a1a6e4bde 100755
 --- a/net/minecraft/world/level/block/state/properties/EnumProperty.java
 +++ b/net/minecraft/world/level/block/state/properties/EnumProperty.java
 @@ -10,11 +10,39 @@ import java.util.function.Predicate;
@@ -35644,7 +35654,7 @@ index d00bb7c0e2dcfa75a2a62ad99bb843d9fc24e49c..665915290911a2a9390062c109103d9a
  
      @Override
 diff --git a/net/minecraft/world/level/block/state/properties/IntegerProperty.java b/net/minecraft/world/level/block/state/properties/IntegerProperty.java
-index 1338213c0c918301a8fbc232b25d55804bda9cf9..8e89405ed73e68b641fd8a47963c60a1ccb1c907 100644
+index 1338213c0c918301a8fbc232b25d55804bda9cf9..8e89405ed73e68b641fd8a47963c60a1ccb1c907 100755
 --- a/net/minecraft/world/level/block/state/properties/IntegerProperty.java
 +++ b/net/minecraft/world/level/block/state/properties/IntegerProperty.java
 @@ -5,11 +5,33 @@ import java.util.List;
@@ -35691,7 +35701,7 @@ index 1338213c0c918301a8fbc232b25d55804bda9cf9..8e89405ed73e68b641fd8a47963c60a1
  
      @Override
 diff --git a/net/minecraft/world/level/block/state/properties/Property.java b/net/minecraft/world/level/block/state/properties/Property.java
-index b95665559d646ab8de313a19dadc197a1e8be02c..5d249a6197c4b18bf92e180fb318636e5ae5d203 100644
+index b95665559d646ab8de313a19dadc197a1e8be02c..5d249a6197c4b18bf92e180fb318636e5ae5d203 100755
 --- a/net/minecraft/world/level/block/state/properties/Property.java
 +++ b/net/minecraft/world/level/block/state/properties/Property.java
 @@ -10,7 +10,7 @@ import java.util.stream.Stream;
@@ -35771,7 +35781,7 @@ index b95665559d646ab8de313a19dadc197a1e8be02c..5d249a6197c4b18bf92e180fb318636e
  
      public Property.Value<T> value(final T value) {
 diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
-index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08dc3e0766 100644
+index 87b940c7f6ecb507a962f34a2e1ee2f63d613a20..791443f8a28eb2937390ab2ace6d73084dc33893 100755
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -56,7 +56,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
@@ -35899,7 +35909,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08
      }
  
      private static void replaceMissingSections(final PalettedContainerFactory containerFactory, final LevelChunkSection[] sections) {
-@@ -404,14 +481,66 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -409,14 +486,66 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
  
      @Override
      public int getMinY() {
@@ -35968,7 +35978,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08
      @Deprecated
      public BiomeGenerationSettings carverBiome(final Supplier<BiomeGenerationSettings> source) {
          if (this.carverBiomeSettings == null) {
-@@ -423,18 +552,22 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -428,18 +557,22 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
  
      @Override
      public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
@@ -36002,7 +36012,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08
      }
  
      // CraftBukkit start
-@@ -480,12 +613,12 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+@@ -485,12 +618,12 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
      }
  
      public void initializeLightSources() {
@@ -36018,7 +36028,7 @@ index 12882e7448ff9b7febdb8475e6e14e87d23d87ae..9e66f6202439cc7780af1016289f3b08
  
      public static ProblemReporter.PathElement problemPath(final ChunkPos pos) {
 diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 3061b7335af71453dd75ee98539cc7535df747ae..221657b7387f4ab0a1862127c90499f97bcc2276 100644
+index 3061b7335af71453dd75ee98539cc7535df747ae..221657b7387f4ab0a1862127c90499f97bcc2276 100755
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
 @@ -130,11 +130,14 @@ public abstract class ChunkGenerator {
@@ -36181,7 +36191,7 @@ index 3061b7335af71453dd75ee98539cc7535df747ae..221657b7387f4ab0a1862127c90499f9
      public void applyBiomeDecoration(final WorldGenLevel level, final ChunkAccess chunk, final StructureManager structureManager) {
          this.applyBiomeDecoration(level, chunk, structureManager, true);
 diff --git a/net/minecraft/world/level/chunk/Configuration.java b/net/minecraft/world/level/chunk/Configuration.java
-index 35e8ea13af811742f0e44afe66b53c3a513f210c..2521b46b128f175d82a9c8d8991346180583588b 100644
+index 35e8ea13af811742f0e44afe66b53c3a513f210c..2521b46b128f175d82a9c8d8991346180583588b 100755
 --- a/net/minecraft/world/level/chunk/Configuration.java
 +++ b/net/minecraft/world/level/chunk/Configuration.java
 @@ -31,7 +31,12 @@ public interface Configuration {
@@ -36199,7 +36209,7 @@ index 35e8ea13af811742f0e44afe66b53c3a513f210c..2521b46b128f175d82a9c8d899134618
  
          @Override
 diff --git a/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/net/minecraft/world/level/chunk/EmptyLevelChunk.java
-index f095ec93c0c5be6db15b6486ec22980ba74cf9e5..9ee8dc12f59ab8ccf03cae451174d023f2870df0 100644
+index f095ec93c0c5be6db15b6486ec22980ba74cf9e5..9ee8dc12f59ab8ccf03cae451174d023f2870df0 100755
 --- a/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 +++ b/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 @@ -14,7 +14,7 @@ import net.minecraft.world.level.material.FluidState;
@@ -36253,7 +36263,7 @@ index f095ec93c0c5be6db15b6486ec22980ba74cf9e5..9ee8dc12f59ab8ccf03cae451174d023
      public BlockState getBlockState(final BlockPos pos) {
          return Blocks.VOID_AIR.defaultBlockState();
 diff --git a/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
-index ddfb53c901eae74278c1636876e932765e0c1f2d..75499e774a386602241e97b27fb8eea59f294aaf 100644
+index ddfb53c901eae74278c1636876e932765e0c1f2d..75499e774a386602241e97b27fb8eea59f294aaf 100755
 --- a/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 +++ b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 @@ -27,7 +27,7 @@ import net.minecraft.world.ticks.BlackholeTickAccess;
@@ -36327,7 +36337,7 @@ index ddfb53c901eae74278c1636876e932765e0c1f2d..75499e774a386602241e97b27fb8eea5
      public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
          return this.wrapped.getBlockEntity(pos);
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..e482afb37a061ab720b72c4604dfafa42a198cd9 100644
+index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..e482afb37a061ab720b72c4604dfafa42a198cd9 100755
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -62,7 +62,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
@@ -36511,7 +36521,7 @@ index 56612c4fd3fb32b6cfc5ccb82070c47fcfb5a05c..e482afb37a061ab720b72c4604dfafa4
  
      private @Nullable BlockEntity promotePendingBlockEntity(final BlockPos pos, final CompoundTag tag) {
 diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
-index f2117549758ad859d400ef649fe20db3ce4b5e81..54ccea30b7bd79304cbe00434cfd4ba5586d7493 100644
+index f2117549758ad859d400ef649fe20db3ce4b5e81..54ccea30b7bd79304cbe00434cfd4ba5586d7493 100755
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -8,7 +8,7 @@ import net.minecraft.world.level.biome.BiomeResolver;
@@ -36755,7 +36765,7 @@ index f2117549758ad859d400ef649fe20db3ce4b5e81..54ccea30b7bd79304cbe00434cfd4ba5
  
      public LevelChunkSection copy() {
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 9591b8644da987a6e2dc77bb7388b99566a855e3..268f73d632691656e7e1244972bf9075ad2994dc 100644
+index 9591b8644da987a6e2dc77bb7388b99566a855e3..268f73d632691656e7e1244972bf9075ad2994dc 100755
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -24,8 +24,8 @@ import org.jspecify.annotations.Nullable;
@@ -36954,7 +36964,7 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..268f73d632691656e7e1244972bf9075
              PaletteResize<T> dummyResizer = PaletteResize.noResizeExpected();
              if (oldPalette.getSize() == 1) {
 diff --git a/net/minecraft/world/level/chunk/ProtoChunk.java b/net/minecraft/world/level/chunk/ProtoChunk.java
-index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..d3afcaa32dc9b46147c99972fbcca84be2a8e54d 100644
+index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..d3afcaa32dc9b46147c99972fbcca84be2a8e54d 100755
 --- a/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -40,7 +40,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
@@ -37065,7 +37075,7 @@ index 27f7e3846607bc0c8070c3ec3d9ec87c583b1c07..d3afcaa32dc9b46147c99972fbcca84b
              }
          }
 diff --git a/net/minecraft/world/level/chunk/Strategy.java b/net/minecraft/world/level/chunk/Strategy.java
-index 5c518b6ec7da546460884c37e9af682b6ab9fc22..8fc956f434cd42fbe67316df36c125714ada9552 100644
+index 5c518b6ec7da546460884c37e9af682b6ab9fc22..8fc956f434cd42fbe67316df36c125714ada9552 100755
 --- a/net/minecraft/world/level/chunk/Strategy.java
 +++ b/net/minecraft/world/level/chunk/Strategy.java
 @@ -6,7 +6,7 @@ import net.minecraft.util.Mth;
@@ -37078,7 +37088,7 @@ index 5c518b6ec7da546460884c37e9af682b6ab9fc22..8fc956f434cd42fbe67316df36c12571
      private static final Configuration ONE_BIT_LINEAR = new Configuration.Simple(LINEAR_PALETTE_FACTORY, 1);
      private static final Configuration TWO_BITS_LINEAR = new Configuration.Simple(LINEAR_PALETTE_FACTORY, 2);
 diff --git a/net/minecraft/world/level/chunk/status/ChunkPyramid.java b/net/minecraft/world/level/chunk/status/ChunkPyramid.java
-index 528990b8d5cc13cefdcfc090ab7e4b3aaa7bae9e..36a00bd4945e3f6b279aa339a5d3cb2369f78a67 100644
+index 528990b8d5cc13cefdcfc090ab7e4b3aaa7bae9e..36a00bd4945e3f6b279aa339a5d3cb2369f78a67 100755
 --- a/net/minecraft/world/level/chunk/status/ChunkPyramid.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkPyramid.java
 @@ -40,7 +40,7 @@ public record ChunkPyramid(ImmutableList<ChunkStep> steps) {
@@ -37091,7 +37101,7 @@ index 528990b8d5cc13cefdcfc090ab7e4b3aaa7bae9e..36a00bd4945e3f6b279aa339a5d3cb23
          .step(ChunkStatus.FULL, s -> s.setTask(ChunkStatusTasks::full))
          .build();
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStatus.java b/net/minecraft/world/level/chunk/status/ChunkStatus.java
-index b6300e04a26020e4add76c015c7973091097fb8f..d2a1bce35f9cb54d6db848a0a679da58990b5f22 100644
+index b6300e04a26020e4add76c015c7973091097fb8f..d2a1bce35f9cb54d6db848a0a679da58990b5f22 100755
 --- a/net/minecraft/world/level/chunk/status/ChunkStatus.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatus.java
 @@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
@@ -37175,7 +37185,7 @@ index b6300e04a26020e4add76c015c7973091097fb8f..d2a1bce35f9cb54d6db848a0a679da58
          this.chunkType = chunkType;
          this.heightmapsAfter = heightmapsAfter;
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index 0e13899caa0abeedf54cc5f1192276b99884a853..55e242900224d0a117fb2045b863c122404b8301 100644
+index 0e13899caa0abeedf54cc5f1192276b99884a853..55e242900224d0a117fb2045b863c122404b8301 100755
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -195,7 +195,7 @@ public class ChunkStatusTasks {
@@ -37203,7 +37213,7 @@ index 0e13899caa0abeedf54cc5f1192276b99884a853..55e242900224d0a117fb2045b863c122
          }
      }
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStep.java b/net/minecraft/world/level/chunk/status/ChunkStep.java
-index 503111a8d54e6bb134df87ff2a099d1b032f6747..3536bc2287ab5b285790dc496836cf43020b698c 100644
+index 503111a8d54e6bb134df87ff2a099d1b032f6747..3536bc2287ab5b285790dc496836cf43020b698c 100755
 --- a/net/minecraft/world/level/chunk/status/ChunkStep.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStep.java
 @@ -13,9 +13,50 @@ import net.minecraft.world.level.chunk.ChunkAccess;
@@ -37317,7 +37327,7 @@ index 503111a8d54e6bb134df87ff2a099d1b032f6747..3536bc2287ab5b285790dc496836cf43
          private final ChunkStatus status;
          private final @Nullable ChunkStep parent;
 diff --git a/net/minecraft/world/level/chunk/storage/IOWorker.java b/net/minecraft/world/level/chunk/storage/IOWorker.java
-index fb93fa9c80ca93352532ba7c1f81f5b7d7bdc058..de51b7290f11c1b2cb5eacb700b1803ad32a414c 100644
+index fb93fa9c80ca93352532ba7c1f81f5b7d7bdc058..de51b7290f11c1b2cb5eacb700b1803ad32a414c 100755
 --- a/net/minecraft/world/level/chunk/storage/IOWorker.java
 +++ b/net/minecraft/world/level/chunk/storage/IOWorker.java
 @@ -31,7 +31,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
@@ -37330,7 +37340,7 @@ index fb93fa9c80ca93352532ba7c1f81f5b7d7bdc058..de51b7290f11c1b2cb5eacb700b1803a
      private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
      private static final int REGION_CACHE_SIZE = 1024;
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..1077ff25ca0da7fb6f89dd2e16174f00b4986283 100644
+index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..1077ff25ca0da7fb6f89dd2e16174f00b4986283 100755
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.level.ChunkPos;
@@ -38005,7 +38015,7 @@ index f3bc7a27b3bd9ba46e3875065a1e0eaa88b04a45..1077ff25ca0da7fb6f89dd2e16174f00
      }
  
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 88c3c4ea242d7dbc38e62c3b406b9955b07dae4d..9f8b1d4235d2f268a523c028006114b61d8d67ef 100644
+index 88c3c4ea242d7dbc38e62c3b406b9955b07dae4d..9f8b1d4235d2f268a523c028006114b61d8d67ef 100755
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -18,7 +18,8 @@ import net.minecraft.util.FileUtil;
@@ -38401,7 +38411,7 @@ index 88c3c4ea242d7dbc38e62c3b406b9955b07dae4d..9f8b1d4235d2f268a523c028006114b6
  
      public RegionStorageInfo info() {
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
-index ea229f63f81c5638ded74c28e1e13d8948f2e5e0..2dac66514278317deb2d6bf222888a885c0479b8 100644
+index ea229f63f81c5638ded74c28e1e13d8948f2e5e0..2dac66514278317deb2d6bf222888a885c0479b8 100755
 --- a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 @@ -21,7 +21,7 @@ import org.slf4j.Logger;
@@ -38414,7 +38424,7 @@ index ea229f63f81c5638ded74c28e1e13d8948f2e5e0..2dac66514278317deb2d6bf222888a88
      public static final RegionFileVersion VERSION_GZIP = register(
          new RegionFileVersion(1, "gzip", in -> new FastBufferedInputStream(new GZIPInputStream(in)), out -> new BufferedOutputStream(new GZIPOutputStream(out))) // Paper - Enable for Configurable region compression format
 diff --git a/net/minecraft/world/level/chunk/storage/SectionStorage.java b/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 2412c31426bbf0a4f8102bf7ce307a4a93935f52..4bc70852449459037d293d2813c1c73345149b4e 100644
+index 2412c31426bbf0a4f8102bf7ce307a4a93935f52..4bc70852449459037d293d2813c1c73345149b4e 100755
 --- a/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -40,10 +40,10 @@ import net.minecraft.world.level.LevelHeightAccessor;
@@ -38572,7 +38582,7 @@ index 2412c31426bbf0a4f8102bf7ce307a4a93935f52..4bc70852449459037d293d2813c1c733
  
      private record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..5b311dc7f0a9d7cb202011302920478977f27bb0 100644
+index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..5b311dc7f0a9d7cb202011302920478977f27bb0 100755
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -145,7 +145,7 @@ public record SerializableChunkData(
@@ -38848,7 +38858,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..5b311dc7f0a9d7cb2020113029204789
      }
  }
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index 2ccb20f4fa0a2ce514b199616cbd791fd749b3f8..db7d25cfc14ea3ebb07533edde97cfb02e783c34 100644
+index 2ccb20f4fa0a2ce514b199616cbd791fd749b3f8..db7d25cfc14ea3ebb07533edde97cfb02e783c34 100755
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -18,25 +18,39 @@ import net.minecraft.util.datafix.DataFixTypes;
@@ -38955,7 +38965,7 @@ index 2ccb20f4fa0a2ce514b199616cbd791fd749b3f8..db7d25cfc14ea3ebb07533edde97cfb0
      }
  }
 diff --git a/net/minecraft/world/level/entity/EntityTickList.java b/net/minecraft/world/level/entity/EntityTickList.java
-index 1fe402ed7e273063e32ed4d164c4098ee764703a..a30409eddfaded878a3ac54bb526fd2e4b887c57 100644
+index 1fe402ed7e273063e32ed4d164c4098ee764703a..a30409eddfaded878a3ac54bb526fd2e4b887c57 100755
 --- a/net/minecraft/world/level/entity/EntityTickList.java
 +++ b/net/minecraft/world/level/entity/EntityTickList.java
 @@ -9,51 +9,38 @@ import net.minecraft.world.entity.Entity;
@@ -39024,7 +39034,7 @@ index 1fe402ed7e273063e32ed4d164c4098ee764703a..a30409eddfaded878a3ac54bb526fd2e
      }
  }
 diff --git a/net/minecraft/world/level/gameevent/DynamicGameEventListener.java b/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
-index c31f66710036cb68500ed936b8a4b89a2cf57574..4d5e3cf76b64e57c22e2717ca395e23a871e4446 100644
+index c31f66710036cb68500ed936b8a4b89a2cf57574..4d5e3cf76b64e57c22e2717ca395e23a871e4446 100755
 --- a/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
 +++ b/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
 @@ -26,6 +26,14 @@ public class DynamicGameEventListener<T extends GameEventListener> {
@@ -39043,7 +39053,7 @@ index c31f66710036cb68500ed936b8a4b89a2cf57574..4d5e3cf76b64e57c22e2717ca395e23a
  
      public void move(final ServerLevel level) {
 diff --git a/net/minecraft/world/level/levelgen/Beardifier.java b/net/minecraft/world/level/levelgen/Beardifier.java
-index 7041d673e6f6b7b629d325fee770e640f75725a1..7e2c64b1962fa36e006c0cd4a4f1df4616f419d8 100644
+index 7041d673e6f6b7b629d325fee770e640f75725a1..7e2c64b1962fa36e006c0cd4a4f1df4616f419d8 100755
 --- a/net/minecraft/world/level/levelgen/Beardifier.java
 +++ b/net/minecraft/world/level/levelgen/Beardifier.java
 @@ -42,6 +42,10 @@ public class Beardifier implements DensitySampler {
@@ -39153,7 +39163,7 @@ index 7041d673e6f6b7b629d325fee770e640f75725a1..7e2c64b1962fa36e006c0cd4a4f1df46
      private static float getBuryContribution(final float dx, final float dy, final float dz) {
          float distanceSq = Mth.lengthSquared(dx, dy, dz);
 diff --git a/net/minecraft/world/level/levelgen/Heightmap.java b/net/minecraft/world/level/levelgen/Heightmap.java
-index 50827f91da97201264e7da29b958ad6297da6540..22990ffcb40304279530462a72c489e8e1207e08 100644
+index 50827f91da97201264e7da29b958ad6297da6540..22990ffcb40304279530462a72c489e8e1207e08 100755
 --- a/net/minecraft/world/level/levelgen/Heightmap.java
 +++ b/net/minecraft/world/level/levelgen/Heightmap.java
 @@ -30,6 +30,17 @@ public class Heightmap {
@@ -39216,7 +39226,7 @@ index 50827f91da97201264e7da29b958ad6297da6540..22990ffcb40304279530462a72c489e8
  
      public enum Types implements StringRepresentable {
 diff --git a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
-index 6b7720722bfd2b0afb2f972dfa4c86cc1f79646d..f0529d233b791e226cec469b2efebcffd02c6d58 100644
+index 6b7720722bfd2b0afb2f972dfa4c86cc1f79646d..f0529d233b791e226cec469b2efebcffd02c6d58 100755
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 +++ b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 @@ -433,7 +433,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
@@ -39229,7 +39239,7 @@ index 6b7720722bfd2b0afb2f972dfa4c86cc1f79646d..f0529d233b791e226cec469b2efebcff
  
      private void doFill(final NoiseChunk noiseChunk, final ChunkAccess chunk) {
 diff --git a/net/minecraft/world/level/levelgen/NoiseChunk.java b/net/minecraft/world/level/levelgen/NoiseChunk.java
-index f580638bbe729d0706ebc64c0dcfe03f9f593c8e..738bed8b72741ba801a8d44d0d342c46393f2e8f 100644
+index f580638bbe729d0706ebc64c0dcfe03f9f593c8e..738bed8b72741ba801a8d44d0d342c46393f2e8f 100755
 --- a/net/minecraft/world/level/levelgen/NoiseChunk.java
 +++ b/net/minecraft/world/level/levelgen/NoiseChunk.java
 @@ -26,7 +26,10 @@ public class NoiseChunk implements AutoCloseable {
@@ -39259,7 +39269,7 @@ index f580638bbe729d0706ebc64c0dcfe03f9f593c8e..738bed8b72741ba801a8d44d0d342c46
      }
  }
 diff --git a/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java b/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
-index ec0ca312c28dc1ba4b4f310ff3f80f22fc3367a5..464fb72348084adcfd5cd40d9e926bb826f1a010 100644
+index ec0ca312c28dc1ba4b4f310ff3f80f22fc3367a5..464fb72348084adcfd5cd40d9e926bb826f1a010 100755
 --- a/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
 +++ b/net/minecraft/world/level/levelgen/densityfunction/DensityBuffer.java
 @@ -3,7 +3,7 @@ package net.minecraft.world.level.levelgen.densityfunction;
@@ -39272,7 +39282,7 @@ index ec0ca312c28dc1ba4b4f310ff3f80f22fc3367a5..464fb72348084adcfd5cd40d9e926bb8
  
      protected DensityBuffer(final int size) {
 diff --git a/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java b/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
-index d40d9cb6835299f68ac8e8ebcbc26c7e091cc415..b86338083d5bd5a5878918bd94cbce23976640aa 100644
+index d40d9cb6835299f68ac8e8ebcbc26c7e091cc415..b86338083d5bd5a5878918bd94cbce23976640aa 100755
 --- a/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
 +++ b/net/minecraft/world/level/levelgen/densityfunction/DensityBufferPool.java
 @@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
@@ -39285,7 +39295,7 @@ index d40d9cb6835299f68ac8e8ebcbc26c7e091cc415..b86338083d5bd5a5878918bd94cbce23
  
      public DensityBufferPool(final int maxAge) {
 diff --git a/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java b/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
-index d2d24803dd0de42a7a6ffdbddfeed060d59028f2..ee8898d22cf05e749653628f0d9afc6c5c638ce4 100644
+index d2d24803dd0de42a7a6ffdbddfeed060d59028f2..ee8898d22cf05e749653628f0d9afc6c5c638ce4 100755
 --- a/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
 +++ b/net/minecraft/world/level/levelgen/densityfunction/ScopedDensityBuffer.java
 @@ -5,13 +5,13 @@ public class ScopedDensityBuffer extends DensityBuffer implements AutoCloseable
@@ -39314,7 +39324,7 @@ index d2d24803dd0de42a7a6ffdbddfeed060d59028f2..ee8898d22cf05e749653628f0d9afc6c
      }
  
 diff --git a/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java b/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
-index 304e5d98b3367480eca22380af684f2cd22dd907..bff272eb3478bb0edac30051dbf9da6173c46658 100644
+index 304e5d98b3367480eca22380af684f2cd22dd907..bff272eb3478bb0edac30051dbf9da6173c46658 100755
 --- a/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
 +++ b/net/minecraft/world/level/levelgen/feature/AbstractOreFeature.java
 @@ -19,7 +19,7 @@ public abstract class AbstractOreFeature implements Feature {
@@ -39327,7 +39337,7 @@ index 304e5d98b3367480eca22380af684f2cd22dd907..bff272eb3478bb0edac30051dbf9da61
          this.discardChanceOnAirExposure = discardChanceOnAirExposure;
      }
 diff --git a/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java b/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
-index 732889c980c3912f66400411b1ed4b3ec42050ce..45a42f68a2aff0f2dae5c7a1abca8c8c1ff81639 100644
+index 732889c980c3912f66400411b1ed4b3ec42050ce..45a42f68a2aff0f2dae5c7a1abca8c8c1ff81639 100755
 --- a/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
 +++ b/net/minecraft/world/level/levelgen/material/MaterialRuleContext.java
 @@ -26,7 +26,7 @@ import net.minecraft.world.level.levelgen.synth.Noise;
@@ -39374,7 +39384,7 @@ index 732889c980c3912f66400411b1ed4b3ec42050ce..45a42f68a2aff0f2dae5c7a1abca8c8c
              return () -> {
                  int index = this.expectedVolume.indexOfBlock(this.blockX, this.blockY, this.blockZ);
 diff --git a/net/minecraft/world/level/levelgen/material/MaterialSystem.java b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
-index f3807cc7b5d2313051981683ff13eb147b569af3..b339467cb268a023dd160d011bcc9ee94875fe01 100644
+index f3807cc7b5d2313051981683ff13eb147b569af3..b339467cb268a023dd160d011bcc9ee94875fe01 100755
 --- a/net/minecraft/world/level/levelgen/material/MaterialSystem.java
 +++ b/net/minecraft/world/level/levelgen/material/MaterialSystem.java
 @@ -82,6 +82,16 @@ public class MaterialSystem {
@@ -39437,7 +39447,7 @@ index f3807cc7b5d2313051981683ff13eb147b569af3..b339467cb268a023dd160d011bcc9ee9
      }
  
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 6ff3a339da8ae6849985836c1138434e9b42bced..bd332a2a0fc1cef260a2a9a14401e551628db030 100644
+index 6ff3a339da8ae6849985836c1138434e9b42bced..bd332a2a0fc1cef260a2a9a14401e551628db030 100755
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -52,13 +52,18 @@ public class StructureCheck {
@@ -39538,7 +39548,7 @@ index 6ff3a339da8ae6849985836c1138434e9b42bced..bd332a2a0fc1cef260a2a9a14401e551
              counts.computeInt(structure, (k, value) -> value == null ? 1 : value + 1);
              return counts;
 diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java b/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
-index d63fd86f1fd90a00eb35dc124879d8ee1d59ad5a..39d459593cba39005ec7f1b56fc67fa9e16e7965 100644
+index d63fd86f1fd90a00eb35dc124879d8ee1d59ad5a..39d459593cba39005ec7f1b56fc67fa9e16e7965 100755
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/AllOfRuleTest.java
 @@ -9,14 +9,16 @@ import net.minecraft.world.level.block.state.BlockState;
@@ -39560,7 +39570,7 @@ index d63fd86f1fd90a00eb35dc124879d8ee1d59ad5a..39d459593cba39005ec7f1b56fc67fa9
                  return false;
              }
 diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java b/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
-index 80d249aa5900aeafab15a0bf7e5bbaf0a50bad7e..e1a0a7fa37ee6e92241829b98631fb77ce7d7f9f 100644
+index 80d249aa5900aeafab15a0bf7e5bbaf0a50bad7e..e1a0a7fa37ee6e92241829b98631fb77ce7d7f9f 100755
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/AnyOfRuleTest.java
 @@ -9,14 +9,16 @@ import net.minecraft.world.level.block.state.BlockState;
@@ -39582,7 +39592,7 @@ index 80d249aa5900aeafab15a0bf7e5bbaf0a50bad7e..e1a0a7fa37ee6e92241829b98631fb77
                  return true;
              }
 diff --git a/net/minecraft/world/level/levelgen/synth/GradientNoise.java b/net/minecraft/world/level/levelgen/synth/GradientNoise.java
-index d7b2a91df8c5c0ce480bc537b3457fcd144162e1..6da4d95f6a5f6043aaea6d62c550cd9f991da9ec 100644
+index d7b2a91df8c5c0ce480bc537b3457fcd144162e1..6da4d95f6a5f6043aaea6d62c550cd9f991da9ec 100755
 --- a/net/minecraft/world/level/levelgen/synth/GradientNoise.java
 +++ b/net/minecraft/world/level/levelgen/synth/GradientNoise.java
 @@ -4,7 +4,7 @@ import net.minecraft.SharedConstants;
@@ -39604,7 +39614,7 @@ index d7b2a91df8c5c0ce480bc537b3457fcd144162e1..6da4d95f6a5f6043aaea6d62c550cd9f
              return this.x * x + this.y * y + this.z * z;
          }
 diff --git a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
-index ecbd95204e4650b514d341f79c5756430e08e70f..12be06b795343d0f61cd908dd3f62fab70592a81 100644
+index ecbd95204e4650b514d341f79c5756430e08e70f..12be06b795343d0f61cd908dd3f62fab70592a81 100755
 --- a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
 +++ b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
 @@ -6,13 +6,40 @@ import net.minecraft.util.Mth;
@@ -39895,7 +39905,7 @@ index ecbd95204e4650b514d341f79c5756430e08e70f..12be06b795343d0f61cd908dd3f62fab
          float d100xz = 0.0F;
          float d010xz = 0.0F;
 diff --git a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
-index 4884b35596ea7ab327f75f0537affab97df492be..e8eafc7063c7563b0e97ec508dd5401efa3d2b31 100644
+index 4884b35596ea7ab327f75f0537affab97df492be..e8eafc7063c7563b0e97ec508dd5401efa3d2b31 100755
 --- a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
 +++ b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
 @@ -5,6 +5,14 @@ import net.minecraft.util.Mth;
@@ -40105,7 +40115,7 @@ index 4884b35596ea7ab327f75f0537affab97df492be..e8eafc7063c7563b0e97ec508dd5401e
          float d100xz = 0.0F;
          float d010xz = 0.0F;
 diff --git a/net/minecraft/world/level/lighting/LevelLightEngine.java b/net/minecraft/world/level/lighting/LevelLightEngine.java
-index 64194984fa30038b5bd53140511faf2b5784ead5..c6825283ad1787fcf4bfb93b32ca8396ac44f503 100644
+index 64194984fa30038b5bd53140511faf2b5784ead5..c6825283ad1787fcf4bfb93b32ca8396ac44f503 100755
 --- a/net/minecraft/world/level/lighting/LevelLightEngine.java
 +++ b/net/minecraft/world/level/lighting/LevelLightEngine.java
 @@ -9,149 +9,113 @@ import net.minecraft.world.level.chunk.DataLayer;
@@ -40311,7 +40321,7 @@ index 64194984fa30038b5bd53140511faf2b5784ead5..c6825283ad1787fcf4bfb93b32ca8396
  
      public int getLightSectionCount() {
 diff --git a/net/minecraft/world/level/material/FlowingFluid.java b/net/minecraft/world/level/material/FlowingFluid.java
-index 75745ac2cee1ae4fa66f9c0ea30ea916a557662d..660a8785fca8dd885318e05cb19255fa493151d0 100644
+index 75745ac2cee1ae4fa66f9c0ea30ea916a557662d..660a8785fca8dd885318e05cb19255fa493151d0 100755
 --- a/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/net/minecraft/world/level/material/FlowingFluid.java
 @@ -45,6 +45,48 @@ public abstract class FlowingFluid extends Fluid {
@@ -40482,7 +40492,7 @@ index 75745ac2cee1ae4fa66f9c0ea30ea916a557662d..660a8785fca8dd885318e05cb19255fa
  
      protected abstract boolean canConvertToSource(ServerLevel level);
 diff --git a/net/minecraft/world/level/material/FluidState.java b/net/minecraft/world/level/material/FluidState.java
-index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..385408597bff901e8017dd224a34e016dfd16488 100644
+index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..385408597bff901e8017dd224a34e016dfd16488 100755
 --- a/net/minecraft/world/level/material/FluidState.java
 +++ b/net/minecraft/world/level/material/FluidState.java
 @@ -21,27 +21,54 @@ import net.minecraft.world.phys.Vec3;
@@ -40628,7 +40638,7 @@ index e3cf392f0b9b9d0d327e86edced72ed1abf93fd8..385408597bff901e8017dd224a34e016
      public float getExplosionResistance() {
          return this.getType().getExplosionResistance();
 diff --git a/net/minecraft/world/level/portal/PortalForcer.java b/net/minecraft/world/level/portal/PortalForcer.java
-index e3a0d0f56207b7eab2f982bdaa421dc456ab52ba..d5697697d48963a01f8d4c3570b75da2c8f6f102 100644
+index e3a0d0f56207b7eab2f982bdaa421dc456ab52ba..d5697697d48963a01f8d4c3570b75da2c8f6f102 100755
 --- a/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/net/minecraft/world/level/portal/PortalForcer.java
 @@ -49,13 +49,46 @@ public class PortalForcer {
@@ -40686,7 +40696,7 @@ index e3a0d0f56207b7eab2f982bdaa421dc456ab52ba..d5697697d48963a01f8d4c3570b75da2
  
      public Optional<BlockUtil.FoundRectangle> createPortal(final BlockPos origin, final Direction.Axis portalAxis) {
 diff --git a/net/minecraft/world/level/storage/SavedDataStorage.java b/net/minecraft/world/level/storage/SavedDataStorage.java
-index f359e53024019f35aaa5cd8477da708bda2fc57a..d2a379b55467af19d9c7915e6964f97ca7ea264f 100644
+index f359e53024019f35aaa5cd8477da708bda2fc57a..d2a379b55467af19d9c7915e6964f97ca7ea264f 100755
 --- a/net/minecraft/world/level/storage/SavedDataStorage.java
 +++ b/net/minecraft/world/level/storage/SavedDataStorage.java
 @@ -116,7 +116,7 @@ public class SavedDataStorage implements AutoCloseable {
@@ -40699,7 +40709,7 @@ index f359e53024019f35aaa5cd8477da708bda2fc57a..d2a379b55467af19d9c7915e6964f97c
              }
  
 diff --git a/net/minecraft/world/phys/AABB.java b/net/minecraft/world/phys/AABB.java
-index 8683fb1f1b3bd8264bf2a14272c70661c833cefc..0f64620a09ccfc3b96757f82a1d0c7fc37dd60b6 100644
+index 8683fb1f1b3bd8264bf2a14272c70661c833cefc..0f64620a09ccfc3b96757f82a1d0c7fc37dd60b6 100755
 --- a/net/minecraft/world/phys/AABB.java
 +++ b/net/minecraft/world/phys/AABB.java
 @@ -319,7 +319,7 @@ public class AABB {
@@ -40712,7 +40722,7 @@ index 8683fb1f1b3bd8264bf2a14272c70661c833cefc..0f64620a09ccfc3b96757f82a1d0c7fc
      ) {
          return getDirection(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ, from, scaleReference, direction, dx, dy, dz);
 diff --git a/net/minecraft/world/phys/shapes/ArrayVoxelShape.java b/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
-index cbc68e86fd31ad787b6e66ed35d98c85dd9fe364..a4502aa85f907ae532e44b46d065c324c934e551 100644
+index cbc68e86fd31ad787b6e66ed35d98c85dd9fe364..a4502aa85f907ae532e44b46d065c324c934e551 100755
 --- a/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
 @@ -20,7 +20,7 @@ public class ArrayVoxelShape extends VoxelShape {
@@ -40733,7 +40743,7 @@ index cbc68e86fd31ad787b6e66ed35d98c85dd9fe364..a4502aa85f907ae532e44b46d065c324
  
      @Override
 diff --git a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
-index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..b23a4a226a370c3ac535282e28c00e6e4dc130c1 100644
+index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..b23a4a226a370c3ac535282e28c00e6e4dc130c1 100755
 --- a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
 @@ -4,13 +4,13 @@ import java.util.BitSet;
@@ -40895,7 +40905,7 @@ index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..b23a4a226a370c3ac535282e28c00e6e
      private boolean isZStripFull(final int startZ, final int endZ, final int x, final int y) {
          return x < this.xSize && y < this.ySize && this.storage.nextClearBit(this.getIndex(x, y, startZ)) >= this.getIndex(x, y, endZ);
 diff --git a/net/minecraft/world/phys/shapes/CubeVoxelShape.java b/net/minecraft/world/phys/shapes/CubeVoxelShape.java
-index 7ea10275641597b32e0e5274f100da74eb1a4e20..da356bdbd621c93310d79399c212c12b1e2c2fbc 100644
+index 7ea10275641597b32e0e5274f100da74eb1a4e20..da356bdbd621c93310d79399c212c12b1e2c2fbc 100755
 --- a/net/minecraft/world/phys/shapes/CubeVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/CubeVoxelShape.java
 @@ -7,6 +7,7 @@ import net.minecraft.util.Mth;
@@ -40907,7 +40917,7 @@ index 7ea10275641597b32e0e5274f100da74eb1a4e20..da356bdbd621c93310d79399c212c12b
  
      @Override
 diff --git a/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java b/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java
-index f5789f45091410beffc69d0de47d381c51c7fa85..34536dee9576d35e15145ccbadb81192fe1646c3 100644
+index f5789f45091410beffc69d0de47d381c51c7fa85..34536dee9576d35e15145ccbadb81192fe1646c3 100755
 --- a/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java
 @@ -5,12 +5,79 @@ import net.minecraft.core.AxisCycle;
@@ -40992,7 +41002,7 @@ index f5789f45091410beffc69d0de47d381c51c7fa85..34536dee9576d35e15145ccbadb81192
          if (xSize >= 0 && ySize >= 0 && zSize >= 0) {
              this.xSize = xSize;
 diff --git a/net/minecraft/world/phys/shapes/OffsetDoubleList.java b/net/minecraft/world/phys/shapes/OffsetDoubleList.java
-index 66085f0e57fd2e2fae3967aab7f6835d23fced07..7c1e93123371d0d1b371243c132b54d478f7d00f 100644
+index 66085f0e57fd2e2fae3967aab7f6835d23fced07..7c1e93123371d0d1b371243c132b54d478f7d00f 100755
 --- a/net/minecraft/world/phys/shapes/OffsetDoubleList.java
 +++ b/net/minecraft/world/phys/shapes/OffsetDoubleList.java
 @@ -4,8 +4,8 @@ import it.unimi.dsi.fastutil.doubles.AbstractDoubleList;
@@ -41007,7 +41017,7 @@ index 66085f0e57fd2e2fae3967aab7f6835d23fced07..7c1e93123371d0d1b371243c132b54d4
      public OffsetDoubleList(final DoubleList delegate, final double offset) {
          this.delegate = delegate;
 diff --git a/net/minecraft/world/phys/shapes/Shapes.java b/net/minecraft/world/phys/shapes/Shapes.java
-index f3235d10461382573053d890ab00c62bf17d3553..780f4b30f4b9993e548e2591993c77839b1eaf1a 100644
+index f3235d10461382573053d890ab00c62bf17d3553..780f4b30f4b9993e548e2591993c77839b1eaf1a 100755
 --- a/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/net/minecraft/world/phys/shapes/Shapes.java
 @@ -21,9 +21,15 @@ public final class Shapes {
@@ -41410,7 +41420,7 @@ index f3235d10461382573053d890ab00c62bf17d3553..780f4b30f4b9993e548e2591993c7783
  
      @VisibleForTesting
 diff --git a/net/minecraft/world/phys/shapes/SliceShape.java b/net/minecraft/world/phys/shapes/SliceShape.java
-index ec7834b53788f95ab7956c22bddfa38c4ee4e2f2..a612ace0b4e128c05196400b125a12a8918e8b0d 100644
+index ec7834b53788f95ab7956c22bddfa38c4ee4e2f2..a612ace0b4e128c05196400b125a12a8918e8b0d 100755
 --- a/net/minecraft/world/phys/shapes/SliceShape.java
 +++ b/net/minecraft/world/phys/shapes/SliceShape.java
 @@ -12,6 +12,7 @@ public class SliceShape extends VoxelShape {
@@ -41422,7 +41432,7 @@ index ec7834b53788f95ab7956c22bddfa38c4ee4e2f2..a612ace0b4e128c05196400b125a12a8
  
      private static DiscreteVoxelShape makeSlice(final DiscreteVoxelShape delegate, final Direction.Axis axis, final int point) {
 diff --git a/net/minecraft/world/phys/shapes/VoxelShape.java b/net/minecraft/world/phys/shapes/VoxelShape.java
-index 9b210edf1f28285fc206644c5d81c7d05ea5a578..cbf479b7337a78b9980926b8ba984c4546bf9c3d 100644
+index 9b210edf1f28285fc206644c5d81c7d05ea5a578..cbf479b7337a78b9980926b8ba984c4546bf9c3d 100755
 --- a/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -18,60 +18,545 @@ import net.minecraft.world.phys.Vec3;
@@ -42321,7 +42331,7 @@ index 9b210edf1f28285fc206644c5d81c7d05ea5a578..cbf479b7337a78b9980926b8ba984c45
      protected double collideX(final AxisCycle transform, final AABB moving, double distance) {
          if (this.isEmpty()) {
 diff --git a/net/minecraft/world/ticks/LevelChunkTicks.java b/net/minecraft/world/ticks/LevelChunkTicks.java
-index cec7442a5401b2886f5ce7c473386c15f64fe0a3..88eb48034d8022600dc08b4dcf6162bbdd8c6d33 100644
+index cec7442a5401b2886f5ce7c473386c15f64fe0a3..88eb48034d8022600dc08b4dcf6162bbdd8c6d33 100755
 --- a/net/minecraft/world/ticks/LevelChunkTicks.java
 +++ b/net/minecraft/world/ticks/LevelChunkTicks.java
 @@ -14,13 +14,37 @@ import java.util.stream.Stream;
@@ -42407,7 +42417,7 @@ index cec7442a5401b2886f5ce7c473386c15f64fe0a3..88eb48034d8022600dc08b4dcf6162bb
  
              for (SavedTick<T> pendingTick : this.pendingTicks) {
 diff --git a/net/minecraft/world/waypoints/WaypointTransmitter.java b/net/minecraft/world/waypoints/WaypointTransmitter.java
-index 01fd20a4a452de5201f4e6141d6fb7563e2597b4..07af92310ee5c8bba04e6175b6faac629632e4de 100644
+index 01fd20a4a452de5201f4e6141d6fb7563e2597b4..07af92310ee5c8bba04e6175b6faac629632e4de 100755
 --- a/net/minecraft/world/waypoints/WaypointTransmitter.java
 +++ b/net/minecraft/world/waypoints/WaypointTransmitter.java
 @@ -34,7 +34,10 @@ public interface WaypointTransmitter extends Waypoint {
