@@ -1,6 +1,23 @@
 --- a/net/minecraft/resources/ResourceManagerRegistryLoadTask.java
 +++ b/net/minecraft/resources/ResourceManagerRegistryLoadTask.java
-@@ -40,6 +_,7 @@
+@@ -26,20 +_,24 @@
+         return new RegistrationInfo(knownPack, lifecycle);
+     });
+     private final ResourceManager resourceManager;
++    private final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause; // Paper - add load cause
+ 
+     public ResourceManagerRegistryLoadTask(
+         final RegistryDataLoader.RegistryData<T> data,
+         final Lifecycle lifecycle,
+         final Map<ResourceKey<?>, Exception> loadingErrors,
+         final ResourceManager resourceManager
++        , final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause // Paper - add load cause
+     ) {
+         super(data, lifecycle, loadingErrors);
+         this.resourceManager = resourceManager;
++        this.cause = cause; // Paper - add load cause
+     }
+ 
      @Override
      public CompletableFuture<?> load(final RegistryOps.RegistryInfoLookup context, final Executor executor) {
          FileToIdConverter lister = FileToIdConverter.registry(this.registryKey());
@@ -20,7 +37,7 @@
                          this.registryKey(), this.concurrentRegistrationGetter, this.readOnlyRegistry()
                      );
 -                    Map<TagKey<T>, List<Holder<T>>> pendingTags = TagLoader.loadTagsForRegistry(this.resourceManager, this.registryKey(), tagElementLookup);
-+                    Map<TagKey<T>, List<Holder<T>>> pendingTags = TagLoader.loadTagsForRegistry(this.resourceManager, this.registryKey(), tagElementLookup, this.registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - tag lifecycle - add registry, cause
++                    Map<TagKey<T>, List<Holder<T>>> pendingTags = TagLoader.loadTagsForRegistry(this.resourceManager, this.registryKey(), tagElementLookup, this.registry, this.cause); // Paper - tag lifecycle - add registry, cause
                      this.registerTags(pendingTags);
                  },
                  executor
