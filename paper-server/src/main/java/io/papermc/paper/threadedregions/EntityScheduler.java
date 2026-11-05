@@ -144,8 +144,7 @@ public final class EntityScheduler {
             }
         }
 
-        // clear the tasks as it will never be executed, helps with gc.
-        this.currentlyExecuting.clear();
+        // this scheduler will never be ticked anymore, clear the delayed tasks; helps with gc.
         this.oneTimeDelayed.clear();
     }
 
