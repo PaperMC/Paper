@@ -143,6 +143,10 @@ public final class EntityScheduler {
                 retireTask.accept(thisEntity);
             }
         }
+
+        // clear the tasks as it will never be executed, helps with gc.
+        this.currentlyExecuting.clear();
+        this.oneTimeDelayed.clear();
     }
 
     /**
