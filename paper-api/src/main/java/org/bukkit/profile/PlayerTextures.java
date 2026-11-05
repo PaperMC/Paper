@@ -1,8 +1,7 @@
 package org.bukkit.profile;
 
 import java.net.URL;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides access to the textures stored inside a {@link PlayerProfile}.
@@ -12,20 +11,6 @@ import org.jetbrains.annotations.Nullable;
  * {@link #getTimestamp() timestamp} and {@link #isSigned() signature}.
  */
 public interface PlayerTextures {
-
-    /**
-     * The different Minecraft skin models.
-     */
-    enum SkinModel {
-        /**
-         * The classic Minecraft skin model.
-         */
-        CLASSIC,
-        /**
-         * The slim model has slimmer arms than the classic model.
-         */
-        SLIM;
-    }
 
     /**
      * Checks if the profile stores no textures.
@@ -42,10 +27,10 @@ public interface PlayerTextures {
     /**
      * Gets the URL that points to the player's skin.
      *
-     * @return the URL of the player's skin, or {@code null} if not set
+     * @return the URL of the player's skin, or
+     *     {@code null} if not set
      */
-    @Nullable
-    URL getSkin();
+    @Nullable URL getSkin();
 
     /**
      * Sets the player's skin to the specified URL, and the skin model to
@@ -56,9 +41,10 @@ public interface PlayerTextures {
      * http://textures.minecraft.net/texture/b3fbd454b599df593f57101bfca34e67d292a8861213d2202bb575da7fd091ac
      * </pre>
      *
-     * @param skinUrl the URL of the player's skin, or {@code null} to
-     * unset it
+     * @param skinUrl the URL of the player's skin, or
+     *                {@code null} to unset it
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setSkin(@Nullable URL skinUrl);
 
     /**
@@ -72,11 +58,12 @@ public interface PlayerTextures {
      * A skin model of {@code null} results in {@link SkinModel#CLASSIC} to
      * be used.
      *
-     * @param skinUrl the URL of the player's skin, or {@code null} to
-     * unset it
+     * @param skinUrl   the URL of the player's skin, or {@code null} to
+     *                  unset it
      * @param skinModel the skin model, ignored if the skin URL is
-     * {@code null}
+     *                  {@code null}
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setSkin(@Nullable URL skinUrl, @Nullable SkinModel skinModel);
 
     /**
@@ -86,7 +73,6 @@ public interface PlayerTextures {
      *
      * @return the model of the player's skin
      */
-    @NotNull
     SkinModel getSkinModel();
 
     /**
@@ -94,8 +80,7 @@ public interface PlayerTextures {
      *
      * @return the URL of the player's cape, or {@code null} if not set
      */
-    @Nullable
-    URL getCape();
+    @Nullable URL getCape();
 
     /**
      * Sets the URL that points to the player's cape.
@@ -106,8 +91,9 @@ public interface PlayerTextures {
      * </pre>
      *
      * @param capeUrl the URL of the player's cape, or {@code null} to
-     * unset it
+     *                unset it
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     void setCape(@Nullable URL capeUrl);
 
     /**
@@ -121,7 +107,21 @@ public interface PlayerTextures {
      * Checks if the textures are signed and the signature is valid.
      *
      * @return {@code true} if the textures are signed and the signature is
-     * valid
+     *     valid
      */
     boolean isSigned();
+
+    /**
+     * The different Minecraft skin models.
+     */
+    enum SkinModel {
+        /**
+         * The classic Minecraft skin model.
+         */
+        CLASSIC,
+        /**
+         * The slim model has slimmer arms than the classic model.
+         */
+        SLIM
+    }
 }

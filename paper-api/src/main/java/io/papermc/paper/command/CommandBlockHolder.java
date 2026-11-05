@@ -1,10 +1,14 @@
 package io.papermc.paper.command;
 
 import net.kyori.adventure.text.Component;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
+/**
+ * Represents something that holds and runs a command like a command block.
+ *
+ * @see org.bukkit.block.CommandBlock
+ * @see org.bukkit.entity.minecart.CommandMinecart
+ */
 public interface CommandBlockHolder {
 
     /**
@@ -41,17 +45,17 @@ public interface CommandBlockHolder {
 
     /**
      * Gets the success count from this command block.
-     * @see <a href="https://minecraft.wiki/wiki/Command_Block#Success_count">Command_Block#Success_count</a>
      *
      * @return the success count
+     * @see <a href="https://minecraft.wiki/wiki/Command_Block#Success_count">Command_Block#Success_count</a>
      */
     int getSuccessCount();
 
     /**
      * Sets the success count from this command block.
-     * @see <a href="https://minecraft.wiki/wiki/Command_Block#Success_count">Command_Block#Success_count</a>
      *
      * @param successCount the success count
+     * @see <a href="https://minecraft.wiki/wiki/Command_Block#Success_count">Command_Block#Success_count</a>
      */
     void setSuccessCount(int successCount);
 }

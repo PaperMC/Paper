@@ -2,7 +2,6 @@ package io.papermc.paper.text;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -11,21 +10,38 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> type of value
  */
-@NullMarked
 public interface Filtered<T> {
 
+    /**
+     * Creates a filterable value.
+     *
+     * @param raw      the unfiltered value
+     * @param filtered the value shown to players with text filtering enabled, or {@code null} to show them the raw value
+     * @param <T>      type of value
+     * @return a new filterable value
+     */
     @Contract(value = "_, _ -> new", pure = true)
     static <T> Filtered<T> of(final T raw, final @Nullable T filtered) {
         @ApiStatus.Internal
-        record Instance<T>(T raw, @Nullable T filtered) implements Filtered<T> {}
+        record Instance<T>(T raw, @Nullable T filtered) implements Filtered<T> {
+        }
 
         return new Instance<>(raw, filtered);
     }
 
+    /**
+     * Gets the unfiltered value.
+     *
+     * @return the unfiltered value
+     */
     @Contract(pure = true)
     T raw();
 
+    /**
+     * Gets the value shown to players with text filtering enabled.
+     *
+     * @return the filtered value, or {@code null} if those players are shown the {@link #raw() raw} value
+     */
     @Contract(pure = true)
-    @Nullable
-    T filtered();
+    @Nullable T filtered();
 }

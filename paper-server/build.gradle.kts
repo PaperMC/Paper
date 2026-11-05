@@ -8,6 +8,7 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
+    id("io.papermc.paperweight.paper-checkstyle")
     id("io.papermc.fill.gradle") version "1.0.14"
 }
 
@@ -25,6 +26,10 @@ paperweight {
     updatingMinecraft {
         //oldPaperCommit = "e5fe71723e2ffde7cc9fafc085ac3bb73e63175e"
     }
+}
+
+paperCheckstyle {
+    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
 }
 
 tasks.generateDevelopmentBundle {

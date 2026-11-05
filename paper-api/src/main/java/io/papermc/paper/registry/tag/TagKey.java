@@ -5,9 +5,12 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
+/**
+ * The key of a {@link Tag}, made of the registry it belongs to and its own key.
+ *
+ * @param <T> the type of the values in the tag
+ */
 public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {
 
     /**
