@@ -5,13 +5,11 @@ import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
 import io.papermc.paper.plugin.loader.library.LibraryStore;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A mutable builder that may be used to collect and register all {@link ClassPathLibrary} instances a
  * {@link PluginLoader} aims to provide to its plugin at runtime.
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface PluginClasspathBuilder {
 
@@ -32,5 +30,10 @@ public interface PluginClasspathBuilder {
     @Contract("_ -> this")
     PluginClasspathBuilder addLibrary(ClassPathLibrary classPathLibrary);
 
+    /**
+     * Gets the context of the plugin this classpath is built for.
+     *
+     * @return the plugin provider context
+     */
     PluginProviderContext getContext();
 }

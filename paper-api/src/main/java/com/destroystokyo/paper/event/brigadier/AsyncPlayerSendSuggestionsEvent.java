@@ -7,7 +7,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * If the suggestions are empty after this event has been called, nothing will be sent to the client.
  */
-@NullMarked
 public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

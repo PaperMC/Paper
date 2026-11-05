@@ -9,9 +9,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import org.bukkit.Axis;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Rail;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class PropertyAppenders {
 
     private static final Map<Property<?>, AppenderBase> APPENDERS = Stream.of(
@@ -29,5 +27,8 @@ public final class PropertyAppenders {
         if (APPENDERS.containsKey(property)) {
             callback.accept(APPENDERS.get(property));
         }
+    }
+
+    private PropertyAppenders() {
     }
 }
