@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import net.minecraft.world.level.chunk.storage.RegionFile;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Region file compression formats that vanilla does not know about.
@@ -21,7 +20,6 @@ import org.jspecify.annotations.NullMarked;
  * Vanilla reports such chunks as "Unrecognized custom compression" instead of treating them as corrupt,
  * and the identifier can never collide with compression ids Mojang adds later.
  */
-@NullMarked
 public final class CustomRegionCompression {
 
     public static final String ZSTD_ID = "paper:zstd";
