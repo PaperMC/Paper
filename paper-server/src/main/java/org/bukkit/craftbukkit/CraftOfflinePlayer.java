@@ -6,12 +6,18 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import com.google.common.base.Preconditions;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.server.players.ServerOpList;
+import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -578,5 +584,50 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             CraftStatistic.setStatistic(manager, statistic, entityType, newValue, null);
             manager.save();
         }
+    }
+
+    @Override
+    public boolean bypassesPlayerLimit() {
+        return this.server.getHandle().getOps().canBypassPlayerLimit(this.nameAndId);
+    }
+
+    @Override
+    public boolean setBypassesPlayerLimit(boolean bypass) {
+        ServerOpList opList = this.server.getHandle().getOps();
+        ServerOpListEntry existingEntry = opList.get(this.nameAndId);
+
+        if (existingEntry == null) {
+            return false;
+        }
+
+        opList.add(new ServerOpListEntry(this.nameAndId, existingEntry.permissions(), bypass));
+        return true;
+    }
+
+    @Override
+    public int getOpLevel() {
+        ServerOpList opList = this.server.getHandle().getOps();
+        ServerOpListEntry entry = opList.get(this.nameAndId);
+
+        if (entry == null) {
+            return 0;
+        }
+
+        LevelBasedPermissionSet levelSet = entry.permissions();
+        return levelSet.level().id();
+    }
+
+    @Override
+    public void setOpLevel(int level) {
+        Preconditions.checkArgument(level >= 0 && level <= 4, "Operator permission level must be between 0 and 4, got '%s'.", level);
+
+        ServerOpListEntry existingEntry = this.server.getHandle().getOps().get(this.nameAndId);
+
+        boolean bypassesLimit = existingEntry != null && existingEntry.getBypassesPlayerLimit();
+
+        PermissionLevel permLevel = PermissionLevel.byId(level);
+        LevelBasedPermissionSet permSet = LevelBasedPermissionSet.forLevel(permLevel);
+
+        this.server.getHandle().op(this.nameAndId, Optional.of(permSet), Optional.of(bypassesLimit));
     }
 }
