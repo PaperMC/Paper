@@ -14,54 +14,78 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 
     /**
-     * Relative flags enable an entity to not lose their velocity in the flag-specific axis/context when teleporting.
-     *
-     * @apiNote The relative flags exposed in the API do *not* mirror all flags known to vanilla, as relative flags concerning
-     * the position are non-applicable given teleports always expect an absolute location.
+     * Relative flags enable an entity to keep part of its current state when teleporting.
+     * <ul>
+     *  <li>{@code VELOCITY_*} flags prevent the entity from losing its velocity in an axis.</li>
+     *  <li>{@code POSITION_*} flags make the teleport relative to the entity's server-side position.
+     *      The provided location is still absolute, the server sends the offset to it.
+     *      For players, the client applies the offset to its own position; this allows for smoother teleportation at
+     *      the cost of possibly offsetting the player slightly from the target location due to latency.</li>
+     * </ul>
      * @see Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
      * @see Entity#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
      */
     enum Relative implements TeleportFlag {
         /**
-         * Configures the player to not lose velocity in their x axis during the teleport.
+         * Configures the entity to not lose velocity in its x axis during the teleport.
          */
         VELOCITY_X,
         /**
-         * Configures the player to not lose velocity in their y axis during the teleport.
+         * Configures the entity to not lose velocity in its y axis during the teleport.
          */
         VELOCITY_Y,
         /**
-         * Configures the player to not lose velocity in their z axis during the teleport.
+         * Configures the entity to not lose velocity in its z axis during the teleport.
          */
         VELOCITY_Z,
         /**
-         * Configures the player to not lose velocity in their current rotation during the teleport.
+         * Configures the entity's velocity to be rotated along with the change in its rotation during the teleport.
+         * <p>
+         * This only affects the axes the velocity is kept in.
          */
-        VELOCITY_ROTATION;
+        VELOCITY_ROTATION,
         /**
-         * Configures the player to not lose velocity in their x axis during the teleport.
+         * Configures the teleport to be relative to the current x position of the entity.
+         * <p>
+         * The provided location is still absolute, the server sends the offset to it from the entity's position on the
+         * server.
+         */
+        POSITION_X,
+        /**
+         * Configures the teleport to be relative to the current y position of the entity.
+         * <p>
+         * The provided location is still absolute, the server sends the offset to it from the entity's position on the
+         * server.
+         */
+        POSITION_Y,
+        /**
+         * Configures the teleport to be relative to the current z position of the entity.
+         * <p>
+         * The provided location is still absolute, the server sends the offset to it from the entity's position on the
+         * server.
+         */
+        POSITION_Z;
+        /**
+         * Configures the entity to not lose velocity in its x axis during the teleport.
          *
-         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
-         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
-         * Use {@link #VELOCITY_X} instead.
+         * @deprecated This flag only affects velocity. Use {@link #VELOCITY_X} instead, and additionally
+         * {@link #POSITION_X} to also make the position relative, as this flag did before 1.21.3.
          */
         @Deprecated(since = "1.21.3", forRemoval = true)
         public static final Relative X = VELOCITY_X;
         /**
-         * Configures the player to not lose velocity in their y axis during the teleport.
+         * Configures the entity to not lose velocity in its y axis during the teleport.
          *
-         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
-         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
-         * Use {@link #VELOCITY_Y} instead.
+         * @deprecated This flag only affects velocity. Use {@link #VELOCITY_Y} instead, and additionally
+         * {@link #POSITION_Y} to also make the position relative, as this flag did before 1.21.3.
          */
         @Deprecated(since = "1.21.3", forRemoval = true)
         public static final Relative Y = VELOCITY_Y;
         /**
-         * Configures the player to not lose velocity in their z axis during the teleport.
+         * Configures the entity to not lose velocity in its z axis during the teleport.
          *
-         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
-         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
-         * Use {@link #VELOCITY_Z} instead.
+         * @deprecated This flag only affects velocity. Use {@link #VELOCITY_Z} instead, and additionally
+         * {@link #POSITION_Z} to also make the position relative, as this flag did before 1.21.3.
          */
         @Deprecated(since = "1.21.3", forRemoval = true)
         public static final Relative Z = VELOCITY_Z;

@@ -323,16 +323,30 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
+        final ServerLevel level = ((CraftWorld) location.getWorld()).getHandle();
         final Set<net.minecraft.world.entity.Relative> relativeFlags = EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
         for (final TeleportFlag flag : flags) {
             if (flag instanceof TeleportFlag.Relative relativeFlag) {
-                relativeFlags.add(deltaRelativeToNMS(relativeFlag));
+                relativeFlags.add(relativeToNMS(relativeFlag));
             }
         }
 
+        // 1. Relative position teleports are meaningless across dimensions.
+        // 2. Teleporting non-player passenger entities first dismounts them, possibly into a location which would alter the offset.
+        if (level != entity.level() || (entity.isPassenger() && !(entity instanceof ServerPlayer))) {
+            relativeFlags.removeAll(net.minecraft.world.entity.Relative.position(true, true, true));
+        }
+
+        final Vec3 target = CraftLocation.toVec3(location);
+        final Vec3 position = new Vec3(
+            relativeFlags.contains(net.minecraft.world.entity.Relative.X) ? target.x - entity.getX() : target.x,
+            relativeFlags.contains(net.minecraft.world.entity.Relative.Y) ? target.y - entity.getY() : target.y,
+            relativeFlags.contains(net.minecraft.world.entity.Relative.Z) ? target.z - entity.getZ() : target.z
+        );
+
         return this.entity.teleport(new TeleportTransition(
-            ((CraftWorld) location.getWorld()).getHandle(),
-            CraftLocation.toVec3(location),
+            level,
+            position,
             Vec3.ZERO,
             location.getYaw(),
             location.getPitch(),
@@ -345,23 +359,40 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         )) != null;
     }
 
-    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(TeleportFlag.Relative apiFlag) {
+    public static net.minecraft.world.entity.Relative relativeToNMS(TeleportFlag.Relative apiFlag) {
         return switch (apiFlag) {
             case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
             case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
             case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
             case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+            case POSITION_X -> net.minecraft.world.entity.Relative.X;
+            case POSITION_Y -> net.minecraft.world.entity.Relative.Y;
+            case POSITION_Z -> net.minecraft.world.entity.Relative.Z;
         };
     }
 
-    public static TeleportFlag.@Nullable Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+    public static TeleportFlag.@Nullable Relative relativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
         return switch (nmsFlag) {
             case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
             case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;
             case DELTA_Z -> TeleportFlag.Relative.VELOCITY_Z;
             case ROTATE_DELTA -> TeleportFlag.Relative.VELOCITY_ROTATION;
-            case X, Y, Z, Y_ROT, X_ROT -> null;
+            case X -> TeleportFlag.Relative.POSITION_X;
+            case Y -> TeleportFlag.Relative.POSITION_Y;
+            case Z -> TeleportFlag.Relative.POSITION_Z;
+            case Y_ROT, X_ROT -> null;
         };
+    }
+
+    public static Set<TeleportFlag.Relative> relativesToAPI(final Set<net.minecraft.world.entity.Relative> nmsFlags) {
+        final Set<TeleportFlag.Relative> apiFlags = EnumSet.noneOf(TeleportFlag.Relative.class);
+        for (final net.minecraft.world.entity.Relative nmsFlag : nmsFlags) {
+            final TeleportFlag.Relative apiFlag = relativeToAPI(nmsFlag);
+            if (apiFlag != null) {
+                apiFlags.add(apiFlag);
+            }
+        }
+        return Collections.unmodifiableSet(apiFlags);
     }
 
     @Override
