@@ -16,6 +16,16 @@ import org.bukkit.loot.LootTable;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
 
+    @Override
+    public boolean isPersistenceRequired() {
+        return this.getHandle().isPersistenceRequired();
+    }
+
+    @Override
+    public void setPersistenceRequired(boolean persistent) {
+        this.getHandle().persistenceRequired = persistent;
+    }
+
     private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
 
     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
