@@ -37330,7 +37330,7 @@ index fb93fa9c80ca93352532ba7c1f81f5b7d7bdc058..de51b7290f11c1b2cb5eacb700b1803a
      private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
      private static final int REGION_CACHE_SIZE = 1024;
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b3a70c77b 100644
+index d63b0872e2253491aff5faaac6467587deceb66b..d0ad0ebdc43ea98cb1e7da60430b9096bf214094 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.level.ChunkPos;
@@ -37415,7 +37415,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
 +                return null;
 +            }
 +
-+            try (final DataInputStream input = new DataInputStream(compression.wrap(createStream(chunkData, chunkData.remaining())))) {
++            try (final DataInputStream input = new DataInputStream(compression.wrapStoredInput(createStream(chunkData, chunkData.remaining())))) { // Paper - Custom region compression formats
 +                return ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(input);
 +            }
 +        } catch (final Exception ex) {
@@ -37587,7 +37587,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
 +                RegionFileVersion compression = null;
 +                for (final RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
 +                    final net.minecraft.nbt.CompoundTag read;
-+                    try (final DataInputStream input = new DataInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData)))) {
++                    try (final DataInputStream input = new DataInputStream(compressionType.wrapStoredInput(new ByteArrayInputStream(chunkData)))) { // Paper - Custom region compression formats
 +                        read = ca.spottedleaf.moonrise.patches.nbt_rw.FastNBTParser.nbtIoRead(input);
 +                    } catch (final Exception ex) {
 +                        continue;
@@ -37904,7 +37904,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          }
      }
  
-@@ -207,6 +675,15 @@ public class RegionFile implements AutoCloseable {
+@@ -206,6 +674,15 @@ public class RegionFile implements AutoCloseable {
      }
  
      private @Nullable DataInputStream createExternalChunkInputStream(final ChunkPos pos, final byte versionId) throws IOException {
@@ -37920,7 +37920,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          Path externalFile = this.getExternalChunkPath(pos);
          if (!Files.isRegularFile(externalFile)) {
              LOGGER.error("External chunk path {} is not file", externalFile);
-@@ -236,7 +713,7 @@ public class RegionFile implements AutoCloseable {
+@@ -235,7 +712,7 @@ public class RegionFile implements AutoCloseable {
          return (size + 4096 - 1) / 4096;
      }
  
@@ -37929,7 +37929,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          int offset = this.getOffset(pos);
          if (offset == 0) {
              return false;
-@@ -247,7 +724,7 @@ public class RegionFile implements AutoCloseable {
+@@ -246,7 +723,7 @@ public class RegionFile implements AutoCloseable {
          ByteBuffer streamHeader = ByteBuffer.allocate(5);
  
          try {
@@ -37938,7 +37938,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
              streamHeader.flip();
              if (streamHeader.remaining() != 5) {
                  return false;
-@@ -293,7 +770,7 @@ public class RegionFile implements AutoCloseable {
+@@ -292,7 +769,7 @@ public class RegionFile implements AutoCloseable {
          this.file.force(true);
      }
  
@@ -37947,7 +37947,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          int offsetIndex = getOffsetIndex(pos);
          int offset = this.offsets.get(offsetIndex);
          if (offset != 0) {
-@@ -370,7 +847,7 @@ public class RegionFile implements AutoCloseable {
+@@ -369,7 +846,7 @@ public class RegionFile implements AutoCloseable {
          return this.offsets.get(getOffsetIndex(pos));
      }
  
@@ -37956,7 +37956,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          return this.getOffset(pos) != 0;
      }
  
-@@ -379,7 +856,7 @@ public class RegionFile implements AutoCloseable {
+@@ -378,7 +855,7 @@ public class RegionFile implements AutoCloseable {
      }
  
      @Override
@@ -37965,7 +37965,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          try {
              this.padToFullSector();
          } finally {
-@@ -401,9 +878,28 @@ public class RegionFile implements AutoCloseable {
+@@ -400,9 +877,28 @@ public class RegionFile implements AutoCloseable {
          }
      }
  
@@ -37995,7 +37995,7 @@ index 0910dd3d45b0490c5a131db45252cdcedb19ede2..a7c67072e4eeab6ae5e704b85f9fa84b
          public ChunkBuffer(final ChunkPos pos) {
              super(8096);
              super.write(0);
-@@ -420,7 +916,7 @@ public class RegionFile implements AutoCloseable {
+@@ -419,7 +915,7 @@ public class RegionFile implements AutoCloseable {
              int streamLength = this.count - 5 + 1;
              JvmProfiler.INSTANCE.onRegionFileWrite(RegionFile.this.info, this.pos, RegionFile.this.version, streamLength);
              result.putInt(0, streamLength);
@@ -38401,7 +38401,7 @@ index 88c3c4ea242d7dbc38e62c3b406b9955b07dae4d..9f8b1d4235d2f268a523c028006114b6
  
      public RegionStorageInfo info() {
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
-index b6810ca918da9aac844a1cd03550a83a0ab1a1e6..7f7a66d05c9bec3d1c5a1e5b4d7fda6bb1757c4a 100644
+index 95a36a5159591d565ddba95b66f7a3a46d2940d0..380097839c9e598b75022609618de109eb1e23f6 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 @@ -21,7 +21,7 @@ import org.slf4j.Logger;

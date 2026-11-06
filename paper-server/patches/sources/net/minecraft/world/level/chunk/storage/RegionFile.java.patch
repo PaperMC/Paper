@@ -29,22 +29,19 @@
          int sectorsLength = numSectors * 4096;
          ByteBuffer buffer = ByteBuffer.allocate(sectorsLength);
          this.file.read(buffer, sectorNumber * 4096);
-@@ -167,7 +_,14 @@
-     private @Nullable DataInputStream createChunkInputStream(final ChunkPos pos, final byte versionId, final InputStream chunkStream) throws IOException {
-         RegionFileVersion version = RegionFileVersion.fromId(versionId);
-         if (version == RegionFileVersion.VERSION_CUSTOM) {
--            String type = new DataInputStream(chunkStream).readUTF();
-+            // Paper start - Custom region compression formats
-+            final String type;
-+            try {
-+                return new DataInputStream(version.wrap(chunkStream));
-+            } catch (final io.papermc.paper.world.storage.CustomRegionCompression.UnknownCompressionException e) {
-+                type = e.compressionId();
-+            }
-+            // Paper end - Custom region compression formats
+@@ -170,6 +_,12 @@
+             String type = new DataInputStream(chunkStream).readUTF();
              Identifier id = Identifier.tryParse(type);
              if (id != null) {
++                // Paper start - Custom region compression formats
++                final RegionFileVersion customVersion = RegionFileVersion.fromCustomId(id);
++                if (customVersion != null) {
++                    return new DataInputStream(customVersion.wrap(chunkStream));
++                }
++                // Paper end - Custom region compression formats
                  LOGGER.error("Unrecognized custom compression {}", id);
+                 return null;
+             } else {
 @@ -258,6 +_,7 @@
  
              return true;

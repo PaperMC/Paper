@@ -9,25 +9,53 @@
      );
      public static final RegionFileVersion VERSION_DEFLATE = register(
          new RegionFileVersion(
-@@ -37,11 +_,20 @@
-             4, "lz4", in -> new FastBufferedInputStream(new LZ4BlockInputStream(in)), out -> new BufferedOutputStream(new LZ4BlockOutputStream(out))
-         )
-     );
--    public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, in -> {
--        throw new UnsupportedOperationException();
--    }, out -> {
-+    public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, io.papermc.paper.world.storage.CustomRegionCompression::wrapInput, out -> { // Paper - Custom region compression formats; dispatch custom streams by their identifier
+@@ -42,6 +_,51 @@
+     }, out -> {
          throw new UnsupportedOperationException();
      }));
 +    // Paper start - Custom region compression formats
-+    // Shares id 127 with VERSION_CUSTOM (so it is only registered by name): the stream starts with the "paper:zstd" identifier.
-+    public static final RegionFileVersion VERSION_PAPER_ZSTD = registerByName(
-+        new RegionFileVersion(127, "zstd", io.papermc.paper.world.storage.CustomRegionCompression::wrapInput, io.papermc.paper.world.storage.CustomRegionCompression::wrapZstdOutput)
++    // Custom formats are stored like Vanilla expects them: the VERSION_CUSTOM id, then the identifier of the format,
++    // which RegionFile#createChunkInputStream reads and looks up with fromCustomId.
++    private static final java.util.Map<net.minecraft.resources.Identifier, RegionFileVersion> CUSTOM_VERSIONS = new java.util.HashMap<>();
++    public static final RegionFileVersion VERSION_PAPER_ZSTD = registerCustom(
++        net.minecraft.resources.Identifier.fromNamespaceAndPath("paper", "zstd"),
++        "zstd",
++        io.papermc.paper.world.storage.ZstdRegionCompression::wrapInput,
++        io.papermc.paper.world.storage.ZstdRegionCompression::wrapOutput
 +    );
 +
-+    private static RegionFileVersion registerByName(final RegionFileVersion version) {
-+        VERSIONS_BY_NAME.put(java.util.Objects.requireNonNull(version.optionName), version);
++    private static RegionFileVersion registerCustom(
++        final net.minecraft.resources.Identifier customId,
++        final String optionName,
++        final RegionFileVersion.StreamWrapper<InputStream> inputWrapper,
++        final RegionFileVersion.StreamWrapper<OutputStream> outputWrapper
++    ) {
++        final RegionFileVersion version = new RegionFileVersion(VERSION_CUSTOM.id, optionName, inputWrapper, out -> {
++            new java.io.DataOutputStream(out).writeUTF(customId.toString()); // DataOutputStream is unbuffered, this goes straight to out
++            return outputWrapper.wrap(out);
++        });
++        CUSTOM_VERSIONS.put(customId, version);
++        VERSIONS_BY_NAME.put(optionName, version);
 +        return version;
++    }
++
++    public static @Nullable RegionFileVersion fromCustomId(final net.minecraft.resources.Identifier customId) {
++        return CUSTOM_VERSIONS.get(customId);
++    }
++
++    // Like wrap, but for VERSION_CUSTOM it first reads the identifier of the format, like RegionFile#createChunkInputStream does.
++    // For code that reads stored chunk data without going through createChunkInputStream, such as the region file header recalculation.
++    public InputStream wrapStoredInput(final InputStream in) throws IOException {
++        if (this.id != VERSION_CUSTOM.id) {
++            return this.wrap(in);
++        }
++        final String type = new java.io.DataInputStream(in).readUTF();
++        final net.minecraft.resources.Identifier customId = net.minecraft.resources.Identifier.tryParse(type);
++        final RegionFileVersion version = customId == null ? null : CUSTOM_VERSIONS.get(customId);
++        if (version == null) {
++            throw new IOException("Unrecognized custom compression " + type);
++        }
++        return version.wrap(in);
 +    }
 +    // Paper end - Custom region compression formats
      public static final RegionFileVersion DEFAULT = VERSION_DEFLATE;
