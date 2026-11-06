@@ -4,26 +4,40 @@ import org.bukkit.block.Lectern;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.LecternInventory;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This event is called when a player clicks the button to take a book of a
  * Lectern. If this event is cancelled the book remains on the lectern.
  */
+@NullMarked
 public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Lectern lectern;
+    private final LecternInventory inventory;
+    private final @Nullable Lectern lectern;
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerTakeLecternBookEvent(@NotNull Player player, @NotNull Lectern lectern) {
+    public PlayerTakeLecternBookEvent(final Player player, final LecternInventory inventory, final @Nullable Lectern lectern) {
         super(player);
+        this.inventory = inventory;
         this.lectern = lectern;
+    }
+
+    /**
+     * Gets the inventory of the lectern.
+     *
+     * @return the Inventory of the Lectern
+     */
+    public LecternInventory getInventory() {
+        return this.inventory;
     }
 
     /**
@@ -31,8 +45,7 @@ public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellab
      *
      * @return the Lectern
      */
-    @NotNull
-    public Lectern getLectern() {
+    public @Nullable Lectern getLectern() {
         return this.lectern;
     }
 
@@ -41,9 +54,8 @@ public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellab
      *
      * @return the ItemStack on the Lectern
      */
-    @Nullable
-    public ItemStack getBook() {
-        return this.lectern.getInventory().getItem(0);
+    public @Nullable ItemStack getBook() {
+        return this.getInventory().getItem(0);
     }
 
     @Override
@@ -52,17 +64,15 @@ public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellab
     }
 
     @Override
-    public void setCancelled(boolean cancel) {
+    public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

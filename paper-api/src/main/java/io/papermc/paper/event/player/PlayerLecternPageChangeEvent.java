@@ -6,15 +6,18 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.LecternInventory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class PlayerLecternPageChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Lectern lectern;
+    private final LecternInventory inventory;
+    private final @Nullable Lectern lectern;
     private final ItemStack book;
     private final PageChangeDirection pageChangeDirection;
     private final int oldPage;
@@ -23,8 +26,9 @@ public class PlayerLecternPageChangeEvent extends PlayerEvent implements Cancell
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerLecternPageChangeEvent(final Player player, final Lectern lectern, final ItemStack book, final PageChangeDirection pageChangeDirection, final int oldPage, final int newPage) {
+    public PlayerLecternPageChangeEvent(final Player player, final LecternInventory inventory, final @Nullable Lectern lectern, final ItemStack book, final PageChangeDirection pageChangeDirection, final int oldPage, final int newPage) {
         super(player);
+        this.inventory = inventory;
         this.lectern = lectern;
         this.book = book;
         this.pageChangeDirection = pageChangeDirection;
@@ -33,11 +37,20 @@ public class PlayerLecternPageChangeEvent extends PlayerEvent implements Cancell
     }
 
     /**
+     * Gets the inventory of the lectern.
+     *
+     * @return the Inventory of the Lectern
+     */
+    public LecternInventory getInventory() {
+        return this.inventory;
+    }
+
+    /**
      * Gets the lectern involved.
      *
      * @return the Lectern
      */
-    public Lectern getLectern() {
+    public @Nullable Lectern getLectern() {
         return this.lectern;
     }
 
