@@ -1,14 +1,20 @@
 package io.papermc.paper.world.storage;
 
+import com.github.luben.zstd.Zstd;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.Objects;
 import java.util.Random;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -23,11 +29,14 @@ import org.bukkit.support.environment.Normal;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @Normal
 class ZstdRegionCompressionTest {
@@ -38,6 +47,11 @@ class ZstdRegionCompressionTest {
     private static final int CUSTOM_COMPRESSION_ID = 127;
     private static final int EXTERNAL_FLAG = 128;
     private static final byte[] ZSTD_FRAME_MAGIC = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD};
+    private static final String NO_DICTIONARY = "paper:zstd";
+    private static final String DICTIONARY_1 = "paper:zstd_dict_1";
+    // Chunks written with paper:zstd_dict_1 can only ever be read with this exact dictionary:
+    // never change it, add a better dictionary as a new format instead.
+    private static final String DICTIONARY_1_SHA256 = "2539eb142970c9d09078e1cd6e463eabf08e14a02396e31d1c871d2d8867cbe8";
 
     // stored inside the region file
     private static final ChunkPos SMALL = new ChunkPos(1, 2);
@@ -50,24 +64,40 @@ class ZstdRegionCompressionTest {
     Path dir;
 
     @Test
-    void storesChunksInTheVanillaCustomCompressionLayout() throws IOException {
-        final byte[] region = Files.readAllBytes(this.writeRegion());
-
-        // internal chunk: length, custom compression id, "paper:zstd", zstd frame
-        final int sector = ByteBuffer.wrap(region).getInt(offsetIndex(SMALL) * 4) >>> 8;
-        final int start = sector * 4096;
-        assertEquals(CUSTOM_COMPRESSION_ID, region[start + 4]);
-        assertIdentifierThenZstdFrame(region, start + 5);
-
-        // external chunk: the region file keeps the custom compression id with the external flag, the .mcc file has the rest
-        final int externalSector = ByteBuffer.wrap(region).getInt(offsetIndex(LARGE) * 4) >>> 8;
-        assertEquals((byte) (CUSTOM_COMPRESSION_ID | EXTERNAL_FLAG), region[externalSector * 4096 + 4]);
-        assertIdentifierThenZstdFrame(Files.readAllBytes(this.dir.resolve("c.3.4.mcc")), 0);
+    void zstdOptionWritesWithTheNewestDictionary() {
+        try {
+            RegionFileVersion.configure("zstd");
+            assertSame(RegionFileVersion.VERSION_PAPER_ZSTD_DICT_1, RegionFileVersion.getSelected());
+        } finally {
+            RegionFileVersion.configure("deflate");
+        }
     }
 
     @Test
-    void readsChunksWhateverFormatIsSelectedForWriting() throws IOException {
-        final Path file = this.writeRegion();
+    void shippedDictionaryNeverChanges() throws IOException, NoSuchAlgorithmException {
+        final String sha256 = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(shippedDictionary()));
+        assertEquals(DICTIONARY_1_SHA256, sha256, "zstd_dict_1.bin changed: chunks written with it would become unreadable");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {NO_DICTIONARY, DICTIONARY_1})
+    void storesChunksInTheVanillaCustomCompressionLayout(final String format) throws IOException {
+        final byte[] region = Files.readAllBytes(this.writeRegion(version(format)));
+        final long dictionaryId = format.equals(NO_DICTIONARY) ? 0 : Zstd.getDictIdFromDict(shippedDictionary());
+
+        // internal chunk: length, custom compression id, format identifier, zstd frame
+        assertEquals(CUSTOM_COMPRESSION_ID, region[chunkStart(region, SMALL) + 4]);
+        assertFormatThenZstdFrame(internalStream(region, SMALL), format, dictionaryId);
+
+        // external chunk: the region file keeps the custom compression id with the external flag, the .mcc file has the rest
+        assertEquals((byte) (CUSTOM_COMPRESSION_ID | EXTERNAL_FLAG), region[chunkStart(region, LARGE) + 4]);
+        assertFormatThenZstdFrame(Files.readAllBytes(this.dir.resolve("c.3.4.mcc")), format, dictionaryId);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {NO_DICTIONARY, DICTIONARY_1})
+    void readsChunksWhateverFormatIsSelectedForWriting(final String format) throws IOException {
+        final Path file = this.writeRegion(version(format));
         try (RegionFile region = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_DEFLATE, false)) {
             assertEquals(SMALL_TAG, read(region, SMALL));
             assertEquals(LARGE_TAG, read(region, LARGE));
@@ -75,30 +105,50 @@ class ZstdRegionCompressionTest {
     }
 
     @Test
-    void unknownCustomCompressionReadsAsMissing() throws IOException {
-        final Path file = this.writeRegion();
+    void readsRegionsMixingBothZstdFormats() throws IOException {
+        // e.g. a world written by a build without the dictionary, then by one with it
+        final Path file = this.dir.resolve("r.0.0.mca");
+        try (RegionFile region = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_PAPER_ZSTD, false)) {
+            write(region, SMALL, SMALL_TAG);
+        }
+        try (RegionFile region = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_PAPER_ZSTD_DICT_1, false)) {
+            write(region, LARGE, LARGE_TAG);
+        }
+        assertEquals(NO_DICTIONARY, new DataInputStream(new ByteArrayInputStream(internalStream(Files.readAllBytes(file), SMALL))).readUTF());
+        assertEquals(DICTIONARY_1, new DataInputStream(new ByteArrayInputStream(Files.readAllBytes(this.dir.resolve("c.3.4.mcc")))).readUTF());
+
+        try (RegionFile region = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_DEFLATE, false)) {
+            assertEquals(SMALL_TAG, read(region, SMALL));
+            assertEquals(LARGE_TAG, read(region, LARGE));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {NO_DICTIONARY, DICTIONARY_1})
+    void unknownCustomCompressionReadsAsMissing(final String format) throws IOException {
+        final Path file = this.writeRegion(version(format));
         final byte[] region = Files.readAllBytes(file);
-        final byte[] stored = "paper:zstd".getBytes(StandardCharsets.UTF_8);
-        final int sector = ByteBuffer.wrap(region).getInt(offsetIndex(SMALL) * 4) >>> 8;
-        final int idStart = sector * 4096 + 5 + 2;
+        final byte[] stored = format.getBytes(StandardCharsets.UTF_8);
+        final int idStart = chunkStart(region, SMALL) + 5 + 2;
         assertArrayEquals(stored, Arrays.copyOfRange(region, idStart, idStart + stored.length));
-        region[idStart + stored.length - 1] = 'x'; // paper:zstx, same length
+        region[idStart + stored.length - 1] = 'x'; // same length, unknown identifier
         Files.write(file, region);
 
-        try (RegionFile regionFile = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_PAPER_ZSTD, false)) {
+        try (RegionFile regionFile = new RegionFile(INFO, file, this.dir, version(format), false)) {
             assertNull(read(regionFile, SMALL));
             assertEquals(LARGE_TAG, read(regionFile, LARGE));
         }
     }
 
-    @Test
-    void headerRecalculationRecoversZstdChunks() throws IOException {
-        final Path file = this.writeRegion();
+    @ParameterizedTest
+    @ValueSource(strings = {NO_DICTIONARY, DICTIONARY_1})
+    void headerRecalculationRecoversZstdChunks(final String format) throws IOException {
+        final Path file = this.writeRegion(version(format));
         final byte[] region = Files.readAllBytes(file);
         Arrays.fill(region, 0, 8192, (byte) 0); // lose the offset and timestamp tables
         Files.write(file, region);
 
-        try (RegionFile regionFile = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_PAPER_ZSTD, false)) {
+        try (RegionFile regionFile = new RegionFile(INFO, file, this.dir, version(format), false)) {
             assertFalse(regionFile.hasChunk(SMALL));
             assertFalse(regionFile.hasChunk(LARGE));
 
@@ -109,13 +159,23 @@ class ZstdRegionCompressionTest {
         }
     }
 
-    private Path writeRegion() throws IOException {
+    private Path writeRegion(final RegionFileVersion version) throws IOException {
         final Path file = this.dir.resolve("r.0.0.mca");
-        try (RegionFile region = new RegionFile(INFO, file, this.dir, RegionFileVersion.VERSION_PAPER_ZSTD, false)) {
+        try (RegionFile region = new RegionFile(INFO, file, this.dir, version, false)) {
             write(region, SMALL, SMALL_TAG);
             write(region, LARGE, LARGE_TAG);
         }
         return file;
+    }
+
+    private static RegionFileVersion version(final String format) {
+        return Objects.requireNonNull(RegionFileVersion.fromCustomId(Identifier.parse(format)), format);
+    }
+
+    private static byte[] shippedDictionary() throws IOException {
+        try (InputStream in = ZstdRegionCompression.class.getResourceAsStream("zstd_dict_1.bin")) {
+            return Objects.requireNonNull(in, "zstd_dict_1.bin").readAllBytes();
+        }
     }
 
     private static void write(final RegionFile region, final ChunkPos pos, final CompoundTag tag) throws IOException {
@@ -130,10 +190,23 @@ class ZstdRegionCompressionTest {
         }
     }
 
-    private static void assertIdentifierThenZstdFrame(final byte[] data, final int start) throws IOException {
-        final DataInputStream in = new DataInputStream(new ByteArrayInputStream(data, start, data.length - start));
-        assertEquals("paper:zstd", in.readUTF());
-        assertArrayEquals(ZSTD_FRAME_MAGIC, in.readNBytes(ZSTD_FRAME_MAGIC.length));
+    private static void assertFormatThenZstdFrame(final byte[] stream, final String format, final long dictionaryId) throws IOException {
+        final DataInputStream in = new DataInputStream(new ByteArrayInputStream(stream));
+        assertEquals(format, in.readUTF());
+        final byte[] frame = in.readAllBytes();
+        assertArrayEquals(ZSTD_FRAME_MAGIC, Arrays.copyOf(frame, ZSTD_FRAME_MAGIC.length));
+        assertEquals(dictionaryId, Zstd.getDictIdFromFrame(frame));
+    }
+
+    private static int chunkStart(final byte[] region, final ChunkPos pos) {
+        return (ByteBuffer.wrap(region).getInt(offsetIndex(pos) * 4) >>> 8) * 4096;
+    }
+
+    // the stored chunk stream of an internal chunk: everything after its length and compression id
+    private static byte[] internalStream(final byte[] region, final ChunkPos pos) {
+        final int start = chunkStart(region, pos);
+        final int length = ByteBuffer.wrap(region).getInt(start);
+        return Arrays.copyOfRange(region, start + 5, start + 4 + length);
     }
 
     private static int offsetIndex(final ChunkPos pos) {
