@@ -319,10 +319,16 @@
 +    // Paper end
 +
      @Override
-     protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
-         super.dropCustomDeathLoot(level, source, killedByPlayer);
+-    protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
+-        super.dropCustomDeathLoot(level, source, killedByPlayer);
++    protected void dropMobEquipment(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) { // Paper
  
 +        this.droppedEquipmentSlots.clear(); // Paper
++        // Paper start - equipment drops respect the gamerule, not the mob's age
++        if (!level.getGameRules().get(GameRules.MOB_DROPS)) {
++            return;
++        }
++        // Paper end
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
              ItemStack itemStack = this.getItemBySlot(slot);
 +            // Paper start
@@ -351,7 +357,7 @@
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
              ItemStack itemStack = this.getItemBySlot(slot);
 -            if (!itemStack.isEmpty()) {
-+            if (!itemStack.isEmpty() && (this.deathDropItems == null || !this.droppedEquipmentSlots.contains(slot))) { // Paper - account for already dropped item in dropCustomDeathLoot to not duplicate loot
++            if (!itemStack.isEmpty() && (this.deathDropItems == null || !this.droppedEquipmentSlots.contains(slot))) { // Paper - account for already dropped item in dropMobEquipment to not duplicate loot
                  if (!shouldDrop.test(itemStack)) {
                      slotsPreventedFromDropping.add(slot);
                  } else if (this.dropChances.isPreserved(slot)) {
