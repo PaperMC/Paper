@@ -64,24 +64,21 @@ public record PaperItemTool(
         }
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .rules(this.rules())
+            .defaultMiningSpeed(this.defaultMiningSpeed())
+            .damagePerBlock(this.damagePerBlock())
+            .canDestroyBlocksInCreative(this.canDestroyBlocksInCreative());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ObjectArrayList<>();
-        private int damage = 1;
         private float miningSpeed = 1.0F;
+        private int damage = 1;
         private boolean canDestroyBlocksInCreative = true;
-
-        @Override
-        public Builder damagePerBlock(final @NonNegative int damage) {
-            this.damage = requireNonNegative(damage, "damage");
-            return this;
-        }
-
-        @Override
-        public Builder defaultMiningSpeed(final float miningSpeed) {
-            this.miningSpeed = miningSpeed;
-            return this;
-        }
 
         @Override
         public Builder addRule(final Rule rule) {
@@ -94,14 +91,33 @@ public record PaperItemTool(
         }
 
         @Override
-        public Builder canDestroyBlocksInCreative(final boolean canDestroyBlocksInCreative) {
-            this.canDestroyBlocksInCreative = canDestroyBlocksInCreative;
+        public Builder addRules(final Collection<Rule> rules) {
+            rules.forEach(this::addRule);
             return this;
         }
 
         @Override
-        public Builder addRules(final Collection<Rule> rules) {
-            rules.forEach(this::addRule);
+        public Builder rules(final Collection<Rule> rules) {
+            this.rules.clear();
+            this.addRules(rules);
+            return this;
+        }
+
+        @Override
+        public Builder defaultMiningSpeed(final float miningSpeed) {
+            this.miningSpeed = miningSpeed;
+            return this;
+        }
+
+        @Override
+        public Builder damagePerBlock(final @NonNegative int damage) {
+            this.damage = requireNonNegative(damage, "damage");
+            return this;
+        }
+
+        @Override
+        public Builder canDestroyBlocksInCreative(final boolean canDestroyBlocksInCreative) {
+            this.canDestroyBlocksInCreative = canDestroyBlocksInCreative;
             return this;
         }
 

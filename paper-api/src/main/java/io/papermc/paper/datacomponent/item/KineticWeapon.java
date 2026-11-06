@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
-public interface KineticWeapon {
+public interface KineticWeapon extends BuildableDataComponent<KineticWeapon, KineticWeapon.Builder> {
 
     /**
      * Returns a new builder for creating a Kinetic Weapon.

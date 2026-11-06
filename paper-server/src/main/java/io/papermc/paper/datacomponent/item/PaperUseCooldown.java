@@ -28,6 +28,11 @@ public record PaperUseCooldown(
             .orElse(null);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.seconds()).cooldownGroup(this.cooldownGroup());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final float seconds;
