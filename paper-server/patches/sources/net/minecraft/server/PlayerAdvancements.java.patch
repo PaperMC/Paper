@@ -58,6 +58,35 @@
                      }
                  });
              }
+@@ -193,10 +_,28 @@
+         boolean result = false;
+         AdvancementProgress progress = this.getOrStartProgress(advancement);
+         boolean wasDone = progress.isDone();
++
+         if (progress.revokeProgress(criterion)) {
++            // Paper start - Add PlayerAdvancementCriterionRevokeEvent
++            if (!new io.papermc.paper.event.player.PlayerAdvancementCriterionRevokeEvent(this.player.getBukkitEntity(), advancement.toBukkit(), criterion).callEvent()) {
++                progress.grantProgress(criterion);
++                return false;
++            }
++            // Paper end - Add PlayerAdvancementCriterionRevokeEvent
++
+             this.registerListeners(advancement);
+             this.progressChanged.add(advancement);
+             result = true;
++
++            if (wasDone && !progress.isDone()) {
++                // Paper start - Add PlayerAdvancementRevokeEvent
++                final io.papermc.paper.event.player.PlayerAdvancementRevokeEvent event = new io.papermc.paper.event.player.PlayerAdvancementRevokeEvent(this.player.getBukkitEntity(), advancement.toBukkit());
++                if (!event.callEvent()) {
++                    progress.grantProgress(criterion);
++                    return false;
++                }
++                // Paper end - Add PlayerAdvancementRevokeEvent
++            }
+         }
+ 
+         if (wasDone && !progress.isDone()) {
 @@ -239,7 +_,7 @@
      public void flushDirty(final ServerPlayer player, final boolean showAdvancements) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
