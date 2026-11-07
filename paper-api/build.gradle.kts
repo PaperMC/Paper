@@ -210,6 +210,9 @@ tasks.withType<Javadoc>().configureEach {
     )
     options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
+    modularity.inferModulePath = false
+    exclude("module-info.java")
+
     inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
     val javadocSourcepathElements = javadocSourcepath.elements
     doFirst {
