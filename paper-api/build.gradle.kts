@@ -185,6 +185,10 @@ tasks.jar {
     from(generateApiVersioningFile.flatMap { it.outputFile })
 }
 
+tasks.compileJava {
+    options.compilerArgs.addAll(listOf("--add-reads", "org.bukkit=ALL-UNNAMED"))
+}
+
 abstract class Services {
     @get:Inject
     abstract val fileSystemOperations: FileSystemOperations
