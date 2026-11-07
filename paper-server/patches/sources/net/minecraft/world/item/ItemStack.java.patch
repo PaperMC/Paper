@@ -28,7 +28,7 @@
                      ItemStack.CODEC.encodeStart(ops, itemStack).getOrThrow(DecoderException::new);
                  }
  
-@@ -369,12 +_,141 @@
+@@ -369,13 +_,152 @@
          } else {
              ItemStack stackBeforeUse = this.copy();
              Item usedItem = this.getItem();
@@ -43,9 +43,12 @@
 +                level.captureBlockStates = true;
 +                level.captureTreeGeneration = isBonemeal;
 +            }
++            List<net.minecraft.world.entity.item.ItemEntity> previousCapturedDrops = level.captureDrops; // Paper - Don't leak drops of reverted block changes
++            level.captureDrops = new java.util.ArrayList<>(); // Paper - Don't leak drops of reverted block changes
 +
 +            List<org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates;
 +            List<net.minecraft.world.level.block.entity.BlockEntity> capturedBlockEntities;
++            List<net.minecraft.world.entity.item.ItemEntity> capturedDrops; // Paper - Don't leak drops of reverted block changes
 +            org.bukkit.TreeType treeType;
 +            InteractionResult result;
 +            try {
@@ -53,6 +56,10 @@
 +            } finally {
 +                level.captureBlockStates = false;
 +                level.captureTreeGeneration = false;
++                // Paper start - Don't leak drops of reverted block changes
++                capturedDrops = level.captureDrops;
++                level.captureDrops = previousCapturedDrops;
++                // Paper end - Don't leak drops of reverted block changes
 +
 +                capturedBlockStates = new java.util.ArrayList<>(level.capturedBlockStates.values());
 +                level.capturedBlockStates.clear();
@@ -92,6 +99,7 @@
 +                        snapshot.place(snapshot.getFlags());
 +                        level.checkCapturedTreeStateForObserverNotify(pos, snapshot); // Paper - notify observers even if grow failed
 +                    }
++                    capturedDrops.forEach(level::addFreshEntity); // Paper - Don't leak drops of reverted block changes
 +                    player.awardStat(Stats.ITEM_USED.get(usedItem)); // SPIGOT-7236 - award stat
 +                }
 +                return result;
@@ -128,6 +136,7 @@
 +                    for (net.minecraft.world.level.block.entity.BlockEntity blockEntity : capturedBlockEntities) {
 +                        level.setBlockEntity(blockEntity);
 +                    }
++                    capturedDrops.forEach(level::addFreshEntity); // Paper - Don't leak drops of reverted block changes
 +
 +                    for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : capturedBlockStates) {
 +                        net.minecraft.world.level.block.state.BlockState oldBlock = snapshot.getHandle();
@@ -173,8 +182,10 @@
 +                return result;
 +                // CraftBukkit end
              } else {
++                capturedDrops.forEach(level::addFreshEntity); // Paper - Don't leak drops of reverted block changes
                  return result;
              }
+         }
 @@ -452,31 +_,67 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
