@@ -40,6 +40,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -888,7 +889,28 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     void setInvulnerable(boolean flag);
 
     /**
-     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
+     * Gets the remaining duration of this entity's temporary invulnerability.
+     * <p>
+     * This is separate from permanent invulnerability and the damage cooldown
+     * exposed by {@link LivingEntity#getNoDamageTicks()}.
+     *
+     * @return the remaining temporary invulnerability duration, in ticks
+     */
+    int getInvulnerableTime();
+
+    /**
+     * Sets the remaining duration of this entity's temporary invulnerability.
+     * <p>
+     * Setting this to {@code 0} removes temporary invulnerability.
+     * This does not change the entity's permanent invulnerability state.
+     *
+     * @param ticks the temporary invulnerability duration, in ticks
+     * @throws IllegalArgumentException if ticks is negative
+     */
+    void setInvulnerableTime(@NonNegative int ticks);
+
+    /**
+     * Gets the entity's current invulnerability state, including permanent and temporary invulnerability.
      *
      * @return whether the entity is invulnerable
      * @see #isInvulnerableTo(DamageSource)
