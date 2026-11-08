@@ -10,10 +10,8 @@ import io.papermc.generator.types.registry.GeneratedTagKeyType;
 import io.papermc.paper.registry.event.RegistryEvents;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-public class RegistryBootstrapper {
+public final class RegistryBootstrapper {
 
     private static final String PAPER_REGISTRY_PACKAGE = "io.papermc.paper.registry";
 
@@ -42,5 +40,8 @@ public class RegistryBootstrapper {
 
     public static void bootstrapServer(PatternSourceSetRewriter sourceSet) {
         sourceSet.register("RegistryDefinitions", Types.PAPER_REGISTRIES, new PaperRegistriesRewriter());
+    }
+
+    private RegistryBootstrapper() {
     }
 }

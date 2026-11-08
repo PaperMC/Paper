@@ -5,7 +5,6 @@ import java.util.Set;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,11 +12,10 @@ import org.jspecify.annotations.Nullable;
  * the bukkit one before.
  */
 @ApiStatus.Experimental
-@NullMarked
 public interface PermissionManager {
 
     /**
-     * Gets a {@link Permission} from its fully qualified name
+     * Gets a {@link Permission} from its fully qualified name.
      *
      * @param name Name of the permission
      * @return Permission, or null if none
@@ -63,7 +61,7 @@ public interface PermissionManager {
     void removePermission(String name);
 
     /**
-     * Gets the default permissions for the given op status
+     * Gets the default permissions for the given op status.
      *
      * @param op Which set of default permissions to get
      * @return The default permissions
@@ -103,7 +101,7 @@ public interface PermissionManager {
 
     /**
      * Gets a set containing all subscribed {@link Permissible}s to the given
-     * permission, by name
+     * permission, by name.
      *
      * @param permission Permission to query for
      * @return Set containing all subscribed permissions
@@ -111,7 +109,7 @@ public interface PermissionManager {
     Set<Permissible> getPermissionSubscriptions(String permission);
 
     /**
-     * Subscribes to the given Default permissions by operator status
+     * Subscribes to the given Default permissions by operator status.
      * <p>
      * If the specified defaults change in any form, the Permissible will be
      * asked to recalculate.
@@ -122,7 +120,7 @@ public interface PermissionManager {
     void subscribeToDefaultPerms(boolean op, Permissible permissible);
 
     /**
-     * Unsubscribes from the given Default permissions by operator status
+     * Unsubscribes from the given Default permissions by operator status.
      *
      * @param op          Default list to unsubscribe from
      * @param permissible Permissible subscribing
@@ -131,7 +129,7 @@ public interface PermissionManager {
 
     /**
      * Gets a set containing all subscribed {@link Permissible}s to the given
-     * default list, by op status
+     * default list, by op status.
      *
      * @param op Default list to query for
      * @return Set containing all subscribed permissions

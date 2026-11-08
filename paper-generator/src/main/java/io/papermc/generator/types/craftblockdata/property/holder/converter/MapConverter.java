@@ -9,9 +9,7 @@ import io.papermc.generator.types.craftblockdata.property.EnumPropertyWriter;
 import io.papermc.generator.types.craftblockdata.property.converter.ConverterBase;
 import io.papermc.generator.types.craftblockdata.property.holder.DataHolderType;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class MapConverter implements DataConverter {
 
     private static final String PROPERTY_VAR = "property";

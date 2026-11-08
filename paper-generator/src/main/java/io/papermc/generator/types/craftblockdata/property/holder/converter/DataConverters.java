@@ -4,9 +4,7 @@ import io.papermc.generator.types.craftblockdata.property.holder.DataHolderType;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class DataConverters {
 
     private static final Map<DataHolderType, DataConverter> CONVERTERS = Stream.of(
@@ -21,5 +19,8 @@ public final class DataConverters {
             throw new IllegalStateException("Cannot handle data holder type: " + type);
         }
         return converter;
+    }
+
+    private DataConverters() {
     }
 }

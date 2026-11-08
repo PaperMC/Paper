@@ -17,14 +17,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
@@ -37,12 +36,13 @@ import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
+import net.minecraft.util.Util;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
 import org.apache.commons.io.file.PathUtils;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import picocli.CommandLine;
 
@@ -52,25 +52,25 @@ import picocli.CommandLine;
 )
 public class Main implements Callable<Integer> {
 
-    @CommandLine.Option(names = {"--sourceset"}, required = true)
+    public static RegistryAccess.@Nullable Frozen registryAccess;
+    public static @Nullable Map<TagKey<?>, String> experimentalTags;
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    @CommandLine.Option(names = "--sourceset", required = true)
     Path sourceSet;
 
     @CommandLine.Option(names = {"-cp", "--classpath"}, split = "[;:]", required = true)
     Set<Path> classpath;
 
-    @CommandLine.Option(names = {"--rewrite"})
+    @CommandLine.Option(names = "--rewrite")
     boolean isRewrite;
 
-    @CommandLine.Option(names = {"--side"}, required = true)
+    @CommandLine.Option(names = "--side", required = true)
     String side;
 
-    @CommandLine.Option(names = {"--bootstrap-tags"})
+    @CommandLine.Option(names = "--bootstrap-tags")
     boolean tagBootstrap;
-
-    private static final Logger LOGGER = LogUtils.getLogger();
-
-    public static RegistryAccess.@MonotonicNonNull Frozen REGISTRY_ACCESS;
-    public static @MonotonicNonNull Map<TagKey<?>, String> EXPERIMENTAL_TAGS;
 
     public static CompletableFuture<Void> bootStrap(boolean withTags) {
         SharedConstants.tryDetectVersion();
@@ -90,7 +90,7 @@ public class Main implements Callable<Integer> {
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(worldGenLayer.stream(), frozenWorldgenRegistries.listRegistries()).toList();
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
-        REGISTRY_ACCESS = layers.compositeAccess().freeze();
+        registryAccess = layers.compositeAccess().freeze();
         if (withTags) {
             return ReloadableServerResources.loadResources(
                 resourceManager,
@@ -107,10 +107,10 @@ public class Main implements Callable<Integer> {
                 }
             }).thenAccept(resources -> {
                 resources.updateComponentsAndStaticRegistryTags();
-                EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
+                experimentalTags = ExperimentalCollector.collectTags(resourceManager);
             });
         } else {
-            EXPERIMENTAL_TAGS = Map.of();
+            experimentalTags = Map.of();
             return CompletableFuture.completedFuture(null);
         }
     }

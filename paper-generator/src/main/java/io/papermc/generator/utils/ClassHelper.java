@@ -6,10 +6,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Set;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public final class ClassHelper {
 
     public static Set<Class<?>> getAllInterfaces(Class<?> clazz, Class<?> ignored, Set<Class<?>> interfaces) {
@@ -62,7 +60,7 @@ public final class ClassHelper {
     public static <T> @Nullable Class<? extends T> classOr(String className, @Nullable Class<? extends T> defaultClass) {
         try {
             return (Class<? extends T>) Class.forName(className);
-        } catch (ClassNotFoundException ignored) {
+        } catch (ClassNotFoundException _) {
             return defaultClass;
         }
     }

@@ -45,16 +45,22 @@ public interface Dialog extends Keyed, DialogLike {
     }
 
     /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
+     * Gets the key of this dialog.
+     *
+     * @return the key of this dialog
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link RegistryAccess#getRegistry(RegistryKey)},
+     *     and {@link RegistryKey#DIALOG}. Dialogs can exist without a key.
      */
     @Deprecated(since = "1.21.8", forRemoval = true)
     @Override
     NamespacedKey getKey();
 
     /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
+     * Gets the key of this dialog.
+     *
+     * @return the key of this dialog
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link RegistryAccess#getRegistry(RegistryKey)},
+     *     and {@link RegistryKey#DIALOG}. Dialogs can exist without a key.
      */
     @Deprecated(since = "1.21.8", forRemoval = true)
     @Override

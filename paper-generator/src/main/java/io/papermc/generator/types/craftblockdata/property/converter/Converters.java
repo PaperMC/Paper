@@ -5,9 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class Converters {
 
     private static final Map<Property<?>, ConverterBase> CONVERTERS = Stream.of(
@@ -21,5 +19,8 @@ public final class Converters {
 
     public static boolean has(Property<?> property) {
         return CONVERTERS.containsKey(property);
+    }
+
+    private Converters() {
     }
 }
