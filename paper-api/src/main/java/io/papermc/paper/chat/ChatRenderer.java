@@ -4,22 +4,20 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A chat renderer is responsible for rendering chat messages sent by {@link Player}s to the server.
  */
-@NullMarked
 @FunctionalInterface
 public interface ChatRenderer {
 
     /**
      * Renders a chat message. This will be called once for each receiving {@link Audience}.
      *
-     * @param source the message source
+     * @param source            the message source
      * @param sourceDisplayName the display name of the source player
-     * @param message the chat message
-     * @param viewer the receiving {@link Audience}
+     * @param message           the chat message
+     * @param viewer            the receiving {@link Audience}
      * @return a rendered chat message
      */
     @ApiStatus.OverrideOnly
@@ -59,9 +57,9 @@ public interface ChatRenderer {
         /**
          * Renders a chat message.
          *
-         * @param source the message source
+         * @param source            the message source
          * @param sourceDisplayName the display name of the source player
-         * @param message the chat message
+         * @param message           the chat message
          * @return a rendered chat message
          */
         @ApiStatus.OverrideOnly

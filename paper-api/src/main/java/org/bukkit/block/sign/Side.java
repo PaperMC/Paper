@@ -5,6 +5,12 @@ package org.bukkit.block.sign;
  */
 public enum Side {
 
+    /**
+     * The front of the sign.
+     */
     FRONT,
-    BACK;
+    /**
+     * The back of the sign.
+     */
+    BACK
 }
