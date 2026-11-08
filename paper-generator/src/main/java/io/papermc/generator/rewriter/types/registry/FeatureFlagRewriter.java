@@ -12,13 +12,11 @@ import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 
 import static io.papermc.generator.rewriter.utils.Annotations.annotation;
 import static io.papermc.generator.utils.Formatting.quoted;
 
-@NullMarked
 public class FeatureFlagRewriter extends SearchReplaceRewriter {
 
     private static final Logger LOGGER = LogUtils.getLogger();

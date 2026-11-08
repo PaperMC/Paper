@@ -48,7 +48,7 @@ public interface DialogInstancesProvider {
     // actions
     DialogAction.CustomClickAction register(DialogActionCallback callback, ClickCallback.Options options);
 
-    DialogAction.StaticAction staticAction(ClickEvent value);
+    DialogAction.StaticAction staticAction(ClickEvent<?> value);
 
     DialogAction.CommandTemplateAction commandTemplate(String template);
 

@@ -3,12 +3,10 @@ package io.papermc.paper.entity.poi;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Registry;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * All the built-in point of interest types.
  */
-@NullMarked
 public final class PoiTypes {
 
     // Start generate - PoiTypes

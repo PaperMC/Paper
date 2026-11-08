@@ -5,10 +5,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import javax.lang.model.SourceVersion;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public class NamingManager {
 
     private final @Nullable AccessKeyword accessKeyword;
@@ -39,19 +37,19 @@ public class NamingManager {
     }
 
     public NameWrapper getterName(Predicate<String> keywordPredicate) {
-        return accessName(keywordPredicate, AccessKeyword::get, "get");
+        return this.accessName(keywordPredicate, AccessKeyword::get, "get");
     }
 
     public NameWrapper setterName(Predicate<String> keywordPredicate) {
-        return accessName(keywordPredicate, AccessKeyword::set, "set");
+        return this.accessName(keywordPredicate, AccessKeyword::set, "set");
     }
 
     public String simpleGetterName(Predicate<String> keywordPredicate) {
-        return getterName(keywordPredicate).concat();
+        return this.getterName(keywordPredicate).concat();
     }
 
     public String simpleSetterName(Predicate<String> keywordPredicate) {
-        return setterName(keywordPredicate).concat();
+        return this.setterName(keywordPredicate).concat();
     }
 
     private NameWrapper accessName(Predicate<String> keywordPredicate, KeywordFetcher keywordFetcher, String fallbackKeyword) {
@@ -84,7 +82,7 @@ public class NamingManager {
         return name;
     }
 
-    public static class NameWrapper {
+    public static final class NameWrapper {
 
         private final String keyword;
         private final String name;

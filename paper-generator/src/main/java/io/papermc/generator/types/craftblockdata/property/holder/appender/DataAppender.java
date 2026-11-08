@@ -7,9 +7,7 @@ import io.papermc.generator.types.craftblockdata.CraftBlockDataGenerator;
 import io.papermc.generator.types.craftblockdata.property.converter.ConverterBase;
 import io.papermc.generator.types.craftblockdata.property.holder.DataHolderType;
 import io.papermc.generator.utils.NamingManager;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface DataAppender {
 
     DataHolderType getType();

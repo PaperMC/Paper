@@ -8,26 +8,24 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public class IceCreamTypeArgument implements CustomArgumentType.Converted<IceCreamType, String> {
 
     @Override
-    public @NotNull IceCreamType convert(String nativeType) throws CommandSyntaxException {
+    public IceCreamType convert(String nativeType) throws CommandSyntaxException {
         try {
             return IceCreamType.valueOf(nativeType.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             throw new ComponentCommandExceptionType(Component.text("Invalid species %s!".formatted(nativeType), NamedTextColor.RED)).create();
         }
     }
 
     @Override
-    public @NotNull ArgumentType<String> getNativeType() {
+    public ArgumentType<String> getNativeType() {
         return StringArgumentType.word();
     }
 

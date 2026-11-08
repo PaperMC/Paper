@@ -4,9 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class TestServerBuildInfo implements ServerBuildInfo {
     @Override
     public Key brandId() {

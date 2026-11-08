@@ -1,9 +1,7 @@
 package io.papermc.generator.rewriter.types;
 
 import io.papermc.typewriter.ClassNamed;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class Types {
 
     public static final String BASE_PACKAGE = "org.bukkit.craftbukkit";
@@ -27,4 +25,7 @@ public final class Types {
     public static final ClassNamed PAPER_SIMPLE_REGISTRY = ClassNamed.of("io.papermc.paper.registry", "PaperSimpleRegistry");
 
     public static final ClassNamed MOB_GOAL_HELPER = ClassNamed.of("com.destroystokyo.paper.entity.ai", "MobGoalHelper");
+
+    private Types() {
+    }
 }

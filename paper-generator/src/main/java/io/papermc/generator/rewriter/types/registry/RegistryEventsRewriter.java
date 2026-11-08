@@ -6,13 +6,11 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.event.RegistryEventProvider;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
-import org.jspecify.annotations.NullMarked;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class RegistryEventsRewriter extends SearchReplaceRewriter {
 
     @Override

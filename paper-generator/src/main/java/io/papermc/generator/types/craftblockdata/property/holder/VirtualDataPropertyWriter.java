@@ -17,19 +17,17 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class VirtualDataPropertyWriter extends DataPropertyWriterBase {
 
+    protected @Nullable Class<?> indexClass;
+    protected @Nullable TypeName fieldType;
     private final VirtualField virtualField;
-    protected @MonotonicNonNull Class<?> indexClass;
-    protected @MonotonicNonNull TypeName fieldType;
 
     protected VirtualDataPropertyWriter(VirtualField virtualField, Collection<? extends Property<?>> properties, Class<? extends Block> blockClass) {
         super(properties, blockClass);
