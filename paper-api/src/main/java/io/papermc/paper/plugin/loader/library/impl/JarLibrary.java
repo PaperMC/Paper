@@ -5,7 +5,6 @@ import io.papermc.paper.plugin.loader.library.LibraryLoadingException;
 import io.papermc.paper.plugin.loader.library.LibraryStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A simple jar library implementation of the {@link ClassPathLibrary} that allows {@link io.papermc.paper.plugin.loader.PluginLoader}s to
@@ -20,7 +19,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * The jar library implementation will error if the file does not exist at the specified path.
  */
-@NullMarked
 public class JarLibrary implements ClassPathLibrary {
 
     private final Path path;

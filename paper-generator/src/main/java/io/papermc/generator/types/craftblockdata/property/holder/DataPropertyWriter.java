@@ -29,22 +29,13 @@ import net.minecraft.world.level.block.MossyCarpetBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.bukkit.block.BlockFace;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class DataPropertyWriter extends DataPropertyWriterBase {
-
-    private record FieldKey(Class<? extends Block> blockClass, String fieldName) {
-    }
-
-    private static FieldKey key(Class<? extends Block> blockClass, String fieldName) {
-        return new FieldKey(blockClass, fieldName);
-    }
 
     private static final Map<String, String> FIELD_TO_BASE_NAME = Map.of(
         "PROPERTY_BY_DIRECTION", "FACE"
@@ -56,15 +47,24 @@ public class DataPropertyWriter extends DataPropertyWriterBase {
         key(WallBlock.class, "PROPERTY_BY_DIRECTION"), "HEIGHT"
     );
 
+    private static final List<String> CUSTOM_KEYWORD = List.of("HAS", "IS", "CAN");
+
     protected final Field field;
-    protected @MonotonicNonNull DataHolderType type;
-    protected @MonotonicNonNull Class<?> indexClass, internalIndexClass;
-    protected @MonotonicNonNull TypeName fieldType;
+    protected @Nullable DataHolderType type;
+    protected @Nullable Class<?> indexClass, internalIndexClass;
+    protected @Nullable TypeName fieldType;
 
     protected DataPropertyWriter(Field field, Collection<? extends Property<?>> properties, Class<? extends Block> blockClass) {
         super(properties, blockClass);
         this.field = field;
         this.computeTypes(field);
+    }
+
+    private record FieldKey(Class<? extends Block> blockClass, String fieldName) {
+    }
+
+    private static FieldKey key(Class<? extends Block> blockClass, String fieldName) {
+        return new FieldKey(blockClass, fieldName);
     }
 
     protected void computeTypes(Field field) {
@@ -143,10 +143,8 @@ public class DataPropertyWriter extends DataPropertyWriterBase {
         if (FIELD_TO_BASE_NAME.containsKey(constantName)) {
             return FIELD_TO_BASE_NAME.get(constantName);
         }
-        return stripFieldAccessKeyword(constantName);
+        return this.stripFieldAccessKeyword(constantName);
     }
-
-    private static final List<String> CUSTOM_KEYWORD = List.of("HAS", "IS", "CAN");
 
     private String stripFieldAccessKeyword(String name) {
         for (String keyword : CUSTOM_KEYWORD) {

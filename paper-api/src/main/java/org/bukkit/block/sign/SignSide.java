@@ -1,20 +1,20 @@
 package org.bukkit.block.sign;
 
+import java.util.List;
+import net.kyori.adventure.text.Component;
 import org.bukkit.material.Colorable;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a side of a sign.
  */
 public interface SignSide extends Colorable {
-    // Paper start
+
     /**
      * Gets all the lines of text currently on the sign.
      *
      * @return List of components containing each line of text
      */
-    @NotNull
-    public java.util.List<net.kyori.adventure.text.Component> lines();
+    List<Component> lines();
 
     /**
      * Gets the line of text at the specified index.
@@ -22,11 +22,10 @@ public interface SignSide extends Colorable {
      * For example, getLine(0) will return the first line of text.
      *
      * @param index Line number to get the text from, starting at 0
-     * @throws IndexOutOfBoundsException Thrown when the line does not exist
      * @return Text on the given line
+     * @throws IndexOutOfBoundsException Thrown when the line does not exist
      */
-    @NotNull
-    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
+    Component line(int index) throws IndexOutOfBoundsException;
 
     /**
      * Sets the line of text at the specified index.
@@ -35,11 +34,10 @@ public interface SignSide extends Colorable {
      * "Line One".
      *
      * @param index Line number to set the text at, starting from 0
-     * @param line New text to set at the specified index
+     * @param line  New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
      */
-    public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
-    // Paper end
+    void line(int index, Component line) throws IndexOutOfBoundsException;
 
     /**
      * Gets all the lines of text currently on this side of the sign.
@@ -47,9 +45,8 @@ public interface SignSide extends Colorable {
      * @return Array of Strings containing each line of text
      * @deprecated in favour of {@link #lines()}
      */
-    @NotNull
-    @Deprecated // Paper
-    public String[] getLines();
+    @Deprecated
+    String[] getLines();
 
     /**
      * Gets the line of text at the specified index on this side of the sign.
@@ -61,9 +58,8 @@ public interface SignSide extends Colorable {
      * @throws IndexOutOfBoundsException Thrown when the line does not exist
      * @deprecated in favour of {@link #line(int)}
      */
-    @NotNull
-    @Deprecated // Paper
-    public String getLine(int index) throws IndexOutOfBoundsException;
+    @Deprecated
+    String getLine(int index) throws IndexOutOfBoundsException;
 
     /**
      * Sets the line of text at the specified index on this side of the sign.
@@ -72,24 +68,24 @@ public interface SignSide extends Colorable {
      * "Line One".
      *
      * @param index Line number to set the text at, starting from 0
-     * @param line New text to set at the specified index
+     * @param line  New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #line(int, Component)}
      */
-    @Deprecated // Paper
-    public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
+    @Deprecated
+    void setLine(int index, String line) throws IndexOutOfBoundsException;
 
     /**
      * Gets whether this side of the sign has glowing text.
      *
      * @return if this side of the sign has glowing text
      */
-    public boolean isGlowingText();
+    boolean isGlowingText();
 
     /**
      * Sets whether this side of the sign has glowing text.
      *
      * @param glowing if this side of the sign has glowing text
      */
-    public void setGlowingText(boolean glowing);
+    void setGlowingText(boolean glowing);
 }

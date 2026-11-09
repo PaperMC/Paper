@@ -9,9 +9,7 @@ import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.MinecraftExperimental;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public record SingleFlagHolder(FeatureFlag flag) implements FlagHolder { // todo support multiple flags?
 
     private static final Map<String, FeatureFlag> FEATURE_FLAG_CACHE = new HashMap<>();

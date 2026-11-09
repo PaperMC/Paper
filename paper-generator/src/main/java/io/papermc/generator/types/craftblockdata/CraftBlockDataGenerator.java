@@ -36,7 +36,6 @@ import org.bukkit.Axis;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Rail;
-import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.utils.NamingManager.keywordGet;
 import static io.papermc.generator.utils.NamingManager.keywordGetSet;
@@ -45,18 +44,7 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClassGenerator<T> {
-
-    private final Class<? extends Block> blockClass;
-    private final BlockStateMapping.BlockData blockData;
-
-    protected CraftBlockDataGenerator(Class<? extends Block> blockClass, BlockStateMapping.BlockData blockData, Class<T> baseClass) {
-        super(baseClass, blockData.implName(), Types.BASE_PACKAGE + ".block.impl");
-        this.blockClass = blockClass;
-        this.blockData = blockData;
-        this.printWarningOnMissingOverride = true;
-    }
 
     // default keywords: get/set
     // for single boolean property: get = is
@@ -93,6 +81,16 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
         }
     );
 
+    private final Class<? extends Block> blockClass;
+    private final BlockStateMapping.BlockData blockData;
+
+    protected CraftBlockDataGenerator(Class<? extends Block> blockClass, BlockStateMapping.BlockData blockData, Class<T> baseClass) {
+        super(baseClass, blockData.implName(), Types.BASE_PACKAGE + ".block.impl");
+        this.blockClass = blockClass;
+        this.blockData = blockData;
+        this.printWarningOnMissingOverride = true;
+    }
+
     private TypeSpec.Builder propertyHolder() {
         TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(this.className)
             .addModifiers(PUBLIC)
@@ -112,6 +110,7 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
         return typeBuilder;
     }
 
+    // CHECKSTYLE.OFF: AvoidNestedBlocks - the blocks group the code for each generated method and mirror its control flow
     @Override
     protected TypeSpec getTypeSpec() {
         TypeSpec.Builder typeBuilder = this.propertyHolder();
@@ -241,4 +240,5 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
 
         return typeBuilder.build();
     }
+    // CHECKSTYLE.ON: AvoidNestedBlocks
 }

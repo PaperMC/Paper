@@ -1,14 +1,17 @@
 package com.destroystokyo.paper.util;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
+ * Rethrows checked exceptions without declaring them.
+ *
  * @hidden
  */
 @ApiStatus.Internal
-@NullMarked
 public final class SneakyThrow {
+
+    private SneakyThrow() {
+    }
 
     public static void sneaky(final Throwable exception) {
         SneakyThrow.throwSneaky(exception);

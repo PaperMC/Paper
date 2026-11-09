@@ -1,5 +1,6 @@
 package io.papermc.paper.event.inventory;
 
+import java.util.OptionalInt;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -8,15 +9,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
-import java.util.OptionalInt;
 
 /**
  * Called when a {@link Player} selects an item inside a bundle.
  *
  * @apiNote This event does not fire for bundle item selections in creative mode player inventories.
  */
-@NullMarked
 public final class PlayerBundleItemSelectEvent extends InventoryEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -33,7 +31,16 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
     private final Direction direction;
 
     @ApiStatus.Internal
-    public PlayerBundleItemSelectEvent(final InventoryView view, final ItemStack bundle, final int rawSlot, final ItemStack previousItem, final ItemStack selectedItem, final int previousIndex, final int selectedIndex, final Direction direction) {
+    public PlayerBundleItemSelectEvent(
+        final InventoryView view,
+        final ItemStack bundle,
+        final int rawSlot,
+        final ItemStack previousItem,
+        final ItemStack selectedItem,
+        final int previousIndex,
+        final int selectedIndex,
+        final Direction direction
+    ) {
         super(view);
 
         this.bundle = bundle;
@@ -125,9 +132,8 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
     /**
      * Gets the direction from the previous selection to the new one.
      *
-     * @apiNote The direction cannot be reliably determined if there are less than three item stacks inside the bundle, in which case this returns {@link Direction#UNKNOWN}.
-     *
      * @return the direction
+     * @apiNote The direction cannot be reliably determined if there are less than three item stacks inside the bundle, in which case this returns {@link Direction#UNKNOWN}.
      */
     public Direction getDirection() {
         return this.direction;

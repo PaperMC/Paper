@@ -144,7 +144,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         map.put(EntityTypes.END_CRYSTAL, 200);
     });
 
-    private static final ClassResolver runtime = new ClassResolver(EntityTypeRewriter.class.getClassLoader());
+    private static final ClassResolver RUNTIME = new ClassResolver(EntityTypeRewriter.class.getClassLoader());
 
     public EntityTypeRewriter() {
         super(Registries.ENTITY_TYPE, false);
@@ -155,7 +155,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         String path = reference.key().identifier().getPath();
         List<String> arguments = new ArrayList<>(4);
         arguments.add(quoted(path));
-        arguments.add(toBukkitClass(reference).concat(".class"));
+        arguments.add(this.toBukkitClass(reference).concat(".class"));
         arguments.add(Integer.toString(LEGACY_ID.getOrDefault(reference.value(), -1)));
 
         if (!reference.value().canSummon()) {
@@ -173,7 +173,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, reference.key().identifier().getPath()); // use the key instead of the internal class name since name match a bit more
         ClassNamed resolvedClass = this.classNamedView.tryFindFirst(CLASS_RENAMES.getOrDefault(className, className))
             .orElseThrow(() -> new IllegalStateException("Could not find entity class for " + reference.key().identifier()))
-            .resolve(runtime);
+            .resolve(RUNTIME);
         Preconditions.checkArgument(org.bukkit.entity.Entity.class.isAssignableFrom(resolvedClass.knownClass()), "Generic type must be an entity");
         return this.importCollector.getShortName(resolvedClass);
     }

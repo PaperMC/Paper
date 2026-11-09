@@ -10,6 +10,7 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import java.io.IOException;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -56,10 +57,11 @@ public interface InternalAPIBridge {
      * @return the instance.
      */
     static InternalAPIBridge get() {
+        //<editor-fold defaultstate="collapsed" desc="Holder">
         class Holder {
-
-            public static final InternalAPIBridge INSTANCE = Services.service(InternalAPIBridge.class).orElseThrow();
+            public static final InternalAPIBridge INSTANCE = Services.service(ServiceLoader.load(InternalAPIBridge.class), InternalAPIBridge.class).orElseThrow();
         }
+        //</editor-fold>
 
         return Holder.INSTANCE;
     }
