@@ -914,6 +914,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return whether the entity is invulnerable
      * @see #isInvulnerableTo(DamageSource)
+     * @see #getInvulnerableTime()
      */
     boolean isMarkedInvulnerable();
 
