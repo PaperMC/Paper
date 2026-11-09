@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.AbstractFurnaceMenu;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.BlastFurnaceMenu;
@@ -156,7 +157,7 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.delegate = new DispenserMenu(windowId, bottom, top);
                 break;
             case FURNACE:
-                this.delegate = new FurnaceMenu(windowId, bottom, top, new SimpleContainerData(4));
+                this.delegate = new FurnaceMenu(windowId, bottom, top, new SimpleContainerData(AbstractFurnaceMenu.DATA_COUNT));
                 break;
             case CRAFTING: // TODO: This should be an error?
             case WORKBENCH:
@@ -166,7 +167,7 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.delegate = new EnchantmentMenu(windowId, bottom);
                 break;
             case BREWING:
-                this.delegate = new BrewingStandMenu(windowId, bottom, top, new io.papermc.paper.inventory.BrewingSimpleContainerData()); // Paper - Add recipeBrewTime
+                this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(BrewingStandMenu.DATA_COUNT));
                 break;
             case HOPPER:
                 this.delegate = new HopperMenu(windowId, bottom, top);
@@ -181,13 +182,13 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.delegate = new ShulkerBoxMenu(windowId, bottom, top);
                 break;
             case BLAST_FURNACE:
-                this.delegate = new BlastFurnaceMenu(windowId, bottom, top, new SimpleContainerData(4));
+                this.delegate = new BlastFurnaceMenu(windowId, bottom, top, new SimpleContainerData(AbstractFurnaceMenu.DATA_COUNT));
                 break;
             case LECTERN:
-                this.delegate = new LecternMenu(windowId, top, new SimpleContainerData(1), bottom);
+                this.delegate = new LecternMenu(windowId, top, new SimpleContainerData(LecternMenu.DATA_COUNT), bottom);
                 break;
             case SMOKER:
-                this.delegate = new SmokerMenu(windowId, bottom, top, new SimpleContainerData(4));
+                this.delegate = new SmokerMenu(windowId, bottom, top, new SimpleContainerData(AbstractFurnaceMenu.DATA_COUNT));
                 break;
             case LOOM:
                 this.delegate = new LoomMenu(windowId, bottom);

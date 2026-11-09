@@ -70,7 +70,7 @@ public interface AttributeModifierDisplay {
     interface OverrideText extends AttributeModifierDisplay {
 
         /**
-         * Overridden text
+         * Overridden text.
          *
          * @return the overridden text
          */

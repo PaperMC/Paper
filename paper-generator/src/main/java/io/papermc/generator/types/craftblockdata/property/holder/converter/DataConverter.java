@@ -5,9 +5,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import io.papermc.generator.types.craftblockdata.property.converter.ConverterBase;
 import io.papermc.generator.types.craftblockdata.property.holder.DataHolderType;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface DataConverter {
 
     DataHolderType getType();

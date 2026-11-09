@@ -17,9 +17,7 @@ import java.util.function.Supplier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PropertyWriter<T extends Comparable<T>> implements PropertyMaker {
 
     protected final Property<T> property;
