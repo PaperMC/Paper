@@ -5,9 +5,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class DataAppenders {
 
     private static final Map<DataHolderType, DataAppender> APPENDERS = Stream.of(
@@ -20,5 +18,8 @@ public final class DataAppenders {
         if (APPENDERS.containsKey(type)) {
             callback.accept(APPENDERS.get(type));
         }
+    }
+
+    private DataAppenders() {
     }
 }

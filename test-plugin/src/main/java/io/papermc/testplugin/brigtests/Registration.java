@@ -29,7 +29,6 @@ import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 public final class Registration {
 
@@ -101,17 +100,16 @@ public final class Registration {
 
             commands.register(plugin.getPluginMeta(), "example", "test", Collections.emptyList(), new BasicCommand() {
                 @Override
-                public void execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
+                public void execute(final CommandSourceStack commandSourceStack, final String[] args) {
                     System.out.println(Arrays.toString(args));
                 }
 
                 @Override
-                public @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
+                public Collection<String> suggest(final CommandSourceStack commandSourceStack, final String[] args) {
                     System.out.println(Arrays.toString(args));
                     return List.of("apple", "banana");
                 }
             });
-
 
             commands.register(plugin.getPluginMeta(), Commands.literal("water")
                     .requires(source -> {
@@ -136,7 +134,6 @@ public final class Registration {
                 null,
                 Collections.emptyList());
 
-
             ExampleAdminCommand.register(plugin, commands);
         }).priority(10));
     }
@@ -144,14 +141,14 @@ public final class Registration {
     private static void registerLegacyCommands(final JavaPlugin plugin) {
         plugin.getServer().getCommandMap().register("fallback", new BukkitCommand("hi", "cool hi command", "<>", List.of("hialias")) {
             @Override
-            public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+            public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                 sender.sendMessage("hi");
                 return true;
             }
         });
         plugin.getServer().getCommandMap().register("fallback", new BukkitCommand("cooler-command", "cool hi command", "<>", List.of("cooler-command-alias")) {
             @Override
-            public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+            public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                 sender.sendMessage("hi");
                 return true;
             }

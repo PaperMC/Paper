@@ -1,12 +1,12 @@
 package org.bukkit.tag;
 
 import io.papermc.paper.annotation.MinecraftVersionDependent;
+import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
@@ -100,9 +100,11 @@ public final class DamageTypeTags {
     @ApiStatus.Internal
     public static final String REGISTRY_DAMAGE_TYPES = "damage_types";
 
-    @Nullable
-    private static Tag<DamageType> getTag(String key) {
-        return Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class);
+    private static Tag<DamageType> getTag(final String key) {
+        return Objects.requireNonNull(
+            Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class),
+            () -> "Missing vanilla damage type tag minecraft:" + key
+        );
     }
 
     private DamageTypeTags() {

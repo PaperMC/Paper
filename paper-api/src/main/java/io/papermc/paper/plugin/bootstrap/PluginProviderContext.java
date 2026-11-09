@@ -4,7 +4,6 @@ import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.nio.file.Path;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents the context provided to a {@link PluginBootstrap} during both the bootstrapping and plugin
@@ -13,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
  * like the plugin's configuration or logger during the plugins bootstrap.
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface PluginProviderContext {
 
