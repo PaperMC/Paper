@@ -43,7 +43,8 @@ public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellab
     /**
      * Gets the lectern involved.
      *
-     * @return the Lectern
+     * @return the lectern, or {@code null} if the inventory has no lectern
+     *     holder, such as a virtual lectern menu
      */
     public @Nullable Lectern getLectern() {
         return this.lectern;
