@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.BoundChecker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -113,6 +114,17 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         Preconditions.checkArgument(min <= max, "The minimum lure (%s) angle should be less than the maximum lure angle (%s)", min, max);
         this.getHandle().minLureAngle = min;
         this.getHandle().maxLureAngle = max;
+    }
+
+    @Override
+    public void setMaxFishHookDistance(float maxDistance) {
+        BoundChecker.requirePositive(maxDistance, "maxDistance");
+        this.getHandle().maxFishHookDistance = maxDistance;
+    }
+
+    @Override
+    public float getMaxFishHookDistance() {
+        return this.getHandle().maxFishHookDistance;
     }
 
     @Override
