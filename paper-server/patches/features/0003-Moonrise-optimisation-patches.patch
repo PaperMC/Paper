@@ -28324,7 +28324,7 @@ index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f47
          return this.upgradeChunkTag(
              tag,
              -1,
-@@ -981,23 +666,66 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -981,23 +666,60 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          return contextTag;
      }
  
@@ -28349,14 +28349,8 @@ index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f47
 +
 +        Objects.checkFromIndexSize(0, len, raw.length);
 +        for (int i = 0; i < len; ++i) {
-+            // Paper start - PlayerNaturallySpawnCreaturesEvent
-+            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = raw[i].playerNaturallySpawnedEvent;
-+            if (event == null || event.isCancelled()) {
-+                continue;
-+            }
-+            double blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
-+            if (chunkMap.playerIsCloseEnoughForSpawning(raw[i], chunkPos, blockRange)) {
-+                // Paper end - PlayerNaturallySpawnCreaturesEvent
++            // Paper - PlayerNaturallySpawnCreaturesEvent; the event only restricts mob spawning (see ServerChunkCache#tickSpawningChunk), not inhabited time or thunder
++            if (chunkMap.playerIsCloseEnoughForSpawning(raw[i], chunkPos, 16384.0D)) {
 +                return true;
 +            }
 +        }
@@ -28374,7 +28368,7 @@ index a71bb2cb640b9e94386643a439e3d731417fc24c..0a60283625536515bfcf6c2a09ca0f47
 -            ChunkHolder holder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
 -            if (holder != null) {
 -                LevelChunk chunk = holder.getTickingChunk();
--                if (chunk != null && this.anyPlayerCloseEnoughForSpawningInternal(holder.getPos(), true)) { // Spigot
+-                if (chunk != null && this.anyPlayerCloseEnoughForSpawningInternal(holder.getPos())) {
 -                    output.add(chunk);
 -                }
 +        final LevelChunk[] raw = tickingChunks.getRawDataUnchecked();
@@ -29983,7 +29977,7 @@ index d5772303296142bb6497c23806cd1bf27c99fcca..8f2c37a3a534b3b0d4f3ffd2a0d7013a
  
          if (!spawningCategories.isEmpty()) {
 -            if (this.level.canSpawnEntitiesInChunk(chunkPos)) {
-+            if (this.level.getWorldBorder().isWithinBounds(chunkPos)) { // Paper - rewrite chunk system
++            if (this.level.getWorldBorder().isWithinBounds(chunkPos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkPos, true)) { // Paper - rewrite chunk system // Paper - PlayerNaturallySpawnCreaturesEvent; only skip mob spawning when the event is absent or cancelled
                  NaturalSpawner.spawnForChunk(this.level, chunk, spawnCookie, spawningCategories);
              }
          }
