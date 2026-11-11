@@ -33,7 +33,7 @@ import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.dialog.input.TextInput;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Util;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 import static io.papermc.paper.util.PaperCodecs.registryFileDecoderFor;
@@ -85,7 +85,7 @@ public final class PaperDialogCodecs {
     );
     private static final Codec<PlainMessageDialogBody> SIMPLE_PLAIN_MESSAGE_BODY_CODEC = Codec.withAlternative(PLAIN_MESSAGE_BODY_CODEC.codec(), AdventureCodecs.COMPONENT_CODEC, component -> DialogBody.plainMessage(component, PlainMessage.DEFAULT_WIDTH));
     private static final MapCodec<ItemDialogBody> ITEM_BODY_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ItemStack.CODEC.xmap(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy).fieldOf("item").forGetter(ItemDialogBody::item),
+            ItemStackTemplate.CODEC.xmap(CraftItemStack::asBukkitCopy, CraftItemStack::asTemplate).fieldOf("item").forGetter(ItemDialogBody::item),
             SIMPLE_PLAIN_MESSAGE_BODY_CODEC.optionalFieldOf("description").forGetter(body -> Optional.ofNullable(body.description())),
             Codec.BOOL.optionalFieldOf("show_decorations", true).forGetter(ItemDialogBody::showDecorations),
             Codec.BOOL.optionalFieldOf("show_tooltip", true).forGetter(ItemDialogBody::showTooltip),
