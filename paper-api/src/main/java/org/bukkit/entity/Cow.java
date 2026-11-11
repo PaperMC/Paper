@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.CowSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -64,7 +65,7 @@ public interface Cow extends AbstractCow {
     /**
      * Represents the sound variant of a cow.
      */
-    interface SoundVariant extends RegistryElement<SoundVariant>, Keyed {
+    interface SoundVariant extends RegistryElement.Buildable<SoundVariant, CowSoundVariantRegistryEntry, CowSoundVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - CowSoundVariant
         SoundVariant CLASSIC = getSoundVariant("classic");

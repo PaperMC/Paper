@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.CatSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -129,7 +130,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
     /**
      * Represents the sound variant of a cat.
      */
-    interface SoundVariant extends RegistryElement<SoundVariant>, Keyed {
+    interface SoundVariant extends RegistryElement.Buildable<SoundVariant, CatSoundVariantRegistryEntry, CatSoundVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - CatSoundVariant
         SoundVariant CLASSIC = getSoundVariant("classic");

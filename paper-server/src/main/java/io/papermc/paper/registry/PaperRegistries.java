@@ -11,8 +11,11 @@ import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.PaperCatSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
+import io.papermc.paper.registry.data.PaperChickenSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperCowSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperCowVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperDecoratedPotPatternRegistryEntry;
@@ -22,11 +25,13 @@ import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperInstrumentRegistryEntry;
 import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperPigSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperSulfurCubeArchetypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperTrimMaterialRegistryEntry;
 import io.papermc.paper.registry.data.PaperTrimPatternRegistryEntry;
+import io.papermc.paper.registry.data.PaperWolfSoundVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
@@ -140,7 +145,7 @@ public final class PaperRegistries {
             start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new, true).writable(PaperTrimPatternRegistryEntry::new, PaperTrimPatternRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).writable(PaperDamageTypeRegistryEntry::new, PaperDamageTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).writable(PaperWolfVariantRegistryEntry::new, PaperWolfVariantRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.WOLF_SOUND_VARIANT, RegistryKey.WOLF_SOUND_VARIANT).craft(Wolf.SoundVariant.class, CraftWolf.CraftSoundVariant::new).build(),
+            start(Registries.WOLF_SOUND_VARIANT, RegistryKey.WOLF_SOUND_VARIANT).craft(Wolf.SoundVariant.class, CraftWolf.CraftSoundVariant::new).writable(PaperWolfSoundVariantRegistryEntry::new, PaperWolfSoundVariantRegistryEntry.PaperBuilder::new),
             start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry::new, PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).writable(PaperJukeboxSongRegistryEntry::new, PaperJukeboxSongRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry::new, PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
@@ -148,14 +153,14 @@ public final class PaperRegistries {
             start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new).writable(PaperPaintingVariantRegistryEntry::new, PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).writable(PaperInstrumentRegistryEntry::new, PaperInstrumentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT).craft(Cat.Type.class, CraftCat.CraftType::new).writable(PaperCatTypeRegistryEntry::new, PaperCatTypeRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.CAT_SOUND_VARIANT, RegistryKey.CAT_SOUND_VARIANT).craft(Cat.SoundVariant.class, CraftCat.CraftSoundVariant::new).build(),
+            start(Registries.CAT_SOUND_VARIANT, RegistryKey.CAT_SOUND_VARIANT).craft(Cat.SoundVariant.class, CraftCat.CraftSoundVariant::new).writable(PaperCatSoundVariantRegistryEntry::new, PaperCatSoundVariantRegistryEntry.PaperBuilder::new),
             start(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT).craft(Frog.Variant.class, CraftFrog.CraftVariant::new).writable(PaperFrogVariantRegistryEntry::new, PaperFrogVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT).craft(Chicken.Variant.class, CraftChicken.CraftVariant::new).writable(PaperChickenVariantRegistryEntry::new, PaperChickenVariantRegistryEntry.PaperBuilder::new),
-            start(Registries.CHICKEN_SOUND_VARIANT, RegistryKey.CHICKEN_SOUND_VARIANT).craft(Chicken.SoundVariant.class, CraftChicken.CraftSoundVariant::new).build(),
+            start(Registries.CHICKEN_SOUND_VARIANT, RegistryKey.CHICKEN_SOUND_VARIANT).craft(Chicken.SoundVariant.class, CraftChicken.CraftSoundVariant::new).writable(PaperChickenSoundVariantRegistryEntry::new, PaperChickenSoundVariantRegistryEntry.PaperBuilder::new),
             start(Registries.COW_VARIANT, RegistryKey.COW_VARIANT).craft(Cow.Variant.class, CraftCow.CraftVariant::new).writable(PaperCowVariantRegistryEntry::new, PaperCowVariantRegistryEntry.PaperBuilder::new),
-            start(Registries.COW_SOUND_VARIANT, RegistryKey.COW_SOUND_VARIANT).craft(Cow.SoundVariant.class, CraftCow.CraftSoundVariant::new).build(),
+            start(Registries.COW_SOUND_VARIANT, RegistryKey.COW_SOUND_VARIANT).craft(Cow.SoundVariant.class, CraftCow.CraftSoundVariant::new).writable(PaperCowSoundVariantRegistryEntry::new, PaperCowSoundVariantRegistryEntry.PaperBuilder::new),
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry::new, PaperPigVariantRegistryEntry.PaperBuilder::new),
-            start(Registries.PIG_SOUND_VARIANT, RegistryKey.PIG_SOUND_VARIANT).craft(Pig.SoundVariant.class, CraftPig.CraftSoundVariant::new).build(),
+            start(Registries.PIG_SOUND_VARIANT, RegistryKey.PIG_SOUND_VARIANT).craft(Pig.SoundVariant.class, CraftPig.CraftSoundVariant::new).writable(PaperPigSoundVariantRegistryEntry::new, PaperPigSoundVariantRegistryEntry.PaperBuilder::new),
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry::new, PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry::new, PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry::new, PaperDialogRegistryEntry.PaperBuilder::new),
