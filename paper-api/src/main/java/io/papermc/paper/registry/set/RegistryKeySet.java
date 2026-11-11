@@ -3,7 +3,6 @@ package io.papermc.paper.registry.set;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
-import io.papermc.paper.registry.tag.TagKey;
 import java.util.Collection;
 import java.util.Iterator;
 import org.bukkit.Keyed;
@@ -43,12 +42,24 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * Resolve this set into a collection of values. Prefer using
      * {@link #values()}.
      *
-     * @param registry the registry to resolve the values from (must match {@link #registryKey()})
+     * @param ignored the registry to resolve the values from (must match {@link #registryKey()})
      * @return the resolved values
      * @see RegistryKeySet#values()
-     * @see Registry#getTagValues(TagKey)
+     * @deprecated use {@link #resolve()}, the registry is not needed
      */
-    @Unmodifiable Collection<T> resolve(final Registry<T> registry);
+    @Deprecated(since = "26.4", forRemoval = true)
+    default @Unmodifiable Collection<T> resolve(final Registry<T> ignored) {
+        return this.resolve();
+    }
+
+    /**
+     * Resolve this set into a collection of values. Prefer using
+     * {@link #values()}.
+     *
+     * @return the resolved values
+     * @see RegistryKeySet#values()
+     */
+    @Unmodifiable Collection<T> resolve();
 
     /**
      * Checks if this set contains the value with the given key.

@@ -2,10 +2,12 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
 
 public record PaperTooltipDisplay(
@@ -50,6 +52,11 @@ public record PaperTooltipDisplay(
         public Builder hiddenComponents(final Set<DataComponentType> components) {
             this.hiddenComponents.addAll(components);
             return this;
+        }
+
+        @Override
+        public Builder hiddenComponents(final RegistryKeySet<DataComponentType> components) {
+            return this.hiddenComponents(components.values().stream().map(Registry.DATA_COMPONENT_TYPE::getOrThrow).collect(Collectors.toSet()));
         }
 
         @Override

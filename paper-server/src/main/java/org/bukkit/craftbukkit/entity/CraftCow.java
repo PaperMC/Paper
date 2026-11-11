@@ -47,7 +47,7 @@ public class CraftCow extends CraftAbstractCow implements Cow {
         this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<CowVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<CowVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<CowVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.COW_VARIANT);
@@ -62,7 +62,7 @@ public class CraftCow extends CraftAbstractCow implements Cow {
         }
     }
 
-    public static class CraftSoundVariant extends HolderableBase<CowSoundVariant> implements SoundVariant {
+    public static class CraftSoundVariant extends HolderableBase<CowSoundVariant, SoundVariant> implements SoundVariant {
 
         public static SoundVariant minecraftHolderToBukkit(Holder<CowSoundVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.COW_SOUND_VARIANT);

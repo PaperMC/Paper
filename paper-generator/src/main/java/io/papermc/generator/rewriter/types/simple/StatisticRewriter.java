@@ -81,11 +81,11 @@ public class StatisticRewriter {
 
         @Override
         protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Identifier> reference) {
-            String keyedName = Formatting.formatKeyAsField(reference.key().identifier().getPath());
+            String fieldName = Formatting.formatKeyAsField(reference.key().identifier().getPath());
 
             return super.rewriteEnumValue(reference)
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
-                .argument("%s.%s".formatted(Stats.class.getSimpleName(), INTERNAL_FIELD_RENAMES.getOrDefault(keyedName, keyedName)));
+                .argument("%s.%s".formatted(Stats.class.getSimpleName(), INTERNAL_FIELD_RENAMES.getOrDefault(fieldName, fieldName)));
         }
     }
 

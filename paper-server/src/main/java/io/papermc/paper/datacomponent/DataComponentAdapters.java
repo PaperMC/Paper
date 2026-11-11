@@ -67,6 +67,7 @@ import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
@@ -182,7 +183,7 @@ public final class DataComponentAdapters {
         register(DataComponents.SULFUR_CUBE_CONTENT, PaperSulfurCubeContent::new);
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
-        register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
+        register(DataComponents.BREAK_SOUND, CraftSound::minecraftHolderToBukkit, CraftSound::bukkitToMinecraftHolder);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
         register(DataComponents.PIERCING_WEAPON, PaperPiercingWeapon::new);
         register(DataComponents.KINETIC_WEAPON, PaperKineticWeapon::new);

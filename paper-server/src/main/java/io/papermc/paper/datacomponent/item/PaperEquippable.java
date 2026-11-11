@@ -17,7 +17,9 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
@@ -38,8 +40,8 @@ public record PaperEquippable(
     }
 
     @Override
-    public Key equipSound() {
-        return PaperAdventure.asAdventure(this.impl.equipSound().value().location());
+    public Sound equipSound() {
+        return CraftSound.minecraftHolderToBukkit(this.impl.equipSound());
     }
 
     @Override
@@ -89,8 +91,8 @@ public record PaperEquippable(
     }
 
     @Override
-    public Key shearSound() {
-        return PaperAdventure.asAdventure(this.impl.shearingSound().value().location());
+    public Sound shearSound() {
+        return CraftSound.minecraftHolderToBukkit(this.impl.shearingSound());
     }
 
     @Override
@@ -128,8 +130,8 @@ public record PaperEquippable(
         }
 
         @Override
-        public Builder equipSound(final Key sound) {
-            this.equipSound = PaperAdventure.resolveSound(sound);
+        public Builder equipSound(final Sound sound) {
+            this.equipSound = CraftSound.bukkitToMinecraftHolder(sound);
             return this;
         }
 
@@ -142,7 +144,7 @@ public record PaperEquippable(
         }
 
         @Override
-        public Builder cameraOverlay(@Nullable final Key cameraOverlay) {
+        public Builder cameraOverlay(final @Nullable Key cameraOverlay) {
             this.cameraOverlay = Optional.ofNullable(cameraOverlay)
                 .map(PaperAdventure::asVanilla);
 
@@ -187,8 +189,8 @@ public record PaperEquippable(
         }
 
         @Override
-        public Builder shearSound(final Key shearSound) {
-            this.shearSound = PaperAdventure.resolveSound(shearSound);
+        public Builder shearSound(final Sound shearSound) {
+            this.shearSound = CraftSound.bukkitToMinecraftHolder(shearSound);
             return this;
         }
 
