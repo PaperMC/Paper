@@ -16,12 +16,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.generator.utils.Formatting.quoted;
 
-@NullMarked
 @ApiStatus.Obsolete
 public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
 
@@ -35,7 +33,7 @@ public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
     }
 
     protected EnumRegistryRewriter(ResourceKey<? extends Registry<T>> registryKey, boolean hasKeyArgument) {
-        this.registry = Suppliers.memoize(() -> Main.REGISTRY_ACCESS.lookupOrThrow(registryKey));
+        this.registry = Suppliers.memoize(() -> Main.registryAccess.lookupOrThrow(registryKey));
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(this.registry.get()));
         this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(registryKey);
         this.hasKeyArgument = hasKeyArgument;

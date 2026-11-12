@@ -17,10 +17,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public final class RegistryEntry<T> {
 
     private final ResourceKey<? extends Registry<T>> registryKey;
@@ -60,7 +58,7 @@ public final class RegistryEntry<T> {
     }
 
     public Registry<T> registry() {
-        return Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
+        return Main.registryAccess.lookupOrThrow(this.registryKey);
     }
 
     public String registryKeyField() {

@@ -3,9 +3,7 @@ package io.papermc.generator.types;
 import com.squareup.javapoet.TypeSpec;
 import io.papermc.generator.utils.Annotations;
 import javax.lang.model.element.Modifier;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class SimpleEnumGenerator<T extends Enum<T>> extends SimpleGenerator {
 
     private final Class<T> enumClass;

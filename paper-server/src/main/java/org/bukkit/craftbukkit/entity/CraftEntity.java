@@ -95,6 +95,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -918,8 +920,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public void setInvulnerable(boolean flag) {
+    public void setInvulnerable(final boolean flag) {
         this.getHandle().setPermanentlyInvulnerable(flag);
+    }
+
+    @Override
+    public int getInvulnerableTime() {
+        return this.getHandle().getInvulnerableTime();
+    }
+
+    @Override
+    public void setInvulnerableTime(final int ticks) {
+        this.getHandle().setInvulnerableTime(requireNonNegative(ticks, "ticks"));
     }
 
     @Override

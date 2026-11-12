@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import io.papermc.paper.connection.PlayerConnection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -496,9 +497,8 @@ public class StandardMessenger implements Messenger {
      * Validates a Plugin Channel name.
      *
      * @param channel Channel name to validate.
-     * @deprecated not an API method
      */
-    @Deprecated(since = "1.13")
+    @ApiStatus.Internal
     public static void validateChannel(@NotNull String channel) {
         validateAndCorrectChannel(channel);
     }
@@ -508,9 +508,8 @@ public class StandardMessenger implements Messenger {
      *
      * @param channel Channel name to validate.
      * @return corrected channel name
-     * @deprecated not an API method
      */
-    @Deprecated(since = "1.13")
+    @ApiStatus.Internal
     @NotNull
     public static String validateAndCorrectChannel(@NotNull String channel) {
         if (channel == null) {

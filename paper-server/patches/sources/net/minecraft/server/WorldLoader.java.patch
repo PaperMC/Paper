@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/WorldLoader.java
 +++ b/net/minecraft/server/WorldLoader.java
-@@ -35,7 +_,7 @@
+@@ -35,11 +_,11 @@
                      CloseableResourceManager resources = packsAndResourceManager.getSecond();
                      LayeredRegistryAccess<RegistryLayer> initialLayers = RegistryLayer.createRegistryAccess();
                      List<Registry.PendingTags<?>> staticLayerTags = TagLoader.loadTagsForExistingRegistries(
@@ -9,3 +9,25 @@
                      );
                      RegistryAccess.Frozen worldLoadContext = initialLayers.getAccessForLoading(RegistryLayer.WORLD);
                      List<HolderLookup.RegistryLookup<?>> worldContextRegistries = TagLoader.buildUpdatedLookups(worldLoadContext, staticLayerTags);
+-                    return RegistryDataLoader.load(resources, worldContextRegistries, RegistryDataLoader.WORLD_REGISTRIES, backgroundExecutor)
++                    return RegistryDataLoader.load(resources, worldContextRegistries, RegistryDataLoader.WORLD_REGISTRIES, backgroundExecutor, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL) // Paper - tag lifecycle - add cause
+                         .thenComposeAsync(
+                             loadedWorldRegistries -> {
+                                 List<HolderLookup.RegistryLookup<?>> dimensionContextRegistries = Stream.concat(
+@@ -47,7 +_,7 @@
+                                     )
+                                     .toList();
+                                 return RegistryDataLoader.load(
+-                                        resources, dimensionContextRegistries, RegistryDataLoader.DIMENSION_REGISTRIES, backgroundExecutor
++                                        resources, dimensionContextRegistries, RegistryDataLoader.DIMENSION_REGISTRIES, backgroundExecutor, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL // Paper - tag lifecycle - add cause
+                                     )
+                                     .thenComposeAsync(
+                                         initialWorldgenDimensions -> {
+@@ -70,6 +_,7 @@
+                                                     config.functionCompilationPermissions(),
+                                                     backgroundExecutor,
+                                                     mainThreadExecutor
++                                                    , io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL // Paper - add registrar event cause
+                                                 )
+                                                 .whenComplete((managers, throwable) -> {
+                                                     if (throwable != null) {
