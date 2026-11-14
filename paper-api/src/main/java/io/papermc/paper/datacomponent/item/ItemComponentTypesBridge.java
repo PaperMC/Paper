@@ -131,4 +131,8 @@ interface ItemComponentTypesBridge {
     VillagerFood villagerFood(int nutrition);
 
     SignText.Builder signText();
+
+    BrewingFuel.Builder brewingFuel();
+
+    CookingFuel.Builder cookingFuel();
 }
