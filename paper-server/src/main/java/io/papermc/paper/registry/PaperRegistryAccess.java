@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
@@ -97,14 +98,6 @@ public class PaperRegistryAccess implements RegistryAccess {
         return registry;
     }
 
-    public <M> void registerReloadableRegistry(final net.minecraft.core.Registry<M> registry) {
-        this.registerRegistry(registry, true);
-    }
-
-    public <M> void registerRegistry(final net.minecraft.core.Registry<M> registry) {
-        this.registerRegistry(registry, false);
-    }
-
     public <M> void lockReferenceHolders(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey) {
         final RegistryEntry<M, Keyed> entry = PaperRegistries.getEntry(resourceKey);
         if (entry == null || !(entry.meta() instanceof final RegistryEntryMeta.ServerSide<M, Keyed> serverSide) || !serverSide.registryTypeMapper().constructorUsesHolder()) {
@@ -115,14 +108,14 @@ public class PaperRegistryAccess implements RegistryAccess {
     }
 
     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
-    private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final net.minecraft.core.Registry<M> registry, final boolean replace) {
+    public <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final net.minecraft.core.Registry<M> registry) {
         final RegistryEntry<M, B> entry = PaperRegistries.getEntry(registry.key());
         if (entry == null) { // skip registries that don't have API entries
             return;
         }
         final RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
-        if (registryHolder == null || replace) {
-            // if the holder doesn't exist yet, or is marked as "replaceable", put it in the map.
+        if (registryHolder == null || isReloadable(registry.key())) {
+            // if the holder doesn't exist yet, or the registry is recreated on each reload, put it in the map.
             this.registries.put(entry.apiKey(), entry.createRegistryHolder(registry));
         } else {
             if (registryHolder instanceof RegistryHolder.Delayed<?, ?> && entry instanceof final DelayedRegistryEntry<M, B> delayedEntry) {
@@ -132,6 +125,11 @@ public class PaperRegistryAccess implements RegistryAccess {
                 throw new IllegalArgumentException(registry.key() + " has already been created");
             }
         }
+    }
+
+    // only called once a holder already exists, so RegistryDataLoader isn't class-loaded during BuiltInRegistries bootstrap
+    private static boolean isReloadable(final ResourceKey<? extends net.minecraft.core.Registry<?>> registryKey) {
+        return RegistryDataLoader.RELOADABLE_REGISTRIES.stream().anyMatch(data -> data.key() == registryKey);
     }
 
     @SuppressWarnings("unchecked")
