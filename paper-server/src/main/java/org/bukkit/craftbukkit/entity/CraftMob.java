@@ -16,16 +16,6 @@ import org.bukkit.loot.LootTable;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
 
-    @Override
-    public boolean isPersistenceRequired() {
-        return this.getHandle().isPersistenceRequired();
-    }
-
-    @Override
-    public void setPersistenceRequired(boolean persistent) {
-        this.getHandle().persistenceRequired = persistent;
-    }
-
     private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
 
     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
@@ -210,4 +200,15 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
+
+    @Override
+    public boolean isPersistenceRequired() {
+        return this.getHandle().isPersistenceRequired();
+    }
+
+    @Override
+    public void setPersistenceRequired(final boolean persistent) {
+        this.getHandle().persistenceRequired = persistent;
+    }
+
 }

@@ -731,7 +731,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated use {@link Mob#isPersistenceRequired()} for mobs
      */
     @Deprecated(since = "26.3")
-    public boolean getRemoveWhenFarAway();
+    default boolean getRemoveWhenFarAway() {
+        return this instanceof Mob mob && !mob.isPersistenceRequired();
+    }
 
     /**
      * Sets whether this living entity is allowed to be removed when far away.
@@ -743,7 +745,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated use {@link Mob#setPersistenceRequired(boolean)} for mobs
      */
     @Deprecated(since = "26.3")
-    public void setRemoveWhenFarAway(boolean remove);
+    default void setRemoveWhenFarAway(final boolean remove) {
+        if (this instanceof Mob mob) {
+            mob.setPersistenceRequired(!remove);
+        }
+    }
 
     /**
      * Gets the inventory with the equipment worn by the living entity.
