@@ -19,6 +19,7 @@ import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
+import io.papermc.paper.loot.PaperLootContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -104,7 +105,6 @@ import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftExplosionResult;
 import org.bukkit.craftbukkit.CraftGameRule;
-import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftStatistic;
@@ -2050,12 +2050,12 @@ public class CraftEventFactory {
         event.callEvent();
     }
 
-    public static LootGenerateEvent callLootGenerateEvent(Container inventory, LootTable lootTable, LootContext lootInfo, List<ItemStack> loot, boolean plugin) {
-        CraftWorld world = lootInfo.getLevel().getWorld();
-        Entity entity = lootInfo.getOptional(LootContextParams.THIS_ENTITY);
+    public static LootGenerateEvent callLootGenerateEvent(Container inventory, LootTable lootTable, LootContext context, List<ItemStack> loot, boolean plugin) {
+        CraftWorld world = context.getLevel().getWorld();
+        Entity entity = context.getOptional(LootContextParams.THIS_ENTITY);
         List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asBukkitMirror).collect(Collectors.toCollection(ArrayList::new));
 
-        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
+        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, PaperLootContext.fromVanilla(context), bukkitLoot, plugin);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
