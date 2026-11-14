@@ -17,7 +17,6 @@ import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 /**
  * A data-centric version-specific registry entry for the {@link Timeline} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface TimelineRegistryEntry {
 
