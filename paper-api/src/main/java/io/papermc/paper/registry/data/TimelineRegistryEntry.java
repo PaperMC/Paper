@@ -7,9 +7,10 @@ import io.papermc.paper.world.WorldClock;
 import java.util.Map;
 import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Range;
 
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
@@ -71,7 +72,7 @@ public interface TimelineRegistryEntry {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder periodTicks(@Range(from = 1, to = Integer.MAX_VALUE) int periodTicks);
+        Builder periodTicks(@Positive int periodTicks);
 
         /**
          * Clears the timeline period.
@@ -90,7 +91,7 @@ public interface TimelineRegistryEntry {
          * @return this builder
          */
         @Contract(value = "_, _, _ -> this", mutates = "this")
-        Builder addTimeMarker(Key key, @Range(from = 0, to = Integer.MAX_VALUE) int ticks, boolean showInCommands);
+        Builder addTimeMarker(Key key, @NonNegative int ticks, boolean showInCommands);
     }
 
     /**
@@ -104,7 +105,7 @@ public interface TimelineRegistryEntry {
          *
          * @return the marker tick
          */
-        @Range(from = 0, to = Integer.MAX_VALUE)
+        @NonNegative
         int ticks();
 
         /**
@@ -122,7 +123,7 @@ public interface TimelineRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _ -> new", pure = true)
-        static TimeMarker of(@Range(from = 0, to = Integer.MAX_VALUE) final int ticks, final boolean showInCommands) {
+        static TimeMarker of(@NonNegative final int ticks, final boolean showInCommands) {
             record Impl(int ticks, boolean showInCommands) implements TimeMarker {
             }
 

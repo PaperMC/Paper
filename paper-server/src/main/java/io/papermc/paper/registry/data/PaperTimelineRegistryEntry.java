@@ -1,6 +1,5 @@
 package io.papermc.paper.registry.data;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
@@ -14,11 +13,14 @@ import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.timeline.Timeline;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
 
@@ -68,8 +70,8 @@ public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
         }
 
         @Override
-        public Builder periodTicks(final @Range(from = 1, to = Integer.MAX_VALUE) int periodTicks) {
-            Preconditions.checkArgument(periodTicks >= 1, "periodTicks must be at least 1, was %s", periodTicks);
+        public Builder periodTicks(final @Positive int periodTicks) {
+            requirePositive(periodTicks, "periodTicks");
             this.periodTicks = periodTicks;
             return this;
         }
@@ -81,8 +83,8 @@ public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
         }
 
         @Override
-        public Builder addTimeMarker(final Key key, final @Range(from = 0, to = Integer.MAX_VALUE) int ticks, final boolean showInCommands) {
-            Preconditions.checkArgument(ticks >= 0, "ticks must be at least 0, was %s", ticks);
+        public Builder addTimeMarker(final Key key, final @NonNegative int ticks, final boolean showInCommands) {
+            requireNonNegative(ticks, "ticks");
             this.timeMarkers.put(asArgument(key, "key"), TimeMarker.of(ticks, showInCommands));
             return this;
         }
