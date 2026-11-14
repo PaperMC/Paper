@@ -95,7 +95,7 @@ public class CraftPig extends CraftAnimals implements Pig {
         this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<PigVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);
@@ -110,7 +110,7 @@ public class CraftPig extends CraftAnimals implements Pig {
         }
     }
 
-    public static class CraftSoundVariant extends HolderableBase<PigSoundVariant> implements SoundVariant {
+    public static class CraftSoundVariant extends HolderableBase<PigSoundVariant, SoundVariant> implements SoundVariant {
 
         public static SoundVariant minecraftHolderToBukkit(Holder<PigSoundVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_SOUND_VARIANT);

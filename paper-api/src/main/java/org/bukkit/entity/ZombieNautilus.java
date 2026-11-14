@@ -1,7 +1,9 @@
 package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -27,7 +29,7 @@ public interface ZombieNautilus extends AbstractNautilus {
     /**
      * Represents the variant of a Zombie Nautilus.
      */
-    interface Variant extends Keyed {
+    interface Variant extends RegistryElement.Buildable<Variant, ZombieNautilusVariantRegistryEntry, ZombieNautilusVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - ZombieNautilusVariant
         Variant TEMPERATE = getVariant("temperate");

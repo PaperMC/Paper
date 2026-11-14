@@ -73,7 +73,7 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
         }
     }
 
-    public static class CraftSoundVariant extends HolderableBase<CatSoundVariant> implements SoundVariant {
+    public static class CraftSoundVariant extends HolderableBase<CatSoundVariant, SoundVariant> implements SoundVariant {
 
         public static SoundVariant minecraftHolderToBukkit(Holder<CatSoundVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CAT_SOUND_VARIANT);

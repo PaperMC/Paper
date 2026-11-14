@@ -6,6 +6,7 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.holder.PaperRegistryHolders;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.util.MCUtil;
@@ -181,8 +182,8 @@ public class PaperSulfurCubeArchetypeRegistryEntry implements SulfurCubeArchetyp
         @Override
         public Builder soundSettings(final SoundSettings settings) {
             this.soundSettings = new SulfurCubeArchetype.SoundSettings(
-                this.conversions.getReferenceHolder(PaperRegistries.toNms(settings.hitSound())),
-                this.conversions.getReferenceHolder(PaperRegistries.toNms(settings.pushSound())),
+                PaperRegistryHolders.convert(settings.hitSound(), this.conversions),
+                PaperRegistryHolders.convert(settings.pushSound(), this.conversions),
                 settings.pushSoundImpulseThreshold(),
                 settings.pushSoundCooldown()
             );

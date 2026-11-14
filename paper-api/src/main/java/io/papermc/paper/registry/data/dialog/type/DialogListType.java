@@ -61,7 +61,7 @@ public non-sealed interface DialogListType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder exitAction(final @Nullable ActionButton exitAction);
+        Builder exitAction(@Nullable ActionButton exitAction);
 
         /**
          * Sets the number of columns to display in the dialog list.
@@ -70,7 +70,7 @@ public non-sealed interface DialogListType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder columns(final @Positive int columns);
+        Builder columns(@Positive int columns);
 
         /**
          * Sets the width of each button in the dialog list.
@@ -79,7 +79,7 @@ public non-sealed interface DialogListType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder buttonWidth(final @Range(from = 1, to = 1024) int buttonWidth);
+        Builder buttonWidth(@Range(from = 1, to = 1024) int buttonWidth);
 
         /**
          * Builds the dialog list type.

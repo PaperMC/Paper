@@ -1,7 +1,10 @@
 package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.ChickenSoundVariantRegistryEntry;
+import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -72,7 +75,7 @@ public interface Chicken extends Animals {
     /**
      * Represents the variant of a chicken.
      */
-    interface Variant extends Keyed {
+    interface Variant extends RegistryElement.Buildable<Variant, ChickenVariantRegistryEntry, ChickenVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - ChickenVariant
         Variant COLD = getVariant("cold");
@@ -90,7 +93,7 @@ public interface Chicken extends Animals {
     /**
      * Represents the sound variant of a chicken.
      */
-    interface SoundVariant extends Keyed {
+    interface SoundVariant extends RegistryElement.Buildable<SoundVariant, ChickenSoundVariantRegistryEntry, ChickenSoundVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - ChickenSoundVariant
         SoundVariant CLASSIC = getSoundVariant("classic");

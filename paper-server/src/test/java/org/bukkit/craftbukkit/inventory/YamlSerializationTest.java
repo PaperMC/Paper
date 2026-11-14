@@ -35,7 +35,7 @@ public class YamlSerializationTest {
         item.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("Jon", "The Destroyer").addPage(Component.text("hi")).build());
         item.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments().add(Enchantment.AQUA_AFFINITY, 1).add(Enchantment.DENSITY, 2).build());
         item.setData(DataComponentTypes.GLIDER);
-        item.setData(DataComponentTypes.TOOL, Tool.tool().addRule(Tool.rule(RegistrySet.keySet(RegistryKey.BLOCK, BlockTypeKeys.ACACIA_DOOR), 1f, TriState.TRUE)));
+        item.setData(DataComponentTypes.TOOL, Tool.tool().addRule(Tool.rule(RegistrySet.keySet(BlockTypeKeys.ACACIA_DOOR), 1f, TriState.TRUE)));
 
         testYamlRoundTrip(item, """
             item:

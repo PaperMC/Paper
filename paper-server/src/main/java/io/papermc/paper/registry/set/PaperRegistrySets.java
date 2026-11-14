@@ -1,8 +1,10 @@
 package io.papermc.paper.registry.set;
 
 import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.util.Holderable;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +15,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
-import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class PaperRegistrySets {
 
@@ -26,7 +27,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO remove Keyed
+    public static <A extends Keyed & RegistryElement.Buildable<A, E, ?>, E, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions, final RegistrySet<A> registrySet) { // TODO remove Keyed
         if (registrySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registrySet).namedSet();
         } else if (registrySet.isEmpty()) {
@@ -41,8 +42,14 @@ public final class PaperRegistrySets {
             }
             return HolderSet.direct(directs);
         } else if (registrySet instanceof final RegistryKeySet<A> keySet) {
-            final HolderGetter<M> registryInfo = lookup.lookup(resourceKey).orElseThrow();
-            return HolderSet.direct(key -> registryInfo.getOrThrow(PaperRegistries.toNms(key)), keySet.values());
+            final HolderGetter<M> holderGetter = conversions.lookup().lookup(resourceKey).orElseThrow();
+            return HolderSet.direct(
+                key -> {
+                    return holderGetter.getOrThrow(PaperRegistries.toNms(key));
+                }, keySet.values()
+            );
+        } else if (registrySet instanceof final RegistryHolderSet<A, ?> registryHolderSet) {
+            return ((RegistryHolderSetImpl<A, ?, M>) registryHolderSet).nmsHolders();
         } else {
             throw new UnsupportedOperationException("Cannot convert a registry set of type " + registrySet.getClass().getName());
         }
@@ -63,27 +70,13 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO remove Keyed
+    public static <A extends Keyed & RegistryElement.Inlineable<A, E, ?>, E, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders, final Conversions conversions) { // TODO remove Keyed
         if (holders instanceof final HolderSet.Named<M> named) {
             return new NamedRegistryKeySetImpl<>(PaperRegistries.fromNms(named.key()), named);
+        } else if (holders instanceof final HolderSet.Direct<M> direct) {
+            return new RegistryHolderSetImpl<>(registryKey, direct, conversions.getEntryCreator(registryKey));
         } else {
-            if (holders.size() == 0) {
-                return RegistrySet.keySet(registryKey);
-            }
-            if (holders.get(0) instanceof Holder.Direct<M>) {
-                final List<A> directs = new ArrayList<>(holders.size());
-                final ResourceKey<? extends Registry<M>> nmsRegistryKey = PaperRegistries.registryToNms(registryKey);
-                for (final Holder<M> holder : holders) {
-                    directs.add(CraftRegistry.minecraftHolderToBukkit(holder, nmsRegistryKey));
-                }
-                return RegistrySet.valueSet(registryKey, directs);
-            } else {
-                final List<TypedKey<A>> keys = new ArrayList<>(holders.size());
-                for (final Holder<M> holder : holders) {
-                    keys.add(PaperRegistries.fromNms(((Holder.Reference<M>) holder).key()));
-                }
-                return RegistrySet.keySet(registryKey, keys);
-            }
+            throw new IllegalArgumentException("Unexpected holder set " + holders);
         }
     }
 

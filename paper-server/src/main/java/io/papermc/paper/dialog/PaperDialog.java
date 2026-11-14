@@ -5,7 +5,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.CraftRegistry;
 
-public final class PaperDialog extends HolderableBase<net.minecraft.server.dialog.Dialog> implements Dialog {
+public final class PaperDialog extends HolderableBase<net.minecraft.server.dialog.Dialog, Dialog> implements Dialog {
 
     public static Holder<net.minecraft.server.dialog.Dialog> bukkitToMinecraftHolder(final Dialog bukkit) {
         return CraftRegistry.bukkitToMinecraftHolder(bukkit);
