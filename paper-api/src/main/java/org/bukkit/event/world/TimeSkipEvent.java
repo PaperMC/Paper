@@ -2,7 +2,6 @@ package org.bukkit.event.world;
 
 import io.papermc.paper.world.WorldClock;
 import org.bukkit.World;
-import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -15,8 +14,6 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 public class TimeSkipEvent extends ClockTimeSkipEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final World world;
 
@@ -33,14 +30,5 @@ public class TimeSkipEvent extends ClockTimeSkipEvent {
      */
     public World getWorld() {
         return this.world;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
     }
 }
