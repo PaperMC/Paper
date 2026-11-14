@@ -29,6 +29,14 @@ public record PaperItemDamageFunction(
         return this.internal.apply(damage);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .threshold(this.threshold())
+            .base(this.base())
+            .factor(this.factor());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private float threshold = BlocksAttacks.ItemDamageFunction.DEFAULT.threshold();

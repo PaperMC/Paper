@@ -101,6 +101,11 @@ public record PaperResolvableProfile(
             .texture(this.impl.skinPatch().body().map(ClientAsset.ResourceTexture::id).map(PaperAdventure::asAdventure).orElse(null));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().name(this.name()).uuid(this.uuid()).skinPatch(this.skinPatch()).addProperties(this.properties());
+    }
+
     record PaperSkinPatch(
         @Nullable Key body,
         @Nullable Key cape,

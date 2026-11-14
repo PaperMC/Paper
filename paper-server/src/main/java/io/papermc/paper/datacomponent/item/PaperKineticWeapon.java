@@ -86,6 +86,20 @@ public record PaperKineticWeapon(
             .orElse(null);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .contactCooldownTicks(this.contactCooldownTicks())
+            .delayTicks(this.delayTicks())
+            .dismountConditions(this.dismountConditions())
+            .knockbackConditions(this.knockbackConditions())
+            .damageConditions(this.damageConditions())
+            .forwardMovement(this.forwardMovement())
+            .damageMultiplier(this.damageMultiplier())
+            .sound(this.sound())
+            .hitSound(this.hitSound());
+    }
+
     public record PaperKineticWeaponCondition(
             net.minecraft.world.item.component.KineticWeapon.Condition impl
     ) implements KineticWeapon.Condition, Handleable<net.minecraft.world.item.component.KineticWeapon.Condition> {
