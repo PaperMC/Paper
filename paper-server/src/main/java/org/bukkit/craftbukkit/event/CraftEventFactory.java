@@ -2485,7 +2485,7 @@ public class CraftEventFactory {
     }
 
     public static ClockTimeSkipEvent createTimeSkipEvent(final ServerLevel level, final Holder<net.minecraft.world.clock.WorldClock> clock, final ClockTimeSkipEvent.SkipReason reason, final long skipAmount) {
-        final io.papermc.paper.world.WorldClock bukkitClock = org.bukkit.craftbukkit.CraftWorldClock.minecraftHolderToBukkit(clock);
+        final io.papermc.paper.world.WorldClock bukkitClock = io.papermc.paper.world.PaperWorldClock.minecraftHolderToBukkit(clock);
         if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
             return new ClockTimeSkipEvent(bukkitClock, reason, skipAmount);
         }

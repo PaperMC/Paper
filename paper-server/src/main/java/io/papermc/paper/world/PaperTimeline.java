@@ -1,11 +1,11 @@
-package org.bukkit.craftbukkit;
+package io.papermc.paper.world;
 
 import io.papermc.paper.registry.HolderableBase;
-import io.papermc.paper.world.Timeline;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import org.bukkit.craftbukkit.CraftRegistry;
 
-public class CraftTimeline extends HolderableBase<net.minecraft.world.timeline.Timeline> implements Timeline {
+public class PaperTimeline extends HolderableBase<net.minecraft.world.timeline.Timeline> implements Timeline {
 
     public static Timeline minecraftHolderToBukkit(final Holder<net.minecraft.world.timeline.Timeline> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TIMELINE);
@@ -15,7 +15,7 @@ public class CraftTimeline extends HolderableBase<net.minecraft.world.timeline.T
         return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
-    public CraftTimeline(final Holder<net.minecraft.world.timeline.Timeline> holder) {
+    public PaperTimeline(final Holder<net.minecraft.world.timeline.Timeline> holder) {
         super(holder);
     }
 }

@@ -1,11 +1,11 @@
-package org.bukkit.craftbukkit;
+package io.papermc.paper.world;
 
 import io.papermc.paper.registry.HolderableBase;
-import io.papermc.paper.world.WorldClock;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import org.bukkit.craftbukkit.CraftRegistry;
 
-public class CraftWorldClock extends HolderableBase<net.minecraft.world.clock.WorldClock> implements WorldClock {
+public class PaperWorldClock extends HolderableBase<net.minecraft.world.clock.WorldClock> implements WorldClock {
 
     public static WorldClock minecraftHolderToBukkit(final Holder<net.minecraft.world.clock.WorldClock> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.WORLD_CLOCK);
@@ -15,7 +15,7 @@ public class CraftWorldClock extends HolderableBase<net.minecraft.world.clock.Wo
         return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
-    public CraftWorldClock(final Holder<net.minecraft.world.clock.WorldClock> holder) {
+    public PaperWorldClock(final Holder<net.minecraft.world.clock.WorldClock> holder) {
         super(holder);
     }
 }
