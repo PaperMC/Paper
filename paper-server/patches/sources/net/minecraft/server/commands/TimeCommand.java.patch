@@ -45,11 +45,11 @@
 +        // Paper start - per-world time
 +        ServerClockManager clockManager = source.getLevel().clockManager();
 +        long currentTotalTicks = clockManager.getInstance(clock).totalTicks();
-+        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, totalTicks - currentTotalTicks);
++        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, clock, totalTicks - currentTotalTicks);
 +        final long newTotalTicks;
-+        if (event.callEvent()) {
-+            newTotalTicks = currentTotalTicks + event.getSkipAmount();
-+            clockManager.setTotalTicks(clock, newTotalTicks);
++        final boolean cancelled = !event.callEvent();
++        if (!cancelled) {
++            newTotalTicks = Math.max(currentTotalTicks + event.getSkipAmount(), 0L);
 +        } else {
 +            newTotalTicks = totalTicks; // just pass it through
 +        }
@@ -60,7 +60,7 @@
 -        clockManager.setTotalTicks(clock, totalTicks);
 -        source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
 -        return totalTicks;
-+        clockManager.setTotalTicks(clock, newTotalTicks);
++        if (!cancelled) clockManager.setTotalTicks(clock, newTotalTicks);
 +        source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), newTotalTicks), true);
 +        return wrapTime(newTotalTicks);
 +        // Paper end - per-world time
@@ -71,7 +71,7 @@
 -        clockManager.addTicks(clock, time);
 +        // Paper start - per-world time
 +        ServerClockManager clockManager = source.getLevel().clockManager();
-+        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, time);
++        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, clock, time);
 +        if (event.callEvent()) {
 +            clockManager.addTicks(clock, event.getSkipAmount());
 +        }
@@ -99,7 +99,7 @@
 +        if (timerMove == null) return ServerClockManager.MoveResult.NO_TIME_MARKER_FOUND;
 +
 +        // We consider it an attempted move even if the marker occurs at this point in time for event calling purposes.
-+        final org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, timerMove.targetTime() - timerMove.currentTime());
++        final org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, clock, timerMove.targetTime() - timerMove.currentTime());
 +        if (!event.callEvent() || event.getSkipAmount() == 0) return ServerClockManager.MoveResult.NOT_MOVED;
 +
 +        clockManager.setTotalTicks(clock, timerMove.currentTime() + event.getSkipAmount());

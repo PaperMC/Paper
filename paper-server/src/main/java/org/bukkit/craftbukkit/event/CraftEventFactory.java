@@ -32,6 +32,7 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.network.Connection;
@@ -2479,11 +2480,16 @@ public class CraftEventFactory {
         return new ItemTransportingEntitySortEvent(mob.getBukkitEntity(), CraftItemStack.asBukkitCopy(mob.getMainHandItem()), new CraftInventory(container));
     }
 
-    public static ClockTimeSkipEvent createTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {
+    public static ClockTimeSkipEvent createTimeSkipEvent(final CommandSourceStack source, final Holder<net.minecraft.world.clock.WorldClock> clock, final long skipAmount) {
+        return createTimeSkipEvent(source.getLevel(), clock, ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+    }
+
+    public static ClockTimeSkipEvent createTimeSkipEvent(final ServerLevel level, final Holder<net.minecraft.world.clock.WorldClock> clock, final ClockTimeSkipEvent.SkipReason reason, final long skipAmount) {
+        final io.papermc.paper.world.WorldClock bukkitClock = io.papermc.paper.world.PaperWorldClock.minecraftHolderToBukkit(clock);
         if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
-            return new ClockTimeSkipEvent(ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+            return new ClockTimeSkipEvent(bukkitClock, reason, skipAmount);
         }
-        return new TimeSkipEvent(source.getLevel().getWorld(), ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+        return new TimeSkipEvent(level.getWorld(), bukkitClock, reason, skipAmount);
     }
 
     public static int callEntityIgniteEvent(Entity entity, int fuseTime) {

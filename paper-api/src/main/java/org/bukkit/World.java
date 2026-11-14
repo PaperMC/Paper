@@ -4,6 +4,7 @@ import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.world.WorldClock;
 import io.papermc.paper.world.chunk.ChunkGenerationState;
 import java.io.File;
 import java.nio.file.Path;
@@ -2116,7 +2117,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The current relative time
      * @see #getFullTime() Returns an absolute time of this world
      */
-    public long getTime();
+    long getTime();
 
     /**
      * Sets the relative in-game time on the server.
@@ -2131,7 +2132,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     hours*1000)
      * @see #setFullTime(long) Sets the absolute time of this world
      */
-    public void setTime(long time);
+    void setTime(long time);
 
     /**
      * Gets the full in-game time on this world, or {@code 0} if this world does not have a world clock.
@@ -2139,7 +2140,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The current absolute time
      * @see #getTime() Returns a relative time of this world
      */
-    public long getFullTime();
+    long getFullTime();
 
     /**
      * Sets the in-game time on the server
@@ -2151,7 +2152,69 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #setTime(long) Sets the relative time of this world
      * @throws IllegalArgumentException if this world does not have a world clock (e.g. the nether)
      */
-    public void setFullTime(long time);
+    void setFullTime(long time);
+
+    /**
+     * Gets the default clock of this world's dimension type.
+     * <p>
+     * This is the clock used by {@link #getTime()}, {@link #getFullTime()} and their setters.
+     *
+     * @return the default clock, or {@code null} if this world does not have one (e.g. the nether)
+     */
+    @Nullable WorldClock getDefaultClock();
+
+    /**
+     * Gets the total number of ticks the given clock has advanced in this world.
+     * <p>
+     * Clocks are per world unless the server is configured to share them between all worlds.
+     *
+     * @param clock the clock
+     * @return the total ticks of the clock
+     */
+    long getFullTime(@NotNull WorldClock clock);
+
+    /**
+     * Sets the total number of ticks of the given clock in this world.
+     * <p>
+     * This calls a {@link org.bukkit.event.world.ClockTimeSkipEvent} and does nothing if it is cancelled.
+     * Clocks are per world unless the server is configured to share them between all worlds.
+     *
+     * @param clock the clock
+     * @param time the new total ticks of the clock, must not be negative
+     */
+    void setFullTime(@NotNull WorldClock clock, long time);
+
+    /**
+     * Gets whether the given clock is paused in this world.
+     *
+     * @param clock the clock
+     * @return whether the clock is paused
+     */
+    boolean isClockPaused(@NotNull WorldClock clock);
+
+    /**
+     * Sets whether the given clock is paused in this world.
+     *
+     * @param clock the clock
+     * @param paused whether the clock should be paused
+     */
+    void setClockPaused(@NotNull WorldClock clock, boolean paused);
+
+    /**
+     * Gets the rate at which the given clock advances in this world, in clock ticks per game tick.
+     *
+     * @param clock the clock
+     * @return the clock rate
+     */
+    float getClockRate(@NotNull WorldClock clock);
+
+    /**
+     * Sets the rate at which the given clock advances in this world, in clock ticks per game tick.
+     *
+     * @param clock the clock
+     * @param rate the new clock rate, must be positive
+     */
+    void setClockRate(@NotNull WorldClock clock, float rate);
 
     // Paper start
 

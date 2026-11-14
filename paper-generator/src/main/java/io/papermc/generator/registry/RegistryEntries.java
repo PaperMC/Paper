@@ -22,11 +22,15 @@ import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.SulfurCubeArchetypeRegistryEntry;
+import io.papermc.paper.registry.data.TimelineRegistryEntry;
 import io.papermc.paper.registry.data.TrimMaterialRegistryEntry;
 import io.papermc.paper.registry.data.TrimPatternRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.WorldClockRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -46,6 +50,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityTypes;
@@ -82,6 +87,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.timeline.Timelines;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
@@ -193,7 +199,9 @@ public final class RegistryEntries {
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCubeArchetypes.class, SulfurCube.Archetype.class).writableApiRegistryBuilder(SulfurCubeArchetypeRegistryEntry.Builder.class, "PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder"),
-        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
+        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
+        entry(Registries.WORLD_CLOCK, WorldClocks.class, WorldClock.class, "Paper").writableApiRegistryBuilder(WorldClockRegistryEntry.Builder.class, "PaperWorldClockRegistryEntry.PaperBuilder"),
+        entry(Registries.TIMELINE, Timelines.class, Timeline.class, "Paper").writableApiRegistryBuilder(TimelineRegistryEntry.Builder.class, "PaperTimelineRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
