@@ -176,6 +176,26 @@ public interface FishHook extends Projectile {
     public void setLureAngle(float min, float max);
 
     /**
+     * Set maximum distance from fish hook to launching projectile source in blocks.
+     * When exceeded, the fish hook despawns.
+     * <p>
+     * Note, that the client has hardcoded limit of 64 blocks for rendering entities,
+     * so the fish hook along with fish line is not rendered for further distances.
+     * <p>
+     * The default is 32 blocks.
+     *
+     * @param maxDistance maximum distance between fish hook and its source in blocks
+     */
+    public void setMaxFishHookDistance(float maxDistance);
+
+    /**
+     * Get maximum distance from fish hook to launching projectile source in blocks.
+     *
+     * @return maximum distance between fish hook and its source in blocks
+     */
+    public float getMaxFishHookDistance();
+
+    /**
      * Get whether the lure enchantment should be applied to reduce the wait
      * time.
      * <p>
