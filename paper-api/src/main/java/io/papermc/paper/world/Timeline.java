@@ -6,12 +6,10 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a timeline that can apply environment attributes or define time markers for a {@link WorldClock}.
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Timeline extends Keyed {
 

@@ -6,12 +6,10 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a world clock that tracks time for worlds and drives timelines.
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface WorldClock extends Keyed {
 
