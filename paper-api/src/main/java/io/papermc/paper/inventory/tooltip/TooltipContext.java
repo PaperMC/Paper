@@ -2,13 +2,11 @@ package io.papermc.paper.inventory.tooltip;
 
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Context for computing itemstack tooltips via
- * {@link org.bukkit.inventory.ItemStack#computeTooltipLines(TooltipContext, Player)}
+ * {@link org.bukkit.inventory.ItemStack#computeTooltipLines(TooltipContext, Player)}.
  */
-@NullMarked
 public interface TooltipContext {
 
     /**

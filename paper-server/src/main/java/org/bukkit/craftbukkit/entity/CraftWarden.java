@@ -61,7 +61,7 @@ public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warde
 
     @Override
     public LivingEntity getEntityAngryAt() {
-        return (LivingEntity) this.getHandle().getEntityAngryAt().map(net.minecraft.world.entity.Entity::getBukkitEntity).orElse(null);
+        return this.getHandle().getEntityAngryAt().map(net.minecraft.world.entity.LivingEntity::getBukkitEntity).orElse(null);
     }
 
     @Override

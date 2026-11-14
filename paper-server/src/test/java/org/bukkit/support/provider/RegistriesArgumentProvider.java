@@ -1,6 +1,9 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.block.pot.PaperPotPatternType;
+import io.papermc.paper.block.pot.PotPatternType;
+import io.papermc.paper.block.pot.PotPatternTypes;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
@@ -34,6 +37,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.Instrument;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.block.entity.DecoratedPotPattern;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
@@ -152,6 +156,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.CAT_SOUND_VARIANT, Cat.SoundVariant.class, CraftCat.CraftSoundVariant.class, CatSoundVariant.class);
         register(Registries.MAP_DECORATION_TYPE, MapCursor.Type.class, CraftMapCursor.CraftType.class, MapDecorationType.class);
         register(Registries.BANNER_PATTERN, PatternType.class, CraftPatternType.class, BannerPattern.class);
+        register(Registries.DECORATED_POT_PATTERN, PotPatternType.class, PotPatternTypes.class, PaperPotPatternType.class, DecoratedPotPattern.class);
         register(Registries.MENU, MenuType.class, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
         register(Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, DataComponentTypes.class, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
         register(Registries.CHICKEN_VARIANT, Chicken.Variant.class, CraftChicken.CraftVariant.class, ChickenVariant.class);

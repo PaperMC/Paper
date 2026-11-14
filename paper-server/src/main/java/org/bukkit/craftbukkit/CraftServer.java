@@ -93,6 +93,7 @@ import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
@@ -162,21 +163,11 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
-import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
-import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftItemCraftResult;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
-import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
-import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftStonecuttingRecipe;
-import org.bukkit.craftbukkit.inventory.CraftTransmuteRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.inventory.util.CraftInventoryCreator;
 import org.bukkit.craftbukkit.map.CraftMapColorCache;
@@ -217,10 +208,6 @@ import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
-import org.bukkit.inventory.BlastingRecipe;
-import org.bukkit.inventory.CampfireRecipe;
-import org.bukkit.inventory.ComplexRecipe;
-import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -228,14 +215,8 @@ import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.inventory.SmithingTransformRecipe;
-import org.bukkit.inventory.SmithingTrimRecipe;
-import org.bukkit.inventory.SmokingRecipe;
-import org.bukkit.inventory.StonecuttingRecipe;
-import org.bukkit.inventory.TransmuteRecipe;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
 import org.bukkit.packs.ResourcePack;
@@ -253,7 +234,9 @@ import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
+import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -400,7 +383,7 @@ public final class CraftServer implements Server {
         this.playerList = (DedicatedPlayerList) playerList;
         this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
-        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
 
@@ -1424,6 +1407,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public PluginCommand getPluginCommand(String name) {
         Command command = this.commandMap.getCommand(name);
 
@@ -1441,44 +1425,34 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
-        CraftRecipe toAdd;
-        if (recipe instanceof CraftRecipe) {
-            toAdd = (CraftRecipe) recipe;
-        } else {
-            if (recipe instanceof ShapedRecipe) {
-                toAdd = CraftShapedRecipe.fromBukkitRecipe((ShapedRecipe) recipe);
-            } else if (recipe instanceof ShapelessRecipe) {
-                toAdd = CraftShapelessRecipe.fromBukkitRecipe((ShapelessRecipe) recipe);
-            } else if (recipe instanceof FurnaceRecipe) {
-                toAdd = CraftFurnaceRecipe.fromBukkitRecipe((FurnaceRecipe) recipe);
-            } else if (recipe instanceof BlastingRecipe) {
-                toAdd = CraftBlastingRecipe.fromBukkitRecipe((BlastingRecipe) recipe);
-            } else if (recipe instanceof CampfireRecipe) {
-                toAdd = CraftCampfireRecipe.fromBukkitRecipe((CampfireRecipe) recipe);
-            } else if (recipe instanceof SmokingRecipe) {
-                toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
-            } else if (recipe instanceof StonecuttingRecipe) {
-                toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
-            } else if (recipe instanceof SmithingTransformRecipe) {
-                toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
-            } else if (recipe instanceof SmithingTrimRecipe) {
-                toAdd = CraftSmithingTrimRecipe.fromBukkitRecipe((SmithingTrimRecipe) recipe);
-            } else if (recipe instanceof TransmuteRecipe) {
-                toAdd = CraftTransmuteRecipe.fromBukkitRecipe((TransmuteRecipe) recipe);
-            } else if (recipe instanceof ComplexRecipe) {
-                throw new UnsupportedOperationException("Cannot add custom complex recipe");
-            } else {
-                return false;
+    public boolean addRecipe(Recipe recipe) {
+        final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+        if (craftRecipe == null) {
+            return false;
+        }
+
+        craftRecipe.addToRecipeManager();
+        return true;
+    }
+
+    @Override
+    public boolean addRecipes(Iterable<Recipe> recipes) {
+        org.spigotmc.AsyncCatcher.catchOp("Recipes Add");
+        Preconditions.checkArgument(recipes != null, "recipes cannot be null");
+        boolean anyAdded = false;
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
+        for (Recipe recipe : recipes) {
+            final CraftRecipe craftRecipe = CraftRecipe.fromBukkitRecipe(recipe);
+            if (craftRecipe != null) {
+                recipeManager.recipes.addRecipe(craftRecipe.toMinecraftRecipe());
+                anyAdded = true;
             }
         }
-        toAdd.addToRecipeManager();
-        // Paper start - API for updating recipes on clients
-        if (true || resendRecipes) { // Always needs to be resent now... TODO
-            this.playerList.reloadRecipes();
+
+        if (anyAdded) {
+            recipeManager.finalizeRecipeLoading();
         }
-        // Paper end - API for updating recipes on clients
-        return true;
+        return anyAdded;
     }
 
     @Override
@@ -1650,17 +1624,34 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
-
-        // Paper start - resend recipes on successful removal
+    public boolean hasRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
-        final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
-        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
-            this.playerList.reloadRecipes();
+        return getServer().getRecipeManager().byKey(id).isPresent();
+    }
+
+    @Override
+    public boolean removeRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey cannot be null");
+        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+        return this.getServer().getRecipeManager().removeRecipe(id);
+    }
+
+    @Override
+    public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
+        Preconditions.checkArgument(recipeKeys != null, "recipeKeys cannot be null");
+        boolean anyRemoved = false;
+        final RecipeManager recipeManager = this.getServer().getRecipeManager();
+        for (NamespacedKey recipeKey : recipeKeys) {
+            final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+            if (recipeManager.recipes.removeRecipe(id)) {
+                anyRemoved = true;
+            }
         }
-        return removed;
-        // Paper end - resend recipes on successful removal
+        if (anyRemoved) {
+            recipeManager.finalizeRecipeLoading();
+        }
+        return anyRemoved;
     }
 
     @Override
@@ -1858,7 +1849,6 @@ public final class CraftServer implements Server {
         return CraftItemStack.asBukkitCopy(stack);
     }
 
-    // Paper start - copied from above (uses un-deprecated StructureType type)
     @Override
     public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.StructureType structureType, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
         Preconditions.checkArgument(world != null, "World cannot be null");
@@ -1866,23 +1856,43 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
         Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
 
-        ServerLevel level = ((CraftWorld) world).getHandle();
-        final org.bukkit.util.StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
+        final ServerLevel level = ((CraftWorld) world).getHandle();
+        final StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
         if (structureSearchResult == null) {
             return null;
         }
-        Location structureLocation = structureSearchResult.getLocation();
-        BlockPos structurePos = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
+
+        return this.createExplorerMap(level, structureSearchResult, mapIcon);
+    }
+
+    @Override
+    public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.Structure structure, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
+        Preconditions.checkArgument(world != null, "World cannot be null");
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(structure != null, "Structure cannot be null");
+        Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
+
+        final ServerLevel level = ((CraftWorld) world).getHandle();
+        final StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structure, radius, findUnexplored);
+        if (structureSearchResult == null) {
+            return null;
+        }
+
+        return this.createExplorerMap(level, structureSearchResult, mapIcon);
+    }
+
+    private ItemStack createExplorerMap(final ServerLevel level, final StructureSearchResult structureSearchResult, final MapCursor.Type mapIcon) {
+        final Location structureLocation = structureSearchResult.getLocation();
+        final BlockPos structurePos = CraftLocation.toBlockPos(structureLocation);
 
         // Create map with trackingPosition = true, unlimitedTracking = true
-        net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        final net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
         MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
         MapItemSavedData.addTargetDecoration(stack, structurePos, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
 
         return CraftItemStack.asBukkitCopy(stack);
     }
-    // Paper end
 
     @Override
     public void shutdown() {
@@ -2290,6 +2300,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @ApiStatus.Obsolete
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
     }

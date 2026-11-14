@@ -1,6 +1,8 @@
 package io.papermc.testplugin.brigtests;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -19,13 +21,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 public final class Registration {
 
@@ -45,7 +48,7 @@ public final class Registration {
                 .then(
                     Commands.argument("name", ArgumentTypes.resource(RegistryKey.ENCHANTMENT))
                         .executes(ctx -> {
-                            ctx.getSource().getSender().sendPlainMessage(ctx.getArgument("name", Enchantment.class).toString());
+                            ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("name", Enchantment.class)), false);
                             return Command.SINGLE_SUCCESS;
                         })
                 ).build()
@@ -55,7 +58,7 @@ public final class Registration {
                     Commands.argument("key", ArgumentTypes.resourceKey(RegistryKey.ENCHANTMENT))
                         .executes(ctx -> {
                             final TypedKey<Enchantment> key = RegistryArgumentExtractor.getTypedKey(ctx, RegistryKey.ENCHANTMENT, "key");
-                            ctx.getSource().getSender().sendPlainMessage(key.toString());
+                            ctx.getSource().sendSuccess(Component.text(key.toString()), false);
                             return Command.SINGLE_SUCCESS;
                         })
                 ).build()
@@ -65,7 +68,7 @@ public final class Registration {
                       Commands.argument("pos", ArgumentTypes.finePosition(false))
                           .executes(ctx -> {
                               final FinePositionResolver position = ctx.getArgument("pos", FinePositionResolver.class);
-                              ctx.getSource().getSender().sendPlainMessage("Position: " + position.resolve(ctx.getSource()));
+                              ctx.getSource().sendRichSuccess("Position: <red>" + position.resolve(ctx.getSource()));
                               return Command.SINGLE_SUCCESS;
                           })
                   ).build()
@@ -73,7 +76,7 @@ public final class Registration {
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
                     .executes(ctx -> {
-                        ctx.getSource().getSender().sendPlainMessage("overriden command");
+                        ctx.getSource().sendRichSuccess("overriden command");
                         return Command.SINGLE_SUCCESS;
                     })
                     .build(),
@@ -88,7 +91,7 @@ public final class Registration {
                     .then(Commands.literal("sub_command")
                         .requires(source -> source.getSender().hasPermission("testplugin.test"))
                         .executes(ctx -> {
-                            ctx.getSource().getSender().sendPlainMessage("root_command sub_command");
+                            ctx.getSource().sendRichSuccess("<red>root_command <gold>sub_command");
                             return Command.SINGLE_SUCCESS;
                         })).build(),
                 null,
@@ -97,17 +100,16 @@ public final class Registration {
 
             commands.register(plugin.getPluginMeta(), "example", "test", Collections.emptyList(), new BasicCommand() {
                 @Override
-                public void execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
+                public void execute(final CommandSourceStack commandSourceStack, final String[] args) {
                     System.out.println(Arrays.toString(args));
                 }
 
                 @Override
-                public @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
+                public Collection<String> suggest(final CommandSourceStack commandSourceStack, final String[] args) {
                     System.out.println(Arrays.toString(args));
                     return List.of("apple", "banana");
                 }
             });
-
 
             commands.register(plugin.getPluginMeta(), Commands.literal("water")
                     .requires(source -> {
@@ -126,12 +128,11 @@ public final class Registration {
                             return true;
                         })
                         .executes(ctx -> {
-                            ctx.getSource().getExecutor().sendMessage("You are in lava!");
+                            ctx.getSource().sendRichReply("You are in lava!");
                             return Command.SINGLE_SUCCESS;
                         })).build(),
                 null,
                 Collections.emptyList());
-
 
             ExampleAdminCommand.register(plugin, commands);
         }).priority(10));
@@ -140,14 +141,14 @@ public final class Registration {
     private static void registerLegacyCommands(final JavaPlugin plugin) {
         plugin.getServer().getCommandMap().register("fallback", new BukkitCommand("hi", "cool hi command", "<>", List.of("hialias")) {
             @Override
-            public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+            public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                 sender.sendMessage("hi");
                 return true;
             }
         });
         plugin.getServer().getCommandMap().register("fallback", new BukkitCommand("cooler-command", "cool hi command", "<>", List.of("cooler-command-alias")) {
             @Override
-            public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+            public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                 sender.sendMessage("hi");
                 return true;
             }
@@ -165,14 +166,14 @@ public final class Registration {
                     .then(Commands.literal("item")
                         .then(Commands.argument("mat", MaterialArgumentType.item())
                             .executes(ctx -> {
-                                ctx.getSource().getSender().sendPlainMessage(ctx.getArgument("mat", Material.class).name());
+                                ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("mat", Material.class)), false);
                                 return Command.SINGLE_SUCCESS;
                             })
                         )
                     ).then(Commands.literal("block")
                         .then(Commands.argument("mat", MaterialArgumentType.block())
                             .executes(ctx -> {
-                                ctx.getSource().getSender().sendPlainMessage(ctx.getArgument("mat", Material.class).name());
+                                ctx.getSource().sendSuccess(Component.translatable(ctx.getArgument("mat", Material.class)), false);
                                 return Command.SINGLE_SUCCESS;
                             })
                         )
@@ -181,6 +182,21 @@ public final class Registration {
                 null,
                 Collections.emptyList()
             );
+
+            commands.register(Commands.literal("send_success")
+                            .then(Commands.argument("allow_inform_admins", BoolArgumentType.bool())
+                                .then(Commands.argument("msg", StringArgumentType.greedyString())
+                                        .executes(ctx -> {
+                                            ctx.getSource().sendSuccess(
+                                                MiniMessage.miniMessage().deserialize(StringArgumentType.getString(ctx, "msg")),
+                                                BoolArgumentType.getBool(ctx, "allow_inform_admins")
+                                            );
+                                            return Command.SINGLE_SUCCESS;
+                                        })))
+                            .build(),
+                    null,
+                    Collections.emptyList()
+            );
         });
 
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event -> {
@@ -188,8 +204,8 @@ public final class Registration {
             commands.register(Commands.literal("heya")
                     .then(Commands.argument("range", ArgumentTypes.doubleRange())
                         .executes((ct) -> {
-                            ct.getSource().getSender().sendPlainMessage(ct.getArgument("range", DoubleRangeProvider.class).range().toString());
-                            return 1;
+                            ct.getSource().sendSuccess(Component.text(ct.getArgument("range", DoubleRangeProvider.class).range().toString()), false);
+                            return Command.SINGLE_SUCCESS;
                         })
                     ).build(),
                 null,

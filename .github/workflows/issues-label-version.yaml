@@ -1,0 +1,185 @@
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  detect-version:
+    runs-on: namespace-profile-linux-small
+    timeout-minutes: 5
+    permissions:
+      issues: read
+    outputs:
+      version: ${{ steps.detect.outputs.version }}
+    steps:
+      - id: detect
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            // Capturing Groups:
+            // 1 = Brand
+            // 2 = Minecraft Version
+            // 3 = Build Number
+            // 4 = Git Branch/Commit
+            // 5 = Build Time
+            const NEW_PATTERN = /This server is running ([A-Za-z0-9]+) version ([\d\.]+)-(DEV|\d+)-(.*) \((.*)\) \(Implementing API version .*\)(?: \(Git: .*\))?/;
+
+            // Capturing Groups:
+            // 1 = Brand
+            // 2 = Minecraft Version
+            const OLD_PATTERN = /This server is running ([A-Za-z0-9]+) version .* \(MC: ([^\)]+)\) \(Implementing API version .*\)(?: \(Git: .*\))?/;
+
+            if (!context.payload.issue.body) {
+              core.info("Issue body is empty; unable to detect version.");
+              return;
+            }
+
+            let version;
+
+            const match = context.payload.issue.body.match(NEW_PATTERN);
+            if (match && match.length === 6) {
+              version = match[2];
+            } else {
+              const oldMatch = context.payload.issue.body.match(OLD_PATTERN);
+              if (oldMatch) {
+                version = oldMatch[2];
+              }
+            }
+
+            if (!version) {
+              core.info("Unable to determine the Minecraft version from the issue body.");
+              return;
+            }
+
+            core.info(`Detected Minecraft version: ${version}`);
+            core.setOutput('version', version);
+
+  label-version:
+    needs: detect-version
+    if: needs.detect-version.outputs.version != ''
+    runs-on: namespace-profile-linux-small
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const version = '${{ needs.detect-version.outputs.version }}';
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: [`version: ${version}`],
+            });
+
+            core.info(`Added version label for ${version}.`);
+
+  check-support:
+    needs:
+      - detect-version
+      - label-version
+    if: needs.detect-version.outputs.version != ''
+    runs-on: namespace-profile-linux-small
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const version = '${{ needs.detect-version.outputs.version }}';
+
+            const apiUrl = `https://fill.papermc.io/v3/projects/paper/versions/${encodeURIComponent(version)}`;
+            core.info(`Fetching version information from ${apiUrl}`);
+
+            let supportStatus;
+            let supportEnd;
+
+            try {
+              const response = await fetch(apiUrl, {
+                headers: {
+                  'Accept': 'application/json',
+                  'User-Agent': `GitHub Actions (${context.repo.owner}/${context.repo.repo})`,
+                },
+              });
+
+              if (response.status === 404) {
+                core.info(`Fill has no information for version ${version}.`);
+                return;
+              }
+
+              if (!response.ok) {
+                core.error(`Fill returned HTTP ${response.status}: ${response.statusText}`);
+                return;
+              }
+
+              const data = await response.json();
+              supportStatus = data?.version?.support?.status;
+              supportEnd = data?.version?.support?.end;
+            } catch (error) {
+              core.warning(`Failed to fetch support information: ${error}`);
+              return;
+            }
+
+            core.info(`Fill support status for ${version}: ${supportStatus}`);
+
+            // Only comment for deprecated or unsupported versions.
+            let comment;
+
+            if (supportStatus === 'UNSUPPORTED') {
+              comment =
+                `⚠️ **Minecraft ${version} is unsupported.**\n\n` +
+                `This version is no longer supported by PaperMC. ` +
+                (supportEnd
+                  ? `Support _ended_ on ${supportEnd}. `
+                  : '') +
+                `Please consider upgrading to a supported Minecraft version.`;
+            } else if (supportStatus === 'DEPRECATED') {
+              comment =
+                `⚠️ **Minecraft ${version} is deprecated.**\n\n` +
+                `This version is deprecated by PaperMC. ` +
+                (supportEnd
+                  ? `Support will end on ${supportEnd}. `
+                  : '') +
+                `Please consider upgrading to a supported Minecraft version.`;
+            } else {
+              core.info(`${version} is supported or has an unknown status.`);
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: comment,
+            });
+
+            if (supportStatus === 'UNSUPPORTED') {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.issue.number,
+                  name: 'status: needs triage',
+                });
+              } catch (error) {
+                // ignore - missing label is not an error
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: ['resolution: unsupported'],
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+            }

@@ -123,7 +123,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Cat> CAT_AVOID_ENTITY = create("cat_avoid_entity", Cat.class);
 
-    GoalKey<Cat> CAT_LIE_ON_BED = create("cat_lie_on_bed", Cat.class);
+    GoalKey<Cat> CAT_LIE_ON_BLOCK = create("cat_lie_on_block", Cat.class);
 
     GoalKey<Cat> CAT_RELAX_ON_OWNER = create("cat_relax_on_owner", Cat.class);
 
@@ -171,7 +171,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Creature> TEMPT = create("tempt", Creature.class);
 
-    GoalKey<Creature> TRY_FIND_WATER = create("try_find_water", Creature.class);
+    GoalKey<Creature> TRY_FIND_LIQUID = create("try_find_liquid", Creature.class);
 
     GoalKey<Creature> WATER_AVOIDING_RANDOM_FLYING = create("water_avoiding_random_flying", Creature.class);
 
@@ -180,6 +180,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Creeper> CREEPER_SWELL = create("creeper_swell", Creeper.class);
 
     GoalKey<Dolphin> DOLPHIN_JUMP = create("dolphin_jump", Dolphin.class);
+
+    GoalKey<Dolphin> DOLPHIN_MOVE_TO_ITEM = create("dolphin_move_to_item", Dolphin.class);
 
     GoalKey<Dolphin> DOLPHIN_PLAY_WITH_ITEMS = create("dolphin_play_with_items", Dolphin.class);
 

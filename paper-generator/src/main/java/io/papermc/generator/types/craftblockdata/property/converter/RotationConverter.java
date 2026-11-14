@@ -8,9 +8,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RotationSegment;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class RotationConverter implements Converter<Integer, BlockFace> {
 
     private static final String DIRECTION_VAR = "dir";

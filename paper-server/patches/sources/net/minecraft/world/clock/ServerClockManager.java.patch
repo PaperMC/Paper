@@ -5,7 +5,7 @@
      private final PackedClockStates packedClockStates;
      private MinecraftServer server;
 +    private @org.jspecify.annotations.Nullable ServerLevel level; // Paper - per-world time
-     private final Map<Holder<WorldClock>, ServerClockManager.ClockInstance> clocks = new HashMap<>();
+     private final Map<Holder<WorldClock>, ServerClockManager.ServerClockInstance> clocks = new HashMap<>();
  
      private ServerClockManager(final PackedClockStates packedClockStates) {
 @@ -37,6 +_,12 @@
@@ -28,19 +28,27 @@
 -        boolean advanceTime = this.server.getGlobalGameRules().get(GameRules.ADVANCE_TIME);
 +        boolean advanceTime = this.advanceTime(); // Paper - per-world time
          if (advanceTime) {
-             this.clocks.values().forEach(ServerClockManager.ClockInstance::tick);
+             this.clocks.values().forEach(ServerClockManager.ServerClockInstance::tick);
              this.setDirty();
-@@ -97,7 +_,16 @@
-         return set.booleanValue();
+@@ -102,7 +_,24 @@
+         return result.get();
      }
  
 -    public void addTicks(final Holder<WorldClock> clock, final int ticks) {
 +    // Paper start - time skip event
-+    public java.util.OptionalLong getTotalTicksToTimeMarker(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
-+        final ServerClockManager.ClockInstance instance = this.getInstance(clock);
-+        final ClockTimeMarker timeMarker = instance.timeMarkers.get(timeMarkerId);
++    public record TimerMove(long currentTime, long targetTime) {
 +
-+        return timeMarker != null ? java.util.OptionalLong.of(timeMarker.resolveTimeToMoveTo(instance.totalTicks)) : java.util.OptionalLong.empty();
++    }
++
++    public @org.jspecify.annotations.Nullable TimerMove resolveTimerMove(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
++        final ServerClockManager.ServerClockInstance instance = this.getInstance(clock);
++        final ClockTimeMarker timeMarker = instance.timeMarkers.get(timeMarkerId);
++        if (timeMarker == null) return null;
++
++        return new TimerMove(
++            instance.totalTicks,
++            timeMarker.resolveTimeToMoveTo(instance.totalTicks)
++        );
 +    }
 +    // Paper end - time skip event
 +
@@ -48,9 +56,9 @@
          this.modifyClock(clock, instance -> instance.totalTicks = Math.max(instance.totalTicks + ticks, 0L));
      }
  
-@@ -112,13 +_,18 @@
-     private void modifyClock(final Holder<WorldClock> clock, final Consumer<? super ServerClockManager.ClockInstance> action) {
-         ServerClockManager.ClockInstance instance = this.getInstance(clock);
+@@ -117,22 +_,63 @@
+     private void modifyClock(final Holder<WorldClock> clock, final Consumer<? super ServerClockManager.ServerClockInstance> action) {
+         ServerClockManager.ServerClockInstance instance = this.getInstance(clock);
          action.accept(instance);
 -        Map<Holder<WorldClock>, ClockNetworkState> updates = Map.of(clock, instance.packNetworkState(this.server));
 -        this.server.getPlayerList().broadcastAll(new ClientboundSetTimePacket(this.getGameTime(), updates));
@@ -66,10 +74,6 @@
          }
 +        }
 +        // Paper end - per-world time
-     }
- 
-     @Override
-@@ -127,12 +_,48 @@
      }
  
      public ClientboundSetTimePacket createFullSyncPacket() {
@@ -92,7 +96,7 @@
 +    }
 +
 +    // Paper start - per-world time; per-player time
-+    private void broadcastUpdates(final Holder<WorldClock> clock, final ServerClockManager.ClockInstance instance) {
++    private void broadcastUpdates(final Holder<WorldClock> clock, final ServerClockManager.ServerClockInstance instance) {
 +        for (final net.minecraft.server.level.ServerPlayer player : this.level != null ? this.level.players() : this.server.getPlayerList().getPlayers()) {
 +            final var packet = new net.minecraft.network.protocol.game.ClientboundSetTimePacket(
 +                this.getGameTime(),
@@ -104,7 +108,7 @@
 +
 +    private ClockNetworkState packNetworkState(
 +        final Holder<WorldClock> clock,
-+        final ServerClockManager.ClockInstance instance,
++        final ServerClockManager.ServerClockInstance instance,
 +        final net.minecraft.server.level.ServerPlayer player
 +    ) {
 +        if (player != null && player.level().dimensionType().defaultClock().filter(clock::equals).isPresent()) {
@@ -120,8 +124,8 @@
 +    // Paper end - per-world time; per-player time
  
      public boolean isAtTimeMarker(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
-         ServerClockManager.ClockInstance clockInstance = this.getInstance(clock);
-@@ -171,8 +_,7 @@
+         ServerClockManager.ServerClockInstance clockInstance = this.getInstance(clock);
+@@ -197,8 +_,7 @@
              return new ClockState(this.totalTicks, this.partialTick, this.rate, this.paused);
          }
  

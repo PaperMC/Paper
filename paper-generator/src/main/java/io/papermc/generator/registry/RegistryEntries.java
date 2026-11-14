@@ -1,15 +1,18 @@
 package io.papermc.generator.registry;
 
 import io.papermc.generator.utils.ClassHelper;
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DecoratedPotPatternRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
@@ -45,6 +48,7 @@ import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.SulfurCubeArchetypes;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -73,6 +77,7 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.block.entity.DecoratedPotPatterns;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
@@ -112,34 +117,12 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class RegistryEntries {
 
-    // CraftBukkit entry where implementation start by "Craft"
-    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass) {
-        return entry(registryKey, holderElementsClass, apiClass, "Craft");
-    }
-
-    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implPrefix) {
-        String name = io.papermc.typewriter.util.ClassHelper.retrieveFullNestedName(apiClass);
-        RegistryKeyField<T> registryKeyField = (RegistryKeyField<T>) REGISTRY_KEY_FIELDS.get(registryKey);
-        String[] classes = name.split("\\.");
-        if (classes.length == 0) {
-            return new RegistryEntry<>(registryKey, registryKeyField, holderElementsClass, apiClass, implPrefix.concat(apiClass.getSimpleName()));
-        }
-
-        String implName = Arrays.stream(classes).map(implPrefix::concat).collect(Collectors.joining("."));
-        return new RegistryEntry<>(registryKey, registryKeyField, holderElementsClass, apiClass, implName);
-    }
-
-    @Deprecated
-    private static <T> RegistryEntry<T> inconsistentEntry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implClass) {
-        return new RegistryEntry<>(registryKey, (RegistryKeyField<T>) REGISTRY_KEY_FIELDS.get(registryKey), holderElementsClass, apiClass, implClass);
-    }
-
+    // CHECKSTYLE.OFF: DeclarationOrder - the public entry lists below read REGISTRY_KEY_FIELDS while they are initialized
     private static final Map<ResourceKey<? extends Registry<?>>, RegistryKeyField<?>> REGISTRY_KEY_FIELDS;
+
     static {
         Map<ResourceKey<? extends Registry<?>>, RegistryKeyField<?>> registryKeyFields = new IdentityHashMap<>();
         try {
@@ -182,7 +165,7 @@ public final class RegistryEntries {
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
         entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/, // only preload once the old names are removed
-        entry(Registries.POINT_OF_INTEREST_TYPE, PoiTypes.class, io.papermc.paper.entity.poi.PoiType.class, "Paper").preload(io.papermc.paper.entity.poi.PoiTypes.class)
+        entry(Registries.POINT_OF_INTEREST_TYPE, net.minecraft.world.entity.ai.village.poi.PoiTypes.class, PoiType.class, "Paper").preload(PoiTypes.class)
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
@@ -196,6 +179,7 @@ public final class RegistryEntries {
         entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).writableApiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),
         entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).writableApiRegistryBuilder(JukeboxSongRegistryEntry.Builder.class, "PaperJukeboxSongRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().writableApiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.DECORATED_POT_PATTERN, DecoratedPotPatterns.class, PotPatternType.class, "Paper").writableApiRegistryBuilder(DecoratedPotPatternRegistryEntry.Builder.class, "PaperDecoratedPotPatternRegistryEntry.PaperBuilder"),
         entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).writableApiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
         entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().writableApiRegistryBuilder(InstrumentRegistryEntry.Builder.class, "PaperInstrumentRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.CAT_VARIANT, CatVariants.class, Cat.Type.class).writableApiRegistryBuilder(CatTypeRegistryEntry.Builder.class, "PaperCatTypeRegistryEntry.PaperBuilder").delayed(),
@@ -213,19 +197,43 @@ public final class RegistryEntries {
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
-        entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityTypes.class, EntityType.class),
+        entry(Registries.ENTITY_TYPE, EntityTypes.class, EntityType.class),
         entry(Registries.PARTICLE_TYPE, ParticleTypes.class, Particle.class),
         entry(Registries.POTION, Potions.class, PotionType.class),
         entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class)
     );
 
     public static final Map<ResourceKey<? extends Registry<?>>, RegistryEntry<?>> BY_REGISTRY_KEY;
+
     static {
         Map<ResourceKey<? extends Registry<?>>, RegistryEntry<?>> byRegistryKey = new IdentityHashMap<>(BUILT_IN.size() + DATA_DRIVEN.size() + API_ONLY.size());
         forEach(entry -> {
             byRegistryKey.put(entry.registryKey(), entry);
         }, RegistryEntries.BUILT_IN, RegistryEntries.DATA_DRIVEN, RegistryEntries.API_ONLY);
         BY_REGISTRY_KEY = Collections.unmodifiableMap(byRegistryKey);
+    }
+    // CHECKSTYLE.ON: DeclarationOrder
+
+    // CraftBukkit entry where implementation start by "Craft"
+    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass) {
+        return entry(registryKey, holderElementsClass, apiClass, "Craft");
+    }
+
+    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implPrefix) {
+        String name = io.papermc.typewriter.util.ClassHelper.retrieveFullNestedName(apiClass);
+        RegistryKeyField<T> registryKeyField = (RegistryKeyField<T>) REGISTRY_KEY_FIELDS.get(registryKey);
+        String[] classes = name.split("\\.");
+        if (classes.length == 0) {
+            return new RegistryEntry<>(registryKey, registryKeyField, holderElementsClass, apiClass, implPrefix.concat(apiClass.getSimpleName()));
+        }
+
+        String implName = Arrays.stream(classes).map(implPrefix::concat).collect(Collectors.joining("."));
+        return new RegistryEntry<>(registryKey, registryKeyField, holderElementsClass, apiClass, implName);
+    }
+
+    @Deprecated
+    private static <T> RegistryEntry<T> inconsistentEntry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implClass) {
+        return new RegistryEntry<>(registryKey, (RegistryKeyField<T>) REGISTRY_KEY_FIELDS.get(registryKey), holderElementsClass, apiClass, implClass);
     }
 
     @SuppressWarnings("unchecked")

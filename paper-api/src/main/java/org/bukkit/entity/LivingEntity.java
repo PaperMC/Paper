@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -720,21 +721,35 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public boolean hasLineOfSight(@NotNull Location location);
 
     /**
-     * Returns if the living entity despawns when away from players or not.
+     * Gets whether this living entity is allowed to be removed when far away.
      * <p>
-     * By default, animals are not removed while other mobs are.
+     * For mobs, this is the inverse of {@link Mob#isPersistenceRequired()}.
+     * A return value of {@code true} does not guarantee that the mob will
+     * despawn, as other conditions may prevent despawning.
      *
-     * @return true if the living entity is removed when away from players
+     * @return true if this living entity is allowed to be removed when far away
+     * @deprecated use {@link Mob#isPersistenceRequired()} for mobs
      */
-    public boolean getRemoveWhenFarAway();
+    @Deprecated(since = "26.3")
+    default boolean getRemoveWhenFarAway() {
+        return this instanceof Mob mob && !mob.isPersistenceRequired();
+    }
 
     /**
-     * Sets whether or not the living entity despawns when away from players
-     * or not.
+     * Sets whether this living entity is allowed to be removed when far away.
+     * <p>
+     * For mobs, this is the inverse of
+     * {@link Mob#setPersistenceRequired(boolean)}.
      *
-     * @param remove the removal status
+     * @param remove whether this living entity is allowed to be removed
+     * @deprecated use {@link Mob#setPersistenceRequired(boolean)} for mobs
      */
-    public void setRemoveWhenFarAway(boolean remove);
+    @Deprecated(since = "26.3")
+    default void setRemoveWhenFarAway(final boolean remove) {
+        if (this instanceof Mob mob) {
+            mob.setPersistenceRequired(!remove);
+        }
+    }
 
     /**
      * Gets the inventory with the equipment worn by the living entity.
@@ -1401,25 +1416,39 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void setHurtDirection(float hurtDirection);
     // Paper end - hurt direction API
 
-    // Paper start - swing hand API
     /**
-     * Makes this entity swing their hand.
+     * Makes this entity swing their hand, using the {@link io.papermc.paper.datacomponent.DataComponentTypes#ATTACK_ANIMATION}
+     * component on the item held in that hand to determine the animation type and duration.
+     * If the held item does not have the component, the default {@link io.papermc.paper.datacomponent.item.SwingAnimation.Animation#WHACK}
+     * animation with a duration of {@code 6} ticks is used.
      *
      * <p>This method does nothing if this entity does not
      * have an animation for swinging their hand.
      *
      * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
-     * @throws IllegalArgumentException if invalid hand is passed
+     * @throws IllegalArgumentException if an invalid hand is passed
      */
     default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
+        Preconditions.checkArgument(hand != null && hand.isHand(), "Expected a valid hand, got \"%s\" instead!", hand);
         if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
             this.swingMainHand();
         } else {
             this.swingOffHand();
         }
     }
-    // Paper end - swing hand API
+
+    /**
+     * Makes this entity swing their hand using the provided {@link io.papermc.paper.datacomponent.item.SwingAnimation},
+     * instead of the swing animation component the held item may have.
+     *
+     * <p>This method does nothing if this entity does not
+     * have an animation for swinging their hand.
+     *
+     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
+     * @param swingAnimation the swing animation to use
+     * @throws IllegalArgumentException if an invalid hand is passed
+     */
+    void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand, @NotNull io.papermc.paper.datacomponent.item.SwingAnimation swingAnimation);
 
     // Paper start - knockback API
     /**

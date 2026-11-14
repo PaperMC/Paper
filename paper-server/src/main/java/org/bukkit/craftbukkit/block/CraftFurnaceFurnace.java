@@ -6,8 +6,8 @@ import org.bukkit.World;
 
 public class CraftFurnaceFurnace extends CraftFurnace<FurnaceBlockEntity> {
 
-    public CraftFurnaceFurnace(World world, FurnaceBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftFurnaceFurnace(World world, FurnaceBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftFurnaceFurnace(CraftFurnaceFurnace state, Location location) {

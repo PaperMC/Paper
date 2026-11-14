@@ -10,8 +10,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements Crafter {
 
-    public CraftCrafter(World world, CrafterBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftCrafter(World world, CrafterBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftCrafter(CraftCrafter state, Location location) {

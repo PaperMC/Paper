@@ -145,11 +145,13 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
             return;
         }
 
-        final WorldGenSettings storedWorldGenSettings = !hasWorldData
+        final boolean isOverworldLevel = loading.info().dimensionKey() == Level.OVERWORLD;
+
+        final WorldGenSettings storedWorldGenSettings = isOverworldLevel || !hasWorldData
             ? this.server.getWorldGenSettings()
             : loadWorldGenSettings(
             this.server.storageSource,
-            this.server.worldLoaderContext.datapackWorldgen(),
+            this.server.worldLoaderContext.datapackWorldRegistries(),
             loading.info().dimensionKey()
         );
         final WorldGenSettings worldGenSettings = PaperWorldGenSettings.applySeedOverride(
@@ -159,7 +161,7 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
         );
         final var worldDataAndGenSettings = new LevelDataAndDimensions.WorldDataAndGenSettings(this.server.getWorldData(), worldGenSettings);
 
-        if (loading.info().dimensionKey() == Level.OVERWORLD) {
+        if (isOverworldLevel) {
             final var primaryLevelData = ((PrimaryLevelData) this.server.getWorldData());
             primaryLevelData.checkName(loading.data().bukkitName());
             primaryLevelData.setModdedInfo(this.server.getServerModName(), this.server.getModdedStatus().shouldReportAsModified());

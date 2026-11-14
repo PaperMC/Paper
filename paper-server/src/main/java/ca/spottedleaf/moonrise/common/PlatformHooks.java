@@ -6,6 +6,7 @@ import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.GenerationChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -53,6 +54,8 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
     public void chunkUnloadFromWorld(final LevelChunk chunk);
 
+    public void onFullChunkStatusChange(final LevelChunk chunk, final FullChunkStatus from, final FullChunkStatus to);
+
     public void chunkSyncSave(final ServerLevel world, final ChunkAccess chunk, final SerializableChunkData data);
 
     public void onChunkWatch(final ServerLevel world, final LevelChunk chunk, final ServerPlayer player);
@@ -69,6 +72,8 @@ public interface PlatformHooks extends ChunkSystemHooks {
     public void entityMove(final Entity entity, final long oldSection, final long newSection);
 
     public boolean configFixMC224294();
+
+    public boolean configFixMC119599(final ServerLevel world);
 
     public boolean configAutoConfigSendDistance();
 
@@ -89,8 +94,6 @@ public interface PlatformHooks extends ChunkSystemHooks {
     public int configMinChunkUnloadCount(final ServerLevel world);
 
     public double configMinChunkUnloadFraction(final ServerLevel world);
-
-    public boolean configFixMC159283();
 
     // support for CB chunk mustNotSave
     public boolean forceNoSave(final ChunkAccess chunk);

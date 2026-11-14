@@ -71,7 +71,10 @@ public class PlayerChangeBeaconEffectEvent extends PlayerEvent implements Cancel
     }
 
     /**
-     * @return the beacon block associated with this event
+     * Gets the block at the location associated with the beacon menu.
+     * This block may not be a beacon, for example when the menu is virtual.
+     *
+     * @return the block at the menu's location
      */
     public Block getBeacon() {
         return this.beacon;

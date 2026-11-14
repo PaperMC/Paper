@@ -14,15 +14,15 @@ import java.util.function.Predicate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.Nullable;
 
 public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerProfession> {
+
+    private @Nullable Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     public VillagerProfessionRewriter() {
         super(Registries.VILLAGER_PROFESSION, "getProfession");
     }
-
-    private @MonotonicNonNull Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     private Map<String, CharSequenceBlockToken> parseConstantJavadocs(String content) {
         Map<String, CharSequenceBlockToken> map = new HashMap<>();
@@ -79,7 +79,7 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        this.javadocsPerConstant = parseConstantJavadocs(metadata.replacedContent());
+        this.javadocsPerConstant = this.parseConstantJavadocs(metadata.replacedContent());
         super.insert(metadata, builder);
     }
 

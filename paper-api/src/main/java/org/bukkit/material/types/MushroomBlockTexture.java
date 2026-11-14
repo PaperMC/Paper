@@ -3,10 +3,11 @@ package org.bukkit.material.types;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import org.bukkit.block.BlockFace;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents the different textured blocks of mushroom.
+ *
  * @deprecated use BlockData
  */
 @Deprecated(forRemoval = true)
@@ -66,12 +67,12 @@ public enum MushroomBlockTexture {
      */
     ALL_STEM(15, null);
     private static final Map<Byte, MushroomBlockTexture> BY_DATA = Maps.newHashMap();
-    private static final Map<BlockFace, MushroomBlockTexture> BY_BLOCKFACE = Maps.newHashMap();
+    private static final Map<@Nullable BlockFace, MushroomBlockTexture> BY_BLOCKFACE = Maps.newHashMap();
 
     private final Byte data;
-    private final BlockFace capFace;
+    private final @Nullable BlockFace capFace;
 
-    private MushroomBlockTexture(final int data, /*@Nullable*/ final BlockFace capFace) {
+    MushroomBlockTexture(final int data, final @Nullable BlockFace capFace) {
         this.data = (byte) data;
         this.capFace = capFace;
     }
@@ -84,7 +85,7 @@ public enum MushroomBlockTexture {
      */
     @Deprecated(since = "1.9", forRemoval = true)
     public byte getData() {
-        return data;
+        return this.data;
     }
 
     /**
@@ -92,9 +93,8 @@ public enum MushroomBlockTexture {
      *
      * @return The cap face
      */
-    @Nullable
-    public BlockFace getCapFace() {
-        return capFace;
+    public @Nullable BlockFace getCapFace() {
+        return this.capFace;
     }
 
     /**
@@ -102,12 +102,11 @@ public enum MushroomBlockTexture {
      *
      * @param data Data value to fetch
      * @return The {@link MushroomBlockTexture} representing the given value, or
-     * null if it doesn't exist
+     *     null if it doesn't exist
      * @deprecated Magic value
      */
     @Deprecated(since = "1.9", forRemoval = true)
-    @Nullable
-    public static MushroomBlockTexture getByData(final byte data) {
+    public static @Nullable MushroomBlockTexture getByData(final byte data) {
         return BY_DATA.get(data);
     }
 
@@ -116,17 +115,15 @@ public enum MushroomBlockTexture {
      *
      * @param face the required block face with cap texture
      * @return The {@link MushroomBlockTexture} representing the given block
-     * face, or null if it doesn't exist
-     *
+     *     face, or null if it doesn't exist
      * @see BlockFace
      */
-    @Nullable
-    public static MushroomBlockTexture getCapByFace(@Nullable final BlockFace face) {
+    public static @Nullable MushroomBlockTexture getCapByFace(final @Nullable BlockFace face) {
         return BY_BLOCKFACE.get(face);
     }
 
     static {
-        for (MushroomBlockTexture type : values()) {
+        for (final MushroomBlockTexture type : values()) {
             BY_DATA.put(type.data, type);
             BY_BLOCKFACE.put(type.capFace, type);
         }

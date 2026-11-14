@@ -61,7 +61,7 @@
 +            // CraftBukkit start
 +            if (slot == 0) {
 +                LecternBlockEntity.this.setBook(itemStack);
-+                if (LecternBlockEntity.this.getLevel() != null) {
++                if (LecternBlockEntity.this.getLevel() != null && LecternBlockEntity.this.real) { // Paper - don't update the block for fake block entities
 +                    LecternBlock.resetBookState(null, LecternBlockEntity.this.getLevel(), LecternBlockEntity.this.getBlockPos(), LecternBlockEntity.this.getBlockState(), LecternBlockEntity.this.hasBook());
 +                }
 +            }
@@ -75,16 +75,25 @@
          }
  
          @Override
+@@ -146,7 +_,7 @@
+     private void onBookItemRemove() {
+         this.page = 0;
+         this.pageCount = 0;
+-        LecternBlock.resetBookState(null, this.getLevel(), this.getBlockPos(), this.getBlockState(), false);
++        if (this.level != null && this.real) LecternBlock.resetBookState(null, this.getLevel(), this.getBlockPos(), this.getBlockState(), false); // Paper - don't update the block for fake block entities
+     }
+ 
+     public void setBook(final ItemStack book, final @Nullable Player resolutionContext) {
 @@ -161,7 +_,7 @@
          if (newPage != this.page) {
              this.page = newPage;
              this.setChanged();
 -            LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState());
-+            if (this.level != null) LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState()); // CraftBukkit
++            if (this.level != null && this.real) LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState()); // CraftBukkit // Paper - don't update the block for fake block entities
          }
      }
  
-@@ -183,6 +_,36 @@
+@@ -183,12 +_,42 @@
          return book;
      }
  
@@ -119,18 +128,17 @@
 +    };
 +    // CraftBukkit end
      private CommandSourceStack createCommandSourceStack(final @Nullable Player player, final ServerLevel level) {
-         String textName;
-         Component displayName;
-@@ -196,7 +_,7 @@
- 
          Vec3 pos = Vec3.atCenterOf(this.worldPosition);
-         return new CommandSourceStack(
--            CommandSource.NULL, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player
-+            this.commandSource, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player // CraftBukkit - commandSource
-         );
+         return player != null
+-            ? new CommandSourceStack(CommandSource.NULL, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, level.getServer(), player)
++            ? new CommandSourceStack(this.commandSource, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, level.getServer(), player) // CraftBukkit - commandSource
+             : new CommandSourceStack(
+-                CommandSource.NULL, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, Component.literal("Lectern"), level.getServer()
++                this.commandSource, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, Component.literal("Lectern"), level.getServer() // CraftBukkit - commandSource
+             );
      }
  
-@@ -237,7 +_,7 @@
+@@ -229,7 +_,7 @@
  
      @Override
      public AbstractContainerMenu createMenu(final int containerId, final Inventory inventory, final Player player) {

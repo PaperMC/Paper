@@ -12,12 +12,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.commons.support.ReflectionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,10 +69,11 @@ public @interface CheckTest {
             assertFalse(builder.checks.isEmpty(), "CheckTestBuilder must have at least one check");
             final TreeWalker walker = new TreeWalker();
             walker.setModuleFactory(new PackageObjectFactory("io.papermc.checkstyle.checks", Util.class.getClassLoader()));
+            final Method registerCheck = ReflectionSupport.findMethod(TreeWalker.class, "registerCheck", AbstractCheck.class).orElseThrow();
             for (final AbstractCheck check : builder.checks) {
                 check.init();
                 check.configure(new DefaultConfiguration("Test"));
-                MethodUtils.invokeMethod(walker, true, "registerCheck", check);
+                ReflectionSupport.invokeMethod(registerCheck, walker, check);
             }
             final Path filePath = Path.of("src", "testData", "java", checkTest.value().replace('.', File.separatorChar) + ".java");
             assertTrue(Files.exists(filePath), "File not found: " + filePath);

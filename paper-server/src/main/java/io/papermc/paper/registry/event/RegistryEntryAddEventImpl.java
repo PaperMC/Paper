@@ -9,8 +9,8 @@ import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.resources.RegistryOps;
 import org.bukkit.Keyed;
 
 public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
@@ -22,8 +22,8 @@ public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
 
     @Override
     public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
-        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
-        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+        final HolderGetter<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+        final HolderSet.Named<?> tagSet = registryInfo.getOrThrow(PaperRegistries.toNms(tagKey));
         return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
     }
 }

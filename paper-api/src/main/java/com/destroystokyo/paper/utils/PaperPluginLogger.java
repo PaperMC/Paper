@@ -5,19 +5,25 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
  */
-@NullMarked
-public class PaperPluginLogger extends Logger {
+public final class PaperPluginLogger extends Logger {
 
     @Deprecated(forRemoval = true)
     public static Logger getLogger(final PluginDescriptionFile description) {
         return getLogger((PluginMeta) description);
     }
 
+    /**
+     * Creates a logger for the given plugin and registers it with the {@link LogManager}.
+     * <p>
+     * If a logger with the same name is already registered, that logger is returned instead.
+     *
+     * @param meta the meta of the plugin to create the logger for
+     * @return the logger for the plugin
+     */
     public static Logger getLogger(final PluginMeta meta) {
         Logger logger = new PaperPluginLogger(meta);
         if (!LogManager.getLogManager().addLogger(logger)) {

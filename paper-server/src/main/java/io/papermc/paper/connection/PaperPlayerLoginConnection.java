@@ -3,6 +3,7 @@ package io.papermc.paper.connection;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.adventure.PaperAdventure;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import net.kyori.adventure.text.Component;
@@ -39,7 +40,10 @@ public class PaperPlayerLoginConnection extends ReadablePlayerCookieConnectionIm
 
     @Override
     public InetSocketAddress getClientAddress() {
-        return (InetSocketAddress) this.packetListener.connection.getRemoteAddress();
+        final SocketAddress addr = this.packetListener.connection.getRemoteAddress();
+
+        if (addr instanceof InetSocketAddress inet) return inet;
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     @Override

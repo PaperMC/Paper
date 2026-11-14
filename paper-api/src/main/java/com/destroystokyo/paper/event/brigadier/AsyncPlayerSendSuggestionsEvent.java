@@ -7,14 +7,14 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
  * marks the {@link com.destroystokyo.paper.event.server.AsyncTabCompleteEvent} event handled asynchronously,
  * otherwise called synchronously.
+ * <p>
+ * If the suggestions are empty after this event has been called, nothing will be sent to the client.
  */
-@NullMarked
 public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -51,6 +51,8 @@ public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Canc
 
     /**
      * Sets the suggestions to be sent to client.
+     * <p>
+     * Empty suggestions are never sent to the client.
      *
      * @param suggestions suggestions
      */

@@ -67,7 +67,7 @@ public class CraftInventorySaddledMount extends CraftInventory implements Saddle
 
         for (int i = AbstractMountInventoryMenu.SLOT_INVENTORY_START; i < items.length; i++) {
             net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(i - AbstractMountInventoryMenu.SLOT_INVENTORY_START);
-            items[i] = item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+            items[i] = item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
         }
 
         return items;
@@ -90,10 +90,10 @@ public class CraftInventorySaddledMount extends CraftInventory implements Saddle
     public ItemStack getItem(final int index) {
         if (index == AbstractMountInventoryMenu.SLOT_SADDLE) {
             final net.minecraft.world.item.ItemStack item = this.getSaddleInventory().getItem(0);
-            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
         } else if (index == AbstractMountInventoryMenu.SLOT_BODY_ARMOR) {
             final net.minecraft.world.item.ItemStack item = this.getArmorInventory().getItem(0);
-            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
         } else {
             int shiftedIndex = index;
             if (index > AbstractMountInventoryMenu.SLOT_SADDLE) {
@@ -104,7 +104,7 @@ public class CraftInventorySaddledMount extends CraftInventory implements Saddle
             }
 
             final net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(shiftedIndex);
-            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asBukkitMirror(item);
         }
     }
 

@@ -131,7 +131,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(slot, ItemStack.EMPTY);
                 result = stack;
             } else {
-                result = CraftItemStack.copyNMSStack(stack, amount);
+                result = stack.copyWithCount(amount);
                 stack.shrink(amount);
             }
             this.setChanged();
@@ -147,7 +147,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(slot, null);
                 result = stack;
             } else {
-                result = CraftItemStack.copyNMSStack(stack, 1);
+                result = stack.copyWithCount(1);
                 stack.shrink(1);
             }
             return result;

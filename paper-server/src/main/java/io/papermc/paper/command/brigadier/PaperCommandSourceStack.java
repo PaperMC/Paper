@@ -2,6 +2,8 @@ package io.papermc.paper.command.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.ComponentLike;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
@@ -47,6 +49,24 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     default CommandSourceStack withExecutor(Entity executor) {
         Preconditions.checkNotNull(executor, "Executor cannot be null.");
         return this.getHandle().withEntity(((CraftEntity) executor).getHandle());
+    }
+
+    @Override
+    default void sendReply(final ComponentLike message) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendSystemMessage(PaperAdventure.asVanilla(message.asComponent()));
+    }
+
+    @Override
+    default void sendSuccess(final ComponentLike message, final boolean allowInformingAdmins) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendSuccess(() -> PaperAdventure.asVanilla(message.asComponent()), allowInformingAdmins);
+    }
+
+    @Override
+    default void sendFailure(final ComponentLike message) {
+        Preconditions.checkArgument(message != null, "message cannot be null.");
+        this.getHandle().sendFailure(PaperAdventure.asVanilla(message.asComponent()), false);
     }
 
     @Override

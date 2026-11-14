@@ -1,12 +1,12 @@
 package org.bukkit.tag;
 
 import io.papermc.paper.annotation.MinecraftVersionDependent;
+import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
@@ -30,6 +30,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> BURNS_ARMOR_STANDS = getTag("burns_armor_stands");
 
     public static final Tag<DamageType> BYPASSES_ARMOR = getTag("bypasses_armor");
+
+    public static final Tag<DamageType> BYPASSES_COOLDOWN = getTag("bypasses_cooldown");
 
     public static final Tag<DamageType> BYPASSES_EFFECTS = getTag("bypasses_effects");
 
@@ -73,6 +75,8 @@ public final class DamageTypeTags {
 
     public static final Tag<DamageType> NO_KNOCKBACK = getTag("no_knockback");
 
+    public static final Tag<DamageType> NO_WOLF_RETALIATION = getTag("no_wolf_retaliation");
+
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 
     public static final Tag<DamageType> PANIC_ENVIRONMENTAL_CAUSES = getTag("panic_environmental_causes");
@@ -96,9 +100,11 @@ public final class DamageTypeTags {
     @ApiStatus.Internal
     public static final String REGISTRY_DAMAGE_TYPES = "damage_types";
 
-    @Nullable
-    private static Tag<DamageType> getTag(String key) {
-        return Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class);
+    private static Tag<DamageType> getTag(final String key) {
+        return Objects.requireNonNull(
+            Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class),
+            () -> "Missing vanilla damage type tag minecraft:" + key
+        );
     }
 
     private DamageTypeTags() {

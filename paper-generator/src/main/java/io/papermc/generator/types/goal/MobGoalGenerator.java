@@ -16,6 +16,7 @@ import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
 import io.papermc.typewriter.util.ClassHelper;
+import java.lang.reflect.Modifier;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -24,14 +25,12 @@ import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Mob;
-import org.jspecify.annotations.NullMarked;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class MobGoalGenerator extends SimpleGenerator {
 
     private static final String CLASS_HEADER = Javadocs.getVersionDependentClassHeader("keys", "Mob Goals");
@@ -63,12 +62,12 @@ public class MobGoalGenerator extends SimpleGenerator {
             .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type));
 
         List<Class<Goal>> classes;
-        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {
+        try (ScanResult scanResult = new ClassGraph().enableAllInfo().acceptPackages("net.minecraft").scan()) {
             classes = scanResult.getSubclasses(Goal.class.getName()).loadClasses(Goal.class);
         }
 
         Stream<GoalKey<Mob>> vanillaGoals = classes.stream()
-            .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
+            .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
             .filter(clazz -> !clazz.isAnonymousClass() || ClassHelper.getTopLevelClass(clazz) != GoalSelector.class)
             .filter(clazz -> !WrappedGoal.class.equals(clazz)) // TODO - properly fix
             .map(MobGoalNames::getKey)

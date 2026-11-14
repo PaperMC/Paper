@@ -16,6 +16,33 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 public interface Mob extends LivingEntity, Lootable, Leashable {
+    /**
+     * Gets whether this mob is required to persist against normal despawning.
+     * <p>
+     * This controls the mob's internal persistence flag, which affects
+     * normal despawning behavior, including behavior unrelated to distance.
+     * Other removal mechanisms may still remove the mob.
+     * <p>
+     * This is distinct from {@link Entity#isPersistent()}, which controls
+     * whether an entity is saved.
+     *
+     * @return true if this mob is required to persist against normal despawning
+     */
+    boolean isPersistenceRequired();
+
+    /**
+     * Sets whether this mob is required to persist against normal despawning.
+     * <p>
+     * This controls the mob's internal persistence flag, which affects
+     * normal despawning behavior, including behavior unrelated to distance.
+     * Other removal mechanisms may still remove the mob.
+     * <p>
+     * This is distinct from {@link Entity#setPersistent(boolean)}, which
+     * controls whether an entity is saved.
+     *
+     * @param persistenceRequired whether normal despawning should be prevented
+     */
+    void setPersistenceRequired(boolean persistenceRequired);
 
     /**
      * Check if a mob should be despawned when the world is set to peaceful difficulty.
@@ -33,9 +60,7 @@ public interface Mob extends LivingEntity, Lootable, Leashable {
      * </ul>
      *
      * @param state a TriState representing the state of the override
-     * @deprecated the client no longer allow to change that setting and will not render the entity
      */
-    @Deprecated(since = "26.2")
     void setDespawnInPeacefulOverride(TriState state);
 
     /**
@@ -48,9 +73,7 @@ public interface Mob extends LivingEntity, Lootable, Leashable {
      *
      * @return a TriState representing the state of the override
      * @see Mob#setDespawnInPeacefulOverride(TriState)
-     * @deprecated the client no longer allow to change that setting and will not render the entity
      */
-    @Deprecated(since = "26.2")
     TriState getDespawnInPeacefulOverride();
 
     @Override
