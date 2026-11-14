@@ -21,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEntity> implements DecoratedPot {
 
-    public CraftDecoratedPot(World world, DecoratedPotBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftDecoratedPot(World world, DecoratedPotBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftDecoratedPot(CraftDecoratedPot state, Location location) {

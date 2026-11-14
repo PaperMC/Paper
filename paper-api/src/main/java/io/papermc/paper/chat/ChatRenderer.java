@@ -4,34 +4,32 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A chat renderer is responsible for rendering chat messages sent by {@link Player}s to the server.
  */
-@NullMarked
 @FunctionalInterface
 public interface ChatRenderer {
 
     /**
      * Renders a chat message. This will be called once for each receiving {@link Audience}.
      *
-     * @param source the message source
+     * @param source            the message source
      * @param sourceDisplayName the display name of the source player
-     * @param message the chat message
-     * @param viewer the receiving {@link Audience}
+     * @param message           the chat message
+     * @param viewer            the receiving {@link Audience}
      * @return a rendered chat message
      */
     @ApiStatus.OverrideOnly
     Component render(Player source, Component sourceDisplayName, Component message, Audience viewer);
 
     /**
-     * Create a new instance of the default {@link ChatRenderer}.
+     * Gets the default {@link ChatRenderer}.
      *
-     * @return a new {@link ChatRenderer}
+     * @return the default {@link ChatRenderer}
      */
     static ChatRenderer defaultRenderer() {
-        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
+        return ViewerUnawareImpl.Default.INSTANCE;
     }
 
     @ApiStatus.Internal
@@ -59,9 +57,9 @@ public interface ChatRenderer {
         /**
          * Renders a chat message.
          *
-         * @param source the message source
+         * @param source            the message source
          * @param sourceDisplayName the display name of the source player
-         * @param message the chat message
+         * @param message           the chat message
          * @return a rendered chat message
          */
         @ApiStatus.OverrideOnly

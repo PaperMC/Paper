@@ -1,13 +1,15 @@
 package io.papermc.paper.persistence;
 
+import com.google.common.base.Preconditions;
+import java.io.IOException;
 import java.util.Set;
+import net.kyori.adventure.key.Key;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -16,7 +18,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @see PersistentDataContainer
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface PersistentDataContainerView {
 
@@ -38,14 +39,14 @@ public interface PersistentDataContainerView {
      * tags, like the display name, will not work as the values are stored
      * using your namespace.
      *
-     * @param key the key the value is stored under
+     * @param key  the key the value is stored under
      * @param type the type the primitive stored value has to match
-     * @param <P> the generic type of the stored primitive
-     * @param <C> the generic type of the eventually created complex object
+     * @param <P>  the generic type of the stored primitive
+     * @param <C>  the generic type of the eventually created complex object
      * @return if a value with the provided key and type exists
      * @throws IllegalArgumentException if the key to look up is null
      * @throws IllegalArgumentException if the type to cast the found object to is
-     * null
+     *                                  null
      */
     <P, C> boolean has(NamespacedKey key, PersistentDataType<P, C> type);
 
@@ -67,23 +68,49 @@ public interface PersistentDataContainerView {
     boolean has(NamespacedKey key);
 
     /**
+     * Returns if the persistent metadata provider has metadata registered
+     * matching the provided parameters.
+     * <p>
+     * This method will only return true if the found value has the same primitive
+     * data type as the provided data key.
+     * <p>
+     * Storing a value using a custom {@link PersistentDataType} implementation
+     * will not store the complex data type. Therefore, storing a UUID (by
+     * storing a byte[]) will match has("key", {@link PersistentDataType#BYTE_ARRAY}).
+     * Likewise, a stored byte[] will always match your UUID {@link PersistentDataType}
+     * even if it is not 16 bytes long.
+     * <p>
+     * This method is only usable for custom object keys. Overwriting existing
+     * tags, like the display name, will not work as the values are stored
+     * using your namespace.
+     *
+     * @param dataKey the data key the value is stored under
+     * @return if a value with the provided key and type exists
+     * @throws IllegalArgumentException if the key to look up is null
+     */
+    default boolean has(final PersistentDataKey<?> dataKey) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.has(dataKey.key(), dataKey.dataType());
+    }
+
+    /**
      * Returns the metadata value that is stored on the
      * {@link PersistentDataHolder} instance.
      *
-     * @param key the key to look up in the custom tag map
+     * @param key  the key to look up in the custom tag map
      * @param type the type the value must have and will be cast to
-     * @param <P> the generic type of the stored primitive
-     * @param <C> the generic type of the eventually created complex object
+     * @param <P>  the generic type of the stored primitive
+     * @param <C>  the generic type of the eventually created complex object
      * @return the value or {@code null} if no value was mapped under the given
-     * value
+     *     value
      * @throws IllegalArgumentException if the key to look up is null
      * @throws IllegalArgumentException if the type to cast the found object to is
-     * null
+     *                                  null
      * @throws IllegalArgumentException if a value exists under the given key,
-     * but cannot be accessed using the given type
+     *                                  but cannot be accessed using the given type
      * @throws IllegalArgumentException if no suitable adapter was found for
-     * the {@link
-     * PersistentDataType#getPrimitiveType()}
+     *                                  the {@link
+     *                                  PersistentDataType#getPrimitiveType()}
      */
     <P, C> @Nullable C get(NamespacedKey key, PersistentDataType<P, C> type);
 
@@ -92,23 +119,80 @@ public interface PersistentDataContainerView {
      * {@link PersistentDataHolder} instance. If the value does not exist in the
      * container, the default value provided is returned.
      *
-     * @param key the key to look up in the custom tag map
-     * @param type the type the value must have and will be cast to
+     * @param key          the key to look up in the custom tag map
+     * @param type         the type the value must have and will be cast to
      * @param defaultValue the default value to return if no value was found for
-     * the provided key
-     * @param <P> the generic type of the stored primitive
-     * @param <C> the generic type of the eventually created complex object
+     *                     the provided key
+     * @param <P>          the generic type of the stored primitive
+     * @param <C>          the generic type of the eventually created complex object
      * @return the value or the default value if no value was mapped under the
-     * given key
+     *     given key
      * @throws IllegalArgumentException if the key to look up is null
      * @throws IllegalArgumentException if the type to cast the found object to is
-     * null
+     *                                  null
      * @throws IllegalArgumentException if a value exists under the given key,
-     * but cannot be accessed using the given type
+     *                                  but cannot be accessed using the given type
      * @throws IllegalArgumentException if no suitable adapter was found for
-     * the {@link PersistentDataType#getPrimitiveType()}
+     *                                  the {@link PersistentDataType#getPrimitiveType()}
      */
     <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
+
+    /**
+     * Returns the metadata value that is stored on the
+     * {@link PersistentDataHolder} instance.
+     *
+     * @param dataKey the data key to look up in the custom tag map
+     * @param <C>     the generic type of the eventually created complex object
+     * @return the value or {@code null} if no value was mapped under the given
+     *     value
+     * @throws IllegalArgumentException if the data key to look up is null
+     * @throws IllegalArgumentException if a value exists under the given key,
+     *                                  but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
+     *                                  the {@link PersistentDataType#getPrimitiveType()}
+     */
+    default <C> @Nullable C get(final PersistentDataKey<C> dataKey) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.get(dataKey.key(), dataKey.dataType());
+    }
+
+    /**
+     * Returns the metadata value that is stored on the
+     * {@link PersistentDataHolder} instance. If the value does not exist in the
+     * container, the default value provided is returned.
+     *
+     * @param dataKey      the data key to look up in the custom tag map
+     * @param defaultValue the default value to return if no value was found for
+     *                     the provided key
+     * @param <C>          the generic type of the eventually created complex object
+     * @return the value or the default value if no value was mapped under the given key
+     * @throws IllegalArgumentException if the data key to look up is null
+     * @throws IllegalArgumentException if a value exists under the given key,
+     *                                  but cannot be accessed using the given type
+     * @throws IllegalArgumentException if no suitable adapter was found for
+     *                                  the {@link PersistentDataType#getPrimitiveType()}
+     */
+    default <C> C getOrDefault(final PersistentDataKey<C> dataKey, final C defaultValue) {
+        Preconditions.checkArgument(dataKey != null, "The data key cannot be null");
+        return this.getOrDefault(dataKey.key(), dataKey.dataType(), defaultValue);
+    }
+
+    /**
+     * Estimates the {@link PersistentDataType} of the value based on the primitive
+     * type that is stored for the given key.
+     * <br>
+     * <b>WARNING:</b> This method will only return data types
+     * defined in {@link PersistentDataType} which directly map to a specific
+     * nbt tag. The return value will be wrong if the data type is plugin
+     * specific or not represented by a specific nbt tag.
+     * Use {@link #has(NamespacedKey, PersistentDataType)} if you expect a
+     * specific data type.
+     *
+     * @param key the key to look up the value type of
+     * @return estimated data type or null if no value is present, the type is
+     *     unknown or an empty list is encountered as value.
+     */
+    @Nullable PersistentDataType<?, ?> getPrimitiveStorageType(Key key);
 
     /**
      * Get the set of keys present on this {@link PersistentDataContainer}
@@ -136,7 +220,7 @@ public interface PersistentDataContainerView {
      * This method only copies custom object keys. Existing tags, like the display
      * name, will not be copied as the values are stored using your namespace.
      *
-     * @param other the container to copy to
+     * @param other   the container to copy to
      * @param replace whether to replace any matching values in the target container
      * @throws IllegalArgumentException if the other container is null
      */
@@ -154,12 +238,14 @@ public interface PersistentDataContainerView {
      * byte array.
      *
      * @return a binary representation of this container
-     * @throws java.io.IOException if we fail to write this container to a byte array
+     * @throws IOException if we fail to write this container to a byte array
      */
-    byte[] serializeToBytes() throws java.io.IOException;
+    byte[] serializeToBytes() throws IOException;
 
     /**
-     * {@return the size of the data container}
+     * Returns the size of the data container.
+     *
+     * @return the size of the data container
      */
     int getSize();
 }

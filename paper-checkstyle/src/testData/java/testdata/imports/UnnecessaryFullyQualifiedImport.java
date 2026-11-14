@@ -70,4 +70,47 @@ public class UnnecessaryFullyQualifiedImport {
         System.out.println(testdata.imports.testclasses.subpkg.OtherClass.class);
         System.out.println(OtherClass.class);
     }
+
+    public void throwsClause() throws java.io.IOException, java.io.UncheckedIOException {
+    }
+
+    public <T extends OtherClass & testdata.imports.testclasses.subpkg.OtherInterface & java.io.Serializable> void bounds() {
+    }
+
+    abstract static class MultipleInterfaces implements testdata.imports.testclasses.subpkg.OtherInterface, java.io.Serializable {
+    }
+
+    public void expressions() {
+        final Object fieldAccess = java.util.Locale.ENGLISH;
+        final int importedField = testdata.imports.testclasses.subpkg.OtherClass.CONSTANT;
+        java.lang.System.out.println();
+        final String root = java.util.Locale.ROOT.toString();
+        final Runnable methodRef = java.lang.Thread::yield;
+        final Runnable constructorRef = java.util.ArrayList::new;
+        final Holder holder = new Holder();
+        final Object notAType = holder.inner.VALUE;
+    }
+
+    static final class Holder {
+        static final int VALUE = 0;
+        Holder inner;
+    }
+
+    // declared in this file, so java.util.Random needs to be qualified
+    static final class Random {
+    }
+
+    java.util.Random declaredConflict;
+    testdata.imports.UnnecessaryFullyQualifiedImport self;
+
+    // SamePackage resolves to testdata.imports.SamePackage, so the other one needs to be qualified
+    SamePackage samePackage;
+    testdata.imports.testclasses.SamePackage otherPackage;
+    testdata.imports.SamePackage qualifiedSamePackage;
+
+    // the nested Shadowed hides testdata.imports.Shadowed, so it needs to be qualified even though it's in the same package
+    static final class Shadowed {
+    }
+
+    testdata.imports.Shadowed shadowedSamePackage;
 }

@@ -12,11 +12,10 @@ import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is successfully enchanted (currently at
- * enchantment table)
+ * enchantment table).
  */
 public class EnchantItemEvent extends InventoryEvent implements Cancellable {
 
@@ -34,7 +33,17 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, @NotNull final Enchantment enchantmentHint, final int levelHint, final int button) {
+    public EnchantItemEvent(
+        final Player enchanter,
+        final InventoryView view,
+        final Block table,
+        final ItemStack item,
+        final int level,
+        final Map<Enchantment, Integer> enchants,
+        final Enchantment enchantmentHint,
+        final int levelHint,
+        final int button
+    ) {
         super(view);
         this.enchanter = enchanter;
         this.table = table;
@@ -47,39 +56,38 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     }
 
     /**
-     * Gets the player enchanting the item
+     * Gets the player enchanting the item.
      *
      * @return enchanting player
      */
-    @NotNull
     public Player getEnchanter() {
         return this.enchanter;
     }
 
     /**
-     * Gets the block being used to enchant the item
+     * Gets the block being used to enchant the item.
      *
      * @return the block used for enchanting
      */
-    @NotNull
     public Block getEnchantBlock() {
         return this.table;
     }
 
     /**
-     * Gets the item to be enchanted (can be modified)
+     * Gets the item to be enchanted (can be modified).
      *
      * @return ItemStack of item
      */
-    @NotNull
     public ItemStack getItem() {
         return this.item;
     }
 
     /**
-     * Sets the item to be enchanted
+     * Sets the item to be enchanted.
+     *
+     * @param item the item to be enchanted
      */
-    public void setItem(@NotNull final ItemStack item) {
+    public void setItem(final ItemStack item) {
         this.item = item;
     }
 
@@ -99,7 +107,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @param level cost in levels
      */
-    public void setExpLevelCost(int level) {
+    public void setExpLevelCost(final int level) {
         Preconditions.checkArgument(level > 0, "The cost must be greater than 0!");
 
         this.level = level;
@@ -108,11 +116,10 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     /**
      * Get map of enchantment (levels, keyed by type) to be added to item
      * (modify map returned to change values). Note: Any enchantments not
-     * allowed for the item will be ignored
+     * allowed for the item will be ignored.
      *
      * @return map of enchantment levels, keyed by enchantment
      */
-    @NotNull
     public Map<Enchantment, Integer> getEnchantsToAdd() {
         return this.enchants;
     }
@@ -123,7 +130,6 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @return the hinted enchantment
      */
-    @NotNull
     public Enchantment getEnchantmentHint() {
         return this.enchantmentHint;
     }
@@ -153,17 +159,15 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     }
 
     @Override
-    public void setCancelled(boolean cancel) {
+    public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

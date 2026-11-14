@@ -1,19 +1,27 @@
 package com.destroystokyo.paper.network;
 
 import java.net.InetSocketAddress;
-import org.jspecify.annotations.NullMarked;
+import java.net.SocketAddress;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a client connected to the server.
  */
-@NullMarked
 public interface NetworkClient {
 
     /**
      * Returns the socket address of the client.
      *
      * @return The client's socket address
+     */
+    SocketAddress getSocketAddress();
+
+    /**
+     * Returns an instance of {@link InetSocketAddress} associated with the
+     * client's socket address.
+     *
+     * @return The client's {@link InetSocketAddress}, or the loopback address
+     *     if this is a Unix domain socket connection
      */
     InetSocketAddress getAddress();
 

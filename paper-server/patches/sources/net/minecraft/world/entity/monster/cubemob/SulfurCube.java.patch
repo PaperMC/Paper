@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-@@ -295,13 +_,34 @@
+@@ -295,13 +_,35 @@
  
          if (!this.explosionData.isEmpty()) {
              if (this.fuse == 0) {
@@ -30,6 +30,7 @@
 +                        if (primeEvent.isCancelled()) {
 +                            this.setFuse(PrimedTnt.NO_FUSE);
 +                            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
++                            this.setPermanentlyInvulnerable(false);
 +                            return;
 +                        }
 +                        afterEvent.run();
@@ -37,7 +38,7 @@
                          level.explode(
                              this,
                              Explosion.getDefaultDamageSource(this.level(), this),
-@@ -309,16 +_,20 @@
+@@ -309,17 +_,27 @@
                              this.getX(),
                              this.getY(0.0625),
                              this.getZ(),
@@ -59,8 +60,15 @@
 -                this.discard();
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
              }
++        // Paper start - properly reset fuse if explosion data was unset by game
++        } else if (this.tickCount > 1 && this.isPrimed()) {
++            this.setFuse(PrimedTnt.NO_FUSE);
++            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
++            this.setPermanentlyInvulnerable(false);
++        // Paper end - properly reset fuse if explosion data was unset by game
          }
      }
+ 
 @@ -340,6 +_,12 @@
              && !this.isPrimed()) {
              int fuse = this.explosionData.get().fuse();
@@ -120,6 +128,36 @@
                      return itWorked ? InteractionResult.SUCCESS_SERVER : InteractionResult.PASS;
                  } else {
                      return Bucketable.bucketMobPickup(player, hand, this).orElse(super.mobInteract(player, hand));
+@@ -490,16 +_,22 @@
+         }
+     }
+ 
++    // Paper start - move out equip item checks
++    public boolean canEquipItem(final ItemStack heldItem) {
++        if (this.isBaby()) return false;
++
++        final Item swallowedItem = this.getItemBySlot(EquipmentSlot.BODY).getItem();
++        if (heldItem.is(swallowedItem)) return false;
++
++        return true;
++    }
++    // Paper end - move out equip item checks
++
+     public boolean equipItem(final ItemStack heldItem) {
+-        if (this.isBaby()) {
+-            return false;
+-        }
++        if (!canEquipItem(heldItem)) return false; // Paper - move out equip item checks
+ 
+         if (this.hasBodyItem()) {
+-            Item swallowedItem = this.getItemBySlot(EquipmentSlot.BODY).getItem();
+-            if (heldItem.is(swallowedItem)) {
+-                return false;
+-            }
++            // Paper - move out equip item checks
+ 
+             Vec3 equipmentSpawnOffset = this.getAttachments().getAverage(EntityAttachment.PASSENGER);
+             if (this.level() instanceof ServerLevel serverLevel) {
 @@ -525,7 +_,7 @@
          if (this.level() instanceof ServerLevel serverLevel) {
              for (SulfurCubeArchetype.ContactDamage damage : this.contactDamages) {

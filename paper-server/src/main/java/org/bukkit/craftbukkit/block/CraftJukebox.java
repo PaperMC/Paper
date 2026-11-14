@@ -16,8 +16,8 @@ import org.bukkit.inventory.JukeboxInventory;
 
 public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> implements Jukebox {
 
-    public CraftJukebox(World world, JukeboxBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftJukebox(World world, JukeboxBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftJukebox(CraftJukebox state, Location location) {

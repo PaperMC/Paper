@@ -2,23 +2,34 @@ package com.destroystokyo.paper.profile;
 
 import com.google.common.base.Preconditions;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents a property on a {@link PlayerProfile}
+ * Represents a property on a {@link PlayerProfile}.
  */
-@NullMarked
 public final class ProfileProperty {
 
     private final String name;
     private final String value;
     private final @Nullable String signature;
 
+    /**
+     * Creates an unsigned property.
+     *
+     * @param name  the property name
+     * @param value the property value
+     */
     public ProfileProperty(final String name, final String value) {
         this(name, value, null);
     }
 
+    /**
+     * Creates a property.
+     *
+     * @param name      the property name, at most 64 characters
+     * @param value     the property value, at most 32767 characters
+     * @param signature the signature, at most 1024 characters, or {@code null} if unsigned
+     */
     public ProfileProperty(final String name, final String value, final @Nullable String signature) {
         this.name = Preconditions.checkNotNull(name, "ProfileProperty name can not be null");
         this.value = Preconditions.checkNotNull(value, "ProfileProperty value can not be null");
@@ -29,6 +40,8 @@ public final class ProfileProperty {
     }
 
     /**
+     * Gets the name of this property.
+     *
      * @return The property name, ie "textures"
      */
     public String getName() {
@@ -36,6 +49,8 @@ public final class ProfileProperty {
     }
 
     /**
+     * Gets the value of this property.
+     *
      * @return The property value, likely to be base64 encoded
      */
     public String getValue() {
@@ -43,13 +58,17 @@ public final class ProfileProperty {
     }
 
     /**
-     * @return A signature from Mojang for signed properties
+     * Gets the signature of this property.
+     *
+     * @return A signature for signed properties
      */
     public @Nullable String getSignature() {
         return this.signature;
     }
 
     /**
+     * Checks whether this property is signed.
+     *
      * @return If this property has a signature or not
      */
     public boolean isSigned() {

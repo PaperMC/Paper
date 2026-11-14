@@ -12,8 +12,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Barrel {
 
-    public CraftBarrel(World world, BarrelBlockEntity blockEntity) {
-        super(world, blockEntity);
+    public CraftBarrel(World world, BarrelBlockEntity blockEntity, boolean useSnapshot) {
+        super(world, blockEntity, useSnapshot);
     }
 
     protected CraftBarrel(CraftBarrel state, Location location) {

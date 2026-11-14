@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import io.papermc.paper.util.BoundChecker;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.MerchantContainer;
@@ -557,6 +558,7 @@ public class CraftInventory implements Inventory {
 
     @Override
     public void setMaxStackSize(int size) {
+        BoundChecker.requireNonNegative(size, "size");
         this.inventory.setMaxStackSize(size);
     }
 

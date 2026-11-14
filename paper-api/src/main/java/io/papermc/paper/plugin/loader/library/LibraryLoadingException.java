@@ -5,11 +5,22 @@ package io.papermc.paper.plugin.loader.library;
  */
 public class LibraryLoadingException extends RuntimeException {
 
-    public LibraryLoadingException(String s) {
+    /**
+     * Creates a new library loading exception.
+     *
+     * @param s the detail message
+     */
+    public LibraryLoadingException(final String s) {
         super(s);
     }
 
-    public LibraryLoadingException(String s, Exception e) {
+    /**
+     * Creates a new library loading exception with a cause.
+     *
+     * @param s the detail message
+     * @param e the cause
+     */
+    public LibraryLoadingException(final String s, final Exception e) {
         super(s, e);
     }
 }

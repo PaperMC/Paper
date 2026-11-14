@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a spawn rule that controls what conditions an entity from a
@@ -23,15 +23,15 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      * Constructs a new SpawnRule.
      *
      * @param minBlockLight The minimum (inclusive) block light required for
-     * spawning to succeed.
+     *                      spawning to succeed.
      * @param maxBlockLight The maximum (inclusive) block light required for
-     * spawning to succeed.
-     * @param minSkyLight The minimum (inclusive) sky light required for
-     * spawning to succeed.
-     * @param maxSkyLight The maximum (inclusive) sky light required for
-     * spawning to succeed.
+     *                      spawning to succeed.
+     * @param minSkyLight   The minimum (inclusive) sky light required for
+     *                      spawning to succeed.
+     * @param maxSkyLight   The maximum (inclusive) sky light required for
+     *                      spawning to succeed.
      */
-    public SpawnRule(int minBlockLight, int maxBlockLight, int minSkyLight, int maxSkyLight) {
+    public SpawnRule(final int minBlockLight, final int maxBlockLight, final int minSkyLight, final int maxSkyLight) {
         Preconditions.checkArgument(minBlockLight <= maxBlockLight, "minBlockLight must be <= maxBlockLight (%s <= %s)", minBlockLight, maxBlockLight);
         Preconditions.checkArgument(minSkyLight <= maxSkyLight, "minSkyLight must be <= maxSkyLight (%s <= %s)", minSkyLight, maxSkyLight);
         Preconditions.checkArgument(minBlockLight >= 0, "minBlockLight must be >= 0 (given %s)", minBlockLight);
@@ -52,7 +52,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      * @return minimum block light
      */
     public int getMinBlockLight() {
-        return minBlockLight;
+        return this.minBlockLight;
     }
 
     /**
@@ -61,9 +61,9 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      *
      * @param minBlockLight minimum block light
      */
-    public void setMinBlockLight(int minBlockLight) {
+    public void setMinBlockLight(final int minBlockLight) {
         Preconditions.checkArgument(minBlockLight >= 0, "minBlockLight must be >= 0 (given %s)", minBlockLight);
-        Preconditions.checkArgument(minBlockLight <= maxBlockLight, "minBlockLight must be <= maxBlockLight (%s <= %s)", minBlockLight, maxBlockLight);
+        Preconditions.checkArgument(minBlockLight <= this.maxBlockLight, "minBlockLight must be <= maxBlockLight (%s <= %s)", minBlockLight, this.maxBlockLight);
 
         this.minBlockLight = minBlockLight;
     }
@@ -75,7 +75,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      * @return maximum block light
      */
     public int getMaxBlockLight() {
-        return maxBlockLight;
+        return this.maxBlockLight;
     }
 
     /**
@@ -84,7 +84,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      *
      * @param maxBlockLight maximum block light
      */
-    public void setMaxBlockLight(int maxBlockLight) {
+    public void setMaxBlockLight(final int maxBlockLight) {
         Preconditions.checkArgument(maxBlockLight >= 0, "maxBlockLight must be >= 0 (given %s)", maxBlockLight);
 
         this.maxBlockLight = maxBlockLight;
@@ -96,7 +96,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      * @return minimum sky light
      */
     public int getMinSkyLight() {
-        return minSkyLight;
+        return this.minSkyLight;
     }
 
     /**
@@ -104,9 +104,9 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      *
      * @param minSkyLight minimum sky light
      */
-    public void setMinSkyLight(int minSkyLight) {
+    public void setMinSkyLight(final int minSkyLight) {
         Preconditions.checkArgument(minSkyLight >= 0, "minSkyLight must be >= 0 (given %s)", minSkyLight);
-        Preconditions.checkArgument(minSkyLight <= maxSkyLight, "minSkyLight must be <= maxSkyLight (%s <= %s)", minSkyLight, maxSkyLight);
+        Preconditions.checkArgument(minSkyLight <= this.maxSkyLight, "minSkyLight must be <= maxSkyLight (%s <= %s)", minSkyLight, this.maxSkyLight);
 
         this.minSkyLight = minSkyLight;
     }
@@ -117,7 +117,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      * @return maximum sky light
      */
     public int getMaxSkyLight() {
-        return maxSkyLight;
+        return this.maxSkyLight;
     }
 
     /**
@@ -125,54 +125,51 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
      *
      * @param maxSkyLight maximum sky light
      */
-    public void setMaxSkyLight(int maxSkyLight) {
+    public void setMaxSkyLight(final int maxSkyLight) {
         Preconditions.checkArgument(maxSkyLight >= 0, "maxSkyLight must be >= 0 (given %s)", maxSkyLight);
 
         this.maxSkyLight = maxSkyLight;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SpawnRule)) {
+    public boolean equals(final @Nullable Object obj) {
+        if (!(obj instanceof final SpawnRule other)) {
             return false;
         }
 
-        SpawnRule other = (SpawnRule) obj;
-        return minBlockLight == other.minBlockLight && maxBlockLight == other.maxBlockLight && minSkyLight == other.minSkyLight && maxSkyLight == other.maxSkyLight;
+        return this.minBlockLight == other.minBlockLight && this.maxBlockLight == other.maxBlockLight && this.minSkyLight == other.minSkyLight && this.maxSkyLight == other.maxSkyLight;
     }
 
     @Override
     public int hashCode() {
-        int hash = minBlockLight;
+        int hash = this.minBlockLight;
 
-        hash = (hash << 4) + maxBlockLight;
-        hash = (hash << 4) + minSkyLight;
-        hash = (hash << 4) + maxSkyLight;
+        hash = (hash << 4) + this.maxBlockLight;
+        hash = (hash << 4) + this.minSkyLight;
+        hash = (hash << 4) + this.maxSkyLight;
 
         return hash;
     }
 
-    @NotNull
     @Override
     public SpawnRule clone() {
         try {
             return (SpawnRule) super.clone();
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             throw new Error(e);
         }
     }
 
     @Override
-    @NotNull
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        Map<String, Object> block = new LinkedHashMap<>();
-        Map<String, Object> sky = new LinkedHashMap<>();
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final Map<String, Object> block = new LinkedHashMap<>();
+        final Map<String, Object> sky = new LinkedHashMap<>();
 
-        block.put("min", getMinBlockLight());
-        block.put("max", getMaxBlockLight());
-        sky.put("min", getMinSkyLight());
-        sky.put("max", getMaxSkyLight());
+        block.put("min", this.getMinBlockLight());
+        block.put("max", this.getMaxBlockLight());
+        sky.put("min", this.getMinSkyLight());
+        sky.put("max", this.getMaxSkyLight());
 
         result.put("block-light", block);
         result.put("sky-light", sky);
@@ -180,19 +177,23 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
         return result;
     }
 
-    @NotNull
-    public static SpawnRule deserialize(@NotNull Map<String, Object> args) {
+    /**
+     * Required method for configuration serialization.
+     *
+     * @param args map to deserialize
+     * @return deserialized spawn rule
+     * @see ConfigurationSerializable
+     */
+    public static SpawnRule deserialize(final Map<String, Object> args) {
         int minBlock = 0;
         int maxBlock = 0;
         int minSky = 0;
         int maxSky = 0;
 
-        Object block = args.get("block-light");
-        Object sky = args.get("sky-light");
+        final Object block = args.get("block-light");
+        final Object sky = args.get("sky-light");
 
-        if (block instanceof Map<?, ?>) {
-            Map<?, ?> blockMap = (Map<?, ?>) block;
-
+        if (block instanceof final Map<?, ?> blockMap) {
             if (blockMap.containsKey("min")) {
                 minBlock = (int) blockMap.get("min");
             }
@@ -202,9 +203,7 @@ public class SpawnRule implements Cloneable, ConfigurationSerializable {
             }
         }
 
-        if (sky instanceof Map<?, ?>) {
-            Map<?, ?> skyMap = (Map<?, ?>) sky;
-
+        if (sky instanceof final Map<?, ?> skyMap) {
             if (skyMap.containsKey("min")) {
                 minSky = (int) skyMap.get("min");
             }
