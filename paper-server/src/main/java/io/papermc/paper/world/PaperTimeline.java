@@ -1,10 +1,13 @@
 package io.papermc.paper.world;
 
 import io.papermc.paper.registry.HolderableBase;
+import java.util.OptionalInt;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class PaperTimeline extends HolderableBase<net.minecraft.world.timeline.Timeline> implements Timeline {
 
     public static Timeline minecraftHolderToBukkit(final Holder<net.minecraft.world.timeline.Timeline> minecraft) {
@@ -17,5 +20,15 @@ public class PaperTimeline extends HolderableBase<net.minecraft.world.timeline.T
 
     public PaperTimeline(final Holder<net.minecraft.world.timeline.Timeline> holder) {
         super(holder);
+    }
+
+    @Override
+    public WorldClock clock() {
+        return PaperWorldClock.minecraftHolderToBukkit(this.getHandle().clock());
+    }
+
+    @Override
+    public OptionalInt periodTicks() {
+        return this.getHandle().periodTicks().map(OptionalInt::of).orElse(OptionalInt.empty());
     }
 }

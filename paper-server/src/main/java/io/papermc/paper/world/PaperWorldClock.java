@@ -4,7 +4,9 @@ import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class PaperWorldClock extends HolderableBase<net.minecraft.world.clock.WorldClock> implements WorldClock {
 
     public static WorldClock minecraftHolderToBukkit(final Holder<net.minecraft.world.clock.WorldClock> minecraft) {
