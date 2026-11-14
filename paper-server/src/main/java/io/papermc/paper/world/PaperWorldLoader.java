@@ -4,6 +4,7 @@ import io.papermc.paper.world.migration.WorldFolderMigration;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import io.papermc.paper.world.saveddata.PaperWorldMetadata;
 import io.papermc.paper.world.saveddata.PaperWorldPDC;
+import io.papermc.paper.world.settings.PaperWorldGenSettings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Locale;
@@ -146,12 +147,17 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
 
         final boolean isOverworldLevel = loading.info().dimensionKey() == Level.OVERWORLD;
 
-        final WorldGenSettings worldGenSettings = isOverworldLevel || !hasWorldData
+        final WorldGenSettings storedWorldGenSettings = isOverworldLevel || !hasWorldData
             ? this.server.getWorldGenSettings()
             : loadWorldGenSettings(
             this.server.storageSource,
             this.server.worldLoaderContext.datapackWorldRegistries(),
             loading.info().dimensionKey()
+        );
+        final WorldGenSettings worldGenSettings = PaperWorldGenSettings.applySeedOverride(
+            storedWorldGenSettings,
+            loading.info().dimensionKey(),
+            hasWorldData
         );
         final var worldDataAndGenSettings = new LevelDataAndDimensions.WorldDataAndGenSettings(this.server.getWorldData(), worldGenSettings);
 
