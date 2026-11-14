@@ -2,17 +2,19 @@ package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
+/**
+ * A layer of a banner, made of a {@link PatternType} and a {@link DyeColor}.
+ */
 @SerializableAs("Pattern")
 public class Pattern implements ConfigurationSerializable {
 
@@ -23,88 +25,88 @@ public class Pattern implements ConfigurationSerializable {
     private final PatternType pattern;
 
     /**
-     * Creates a new pattern from the specified color and
-     * pattern type
-     *
-     * @param color   the pattern color
-     * @param pattern the pattern type
-     */
-    public Pattern(@NotNull DyeColor color, @NotNull PatternType pattern) {
-        this.color = color;
-        this.pattern = pattern;
-    }
-
-    /**
      * Constructor for deserialization.
      *
      * @param map the map to deserialize from
      */
-    public Pattern(@NotNull Map<String, Object> map) {
-        color = DyeColor.legacyValueOf(getString(map, COLOR));
+    public Pattern(final Map<String, Object> map) {
+        this.color = DyeColor.legacyValueOf(getString(map, COLOR));
 
-        String value = getString(map, PATTERN);
+        final String value = getString(map, PATTERN);
         PatternType patternType = PatternType.getByIdentifier(value);
 
         if (patternType == null) {
-            patternType = Bukkit.getUnsafe().get(RegistryKey.BANNER_PATTERN, NamespacedKey.fromString(value));
+            final NamespacedKey patternKey = NamespacedKey.fromString(value);
+            if (patternKey != null) {
+                patternType = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(patternKey);
+            }
         }
 
         Preconditions.checkNotNull(patternType, "Pattern type for key %s cannot be null", value);
 
-        pattern = patternType;
+        this.pattern = patternType;
     }
 
-    private static String getString(@NotNull Map<?, ?> map, @NotNull Object key) {
-        Object str = map.get(key);
+    /**
+     * Creates a new pattern from the specified color and
+     * pattern type.
+     *
+     * @param color   the pattern color
+     * @param pattern the pattern type
+     */
+    public Pattern(final DyeColor color, final PatternType pattern) {
+        this.color = color;
+        this.pattern = pattern;
+    }
+
+    private static String getString(final Map<?, ?> map, final Object key) {
+        final Object str = map.get(key);
         if (str instanceof String) {
             return (String) str;
         }
         throw new NoSuchElementException(map + " does not contain " + key);
     }
 
-    @NotNull
     @Override
     public Map<String, Object> serialize() {
-        return ImmutableMap.<String, Object>of(
-            COLOR, color.toString(),
-            PATTERN, pattern.getKey().toString()
+        return ImmutableMap.of(
+            COLOR, this.color.toString(),
+            PATTERN, this.pattern.getKey().toString()
         );
     }
 
     /**
-     * Returns the color of the pattern
+     * Returns the color of the pattern.
      *
      * @return the color of the pattern
      */
-    @NotNull
     public DyeColor getColor() {
-        return color;
+        return this.color;
     }
 
     /**
-     * Returns the type of pattern
+     * Returns the type of pattern.
      *
      * @return the pattern type
      */
-    @NotNull
     public PatternType getPattern() {
-        return pattern;
+        return this.pattern;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 97 * hash + (this.color != null ? this.color.hashCode() : 0);
-        hash = 97 * hash + (this.pattern != null ? this.pattern.hashCode() : 0);
+        hash = 97 * hash + this.color.hashCode();
+        hash = 97 * hash + this.pattern.hashCode();
         return hash;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final @Nullable Object obj) {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         final Pattern other = (Pattern) obj;

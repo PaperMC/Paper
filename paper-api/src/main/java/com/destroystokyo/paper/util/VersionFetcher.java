@@ -4,13 +4,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
+/**
+ * Provides the message shown by the {@code /version} command about whether the server is up to date.
+ */
 public interface VersionFetcher {
 
     /**
-     * Amount of time to cache results for in milliseconds
+     * Amount of time to cache results for in milliseconds.
      * <p>
      * Negative values will never cache.
      *
@@ -36,11 +37,13 @@ public interface VersionFetcher {
      * @deprecated {@code serverVersion} is not required
      */
     @Deprecated
-    default Component getVersionMessage(String serverVersion) {
-        return getVersionMessage();
+    default Component getVersionMessage(final String serverVersion) {
+        return this.getVersionMessage();
     }
 
     /**
+     * A version fetcher used when the server does not provide one.
+     *
      * @hidden
      */
     @ApiStatus.Internal

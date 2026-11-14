@@ -4,12 +4,10 @@ import com.mojang.logging.LogUtils;
 import com.squareup.javapoet.MethodSpec;
 import io.papermc.generator.utils.Annotations;
 import java.util.Arrays;
-import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 
 import static javax.lang.model.element.Modifier.PUBLIC;
 
-@NullMarked
 public abstract class OverriddenClassGenerator<T> extends SimpleGenerator {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -29,7 +27,7 @@ public abstract class OverriddenClassGenerator<T> extends SimpleGenerator {
     public MethodSpec.Builder createMethod(String name, Class<?>... parameterTypes) {
         MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(name)
             .addModifiers(PUBLIC);
-        if (methodExists(name, parameterTypes)) {
+        if (this.methodExists(name, parameterTypes)) {
             methodBuilder.addAnnotation(Annotations.OVERRIDE);
         } else {
             if (this.printWarningOnMissingOverride) {
@@ -43,7 +41,7 @@ public abstract class OverriddenClassGenerator<T> extends SimpleGenerator {
         try {
             this.baseClass.getMethod(name, parameterTypes);
             return true;
-        } catch (NoSuchMethodException e) {
+        } catch (NoSuchMethodException _) {
             return false;
         }
     }

@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired any time a Brigadier RootCommandNode is generated for a player to inform the client of commands.
@@ -28,9 +27,10 @@ import org.jspecify.annotations.NullMarked;
  * <p>If your logic is not safe to run asynchronously, only react to the synchronous version.</p>
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
+ *
+ * @param <S> the type of the command source
  */
 @ApiStatus.Experimental
-@NullMarked
 public class AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

@@ -1,16 +1,11 @@
 package io.papermc.paper.inventory.recipe;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.recipebook.ServerPlaceRecipe;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.PlayerEquipment;
@@ -26,13 +21,17 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.minecraft.recipebook.ServerPlaceRecipe;
 import org.bukkit.support.environment.VanillaFeature;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 @VanillaFeature
-@Disabled("The recipe placement tests are mostly AI generated and require feature patches")
+// @Disabled("The recipe placement tests are mostly AI generated and require feature patches")
 class RecipeAutofillPlacementTest {
 
     private static final boolean CRAFT_ONE = false;

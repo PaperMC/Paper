@@ -1,9 +1,20 @@
 package io.papermc.generator.utils;
 
-import org.jspecify.annotations.NullMarked;
-
-@NullMarked
 public final class Javadocs {
+
+    public static final String CREATE_TYPED_KEY_JAVADOC = """
+        Creates a typed key for {@link $T} in the registry {@code $L}.
+        
+        @param key the value's key in the registry
+        @return a new typed key
+        """;
+
+    public static final String CREATED_TAG_KEY_JAVADOC = """
+        Creates a tag key for {@link $T} in the registry {@code $L}.
+        
+        @param key the tag key's key
+        @return a new tag key
+        """;
 
     public static String getVersionDependentClassHeader(String objectIdentifier, String headerIdentifier) {
         return """
@@ -24,20 +35,6 @@ public final class Javadocs {
             @apiNote This field is version-dependant and may be removed in future Minecraft versions
             """.formatted(headerIdentifier);
     }
-
-    public static final String CREATE_TYPED_KEY_JAVADOC = """
-        Creates a typed key for {@link $T} in the registry {@code $L}.
-        
-        @param key the value's key in the registry
-        @return a new typed key
-        """;
-
-    public static final String CREATED_TAG_KEY_JAVADOC = """
-        Creates a tag key for {@link $T} in the registry {@code $L}.
-        
-        @param key the tag key's key
-        @return a new tag key
-        """;
 
     private Javadocs() {
     }

@@ -4,13 +4,11 @@ import org.bukkit.event.inventory.PrepareInventoryResultEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Called when an item is put in an inventory containing a result slot
+ * Called when an item is put in an inventory containing a result slot.
  */
-@NullMarked
 public class PrepareResultEvent extends PrepareInventoryResultEvent {
 
     // HandlerList on PrepareInventoryResultEvent to ensure api compat

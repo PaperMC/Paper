@@ -5,7 +5,6 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This class represents the union of a {@link Key} and a
@@ -14,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * The advantage of this class is more direct, typed access to data stored in a {@link PersistentDataContainer}.
  * Instead of having to keep track of the {@link NamespacedKey} and {@link PersistentDataType} separately
  * when working with PDC, this class allows you to store both together.
- * <p>
+ *
  * <h2>Example usage</h2>
  * <pre>{@code
  * public class CustomLogic {
@@ -41,16 +40,15 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <C> the retrieved object type when applying this tag type
  */
-@NullMarked
 public interface PersistentDataKey<C> {
 
     /**
-     * Creates a new {@link PersistentDataKey} with the given {@link Key} and {@link PersistentDataType}.
+     * Creates a new PersistentDataKey with the given {@link Key} and {@link PersistentDataType}.
      *
      * @param key  the access key to store
      * @param type the persistent data type to reference
      * @param <C>  the retrieved object type when applying this tag type
-     * @return a new {@link PersistentDataKey} of the given key and type
+     * @return a new PersistentDataKey of the given key and type
      * @throws IllegalArgumentException if either key or type are null
      */
     static <C> PersistentDataKey<C> of(final Key key, final PersistentDataType<?, C> type) {
@@ -58,12 +56,16 @@ public interface PersistentDataKey<C> {
     }
 
     /**
-     * {@return the access key of this {@link PersistentDataKey}}
+     * Returns the access key of this PersistentDataKey.
+     *
+     * @return the access key of this PersistentDataKey
      */
     NamespacedKey key();
 
     /**
-     * {@return the data type of this {@link PersistentDataKey}}
+     * Returns the data type of this PersistentDataKey.
+     *
+     * @return the data type of this PersistentDataKey
      */
     PersistentDataType<?, C> dataType();
 }

@@ -20,18 +20,17 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.utils.Formatting.quoted;
 
-@NullMarked
 @ApiStatus.Obsolete
 public class TagRewriter extends SearchReplaceRewriter {
 
     public record TagRegistry(String legacyFolderName, Class<? extends Keyed> apiType, ResourceKey<? extends Registry<?>> registryKey) { // TODO remove Keyed
     }
 
-    private static final TagRegistry[] SUPPORTED_REGISTRIES = { // 1.21 folder name are normalized to registry key but api will stay as is
+    // 1.21 folder name are normalized to registry key but api will stay as is
+    private static final TagRegistry[] SUPPORTED_REGISTRIES = {
         new TagRegistry("blocks", Material.class, Registries.BLOCK),
         new TagRegistry("items", Material.class, Registries.ITEM),
         new TagRegistry("fluids", Fluid.class, Registries.FLUID),
@@ -46,7 +45,7 @@ public class TagRewriter extends SearchReplaceRewriter {
             final TagRegistry tagRegistry = SUPPORTED_REGISTRIES[i];
 
             final ResourceKey<? extends Registry<?>> registryKey = tagRegistry.registryKey();
-            final Registry<?> registry = Main.REGISTRY_ACCESS.lookupOrThrow(registryKey);
+            final Registry<?> registry = Main.registryAccess.lookupOrThrow(registryKey);
 
             final String fieldPrefix = Formatting.formatTagFieldPrefix(tagRegistry.legacyFolderName(), registryKey);
             final String registryFieldName = "REGISTRY_" + tagRegistry.legacyFolderName().toUpperCase(Locale.ENGLISH);
@@ -70,7 +69,7 @@ public class TagRewriter extends SearchReplaceRewriter {
                 final String fieldName = fieldPrefix + Formatting.formatKeyAsField(keyPath);
 
                 // tag field
-                String featureFlagName = Main.EXPERIMENTAL_TAGS.get(tagKey);
+                String featureFlagName = Main.experimentalTags.get(tagKey);
                 if (featureFlagName != null) {
                     Annotations.experimentalAnnotations(builder, metadata.indent(), this.importCollector, SingleFlagHolder.fromName(featureFlagName));
                 }
