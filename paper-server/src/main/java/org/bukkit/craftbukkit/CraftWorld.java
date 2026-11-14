@@ -17,6 +17,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.WorldClock;
 import io.papermc.paper.world.chunk.ChunkGenerationState;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
@@ -828,18 +829,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public io.papermc.paper.world.@Nullable WorldClock getDefaultClock() {
+    public @Nullable WorldClock getDefaultClock() {
         return this.world.dimensionType().defaultClock().map(CraftWorldClock::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override
-    public long getFullTime(final io.papermc.paper.world.WorldClock clock) {
+    public long getFullTime(final WorldClock clock) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).totalTicks();
     }
 
     @Override
-    public void setFullTime(final io.papermc.paper.world.WorldClock clock, final long time) {
+    public void setFullTime(final WorldClock clock, final long time) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         this.setFullTime(CraftWorldClock.bukkitToMinecraftHolder(clock), time);
     }
@@ -857,36 +858,34 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public boolean isClockPaused(final io.papermc.paper.world.WorldClock clock) {
+    public boolean isClockPaused(final WorldClock clock) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).isPaused();
     }
 
     @Override
-    public void setClockPaused(final io.papermc.paper.world.WorldClock clock, final boolean paused) {
+    public void setClockPaused(final WorldClock clock, final boolean paused) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         this.world.clockManager().setPaused(CraftWorldClock.bukkitToMinecraftHolder(clock), paused);
     }
 
     @Override
-    public float getClockRate(final io.papermc.paper.world.WorldClock clock) {
+    public float getClockRate(final WorldClock clock) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         return this.world.clockManager().getInstance(CraftWorldClock.bukkitToMinecraftHolder(clock)).rate();
     }
 
     @Override
-    public void setClockRate(final io.papermc.paper.world.WorldClock clock, final float rate) {
+    public void setClockRate(final WorldClock clock, final float rate) {
         Preconditions.checkArgument(clock != null, "clock cannot be null");
         Preconditions.checkArgument(Float.isFinite(rate) && rate > 0.0F, "rate must be positive and finite, was %s", rate);
         this.world.clockManager().setRate(CraftWorldClock.bukkitToMinecraftHolder(clock), rate);
     }
 
-    // Paper start
     @Override
     public boolean isDayTime() {
-        return getHandle().isBrightOutside();
+        return this.getHandle().isBrightOutside();
     }
-    // Paper end
 
     @Override
     public long getGameTime() {
