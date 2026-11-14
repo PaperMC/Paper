@@ -200,4 +200,15 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
+
+    @Override
+    public boolean isPersistenceRequired() {
+        return this.getHandle().isPersistenceRequired();
+    }
+
+    @Override
+    public void setPersistenceRequired(final boolean persistent) {
+        this.getHandle().persistenceRequired = persistent;
+    }
+
 }

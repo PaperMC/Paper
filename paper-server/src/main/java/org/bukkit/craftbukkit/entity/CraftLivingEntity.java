@@ -692,18 +692,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean getRemoveWhenFarAway() {
-        return this.getHandle() instanceof Mob mob && !mob.isPersistenceRequired();
-    }
-
-    @Override
-    public void setRemoveWhenFarAway(boolean remove) {
-        if (this.getHandle() instanceof Mob mob) {
-            mob.persistenceRequired = !remove;
-        }
-    }
-
-    @Override
     public @NonNull EntityEquipment getEquipment() {
         return this.equipment;
     }
