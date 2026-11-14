@@ -165,8 +165,8 @@ public final class PaperRegistries {
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
-            start(Registries.WORLD_CLOCK, RegistryKey.WORLD_CLOCK).craft(WorldClock.class, CraftWorldClock::new).writable(PaperWorldClockRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.TIMELINE, RegistryKey.TIMELINE).craft(Timeline.class, CraftTimeline::new).writable(PaperTimelineRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.WORLD_CLOCK, RegistryKey.WORLD_CLOCK).craft(WorldClock.class, CraftWorldClock::new).writable(PaperWorldClockRegistryEntry.PaperBuilder::new),
+            start(Registries.TIMELINE, RegistryKey.TIMELINE).craft(Timeline.class, CraftTimeline::new).writable(PaperTimelineRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
