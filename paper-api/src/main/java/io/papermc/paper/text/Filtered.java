@@ -1,6 +1,5 @@
 package io.papermc.paper.text;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +21,6 @@ public interface Filtered<T> {
      */
     @Contract(value = "_, _ -> new", pure = true)
     static <T> Filtered<T> of(final T raw, final @Nullable T filtered) {
-        @ApiStatus.Internal
         record Instance<T>(T raw, @Nullable T filtered) implements Filtered<T> {
         }
 
