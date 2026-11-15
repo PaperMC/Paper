@@ -17,6 +17,8 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.PaperWorldClock;
+import io.papermc.paper.world.WorldClock;
 import io.papermc.paper.world.chunk.ChunkGenerationState;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
@@ -143,7 +145,6 @@ import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
@@ -823,27 +824,69 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setFullTime(long time) {
-        if (this.world.dimensionType().defaultClock().isEmpty()) {
-            throw new IllegalArgumentException("Cannot set time in world without world clock");
-        }
+        final Holder<net.minecraft.world.clock.WorldClock> clock = this.world.dimensionType().defaultClock()
+            .orElseThrow(() -> new IllegalArgumentException("Cannot set time in world without world clock"));
+        this.setFullTime(clock, time);
+    }
 
-        final long currentClockTime = this.world.getDefaultClockTime();
-        final ClockTimeSkipEvent event = new TimeSkipEvent(this, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
-        this.server.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
+    @Override
+    public @Nullable WorldClock getDefaultClock() {
+        return this.world.dimensionType().defaultClock().map(PaperWorldClock::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public long getFullTime(final WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(PaperWorldClock.bukkitToMinecraftHolder(clock)).totalTicks();
+    }
+
+    @Override
+    public void setFullTime(final WorldClock clock, final long time) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        this.setFullTime(PaperWorldClock.bukkitToMinecraftHolder(clock), time);
+    }
+
+    private void setFullTime(final Holder<net.minecraft.world.clock.WorldClock> clock, final long time) {
+        Preconditions.checkArgument(time >= 0, "time cannot be negative, was %s", time);
+        final long currentClockTime = this.world.clockManager().getInstance(clock).totalTicks();
+        final ClockTimeSkipEvent event = CraftEventFactory.createTimeSkipEvent(this.world, clock, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
+        if (!event.callEvent()) {
             return;
         }
 
         // Updates the clock for all players
-        this.world.clockManager().setTotalTicks(this.world.dimensionType().defaultClock().get(), currentClockTime + event.getSkipAmount());
+        this.world.clockManager().setTotalTicks(clock, Math.max(currentClockTime + event.getSkipAmount(), 0L));
     }
 
-    // Paper start
+    @Override
+    public boolean isClockPaused(final WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(PaperWorldClock.bukkitToMinecraftHolder(clock)).isPaused();
+    }
+
+    @Override
+    public void setClockPaused(final WorldClock clock, final boolean paused) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        this.world.clockManager().setPaused(PaperWorldClock.bukkitToMinecraftHolder(clock), paused);
+    }
+
+    @Override
+    public float getClockRate(final WorldClock clock) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        return this.world.clockManager().getInstance(PaperWorldClock.bukkitToMinecraftHolder(clock)).rate();
+    }
+
+    @Override
+    public void setClockRate(final WorldClock clock, final float rate) {
+        Preconditions.checkArgument(clock != null, "clock cannot be null");
+        Preconditions.checkArgument(Float.isFinite(rate) && rate > 0.0F, "rate must be positive and finite, was %s", rate);
+        this.world.clockManager().setRate(PaperWorldClock.bukkitToMinecraftHolder(clock), rate);
+    }
+
     @Override
     public boolean isDayTime() {
-        return getHandle().isBrightOutside();
+        return this.getHandle().isBrightOutside();
     }
-    // Paper end
 
     @Override
     public long getGameTime() {
