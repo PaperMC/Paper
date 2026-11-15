@@ -86,7 +86,7 @@ public record PaperItemTool(
         @Override
         public Builder addRule(final Rule rule) {
             this.rules.add(new net.minecraft.world.item.component.Tool.Rule(
-                PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.global().lookup(), rule.blocks()),
+                PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.current().lookup(), rule.blocks()),
                 Optional.ofNullable(rule.speed()),
                 Optional.ofNullable(rule.correctForDrops().toBoolean())
             ));

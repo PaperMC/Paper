@@ -34,7 +34,7 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
     public ConsumeEffect.RemoveStatusEffects removeStatusEffects(final RegistryKeySet<PotionEffectType> effectTypes) {
         return new PaperRemoveStatusEffects(
             new net.minecraft.world.item.consume_effects.RemoveStatusEffectsConsumeEffect(
-                PaperRegistrySets.convertToNms(Registries.MOB_EFFECT, Conversions.global().lookup(), effectTypes)
+                PaperRegistrySets.convertToNms(Registries.MOB_EFFECT, Conversions.current().lookup(), effectTypes)
             )
         );
     }

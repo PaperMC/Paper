@@ -130,7 +130,7 @@ public record PaperBlocksAttacks(
                 this.disableCooldownScale,
                 this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).internal()).toList(),
                 ((PaperItemDamageFunction) this.itemDamage).internal(),
-                Optional.ofNullable(this.bypassedBy).map(holders -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), holders)),
+                Optional.ofNullable(this.bypassedBy).map(holders -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.current().lookup(), holders)),
                 Optional.ofNullable(this.blockSound).map(CraftSound::bukkitToMinecraftHolder),
                 Optional.ofNullable(this.disableSound).map(CraftSound::bukkitToMinecraftHolder)
             ));

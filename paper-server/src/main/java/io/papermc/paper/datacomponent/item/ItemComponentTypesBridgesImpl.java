@@ -2,6 +2,9 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.item.ItemStackTemplate;
+import io.papermc.paper.item.PaperItemStackTemplate;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -12,11 +15,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.CraftJukeboxSong;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.map.MapCursor;
@@ -100,7 +102,12 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
-        return new PaperJukeboxPlayable.BuilderImpl(song);
+        return new PaperJukeboxPlayable.BuilderImpl(CraftJukeboxSong.bukkitToMinecraftHolder(song));
+    }
+
+    @Override
+    public JukeboxPlayable.Builder jukeboxPlayable(final TypedKey<JukeboxSong> song) {
+        return new PaperJukeboxPlayable.BuilderImpl(Conversions.current().getReferenceHolder(song));
     }
 
     @Override
@@ -179,11 +186,10 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public UseRemainder useRemainder(final ItemStack item) {
-        Preconditions.checkArgument(item != null, "item cannot be null");
-        Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty!");
+    public UseRemainder useRemainder(final ItemStackTemplate template) {
+        Preconditions.checkArgument(template != null, "template cannot be null");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asTemplate(item))
+            new net.minecraft.world.item.component.UseRemainder(PaperItemStackTemplate.unwrap(template))
         );
     }
 
@@ -199,7 +205,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public DamageResistant damageResistant(final RegistryKeySet<DamageType> types) {
-        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), types)));
+        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.current().lookup(), types)));
     }
 
     @Override
@@ -210,7 +216,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public Repairable repairable(final RegistryKeySet<ItemType> types) {
         return new PaperRepairable(new net.minecraft.world.item.enchantment.Repairable(
-            PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), types)
+            PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.current().lookup(), types)
         ));
     }
 
@@ -284,16 +290,15 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public SulfurCubeContent sulfurCubeContent(final ItemStack absorbedItem) {
+    public SulfurCubeContent sulfurCubeContent(final ItemStackTemplate absorbedItem) {
         Preconditions.checkArgument(absorbedItem != null, "absorbedItem cannot be null");
-        Preconditions.checkArgument(!absorbedItem.isEmpty(), "absorbedItem cannot be empty");
-        return new PaperSulfurCubeContent(new net.minecraft.world.item.component.SulfurCubeContent(CraftItemStack.asTemplate(absorbedItem)));
+        return new PaperSulfurCubeContent(new net.minecraft.world.item.component.SulfurCubeContent(PaperItemStackTemplate.unwrap(absorbedItem)));
     }
 
     @Override
     public MobVisibility mobVisibility(final RegistryKeySet<EntityType> targetingEntityTypes, final float visibility) {
         return new PaperMobVisibility(new net.minecraft.world.item.component.MobVisibility(
-            PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), targetingEntityTypes),
+            PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.current().lookup(), targetingEntityTypes),
             requireRange(visibility, "visibility", net.minecraft.world.item.component.MobVisibility.MIN_VISIBILITY, net.minecraft.world.item.component.MobVisibility.MAX_VISIBILITY))
         );
     }

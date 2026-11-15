@@ -154,7 +154,7 @@ public record PaperEquippable(
         @Override
         public Builder allowedEntities(final @Nullable RegistryKeySet<EntityType> allowedEntities) {
             this.allowedEntities = Optional.ofNullable(allowedEntities)
-                .map((set) -> PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), set));
+                .map((set) -> PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.current().lookup(), set));
             return this;
         }
 

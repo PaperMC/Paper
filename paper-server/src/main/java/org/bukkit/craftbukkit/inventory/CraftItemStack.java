@@ -5,7 +5,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
-import io.papermc.paper.persistence.PaperPersistentDataContainerView;
+import io.papermc.paper.persistence.ItemPersistentDataViewHolder;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import io.papermc.paper.util.MCUtil;
 import java.lang.invoke.MethodHandles;
@@ -34,7 +34,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -50,7 +49,6 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
-import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
@@ -65,7 +63,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 @DelegateDeserialization(ItemStack.class)
-public final class CraftItemStack extends ItemStack {
+public final class CraftItemStack extends ItemStack implements ItemPersistentDataViewHolder {
 
     // Paper start - delegate api-ItemStack to CraftItemStack
     private static final VarHandle API_ITEM_STACK_CRAFT_DELEGATE_FIELD;
@@ -129,6 +127,12 @@ public final class CraftItemStack extends ItemStack {
         return handle == null || handle.isEmpty();
     }
     // Paper end - override isEmpty to use vanilla's impl
+
+    @Override
+    public io.papermc.paper.item.ItemStackTemplate toTemplate() {
+        Preconditions.checkArgument(!this.isEmpty(), "Cannot create a template from an empty item stack");
+        return new io.papermc.paper.item.PaperItemStackTemplate(ItemStackTemplate.fromNonEmptyStack(this.handle));
+    }
 
     public static net.minecraft.world.item.ItemStack asNMSCopy(@Nullable ItemStack original) {
         // Paper start - re-implement after delegating all api ItemStack calls to CraftItemStack
@@ -569,35 +573,12 @@ public final class CraftItemStack extends ItemStack {
         return lines.stream().map(PaperAdventure::asAdventure).toList();
     }
 
-    public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
-    private CompoundTag getPdcTag() {
-        if (this.handle == null) {
-            return new CompoundTag();
-        }
-        final CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
-        //noinspection deprecation
-        return customData.getUnsafe().getCompoundOrEmpty(PDC_CUSTOM_DATA_KEY);
+    @Override
+    public CustomData getCustomData() {
+        return this.handle == null ? CustomData.EMPTY : this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
     }
 
-    private static final CraftPersistentDataTypeRegistry REGISTRY = new CraftPersistentDataTypeRegistry();
-    private final PaperPersistentDataContainerView pdcView = new PaperPersistentDataContainerView(REGISTRY) {
-
-        @Override
-        public int getSize() {
-            return CraftItemStack.this.getPdcTag().size();
-        }
-
-        @Override
-        public CompoundTag toTagCompound() {
-            return CraftItemStack.this.getPdcTag();
-        }
-
-        @Override
-        public Tag getTag(final String key) {
-            return CraftItemStack.this.getPdcTag().get(key);
-        }
-    };
+    private final PersistentDataContainerView pdcView = ItemPersistentDataViewHolder.createView(this);
     @Override
     public PersistentDataContainerView getPersistentDataContainer() {
         return this.pdcView;
@@ -607,7 +588,7 @@ public final class CraftItemStack extends ItemStack {
     public boolean editPersistentDataContainer(final Consumer<PersistentDataContainer> consumer) {
         if (this.handle == null || this.handle.isEmpty()) return false;
 
-        final CraftPersistentDataContainer container = new CraftPersistentDataContainer(REGISTRY);
+        final CraftPersistentDataContainer container = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
         CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         //noinspection deprecation // we copy only the pdc tag
         final CompoundTag pdcTag = customData.getUnsafe().getCompoundOrEmpty(PDC_CUSTOM_DATA_KEY).copy();

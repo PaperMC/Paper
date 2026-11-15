@@ -1152,6 +1152,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return this.craftDelegate.isEmpty(); // Paper - delegate
     }
     // Paper end
+
+    /**
+     * Creates an item stack template with the same type, amount and data as this stack.
+     *
+     * @return a new template
+     * @throws IllegalArgumentException if this stack is {@link #isEmpty() empty}
+     * @see io.papermc.paper.item.ItemStackTemplate#createItemStack()
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    @org.jetbrains.annotations.Contract(value = "-> new", pure = true)
+    public io.papermc.paper.item.@NotNull ItemStackTemplate toTemplate() {
+        return this.craftDelegate.toTemplate();
+    }
     // Paper start - expose itemstack tooltip lines
     /**
      * Computes the tooltip lines for this stack.

@@ -39,6 +39,8 @@ import org.jspecify.annotations.Nullable;
 
 public class Conversions implements RegistryFactory {
 
+    private static final ScopedValue<Conversions> CURRENT = ScopedValue.newInstance();
+
     private static @Nullable Conversions globalInstance;
     public static Conversions global() {
         if (globalInstance == null) {
@@ -47,6 +49,26 @@ public class Conversions implements RegistryFactory {
             globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(globalAccess));
         }
         return globalInstance;
+    }
+
+    /**
+     * Gets the conversions bound to the current scope, like the one for the registry
+     * currently being loaded while its registry events are running, falling back to
+     * the {@link #global()} conversions.
+     *
+     * @return the current conversions
+     */
+    public static Conversions current() {
+        return CURRENT.isBound() ? CURRENT.get() : global();
+    }
+
+    /**
+     * Runs the action with these conversions bound as the {@link #current()} conversions.
+     *
+     * @param action the action to run
+     */
+    public void runAsCurrent(final Runnable action) {
+        ScopedValue.where(CURRENT, this).run(action);
     }
 
     private final RegistryOps.RegistryInfoLookup lookup;

@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import io.papermc.paper.registry.TypedKey;
 import java.util.Map;
 import org.bukkit.enchantments.Enchantment;
 import org.checkerframework.common.value.qual.IntRange;
@@ -35,6 +36,17 @@ public interface ItemEnchantments {
     @Unmodifiable Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments();
 
     /**
+     * Keys of the enchantments currently present on this item.
+     * <p>
+     * Unlike {@link #enchantments()}, this is available while the enchantment
+     * registry is still being loaded, such as in registry events.
+     *
+     * @return enchantment keys and their levels
+     */
+    @Contract(pure = true)
+    @Unmodifiable Map<TypedKey<Enchantment>, @IntRange(from = 1, to = 255) Integer> enchantmentKeys();
+
+    /**
      * Builder for {@link ItemEnchantments}.
      */
     @ApiStatus.NonExtendable
@@ -52,6 +64,20 @@ public interface ItemEnchantments {
         Builder add(Enchantment enchantment, @IntRange(from = 1, to = 255) int level);
 
         /**
+         * Adds an enchantment with the given level to this component.
+         * <p>
+         * Unlike {@link #add(Enchantment, int)}, this can be used while the enchantment
+         * registry is still being loaded, such as in registry events.
+         *
+         * @param enchantment enchantment key
+         * @param level level
+         * @return the builder for chaining
+         * @see #enchantmentKeys()
+         */
+        @Contract(value = "_, _ -> this", mutates = "this")
+        Builder add(TypedKey<Enchantment> enchantment, @IntRange(from = 1, to = 255) int level);
+
+        /**
          * Adds enchantments with the given level to this component.
          *
          * @param enchantments enchantments
@@ -60,5 +86,18 @@ public interface ItemEnchantments {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
+
+        /**
+         * Adds enchantments with the given level to this component.
+         * <p>
+         * Unlike {@link #addAll(Map)}, this can be used while the enchantment
+         * registry is still being loaded, such as in registry events.
+         *
+         * @param enchantments enchantment keys and their levels
+         * @return the builder for chaining
+         * @see #enchantmentKeys()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder addAllKeys(Map<TypedKey<Enchantment>, @IntRange(from = 1, to = 255) Integer> enchantments);
     }
 }

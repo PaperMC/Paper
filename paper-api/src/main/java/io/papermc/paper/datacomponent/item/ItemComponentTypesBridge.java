@@ -1,6 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.item.ItemStackTemplate;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
 import java.util.Optional;
@@ -12,7 +14,6 @@ import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.map.MapCursor;
@@ -78,6 +79,8 @@ interface ItemComponentTypesBridge {
 
     JukeboxPlayable.Builder jukeboxPlayable(JukeboxSong song);
 
+    JukeboxPlayable.Builder jukeboxPlayable(TypedKey<JukeboxSong> song);
+
     Tool.Builder tool();
 
     Tool.Rule toolRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
@@ -88,7 +91,7 @@ interface ItemComponentTypesBridge {
 
     MapId mapId(int id);
 
-    UseRemainder useRemainder(ItemStack stack);
+    UseRemainder useRemainder(ItemStackTemplate template);
 
     Consumable.Builder consumable();
 
@@ -124,7 +127,7 @@ interface ItemComponentTypesBridge {
 
     SwingAnimation.Builder swingAnimation();
 
-    SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
+    SulfurCubeContent sulfurCubeContent(ItemStackTemplate absorbedItem);
 
     MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
 

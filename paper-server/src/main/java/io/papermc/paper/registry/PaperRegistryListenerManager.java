@@ -87,7 +87,7 @@ public class PaperRegistryListenerManager {
         this.registerWithListeners(registry, key, nms, registrationInfo, WritableRegistry::register, conversions);
     }
 
-    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
+    private <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
         final Registry<M> registry,
         final ResourceKey<M> key,
         final M nms,
@@ -120,7 +120,7 @@ public class PaperRegistryListenerManager {
         this.registerWithListeners(registry, entry, key, null, builder, registrationInfo, WritableRegistry::register, conversions);
     }
 
-    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
+    private <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
         final Registry<M> registry,
         final RegistryEntryMeta.Buildable<M, T, ?, B> entry,
         final ResourceKey<M> key,
@@ -133,7 +133,7 @@ public class PaperRegistryListenerManager {
         @Subst("namespace:key") final Identifier beingAdded = key.identifier();
         @SuppressWarnings("PatternValidation") final TypedKey<T> typedKey = TypedKey.create(entry.apiKey(), Key.key(beingAdded.getNamespace(), beingAdded.getPath()));
         final RegistryEntryAddEventImpl<T, B> event = entry.createEntryAddEvent(typedKey, builder, conversions);
-        LifecycleEventRunner.INSTANCE.callEvent(this.valueAddEventTypes.getEventType(entry.apiKey()), event);
+        conversions.runAsCurrent(() -> LifecycleEventRunner.INSTANCE.callEvent(this.valueAddEventTypes.getEventType(entry.apiKey()), event));
         if (oldNms != null) {
             ((MappedRegistry<M>) registry).clearIntrusiveHolder(oldNms);
         }
@@ -163,7 +163,7 @@ public class PaperRegistryListenerManager {
         final RegistryEntryMeta.Buildable<M, T, ?, B> writableEntry = (RegistryEntryMeta.Buildable<M, T, ?, B>) entry.meta();
         final WritableCraftRegistry<M, T, B> writableRegistry = PaperRegistryAccess.instance().getWritableRegistry(entry.apiKey());
         final RegistryComposeEventImpl<T, B> event = writableEntry.createPostLoadEvent(writableRegistry, conversions);
-        LifecycleEventRunner.INSTANCE.callEvent(this.composeEventType.getEventType(entry.apiKey()), event);
+        conversions.runAsCurrent(() -> LifecycleEventRunner.INSTANCE.callEvent(this.composeEventType.getEventType(entry.apiKey()), event));
     }
 
     public <T extends RegistryElement.Buildable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryKey<T> registryKey) {
