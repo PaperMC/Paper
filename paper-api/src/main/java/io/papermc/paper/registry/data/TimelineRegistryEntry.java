@@ -11,7 +11,8 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Unmodifiable;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 /**
  * A data-centric version-specific registry entry for the {@link Timeline} type.
@@ -41,8 +42,7 @@ public interface TimelineRegistryEntry {
      * @return the time markers
      */
     @Contract(pure = true)
-    @Unmodifiable
-    Map<Key, Timeline.TimeMarker> timeMarkers();
+    Map<Key, TimeMarker> timeMarkers();
 
     /**
      * A mutable builder for the {@link TimelineRegistryEntry} plugins may change in applicable registry events.
@@ -91,5 +91,42 @@ public interface TimelineRegistryEntry {
          */
         @Contract(value = "_, _, _ -> this", mutates = "this")
         Builder addTimeMarker(Key key, @NonNegative int ticks, boolean showInCommands);
+    }
+
+    /**
+     * A time marker defined by a timeline.
+     */
+    @ApiStatus.NonExtendable
+    interface TimeMarker {
+
+        /**
+         * Gets the tick this marker occurs on.
+         *
+         * @return the marker tick
+         */
+        @NonNegative
+        int ticks();
+
+        /**
+         * Gets whether this marker should be suggested in commands.
+         *
+         * @return whether the marker should be suggested in commands
+         */
+        boolean showInCommands();
+
+        /**
+         * Creates a new time marker instance based on the passed values.
+         *
+         * @param ticks          the tick this marker occurs on, as returned by {@link #ticks()}
+         * @param showInCommands whether the marker should be suggested in commands, as returned by {@link #showInCommands()}
+         * @return the created instance
+         */
+        @Contract(value = "_, _ -> new", pure = true)
+        static TimeMarker of(@NonNegative final int ticks, final boolean showInCommands) {
+            record Impl(int ticks, boolean showInCommands) implements TimeMarker {
+            }
+
+            return new Impl(requireNonNegative(ticks, "ticks"), showInCommands);
+        }
     }
 }
