@@ -5,6 +5,7 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.world.Timeline.TimeMarker;
 import io.papermc.paper.world.WorldClock;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.timeline.Timeline;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -53,7 +55,7 @@ public class PaperTimelineRegistryEntry implements TimelineRegistryEntry {
     }
 
     @Override
-    public Map<Key, TimeMarker> timeMarkers() {
+    public @Unmodifiable Map<Key, TimeMarker> timeMarkers() {
         return Map.copyOf(this.timeMarkers);
     }
 
