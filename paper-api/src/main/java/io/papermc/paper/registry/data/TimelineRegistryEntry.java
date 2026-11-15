@@ -11,6 +11,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
@@ -42,7 +43,7 @@ public interface TimelineRegistryEntry {
      * @return the time markers
      */
     @Contract(pure = true)
-    Map<Key, TimeMarker> timeMarkers();
+    @Unmodifiable Map<Key, TimeMarker> timeMarkers();
 
     /**
      * A mutable builder for the {@link TimelineRegistryEntry} plugins may change in applicable registry events.
