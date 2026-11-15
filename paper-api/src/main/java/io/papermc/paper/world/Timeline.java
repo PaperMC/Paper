@@ -38,7 +38,8 @@ public interface Timeline extends Keyed {
      *
      * @return an immutable map of time marker keys to time markers
      */
-    @Unmodifiable Map<Key, TimeMarker> timeMarkers();
+    @Unmodifiable
+    Map<Key, TimeMarker> timeMarkers();
 
     /**
      * A time marker defined by a timeline.
@@ -51,7 +52,8 @@ public interface Timeline extends Keyed {
          *
          * @return the marker tick
          */
-        @NonNegative int ticks();
+        @NonNegative
+        int ticks();
 
         /**
          * Gets whether this marker should be suggested in commands.
@@ -69,7 +71,6 @@ public interface Timeline extends Keyed {
          */
         @Contract(value = "_, _ -> new", pure = true)
         static TimeMarker of(@NonNegative final int ticks, final boolean showInCommands) {
-            @SuppressWarnings("checkstyle:MissingJavadocType")
             record Impl(int ticks, boolean showInCommands) implements TimeMarker {
             }
 
