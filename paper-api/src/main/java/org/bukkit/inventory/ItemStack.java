@@ -1152,6 +1152,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return this.craftDelegate.isEmpty(); // Paper - delegate
     }
     // Paper end
+
+    /**
+     * Creates an item stack template with the same type, amount and data as this stack.
+     *
+     * @return a new template
+     * @throws IllegalArgumentException if this stack is {@link #isEmpty() empty}
+     * @see io.papermc.paper.item.ItemStackTemplate#createItemStack()
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    @org.jetbrains.annotations.Contract(value = "-> new", pure = true)
+    public io.papermc.paper.item.@NotNull ItemStackTemplate toTemplate() {
+        return this.craftDelegate.toTemplate();
+    }
     // Paper start - expose itemstack tooltip lines
     /**
      * Computes the tooltip lines for this stack.
@@ -1169,7 +1182,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
     // Paper end - expose itemstack tooltip lines
 
-    // Paper start - data component API
     /**
      * Gets the value for the data component type on this stack.
      *
@@ -1358,7 +1370,31 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return {@code true} if the provided item is equal, ignoring the provided components
      */
     public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
+        return this.matchesWithoutData(item, excludeTypes::contains, ignoreCount);
+    }
+
+    /**
+     * Checks if this itemstack matches another given itemstack excluding the provided components.
+     * This is useful if you are wanting to ignore certain properties of itemstacks, such as durability.
+     *
+     * @param item the item to compare
+     * @param excludeTypes the data component types to ignore
+     * @return {@code true} if the provided item is equal, ignoring the provided components
+     */
+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
+        return this.matchesWithoutData(item, excludeTypes, false);
+    }
+
+    /**
+     * Checks if this itemstack matches another given itemstack excluding the provided components.
+     * This is useful if you are wanting to ignore certain properties of itemstacks, such as durability.
+     *
+     * @param item the item to compare
+     * @param excludeTypes the data component types to ignore
+     * @param ignoreCount ignore the count of the item
+     * @return {@code true} if the provided item is equal, ignoring the provided components
+     */
+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
         return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
     }
-    // Paper end - data component API
 }

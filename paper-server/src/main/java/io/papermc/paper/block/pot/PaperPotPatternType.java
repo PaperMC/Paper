@@ -6,7 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.DecoratedPotPattern;
 import org.bukkit.craftbukkit.CraftRegistry;
 
-public class PaperPotPatternType extends HolderableBase<net.minecraft.world.level.block.entity.DecoratedPotPattern> implements PotPatternType {
+public class PaperPotPatternType extends HolderableBase<net.minecraft.world.level.block.entity.DecoratedPotPattern, PotPatternType> implements PotPatternType {
 
     public PaperPotPatternType(final Holder<DecoratedPotPattern> holder) {
         super(holder);

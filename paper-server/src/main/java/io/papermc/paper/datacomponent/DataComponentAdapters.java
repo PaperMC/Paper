@@ -55,6 +55,7 @@ import io.papermc.paper.registry.set.PaperRegistrySets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -67,6 +68,7 @@ import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
@@ -88,6 +90,7 @@ import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemRarity;
+import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
@@ -111,7 +114,7 @@ public final class DataComponentAdapters {
         register(DataComponents.USE_EFFECTS, PaperUseEffects::new);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE);
-        register(DataComponents.DAMAGE_TYPE, CraftDamageType::minecraftHolderToBukkit, CraftDamageType::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, CraftDamageType::minecraftHolderToBukkit, CraftDamageType::bukkitToMinecraftHolder);
         register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_MODEL, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.LORE, PaperItemLore::new);
@@ -158,11 +161,11 @@ public final class DataComponentAdapters {
         // entity data
         // bucket entity data
         // block entity data
-        register(DataComponents.INSTRUMENT, nms -> CraftMusicInstrument.minecraftHolderToBukkit(nms.instrument()), api -> new InstrumentComponent(CraftMusicInstrument.bukkitToMinecraftHolder(api)));
-        register(DataComponents.PROVIDES_TRIM_MATERIAL, CraftTrimMaterial::minecraftHolderToBukkit, CraftTrimMaterial::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.INSTRUMENT, RegistryKey.INSTRUMENT, InstrumentComponent::instrument, InstrumentComponent::new, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.PROVIDES_TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL, CraftTrimMaterial::minecraftHolderToBukkit, CraftTrimMaterial::bukkitToMinecraftHolder);
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
-        register(DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.global().lookup(), set));
+        register(DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.current().lookup(), set));
         register(
             DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
@@ -182,7 +185,7 @@ public final class DataComponentAdapters {
         register(DataComponents.SULFUR_CUBE_CONTENT, PaperSulfurCubeContent::new);
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
-        register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
+        register(DataComponents.BREAK_SOUND, CraftSound::minecraftHolderToBukkit, CraftSound::bukkitToMinecraftHolder);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
         register(DataComponents.PIERCING_WEAPON, PaperPiercingWeapon::new);
         register(DataComponents.KINETIC_WEAPON, PaperKineticWeapon::new);
@@ -193,9 +196,9 @@ public final class DataComponentAdapters {
         register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
         register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
-        register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        register(DataComponents.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant::minecraftHolderToBukkit, CraftWolf.CraftSoundVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.WOLF_SOUND_VARIANT, RegistryKey.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant::minecraftHolderToBukkit, CraftWolf.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.fox.Fox.Variant.byId(api.ordinal()));
         register(DataComponents.SALMON_SIZE, nms -> Salmon.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.fish.Salmon.Variant.values()[api.ordinal()]);
         register(DataComponents.PARROT_VARIANT, nms -> Parrot.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.parrot.Parrot.Variant.byId(api.ordinal()));
@@ -204,24 +207,24 @@ public final class DataComponentAdapters {
         register(DataComponents.TROPICAL_FISH_PATTERN_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.MOOSHROOM_VARIANT, nms -> MushroomCow.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.cow.MushroomCow.Variant.values()[api.ordinal()]);
         register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.values()[api.ordinal()]);
-        register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.PIG_SOUND_VARIANT, CraftPig.CraftSoundVariant::minecraftHolderToBukkit, CraftPig.CraftSoundVariant::bukkitToMinecraftHolder);
-        register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.COW_SOUND_VARIANT, CraftCow.CraftSoundVariant::minecraftHolderToBukkit, CraftCow.CraftSoundVariant::bukkitToMinecraftHolder);
-        register(DataComponents.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.CHICKEN_SOUND_VARIANT, CraftChicken.CraftSoundVariant::minecraftHolderToBukkit, CraftChicken.CraftSoundVariant::bukkitToMinecraftHolder);
-        register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.ZOMBIE_NAUTILUS_VARIANT, CraftZombieNautilus.CraftVariant::minecraftHolderToBukkit, CraftZombieNautilus.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.PIG_VARIANT, RegistryKey.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.PIG_SOUND_VARIANT, RegistryKey.PIG_SOUND_VARIANT, CraftPig.CraftSoundVariant::minecraftHolderToBukkit, CraftPig.CraftSoundVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.COW_VARIANT, RegistryKey.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.COW_SOUND_VARIANT, RegistryKey.COW_SOUND_VARIANT, CraftCow.CraftSoundVariant::minecraftHolderToBukkit, CraftCow.CraftSoundVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.CHICKEN_SOUND_VARIANT, RegistryKey.CHICKEN_SOUND_VARIANT, CraftChicken.CraftSoundVariant::minecraftHolderToBukkit, CraftChicken.CraftSoundVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.FROG_VARIANT, RegistryKey.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT, CraftZombieNautilus.CraftVariant::minecraftHolderToBukkit, CraftZombieNautilus.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.HORSE_VARIANT, nms -> Horse.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Variant.byId(api.ordinal()));
-        register(DataComponents.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
         register(DataComponents.LLAMA_VARIANT, nms -> Llama.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Llama.Variant.byId(api.ordinal()));
         register(DataComponents.AXOLOTL_VARIANT, nms -> Axolotl.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(api.ordinal()));
-        register(DataComponents.CAT_VARIANT, CraftCat.CraftType::minecraftHolderToBukkit, CraftCat.CraftType::bukkitToMinecraftHolder);
-        register(DataComponents.CAT_SOUND_VARIANT, CraftCat.CraftSoundVariant::minecraftHolderToBukkit, CraftCat.CraftSoundVariant::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.CAT_VARIANT, RegistryKey.CAT_VARIANT, CraftCat.CraftType::minecraftHolderToBukkit, CraftCat.CraftType::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.CAT_SOUND_VARIANT, RegistryKey.CAT_SOUND_VARIANT, CraftCat.CraftSoundVariant::minecraftHolderToBukkit, CraftCat.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.CAT_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        register(DataComponents.PROVIDES_POTTERY_PATTERN, PaperPotPatternType::minecraftHolderToBukkit, PaperPotPatternType::bukkitToMinecraftHolder);
+        registerHolder(DataComponents.PROVIDES_POTTERY_PATTERN, RegistryKey.DECORATED_POT_PATTERN, PaperPotPatternType::minecraftHolderToBukkit, PaperPotPatternType::bukkitToMinecraftHolder);
         register(DataComponents.SIGN_TEXT_FRONT, PaperSignText::new);
         register(DataComponents.SIGN_TEXT_BACK, PaperSignText::new);
         registerUntyped(DataComponents.WAXED);
@@ -239,30 +242,51 @@ public final class DataComponentAdapters {
     }
 
     public static void registerUntyped(final DataComponentType<Unit> type) {
-        registerInternal(getKey(type), UNIT_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIT_CONVERTER, false);
+        registerInternal(getKey(type), UNIT_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIT_CONVERTER, false, null);
     }
 
     private static <COMMON> void registerIdentity(final DataComponentType<COMMON> type) {
-        registerInternal(getKey(type), Function.identity(), Function.identity(), true);
+        registerInternal(getKey(type), Function.identity(), Function.identity(), true, null);
     }
 
     @SuppressWarnings("unchecked")
     public static void registerUnimplemented(final ResourceKey<DataComponentType<?>> key) {
-        registerInternal(key, UNIMPLEMENTED_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIMPLEMENTED_CONVERTER, false);
+        registerInternal(key, UNIMPLEMENTED_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIMPLEMENTED_CONVERTER, false, null);
     }
 
     private static <NMS, API extends Handleable<NMS>> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi) {
-        registerInternal(getKey(type), vanillaToApi, Handleable::getHandle, false);
+        registerInternal(getKey(type), vanillaToApi, Handleable::getHandle, false, null);
     }
 
     private static <NMS, API> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
-        registerInternal(getKey(type), vanillaToApi, apiToVanilla, false);
+        registerInternal(getKey(type), vanillaToApi, apiToVanilla, false, null);
     }
 
-    private static <NMS, API> void registerInternal(final ResourceKey<DataComponentType<?>> key, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla, final boolean codecValidation) {
+    private static <M, API> void registerHolder(final DataComponentType<Holder<M>> type, final RegistryKey<API> registryKey, final Function<Holder<M>, API> vanillaToApi, final Function<API, Holder<M>> apiToVanilla) {
+        registerHolder(type, registryKey, Function.identity(), Function.identity(), vanillaToApi, apiToVanilla);
+    }
+
+    private static <NMS, M, API> void registerHolder(
+        final DataComponentType<NMS> type,
+        final RegistryKey<API> registryKey,
+        final Function<NMS, Holder<M>> unwrap,
+        final Function<Holder<M>, NMS> wrap,
+        final Function<Holder<M>, API> vanillaToApi,
+        final Function<API, Holder<M>> apiToVanilla
+    ) {
+        registerInternal(getKey(type), unwrap.andThen(vanillaToApi), apiToVanilla.andThen(wrap), false, new DataComponentAdapter.HolderValue<>(registryKey, unwrap, wrap));
+    }
+
+    private static <NMS, API> void registerInternal(
+        final ResourceKey<DataComponentType<?>> key,
+        final Function<NMS, API> vanillaToApi,
+        final Function<API, NMS> apiToVanilla,
+        final boolean codecValidation,
+        final DataComponentAdapter.@Nullable HolderValue<NMS, ?> holderValue
+    ) {
         if (ADAPTERS.containsKey(key)) {
             throw new IllegalStateException("Duplicate adapter registration for " + key);
         }
-        ADAPTERS.put(key, new DataComponentAdapter<>(apiToVanilla, vanillaToApi, codecValidation));
+        ADAPTERS.put(key, new DataComponentAdapter<>(apiToVanilla, vanillaToApi, codecValidation, holderValue));
     }
 }

@@ -47,7 +47,7 @@ public record PaperDamageReduction(
         @Override
         public Builder type(final @Nullable RegistryKeySet<DamageType> type) {
             this.type = Optional.ofNullable(type)
-                .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), set));
+                .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.current().lookup(), set));
             return this;
         }
 

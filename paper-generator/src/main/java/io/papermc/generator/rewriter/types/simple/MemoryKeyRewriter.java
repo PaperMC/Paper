@@ -102,8 +102,8 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
 
     @Override
     protected String rewriteFieldName(Holder.Reference<MemoryModuleType<?>> reference) {
-        String keyedName = super.rewriteFieldName(reference);
-        return FIELD_RENAMES.getOrDefault(keyedName, keyedName);
+        String constantName = super.rewriteFieldName(reference);
+        return FIELD_RENAMES.getOrDefault(constantName, constantName);
     }
 
     @Override

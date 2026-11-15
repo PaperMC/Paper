@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import io.papermc.paper.item.ItemStackTemplate;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -8,7 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An item body for a dialog.
- * <p>Created via {@link DialogBody#item(ItemStack, PlainMessageDialogBody, boolean, boolean, int, int)}</p>
+ * <p>Created via {@link DialogBody#item(ItemStack, PlainMessageDialogBody, boolean, boolean, int, int)}
+ * or {@link DialogBody#item(ItemStackTemplate, PlainMessageDialogBody, boolean, boolean, int, int)}</p>
  */
 @ApiStatus.NonExtendable
 public non-sealed interface ItemDialogBody extends DialogBody {
@@ -16,10 +18,22 @@ public non-sealed interface ItemDialogBody extends DialogBody {
     /**
      * The item to display in the dialog.
      *
-     * @return the item stack
+     * @return a copy of the item
+     * @see #itemTemplate()
+     */
+    @Contract(value = "-> new", pure = true)
+    ItemStack item();
+
+    /**
+     * The item to display in the dialog.
+     * <p>
+     * Unlike {@link #item()}, this is available while registries are
+     * still being loaded, such as in registry events.
+     *
+     * @return the item
      */
     @Contract(pure = true)
-    ItemStack item();
+    ItemStackTemplate itemTemplate();
 
     /**
      * The description of the body, or null if not set.

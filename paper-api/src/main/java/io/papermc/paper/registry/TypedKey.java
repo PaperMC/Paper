@@ -2,8 +2,6 @@ package io.papermc.paper.registry;
 
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
-import net.kyori.adventure.key.Keyed;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -12,14 +10,13 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> the value type for the registry
  */
 @NullMarked
-public sealed interface TypedKey<T> extends Key permits TypedKeyImpl {
+public sealed interface TypedKey<T> permits TypedKeyImpl {
 
     /**
      * Gets the key for the value in the registry.
      *
      * @return the value's key
      */
-    @Override
     Key key();
 
     /**

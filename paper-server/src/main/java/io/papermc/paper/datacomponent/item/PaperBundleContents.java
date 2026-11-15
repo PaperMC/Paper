@@ -1,6 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.item.ItemStackTemplate;
+import io.papermc.paper.item.PaperItemStackTemplate;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
@@ -22,6 +24,11 @@ public record PaperBundleContents(
         return MCUtil.transformUnmodifiable(this.impl.items(), CraftItemStack::asBukkitCopy);
     }
 
+    @Override
+    public List<ItemStackTemplate> contentTemplates() {
+        return MCUtil.transformUnmodifiable(this.impl.items(), PaperItemStackTemplate::new);
+    }
+
     static final class BuilderImpl implements BundleContents.Builder {
 
         private final List<net.minecraft.world.item.ItemStackTemplate> items = new ObjectArrayList<>();
@@ -29,14 +36,25 @@ public record PaperBundleContents(
         @Override
         public BundleContents.Builder add(final ItemStack item) {
             Preconditions.checkArgument(item != null, "item cannot be null");
-            Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty");
-            this.items.add(CraftItemStack.asTemplate(item));
+            return this.add(item.toTemplate());
+        }
+
+        @Override
+        public BundleContents.Builder add(final ItemStackTemplate template) {
+            Preconditions.checkArgument(template != null, "template cannot be null");
+            this.items.add(PaperItemStackTemplate.unwrap(template));
             return this;
         }
 
         @Override
         public BundleContents.Builder addAll(final List<ItemStack> items) {
             items.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public BundleContents.Builder addAllTemplates(final List<ItemStackTemplate> templates) {
+            templates.forEach(this::add);
             return this;
         }
 

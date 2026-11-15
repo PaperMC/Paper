@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * @see GameRules
  */
 @ApiStatus.NonExtendable
-public abstract class GameRule<T> implements net.kyori.adventure.translation.Translatable, FeatureDependant, Keyed {
+public abstract class GameRule<T> implements RegistryElement<GameRule<T>>, net.kyori.adventure.translation.Translatable, FeatureDependant, Keyed {
 
     // Boolean rules
     /**

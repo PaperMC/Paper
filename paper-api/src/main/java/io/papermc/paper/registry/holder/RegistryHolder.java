@@ -1,5 +1,7 @@
 package io.papermc.paper.registry.holder;
 
+import io.papermc.paper.registry.RegistryElement;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -12,7 +14,28 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <E> the type of the registry entry (for inlined values)
  */
 @ApiStatus.Experimental
-public sealed interface RegistryHolder<T, E> permits RegistryHolder.Reference, RegistryHolder.Inlined {
+public sealed interface RegistryHolder<T extends RegistryElement.Buildable<T, E, ?>, E> permits RegistryHolder.Reference, RegistryHolder.Inlined {
+
+    /**
+     * Gets the registry key of the registry this holder's value belongs to.
+     *
+     * @return the registry key
+     */
+    RegistryKey<T> registryKey();
+
+    /**
+     * Gets the value held by this holder.
+     *
+     * @return the value
+     */
+    T value();
+
+    /**
+     * Gets the registry entry held by this holder.
+     *
+     * @return the entry
+     */
+    E entry();
 
     /**
      * A holder that references a registry value by key, but does not have the entry itself.
@@ -22,7 +45,7 @@ public sealed interface RegistryHolder<T, E> permits RegistryHolder.Reference, R
      * @param <E> the type of the registry entry
      */
     @ApiStatus.NonExtendable
-    non-sealed interface Reference<T, E> extends RegistryHolder<T, E> {
+    non-sealed interface Reference<T extends RegistryElement.Buildable<T, E, ?>, E> extends RegistryHolder<T, E> {
 
         /**
          * The key of the referenced value.
@@ -39,13 +62,14 @@ public sealed interface RegistryHolder<T, E> permits RegistryHolder.Reference, R
      * @param <E> the type of the registry entry
      */
     @ApiStatus.NonExtendable
-    non-sealed interface Inlined<T, E> extends RegistryHolder<T, E> {
+    non-sealed interface Inlined<T extends RegistryElement.Buildable<T, E, ?>, E> extends RegistryHolder<T, E> {
 
         /**
          * The inlined entry.
          *
          * @return the inlined entry
          */
+        @Override
         E entry();
     }
 }

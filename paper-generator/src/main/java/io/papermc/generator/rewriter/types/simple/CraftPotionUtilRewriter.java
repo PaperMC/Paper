@@ -23,9 +23,9 @@ public class CraftPotionUtilRewriter extends SearchReplaceRewriter {
         BuiltInRegistries.POTION.keySet().stream()
             .filter(key -> BuiltInRegistries.POTION.containsKey(key.withPath(path -> this.statePrefix + "_" + path)))
             .sorted(Formatting.alphabeticKeyOrder(Identifier::getPath)).forEach(key -> {
-                String keyedName = Formatting.formatKeyAsField(key.getPath());
+                String fieldName = Formatting.formatKeyAsField(key.getPath());
                 builder.append(metadata.indent());
-                builder.append(".put(%s.%s, %s.%s_%s)".formatted(PotionType.class.getSimpleName(), keyedName, PotionType.class.getSimpleName(), upperStatePrefix, keyedName));
+                builder.append(".put(%s.%s, %s.%s_%s)".formatted(PotionType.class.getSimpleName(), fieldName, PotionType.class.getSimpleName(), upperStatePrefix, fieldName));
                 builder.append('\n');
             });
     }

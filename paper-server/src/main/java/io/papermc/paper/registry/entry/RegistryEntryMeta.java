@@ -92,12 +92,13 @@ public sealed interface RegistryEntryMeta<M, A extends Keyed> permits RegistryEn
         }
     }
 
-    record Buildable<M, A extends Keyed, B extends PaperRegistryBuilder<M, A>>( // TODO remove Keyed
+    record Buildable<M, A extends Keyed, E, B extends PaperRegistryBuilder<M, A>>( // TODO remove Keyed
         ResourceKey<? extends Registry<M>> mcKey,
         RegistryKey<A> apiKey,
         Class<?> classToPreload,
         RegistryTypeMapper<M, A> registryTypeMapper,
         BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater,
+        EntryFactory<M, E> entryFactory,
         PaperRegistryBuilder.Filler<M, A, B> builderFiller,
         RegistryModificationApiSupport modificationApiSupport
     ) implements ServerSide<M, A> {

@@ -1,8 +1,11 @@
 package io.papermc.paper.registry.data.dialog;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.item.ItemStackTemplate;
+import io.papermc.paper.item.PaperItemStackTemplate;
 import io.papermc.paper.registry.data.dialog.action.CommandTemplateActionImpl;
 import io.papermc.paper.registry.data.dialog.action.CustomClickActionImpl;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
@@ -40,7 +43,6 @@ import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
-import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -81,8 +83,14 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     }
 
     @Override
-    public ItemDialogBody.Builder itemDialogBodyBuilder(final ItemStack itemStack) {
-        return new ItemDialogBodyImpl.BuilderImpl(itemStack);
+    public ItemDialogBody.Builder itemDialogBodyBuilder(final ItemStackTemplate template) {
+        Preconditions.checkArgument(template != null, "template cannot be null");
+        final net.minecraft.world.item.ItemStackTemplate vanilla = PaperItemStackTemplate.unwrap(template);
+        // item components aren't bound while registries are loading, so strict validation can only happen after that
+        if (vanilla.item().areComponentsBound()) {
+            net.minecraft.world.item.ItemStack.validateStrict(new net.minecraft.world.item.ItemStack(vanilla.item(), vanilla.count(), vanilla.components())).getOrThrow();
+        }
+        return new ItemDialogBodyImpl.BuilderImpl(template);
     }
 
     @Override

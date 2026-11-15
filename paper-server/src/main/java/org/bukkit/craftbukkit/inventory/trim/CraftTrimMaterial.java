@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimMaterial extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimMaterial> implements TrimMaterial {
+public class CraftTrimMaterial extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimMaterial, TrimMaterial> implements TrimMaterial {
 
     public static TrimMaterial minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_MATERIAL);

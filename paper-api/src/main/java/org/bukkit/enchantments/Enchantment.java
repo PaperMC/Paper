@@ -1,7 +1,9 @@
 package org.bukkit.enchantments;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -18,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The various type of enchantments that may be added to armour or weapons
  */
-public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+public abstract class Enchantment implements RegistryElement.Buildable<Enchantment, EnchantmentRegistryEntry, EnchantmentRegistryEntry.Builder>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
     /**
      * Provides protection against environmental damage
      */

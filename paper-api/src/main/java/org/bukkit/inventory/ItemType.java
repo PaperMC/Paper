@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Set;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
@@ -47,7 +48,7 @@ import org.jspecify.annotations.Nullable;
  * Represents an item type.
  */
 @NullMarked
-public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
+public interface ItemType extends RegistryElement<ItemType>, Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
 
     /**
      * Typed represents a subtype of {@link ItemType}s that have a known item meta type

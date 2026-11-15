@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a fluid type.
  */
-public interface Fluid extends OldEnum<Fluid>, Keyed {
+public interface Fluid extends RegistryElement<Fluid>, OldEnum<Fluid>, Keyed {
 
     // Start generate - Fluid
     Fluid EMPTY = getFluid("empty");

@@ -2,7 +2,9 @@ package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -17,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A type of pattern that can be applied to a banner.
  */
-public interface PatternType extends OldEnum<PatternType>, Keyed {
+public interface PatternType extends RegistryElement.Buildable<PatternType, BannerPatternRegistryEntry, BannerPatternRegistryEntry.Builder>, OldEnum<PatternType>, Keyed {
 
     // Start generate - PatternType
     PatternType BASE = getType("base");

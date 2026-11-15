@@ -6,12 +6,11 @@ import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentGetter;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jspecify.annotations.Nullable;
 
-public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>> implements DataComponentType {
+public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>, DataComponentType> implements DataComponentType {
 
     static {
         DataComponentAdapters.bootstrap();
