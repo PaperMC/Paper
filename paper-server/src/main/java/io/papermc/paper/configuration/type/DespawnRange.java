@@ -56,11 +56,15 @@ public final class DespawnRange {
     }
 
     public boolean shouldDespawn(final Shape shape, final double dxSqr, final double dySqr, final double dzSqr, final double dy) {
-        if (shape == Shape.ELLIPSOID) {
-            return dxSqr + dzSqr + (dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared) > this.preComputedHorizontalLimitSquared;
-        } else {
-            return dxSqr + dzSqr > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
-        }
+        final double horizontalDistanceSquared = dxSqr + dzSqr;
+        return switch (shape) {
+            case ELLIPSOID -> horizontalDistanceSquared + dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared > this.preComputedHorizontalLimitSquared;
+            case CYLINDER -> horizontalDistanceSquared > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
+            case HYBRID -> {
+                final int vanillaLimit = this.preComputedVanillaDefaultLimit;
+                yield horizontalDistanceSquared > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(vanillaLimit) || horizontalDistanceSquared + dySqr > (double) vanillaLimit * vanillaLimit;
+            }
+        };
     }
 
     public boolean wasDefinedViaLongSyntax() {
@@ -68,7 +72,7 @@ public final class DespawnRange {
     }
 
     public enum Shape {
-        CYLINDER, ELLIPSOID
+        CYLINDER, ELLIPSOID, HYBRID
     }
 
     static final class Serializer implements TypeSerializer<DespawnRange> {
