@@ -6,9 +6,11 @@ import io.papermc.paper.datacomponent.item.AttackRange;
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
+import io.papermc.paper.datacomponent.item.BrewingFuel;
 import io.papermc.paper.datacomponent.item.BundleContents;
 import io.papermc.paper.datacomponent.item.ChargedProjectiles;
 import io.papermc.paper.datacomponent.item.Consumable;
+import io.papermc.paper.datacomponent.item.CookingFuel;
 import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.DamageResistant;
 import io.papermc.paper.datacomponent.item.DeathProtection;
@@ -401,6 +403,14 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<SignText> SIGN_TEXT_BACK = valued("sign_text_back");
     public static final DataComponentType.NonValued WAXED = unvalued("waxed");
     public static final DataComponentType.Valued<DyeColor> CUSHION_COLOR = valued("cushion/color");
+    /**
+     * Describes an item that can be used as fuel for a furnace, smoker or blast furnace.
+     */
+    public static final DataComponentType.Valued<CookingFuel> COOKING_FUEL = valued("cooking_fuel");
+    /**
+     * Describes an item that can be used as fuel for a brewing stand.
+     */
+    public static final DataComponentType.Valued<BrewingFuel> BREWING_FUEL = valued("brewing_fuel");
 
     private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
