@@ -28,6 +28,7 @@ public final class DespawnRange {
     private double preComputedHorizontalLimitSquared; // ac^2
     private double preComputedHorizontalLimitSquaredOverVerticalLimitSquared; // ac^2/b^2
     private int preComputedVanillaDefaultLimit;
+    private double preComputedVanillaDefaultLimitSquared;
 
     public DespawnRange(final IntOr.Default generalLimit) {
         this(generalLimit, generalLimit, false);
@@ -47,6 +48,7 @@ public final class DespawnRange {
             throw new SerializationException("Horizontal limit must be greater than 0 for " + identifier);
         }
         this.preComputedVanillaDefaultLimit = defaultDistanceLimit;
+        this.preComputedVanillaDefaultLimitSquared = (double) defaultDistanceLimit * defaultDistanceLimit;
         this.preComputedHorizontalLimitSquared = Math.pow(this.horizontalLimit.or(defaultDistanceLimit), 2);
         if (!this.horizontalLimit.isDefined() && !this.verticalLimit.isDefined()) {
             this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared = 1.0;
@@ -57,13 +59,11 @@ public final class DespawnRange {
 
     public boolean shouldDespawn(final Shape shape, final double dxSqr, final double dySqr, final double dzSqr, final double dy) {
         final double horizontalDistanceSquared = dxSqr + dzSqr;
+        final double horizontalLimitSquared = this.preComputedHorizontalLimitSquared;
         return switch (shape) {
-            case ELLIPSOID -> horizontalDistanceSquared + dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared > this.preComputedHorizontalLimitSquared;
-            case CYLINDER -> horizontalDistanceSquared > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
-            case HYBRID -> {
-                final int vanillaLimit = this.preComputedVanillaDefaultLimit;
-                yield horizontalDistanceSquared > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(vanillaLimit) || horizontalDistanceSquared + dySqr > (double) vanillaLimit * vanillaLimit;
-            }
+            case ELLIPSOID -> horizontalDistanceSquared + dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared > horizontalLimitSquared;
+            case CYLINDER -> horizontalDistanceSquared > horizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
+            case HYBRID -> dxSqr > horizontalLimitSquared || dzSqr > horizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit) || horizontalDistanceSquared + dySqr > this.preComputedVanillaDefaultLimitSquared;
         };
     }
 
