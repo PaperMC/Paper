@@ -252,6 +252,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public DoubleOr.Default skeletonHorseThunderSpawnChance = DoubleOr.Default.USE_DEFAULT;
             public boolean ironGolemsCanSpawnInAir = false;
             public boolean countAllMobsForSpawning = false;
+            public boolean countEndermenHoldingBlocksForSpawning = false;
             @BelowZeroToEmpty
             public IntOr.Default monsterSpawnMaxLightLevel = IntOr.Default.USE_DEFAULT;
             public DuplicateUUID duplicateUuid;
