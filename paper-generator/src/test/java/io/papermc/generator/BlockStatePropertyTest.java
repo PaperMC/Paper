@@ -20,15 +20,15 @@ import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) // one instance for all tests, so the constructor only runs once
 public class BlockStatePropertyTest {
 
-    private static Set<Class<? extends Comparable<?>>> ENUM_PROPERTY_VALUES;
+    private final Set<Class<? extends Comparable<?>>> enumPropertyValueClasses;
 
-    @BeforeAll
-    public static void getAllProperties() {
+    public BlockStatePropertyTest() throws IllegalAccessException {
         // bootstrap
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
@@ -36,20 +36,16 @@ public class BlockStatePropertyTest {
 
         // get all properties
         Set<Class<? extends Comparable<?>>> enumPropertyValues = Collections.newSetFromMap(new IdentityHashMap<>());
-        try {
-            for (Field field : BlockStateProperties.class.getDeclaredFields()) {
-                if (ClassHelper.isStaticConstant(field, Modifier.PUBLIC)) {
-                    if (!EnumProperty.class.isAssignableFrom(field.getType())) {
-                        continue;
-                    }
-
-                    enumPropertyValues.add(((EnumProperty<?>) field.get(null)).getValueClass());
+        for (Field field : BlockStateProperties.class.getDeclaredFields()) {
+            if (ClassHelper.isStaticConstant(field, Modifier.PUBLIC)) {
+                if (!EnumProperty.class.isAssignableFrom(field.getType())) {
+                    continue;
                 }
+
+                enumPropertyValues.add(((EnumProperty<?>) field.get(null)).getValueClass());
             }
-            ENUM_PROPERTY_VALUES = Collections.unmodifiableSet(enumPropertyValues);
-        } catch (ReflectiveOperationException ex) {
-            throw new RuntimeException(ex);
         }
+        this.enumPropertyValueClasses = Collections.unmodifiableSet(enumPropertyValues);
     }
 
     @Test
@@ -65,7 +61,7 @@ public class BlockStatePropertyTest {
     @Test
     public void testBridge() {
         Set<String> missingApiEquivalents = new HashSet<>();
-        for (Class<? extends Comparable<?>> value : ENUM_PROPERTY_VALUES) {
+        for (Class<? extends Comparable<?>> value : this.enumPropertyValueClasses) {
             if (!BlockStateMapping.ENUM_BRIDGE.containsKey(value)) {
                 missingApiEquivalents.add(value.getCanonicalName());
             }

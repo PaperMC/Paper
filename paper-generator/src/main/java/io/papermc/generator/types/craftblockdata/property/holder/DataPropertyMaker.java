@@ -8,9 +8,7 @@ import java.util.Collection;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface DataPropertyMaker extends DataAppender {
 
     FieldSpec.Builder getOrCreateField(Map<Property<?>, Field> fields);

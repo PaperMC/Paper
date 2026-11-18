@@ -1,5 +1,6 @@
 package org.bukkit.support;
 
+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -75,11 +76,11 @@ public final class RegistryHelper {
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
 
         List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLD), pendingTags);
-        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLD_REGISTRIES, Util.backgroundExecutor()).join();
+        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLD_REGISTRIES, Util.backgroundExecutor(), ReloadableRegistrarEvent.Cause.INITIAL).join();
         layers = layers.replaceFrom(RegistryLayer.WORLD, worldGenRegistries);
 
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
-        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
+        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor(), ReloadableRegistrarEvent.Cause.INITIAL).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         // load registry here to ensure bukkit object registry are correctly delayed if needed
         try {
@@ -99,7 +100,7 @@ public final class RegistryHelper {
         PackedRegistries registries = createRegistries(resourceManager);
 
         // Register vanilla packs
-        ReloadableServerResources datapack = ReloadableServerResources.loadResources(resourceManager, registries.layers(), registries.pendingTags(), enabledFeatures, Commands.CommandSelection.DEDICATED, LevelBasedPermissionSet.ALL_PERMISSIONS, Util.backgroundExecutor(), Runnable::run).join();
+        ReloadableServerResources datapack = ReloadableServerResources.loadResources(resourceManager, registries.layers(), registries.pendingTags(), enabledFeatures, Commands.CommandSelection.DEDICATED, LevelBasedPermissionSet.ALL_PERMISSIONS, Util.backgroundExecutor(), Runnable::run, ReloadableRegistrarEvent.Cause.INITIAL).join();
         // Bind tags
         datapack.updateComponentsAndStaticRegistryTags();
 

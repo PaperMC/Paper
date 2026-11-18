@@ -11,5 +11,10 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 @FunctionalInterface
 public interface LifecycleEventHandler<E extends LifecycleEvent> {
 
+    /**
+     * Called when the event is fired.
+     *
+     * @param event the event
+     */
     void run(E event);
 }

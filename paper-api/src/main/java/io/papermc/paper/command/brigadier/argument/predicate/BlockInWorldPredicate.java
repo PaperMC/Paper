@@ -54,8 +54,7 @@ public interface BlockInWorldPredicate {
         /**
          * The block passed to the predicate was in an unloaded chunk and the {@code loadChunk} flag was false.
          */
-        UNLOADED_CHUNK,
-        ;
+        UNLOADED_CHUNK;
 
         /**
          * Converts the result into an approximated boolean representation.

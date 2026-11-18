@@ -23,10 +23,8 @@ import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transfer.AbstractTransferListener;
-import org.eclipse.aether.transfer.TransferCancelledException;
 import org.eclipse.aether.transfer.TransferEvent;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +45,6 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Plugins may create and register a {@link MavenLibraryResolver} after configuring it.
  */
-@NullMarked
 public class MavenLibraryResolver implements ClassPathLibrary {
 
     /**
@@ -93,7 +90,7 @@ public class MavenLibraryResolver implements ClassPathLibrary {
         this.session.setLocalRepositoryManager(this.repository.newLocalRepositoryManager(this.session, new LocalRepository("libraries")));
         this.session.setTransferListener(new AbstractTransferListener() {
             @Override
-            public void transferInitiated(final TransferEvent event) throws TransferCancelledException {
+            public void transferInitiated(final TransferEvent event) {
                 LOGGER.info("Downloading {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
             }
         });
@@ -117,7 +114,7 @@ public class MavenLibraryResolver implements ClassPathLibrary {
      * repository.
      *
      * @param remoteRepository the configuration that defines the maven repository this library resolver should fetch
-     * dependencies from
+     *                         dependencies from
      */
     public void addRepository(final RemoteRepository remoteRepository) {
         if (MAVEN_CENTRAL_URLS.stream().anyMatch(remoteRepository.getUrl()::startsWith)) {

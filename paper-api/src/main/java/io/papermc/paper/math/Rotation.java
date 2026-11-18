@@ -11,7 +11,7 @@ public interface Rotation {
      * @param pitch the pitch component of the rotation, measured in degrees
      * @return a new {@code Rotation} instance with the specified yaw and pitch
      */
-    static Rotation rotation(float yaw, float pitch) {
+    static Rotation rotation(final float yaw, final float pitch) {
         return new RotationImpl(yaw, pitch);
     }
 

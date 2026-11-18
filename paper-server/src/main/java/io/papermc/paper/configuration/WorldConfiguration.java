@@ -418,6 +418,8 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean optimizeExplosions = false;
         public boolean disableExplosionKnockback = false;
         public boolean generateFlatBedrock = false;
+        @Comment("Fixes MC-119599. Vanilla places snow on a chunk while generating that chunk's features, so tree parts that neighbouring chunks generate into it afterwards are left without snow, causing snowless patches of leaves with straight edges at chunk borders. Vanilla also only places snow on the top block of each column, so lower leaf layers and the ground under leaves never get snow. When enabled, snow is placed again as neighbouring chunks generate their features, including on lower leaf layers and the ground under leaves. This changes world generation and only affects newly generated chunks.")
+        public boolean fixMissingTreeSnow = false;
         public FrostedIce frostedIce;
         public DoubleOr.Disabled voidDamageAmount = new DoubleOr.Disabled(OptionalDouble.of(4));
         public double voidDamageMinBuildHeightOffset = -64.0;

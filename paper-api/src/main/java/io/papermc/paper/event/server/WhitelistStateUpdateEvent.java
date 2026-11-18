@@ -7,12 +7,10 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
- * This event gets called when the whitelist status of a player is changed
+ * This event gets called when the whitelist status of a player is changed.
  */
-@NullMarked
 public class WhitelistStateUpdateEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -29,7 +27,7 @@ public class WhitelistStateUpdateEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the player whose whitelist status is being changed
+     * Gets the player whose whitelist status is being changed.
      *
      * @return the player whose status is being changed
      */
@@ -38,7 +36,7 @@ public class WhitelistStateUpdateEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the player profile whose whitelist status is being changed
+     * Gets the player profile whose whitelist status is being changed.
      *
      * @return the player profile whose status is being changed
      */
@@ -47,7 +45,7 @@ public class WhitelistStateUpdateEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the status change of the player profile
+     * Gets the status change of the player profile.
      *
      * @return the whitelist status
      */
@@ -75,9 +73,16 @@ public class WhitelistStateUpdateEvent extends Event implements Cancellable {
     }
 
     /**
-     * Enum for the whitelist status changes
+     * Enum for the whitelist status changes.
      */
     public enum WhitelistStatus {
-        ADDED, REMOVED
+        /**
+         * The player was added to the whitelist.
+         */
+        ADDED,
+        /**
+         * The player was removed from the whitelist.
+         */
+        REMOVED
     }
 }

@@ -8,16 +8,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.util.Util;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-public interface Generators {
+public final class Generators {
 
-    List<SourceGenerator> API = Collections.unmodifiableList(Util.make(new ArrayList<>(), list -> {
+    public static final List<SourceGenerator> API = Collections.unmodifiableList(Util.make(new ArrayList<>(), list -> {
         RegistryBootstrapper.bootstrap(list);
         list.add(new MobGoalGenerator("VanillaGoal", "com.destroystokyo.paper.entity.ai"));
         // todo extract fields for registry based api
     }));
 
-    List<SourceGenerator> SERVER = Collections.unmodifiableList(Util.make(new ArrayList<>(), CraftBlockDataBootstrapper::bootstrap));
+    public static final List<SourceGenerator> SERVER = Collections.unmodifiableList(Util.make(new ArrayList<>(), CraftBlockDataBootstrapper::bootstrap));
+
+    private Generators() {
+    }
 }

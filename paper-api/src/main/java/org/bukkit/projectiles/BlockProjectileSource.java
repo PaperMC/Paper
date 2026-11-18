@@ -1,8 +1,10 @@
 package org.bukkit.projectiles;
 
 import org.bukkit.block.Block;
-import org.jetbrains.annotations.NotNull;
 
+/**
+ * A {@link ProjectileSource} that is a block, such as a dispenser.
+ */
 public interface BlockProjectileSource extends ProjectileSource {
 
     /**
@@ -10,6 +12,5 @@ public interface BlockProjectileSource extends ProjectileSource {
      *
      * @return Block for the projectile source
      */
-    @NotNull
-    public Block getBlock();
+    Block getBlock();
 }

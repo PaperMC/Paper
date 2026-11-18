@@ -1,6 +1,7 @@
 /**
  * Classes concerning an entity's persistent memory.
- *
- * Currently only relevant for Villagers.
  */
+@NullMarked
 package org.bukkit.entity.memory;
+
+import org.jspecify.annotations.NullMarked;

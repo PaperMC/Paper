@@ -8,11 +8,10 @@ import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class BlockEntityMapping {
 
+    // CHECKSTYLE.OFF: DeclarationOrder - MAPPING reads RENAMES while it is initialized
     // if this become painful/too weird like the blockdata just rename the impl directly again
     private static final Map<String, String> RENAMES = ImmutableMap.<String, String>builder()
         .put("CraftFurnace", "CraftFurnaceFurnace")
@@ -33,5 +32,9 @@ public final class BlockEntityMapping {
         });
 
         MAPPING = Collections.unmodifiableMap(mapping);
+    }
+    // CHECKSTYLE.ON: DeclarationOrder
+
+    private BlockEntityMapping() {
     }
 }

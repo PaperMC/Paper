@@ -25,14 +25,20 @@ import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperSulfurCubeArchetypeRegistryEntry;
+import io.papermc.paper.registry.data.PaperTimelineRegistryEntry;
 import io.papermc.paper.registry.data.PaperTrimMaterialRegistryEntry;
 import io.papermc.paper.registry.data.PaperTrimPatternRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperWorldClockRegistryEntry;
 import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.PaperTimeline;
+import io.papermc.paper.world.PaperWorldClock;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -159,6 +165,8 @@ public final class PaperRegistries {
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
+            start(Registries.WORLD_CLOCK, RegistryKey.WORLD_CLOCK).craft(WorldClock.class, PaperWorldClock::new).writable(PaperWorldClockRegistryEntry.PaperBuilder::new),
+            start(Registries.TIMELINE, RegistryKey.TIMELINE).craft(Timeline.class, PaperTimeline::new).writable(PaperTimelineRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

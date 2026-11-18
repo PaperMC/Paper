@@ -3,11 +3,12 @@ package io.papermc.testplugin.brigtests.example;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.argument.SignedMessageResolver;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.SignedMessageResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.math.BlockPosition;
+import java.util.List;
 import net.kyori.adventure.chat.ChatType;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -17,11 +18,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+public final class ExampleAdminCommand {
 
-public class ExampleAdminCommand {
+    private ExampleAdminCommand() {
+    }
 
     public static void register(JavaPlugin plugin, Commands commands) {
         final LiteralArgumentBuilder<CommandSourceStack> adminBuilder = Commands.literal("admin")
@@ -117,17 +118,16 @@ public class ExampleAdminCommand {
             );
         commands.register(plugin.getPluginMeta(), adminBuilder.build(), "Cool command showcasing what you can do!", List.of("alias_for_admin_that_you_shouldnt_use", "a"));
 
-
         Bukkit.getCommandMap().register(
             "legacy",
             new Command("legacy_command") {
                 @Override
-                public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+                public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                     throw new UnsupportedOperationException();
                 }
 
                 @Override
-                public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+                public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
                     return List.of(String.join(" ", args));
                 }
             }
@@ -137,12 +137,12 @@ public class ExampleAdminCommand {
             "legacy",
             new Command("legacy_fail") {
                 @Override
-                public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+                public boolean execute(CommandSender sender, String commandLabel, String[] args) {
                     return false;
                 }
 
                 @Override
-                public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+                public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
                     return List.of(String.join(" ", args));
                 }
             }

@@ -34,7 +34,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      * @return a new static action instance
      */
     @Contract(pure = true, value = "_ -> new")
-    static StaticAction staticAction(final ClickEvent value) {
+    static StaticAction staticAction(final ClickEvent<?> value) {
         return DialogInstancesProvider.instance().staticAction(value);
     }
 
@@ -43,7 +43,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      * Each {@link io.papermc.paper.registry.data.dialog.input.DialogInput#key()} is added
      * to the compound binary tag holder.
      *
-     * @param id the identifier of the custom action
+     * @param id        the identifier of the custom action
      * @param additions additional data to be sent with the action, or null if not needed
      * @return a new custom click action instance
      */
@@ -56,7 +56,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      * Creates a new custom click action that executes a custom action.
      *
      * @param callback the custom action to execute
-     * @param options the options for the custom action
+     * @param options  the options for the custom action
      * @return a new custom click action instance
      */
     @Contract(pure = true, value = "_, _ -> new")
@@ -91,7 +91,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
          * @return the click event
          */
         @Contract(pure = true)
-        ClickEvent value();
+        ClickEvent<?> value();
     }
 
     /**

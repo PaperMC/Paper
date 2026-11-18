@@ -6,9 +6,7 @@ import io.papermc.generator.types.craftblockdata.property.converter.ConverterBas
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface PropertyMaker extends ConverterBase, AppenderBase {
 
     TypeName getPropertyType();

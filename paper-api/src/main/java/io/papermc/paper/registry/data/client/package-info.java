@@ -1,3 +1,6 @@
+/**
+ * Classes representing client-side assets referenced by registry entries.
+ */
 @NullMarked
 @MinecraftVersionDependent
 package io.papermc.paper.registry.data.client;

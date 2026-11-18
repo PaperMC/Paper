@@ -3,6 +3,7 @@ package io.papermc.paper;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.ServiceLoader;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.Services;
 import org.jetbrains.annotations.ApiStatus;
@@ -25,7 +26,7 @@ public interface ServerBuildInfo {
     static ServerBuildInfo buildInfo() {
         //<editor-fold defaultstate="collapsed" desc="Holder">
         final class Holder {
-            static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
+            static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServiceLoader.load(ServerBuildInfo.class), ServerBuildInfo.class);
         }
         //</editor-fold>
 

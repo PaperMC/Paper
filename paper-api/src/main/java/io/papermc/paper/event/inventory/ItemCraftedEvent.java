@@ -5,12 +5,10 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player picks up a crafted item from the result slot of a crafting grid.
  */
-@NullMarked
 public class ItemCraftedEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

@@ -8,8 +8,18 @@ import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class Annotations {
+
+    @ApiStatus.Experimental
+    public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
+    public static final AnnotationSpec NULL_MARKED = AnnotationSpec.builder(NullMarked.class).build();
+    public static final AnnotationSpec OVERRIDE = AnnotationSpec.builder(Override.class).build();
+    public static final AnnotationSpec GENERATED_CLASS = AnnotationSpec.builder(GeneratedClass.class).build();
+    public static final Iterable<AnnotationSpec> CONSTANTS_HEADER = List.of(
+        suppressWarnings("unused", "SpellCheckingInspection"),
+        NULL_MARKED,
+        GENERATED_CLASS
+    );
 
     public static List<AnnotationSpec> experimentalAnnotations(SingleFlagHolder requiredFeature) {
         AnnotationSpec.Builder builder = AnnotationSpec.builder(MinecraftExperimental.class);
@@ -28,17 +38,6 @@ public final class Annotations {
         }
         return builder.build();
     }
-
-    @ApiStatus.Experimental
-    public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
-    public static final AnnotationSpec NULL_MARKED = AnnotationSpec.builder(NullMarked.class).build();
-    public static final AnnotationSpec OVERRIDE = AnnotationSpec.builder(Override.class).build();
-    public static final AnnotationSpec GENERATED_CLASS = AnnotationSpec.builder(GeneratedClass.class).build();
-    public static final Iterable<AnnotationSpec> CONSTANTS_HEADER = List.of(
-        suppressWarnings("unused", "SpellCheckingInspection"),
-        NULL_MARKED,
-        GENERATED_CLASS
-    );
 
     private Annotations() {
     }

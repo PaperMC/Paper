@@ -2,7 +2,6 @@ package io.papermc.paper.plugin.loader.library;
 
 import java.nio.file.Path;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a storage that stores library jars.
@@ -13,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.plugin.loader.PluginLoader
  */
 @ApiStatus.Internal
-@NullMarked
 public interface LibraryStore {
 
     /**

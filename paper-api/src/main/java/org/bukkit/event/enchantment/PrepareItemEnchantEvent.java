@@ -9,12 +9,11 @@ import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.view.EnchantmentView;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an ItemStack is inserted in an enchantment table - can be
- * called multiple times
+ * called multiple times.
  */
 public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellable {
 
@@ -23,13 +22,20 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     private final Player enchanter;
     private final Block table;
     private final ItemStack item;
-    private final EnchantmentOffer[] offers;
+    private final @Nullable EnchantmentOffer[] offers;
     private final int bonus;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PrepareItemEnchantEvent(@NotNull final Player enchanter, @NotNull EnchantmentView view, @NotNull final Block table, @NotNull final ItemStack item, @org.jetbrains.annotations.Nullable final EnchantmentOffer @NotNull [] offers, final int bonus) { // Paper - offers can contain null values
+    public PrepareItemEnchantEvent(
+        final Player enchanter,
+        final EnchantmentView view,
+        final Block table,
+        final ItemStack item,
+        final @Nullable EnchantmentOffer[] offers,
+        final int bonus
+    ) {
         super(view);
         this.enchanter = enchanter;
         this.table = table;
@@ -38,28 +44,25 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
         this.bonus = bonus;
     }
 
-    @NotNull
     @Override
     public EnchantmentView getView() {
         return (EnchantmentView) super.getView();
     }
 
     /**
-     * Gets the player enchanting the item
+     * Gets the player enchanting the item.
      *
      * @return enchanting player
      */
-    @NotNull
     public Player getEnchanter() {
         return this.enchanter;
     }
 
     /**
-     * Gets the block being used to enchant the item
+     * Gets the block being used to enchant the item.
      *
      * @return the block used for enchanting
      */
-    @NotNull
     public Block getEnchantBlock() {
         return this.table;
     }
@@ -69,7 +72,6 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      *
      * @return ItemStack of item
      */
-    @NotNull
     public ItemStack getItem() {
         return this.item;
     }
@@ -80,12 +82,12 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      * @return experience level costs offered
      * @deprecated Use {@link #getOffers()} instead of this method
      */
-    @NotNull
     @Deprecated(since = "1.20.5")
     public int[] getExpLevelCostsOffered() {
-        int[] levelOffers = new int[this.offers.length];
+        final int[] levelOffers = new int[this.offers.length];
         for (int i = 0; i < this.offers.length; i++) {
-            levelOffers[i] = this.offers[i] != null ? this.offers[i].getCost() : 0;
+            final EnchantmentOffer offer = this.offers[i];
+            levelOffers[i] = offer != null ? offer.getCost() : 0;
         }
         return levelOffers;
     }
@@ -96,14 +98,14 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      * may be null, if there isn't an enchantment offer at a specific slot. There
      * are 3 slots in the enchantment table available to modify.
      *
-     * @return list of available enchantment offers
+     * @return array of available enchantment offers
      */
-    public @Nullable EnchantmentOffer @NotNull[] getOffers() {
+    public @Nullable EnchantmentOffer[] getOffers() {
         return this.offers;
     }
 
     /**
-     * Get enchantment bonus in effect - corresponds to number of bookshelves
+     * Get enchantment bonus in effect - corresponds to number of bookshelves.
      *
      * @return enchantment bonus
      */
@@ -117,17 +119,15 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     }
 
     @Override
-    public void setCancelled(boolean cancel) {
+    public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

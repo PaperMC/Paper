@@ -1,12 +1,10 @@
 package io.papermc.paper.plugin.loader.library;
 
-import org.jspecify.annotations.NullMarked;
 
 /**
  * The classpath library interface represents libraries that are capable of registering themselves via
  * {@link #register(LibraryStore)} on any given {@link LibraryStore}.
  */
-@NullMarked
 public interface ClassPathLibrary {
 
     /**

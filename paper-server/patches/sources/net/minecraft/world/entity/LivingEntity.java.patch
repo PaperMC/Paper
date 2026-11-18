@@ -208,12 +208,13 @@
              this.effectsDirty = true;
          }
  
+-        this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
 +        // CraftBukkit start
 +        input.read("Bukkit.MaxHealth", com.mojang.serialization.Codec.DOUBLE).ifPresent(maxHealth -> {
 +            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
 +        });
 +        // CraftBukkit end
-         this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
++        this.setHealth(input.getFloatOr("Health", this.getMaxHealth()), false); // Paper - Fix MC-17876
          this.hurtTime = input.getShortOr("HurtTime", (short)0);
          this.deathTime = input.getShortOr("DeathTime", (short)0);
          this.setSharedFlag(Entity.FLAG_FALL_FLYING, input.getBooleanOr("FallFlying", false));
@@ -423,7 +424,7 @@
          if (effectInstance != null) {
              this.onEffectsRemoved(List.of(effectInstance));
              return true;
-@@ -1152,17 +_,62 @@
+@@ -1152,18 +_,74 @@
      }
  
      public void heal(final float heal) {
@@ -463,9 +464,8 @@
          return this.entityData.get(DATA_HEALTH_ID);
      }
  
--    public void setHealth(final float health) {
 +    // Paper start - Check for NaN
-+    public void setHealth(float health) {
++    public void setHealth(float health, final boolean clamp) { // Paper - Fix MC-17876 - add clamp parameter
 +        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
 +            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
 +        } } // Paper end - Check for NaN
@@ -475,7 +475,7 @@
 +            // Squeeze
 +            if (health < 0.0F) {
 +                player.setRealHealth(0.0);
-+            } else if (health > player.getMaxHealth()) {
++            } else if (clamp && health > player.getMaxHealth()) { // Paper - Fix MC-17876
 +                player.setRealHealth(player.getMaxHealth());
 +            } else {
 +                player.setRealHealth(health);
@@ -485,9 +485,22 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
++        // Paper start - Fix MC-17876
++        if (clamp) {
++            health = Math.clamp(health, 0.0F, this.getMaxHealth());
++        } else {
++            health = Math.max(health, 0.0F);
++        }
++
++        this.entityData.set(DATA_HEALTH_ID, health);
++    }
+     public void setHealth(final float health) {
+-        this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
++        this.setHealth(health, true);
++        // Paper end - Fix MC-17876
      }
  
+     public boolean isDeadOrDying() {
 @@ -1180,7 +_,7 @@
              return false;
          }

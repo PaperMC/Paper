@@ -20,7 +20,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.kyori.adventure.key.Key;
-import org.jspecify.annotations.NullMarked;
 
 import static com.squareup.javapoet.TypeSpec.classBuilder;
 import static io.papermc.generator.utils.Annotations.EXPERIMENTAL_API_ANNOTATION;
@@ -30,7 +29,6 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class GeneratedTagKeyType extends SimpleGenerator {
 
     private final RegistryEntry<?> entry;
@@ -90,7 +88,7 @@ public class GeneratedTagKeyType extends SimpleGenerator {
                 .initializer("$N(key($S))", createMethod.build(), tagKey.location().getPath())
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), "#" + tagKey.location());
 
-            String featureFlagName = Main.EXPERIMENTAL_TAGS.get(tagKey);
+            String featureFlagName = Main.experimentalTags.get(tagKey);
             if (featureFlagName != null) {
                 fieldBuilder.addAnnotations(experimentalAnnotations(SingleFlagHolder.fromName(featureFlagName)));
             } else {

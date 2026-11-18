@@ -5,8 +5,8 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -15,11 +15,10 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.jetbrains.annotations.NotNull;
 
 import static net.kyori.adventure.text.Component.translatable;
 
-public class MaterialArgumentType implements CustomArgumentType.Converted<Material, NamespacedKey> {
+public final class MaterialArgumentType implements CustomArgumentType.Converted<Material, NamespacedKey> {
 
     private static final ComponentCommandExceptionType ERROR_INVALID = new ComponentCommandExceptionType(translatable("argument.id.invalid"));
 
@@ -38,7 +37,7 @@ public class MaterialArgumentType implements CustomArgumentType.Converted<Materi
     }
 
     @Override
-    public @NotNull Material convert(final @NotNull NamespacedKey nativeType) throws CommandSyntaxException {
+    public Material convert(final NamespacedKey nativeType) throws CommandSyntaxException {
         final Material material = Registry.MATERIAL.get(nativeType);
         if (material == null) {
             throw ERROR_INVALID.create();
@@ -50,7 +49,7 @@ public class MaterialArgumentType implements CustomArgumentType.Converted<Materi
     }
 
     static boolean matchesSubStr(String remaining, String candidate) {
-        for(int i = 0; !candidate.startsWith(remaining, i); ++i) {
+        for (int i = 0; !candidate.startsWith(remaining, i); ++i) {
             i = candidate.indexOf('_', i);
             if (i < 0) {
                 return false;
@@ -61,12 +60,12 @@ public class MaterialArgumentType implements CustomArgumentType.Converted<Materi
     }
 
     @Override
-    public @NotNull ArgumentType<NamespacedKey> getNativeType() {
+    public ArgumentType<NamespacedKey> getNativeType() {
         return ArgumentTypes.namespacedKey();
     }
 
     @Override
-    public @NotNull <S> CompletableFuture<Suggestions> listSuggestions(final @NotNull CommandContext<S> context, final @NotNull SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         final Stream<Material> stream = StreamSupport.stream(Registry.MATERIAL.spliterator(), false);
         final String remaining = builder.getRemaining();
         boolean containsColon = remaining.indexOf(':') > -1;

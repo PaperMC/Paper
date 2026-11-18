@@ -5,9 +5,7 @@ import io.papermc.typewriter.context.ImportCollector;
 import java.lang.annotation.Annotation;
 import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class Annotations {
 
     public static String annotation(Class<? extends Annotation> clazz, ImportCollector collector) {
