@@ -29,7 +29,7 @@ public interface LootTable extends Keyed {
      * @return a list of ItemStacks
      * @deprecated the random instance is provided through the loot context, use {@link #populateLoot(LootContext)}
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.4")
     @NotNull Collection<ItemStack> populateLoot(final @Nullable Random random, final @NotNull LootContext context);
 
     /**
@@ -48,7 +48,7 @@ public interface LootTable extends Keyed {
      * @param context context within to populate loot
      * @deprecated the random instance is provided through the loot context, use {@link #fillInventory(Inventory, LootContext)}
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.4")
     void fillInventory(@NotNull Inventory inventory, @Nullable Random random, @NotNull LootContext context);
 
     /**

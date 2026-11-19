@@ -30,7 +30,7 @@ public final class LootContext {
     /**
      * @deprecated no longer functional
      */
-    @Deprecated
+    @Deprecated(since = "26.4")
     public static final int DEFAULT_LOOT_MODIFIER = -1;
 
     private final World world;
@@ -125,7 +125,7 @@ public final class LootContext {
      * @return the Location of where the loot will be generated
      * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.4")
     public Location getLocation() {
         if (this.has(LootContextKeys.ORIGIN)) {
             final Position pos = this.getOrThrow(LootContextKeys.ORIGIN);
@@ -170,7 +170,7 @@ public final class LootContext {
      * @return the looted entity or {@code null}
      * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.4")
     public @Nullable Entity getLootedEntity() {
         return this.get(LootContextKeys.THIS_ENTITY);
     }
@@ -181,7 +181,7 @@ public final class LootContext {
      * @return the killer entity, or {@code null}.
      * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.2")
+    @Deprecated(since = "26.4")
     public @Nullable HumanEntity getKiller() {
         return this.get(LootContextKeys.ATTACKING_ENTITY) instanceof final HumanEntity humanEntity ? humanEntity : null;
     }
@@ -214,7 +214,7 @@ public final class LootContext {
          * @param location the location the LootContext should use
          * @deprecated not all loot contexts have locations, use {@link LootContext#builder(World)}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.4")
         public Builder(final Location location) {
             this(location.getWorld());
             this.with(LootContextKeys.ORIGIN, location);
@@ -311,7 +311,7 @@ public final class LootContext {
          * @return the builder
          * @deprecated use {@link #with(LootContextKey.Valued, Object)}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.4")
         @Contract(value = "_ -> this", mutates = "this")
         public Builder lootedEntity(final @Nullable Entity lootedEntity) {
             if (lootedEntity == null) {
@@ -335,7 +335,7 @@ public final class LootContext {
          * @return the builder
          * @deprecated use {@link #with(LootContextKey.Valued, Object)}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.4")
         @Contract(value = "_ -> this", mutates = "this")
         public Builder killer(final @Nullable HumanEntity killer) {
             if (killer == null) {
