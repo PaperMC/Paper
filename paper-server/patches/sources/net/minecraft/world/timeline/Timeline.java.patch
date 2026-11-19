@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/timeline/Timeline.java
++++ b/net/minecraft/world/timeline/Timeline.java
+@@ -142,6 +_,23 @@
+         }
+     }
+ 
++    // Paper start - clock API - value equality for registry builder round-trips
++    @Override
++    public boolean equals(final Object o) {
++        if (this == o) return true;
++        if (!(o instanceof final Timeline other)) return false;
++        return this.clock.equals(other.clock)
++            && this.periodTicks.equals(other.periodTicks)
++            && this.tracks.equals(other.tracks)
++            && this.timeMarkers.equals(other.timeMarkers);
++    }
++
++    @Override
++    public int hashCode() {
++        return java.util.Objects.hash(this.clock, this.periodTicks, this.tracks, this.timeMarkers);
++    }
++    // Paper end - clock API - value equality for registry builder round-trips
++
+     public Set<EnvironmentAttribute<?>> attributes() {
+         return this.tracks.keySet();
+     }
+@@ -181,6 +_,13 @@
+             this.tracks.put(attribute, new AttributeTrack<>(modifier, argumentTrack.build()));
+             return this;
+         }
++
++        // Paper start - clock API
++        public Timeline.Builder addTracks(final Map<EnvironmentAttribute<?>, AttributeTrack<?, ?>> tracks) {
++            this.tracks.putAll(tracks);
++            return this;
++        }
++        // Paper end - clock API
+ 
+         public <Value> Timeline.Builder addTrack(final EnvironmentAttribute<Value> attribute, final Consumer<KeyframeTrack.Builder<Value>> builder) {
+             return this.addModifierTrack(attribute, AttributeModifier.override(), builder);
