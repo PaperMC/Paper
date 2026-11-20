@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index d920a4905d044925c4c4ab980fc238c9c489d5ac..60decc2534c5bc52b1a22e23a416a7660f724cb0 100644
+index 4059f06326368242d900440ca5f0281752542420..7b11e3833d20fe29661adb342c39a3331bc38c1c 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -647,6 +647,7 @@ public class ServerGamePacketListenerImpl
@@ -116,7 +116,7 @@ index d920a4905d044925c4c4ab980fc238c9c489d5ac..60decc2534c5bc52b1a22e23a416a766
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(
                      this.awaitingPositionFromClient.x,
-@@ -1807,6 +1853,34 @@ public class ServerGamePacketListenerImpl
+@@ -1807,6 +1853,36 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -124,22 +124,24 @@ index d920a4905d044925c4c4ab980fc238c9c489d5ac..60decc2534c5bc52b1a22e23a416a766
 +    private boolean hasNewCollision(final ServerLevel level, final Entity entity, final AABB oldBox, final AABB newBox) {
 +        final List<AABB> collisionsBB = new java.util.ArrayList<>();
 +        final List<VoxelShape> collisionsVoxel = new java.util.ArrayList<>();
++        final AABB deflatedNewBox = newBox.deflate(1.0E-5F);
 +        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisions(
-+            level, entity, newBox, collisionsVoxel, collisionsBB,
++            level, entity, deflatedNewBox, collisionsVoxel, collisionsBB,
 +            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
 +            null, null
 +        );
 +
++        final AABB deflatedOldBox = oldBox.deflate(1.0E-5F);
 +        for (int i = 0, len = collisionsBB.size(); i < len; ++i) {
 +            final AABB box = collisionsBB.get(i);
-+            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(box, deflatedOldBox)) {
 +                return true;
 +            }
 +        }
 +
 +        for (int i = 0, len = collisionsVoxel.size(); i < len; ++i) {
 +            final VoxelShape voxel = collisionsVoxel.get(i);
-+            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, oldBox)) {
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, deflatedOldBox)) {
 +                return true;
 +            }
 +        }
