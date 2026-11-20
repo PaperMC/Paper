@@ -8,13 +8,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Thrown when a player executes a command that is not defined
+ * Thrown when a player executes a command that is not defined.
  */
-@NullMarked
 public class UnknownCommandEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -32,7 +30,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Gets the CommandSender
+     * Gets the CommandSender.
      *
      * @return sender of the command
      */
@@ -41,7 +39,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Gets the command source associated with this event
+     * Gets the command source associated with this event.
      *
      * @return the {@link CommandSourceStack}
      */
@@ -50,7 +48,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Gets the command that was sent
+     * Gets the command that was sent.
      *
      * @return command sent
      */
@@ -59,7 +57,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Gets the message that will be returned
+     * Gets the message that will be returned.
      *
      * @return unknown command message
      * @deprecated use {@link #message()}
@@ -70,7 +68,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Sets the message that will be returned
+     * Sets the message that will be returned.
      * <p>
      * Set to {@code null} to avoid any message being sent
      *
@@ -78,12 +76,12 @@ public class UnknownCommandEvent extends Event {
      * @deprecated use {@link #message(Component)}
      */
     @Deprecated
-    public void setMessage(@Nullable String message) {
+    public void setMessage(final @Nullable String message) {
         this.message(message == null ? null : LegacyComponentSerializer.legacySection().deserialize(message));
     }
 
     /**
-     * Gets the message that will be returned
+     * Gets the message that will be returned.
      *
      * @return unknown command message
      */
@@ -93,13 +91,13 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Sets the message that will be returned
+     * Sets the message that will be returned.
      * <p>
      * Set to {@code null} to avoid any message being sent
      *
      * @param message the message to be returned, or {@code null}
      */
-    public void message(@Nullable Component message) {
+    public void message(final @Nullable Component message) {
         this.message = message;
     }
 

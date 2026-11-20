@@ -16,10 +16,8 @@ import java.util.Collections;
 import java.util.Set;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public class PaperPatternSourceSetRewriter extends SourceSetRewriterImpl<PatternSourceSetRewriter> implements PatternSourceSetRewriter {
 
     private static final String COMMENT_MARKER_FORMAT = "%s generate - %s"; // {0} = Start|End {1} = pattern

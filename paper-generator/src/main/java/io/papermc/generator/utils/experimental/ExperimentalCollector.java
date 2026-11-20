@@ -30,10 +30,8 @@ import net.minecraft.server.packs.repository.BuiltInPackSource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
 import org.jetbrains.annotations.UnknownNullability;
-import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 
-@NullMarked
 public final class ExperimentalCollector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -141,7 +139,7 @@ public final class ExperimentalCollector {
         Set<String> namespaces = pack.getNamespaces(PackType.SERVER_DATA);
 
         for (String namespace : namespaces) {
-            Main.REGISTRY_ACCESS.registries().forEach(entry -> {
+            Main.registryAccess.registries().forEach(entry -> {
                 // this is probably expensive but can't find another way around and data-pack loader has similar logic
                 // the issue is that registry key can have parent/key but tag key can also have parent/key so parsing become a mess
                 // without having at least one of the two values

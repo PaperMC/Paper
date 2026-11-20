@@ -1,5 +1,3 @@
-import io.papermc.paperweight.checkstyle.PaperCheckstyleExt
-import io.papermc.paperweight.checkstyle.tasks.PaperCheckstyleTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -11,6 +9,7 @@ subprojects {
     apply {
         plugin("java-library")
         plugin("maven-publish")
+        plugin("io.papermc.paperweight.paper-checkstyle")
     }
 
     extensions.configure<JavaPluginExtension> {
@@ -19,27 +18,8 @@ subprojects {
         }
     }
 
-    val tempDisabled = setOf("paper-server", "paper-generator", "test-plugin")
-
-    if (name !in tempDisabled) {
-        apply { plugin("io.papermc.paperweight.paper-checkstyle") }
-        extensions.configure<PaperCheckstyleExt> {
-            typeUseAnnotationsFile.set(rootProject.layout.projectDirectory.file(".checkstyle/type_use_annotations.txt"))
-        }
-
-        /*tasks.withType<PaperCheckstyleTask>().configureEach {
-            configDirectory = rootProject.layout.projectDirectory.dir(".checkstyle")
-            // configFile = layout.projectDirectory.file(".checkstyle/checkstyle.xml").asFile // use the base file if not overwritten
-            maxHeapSize = "2g"
-            reports {
-                xml.required = true
-                html.required = true
-            }
-        }*/
-
-        dependencies {
-            "checkstyle"(project(":paper-checkstyle"))
-        }
+    dependencies {
+        "checkstyle"(project(":paper-checkstyle"))
     }
 }
 

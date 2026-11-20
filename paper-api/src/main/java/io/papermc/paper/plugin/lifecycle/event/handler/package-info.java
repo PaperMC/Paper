@@ -1,3 +1,6 @@
+/**
+ * Handlers for lifecycle events.
+ */
 @NullMarked
 package io.papermc.paper.plugin.lifecycle.event.handler;
 

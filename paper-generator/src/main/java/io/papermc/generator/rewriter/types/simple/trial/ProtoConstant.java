@@ -1,12 +1,12 @@
 package io.papermc.generator.rewriter.types.simple.trial;
 
 import io.papermc.typewriter.parser.token.CharSequenceBlockToken;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.Nullable;
 
 class ProtoConstant {
 
-    private @MonotonicNonNull String name;
-    private @MonotonicNonNull CharSequenceBlockToken token;
+    private @Nullable String name;
+    private @Nullable CharSequenceBlockToken token;
 
     public void name(String name) {
         this.name = name;

@@ -69,6 +69,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Orientation;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.AnaloguePowerable;
+import org.bukkit.block.data.AttachableDirectional;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Brushable;
 import org.bukkit.block.data.Directional;
@@ -112,10 +113,8 @@ import org.bukkit.block.data.type.TechnicalPiston;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Vault;
 import org.bukkit.block.data.type.Wall;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public final class BlockStateMapping {
 
     public record BlockData(String implName, @Nullable Class<? extends org.bukkit.block.data.BlockData> api,
@@ -123,6 +122,52 @@ public final class BlockStateMapping {
                             Multimap<Either<Field, VirtualField>, Property<?>> complexPropertyFields) {
     }
 
+    // virtual data that doesn't exist as constant in the source but still organized this way in the api
+    public static final ImmutableMultimap<Class<?>, VirtualField> VIRTUAL_NODES = ImmutableMultimap.<Class<?>, VirtualField>builder()
+        .build();
+
+    public static final Map<Property<?>, Field> FALLBACK_GENERIC_FIELDS;
+
+    static {
+        Map<Property<?>, Field> fallbackGenericFields = new HashMap<>();
+        fetchProperties(BlockStateProperties.class, (field, property) -> fallbackGenericFields.put(property, field), null);
+        FALLBACK_GENERIC_FIELDS = Collections.unmodifiableMap(fallbackGenericFields);
+    }
+
+    public static final Map<Class<? extends Enum<? extends StringRepresentable>>, Class<? extends Enum<?>>> ENUM_BRIDGE = ImmutableMap.<Class<? extends Enum<? extends StringRepresentable>>, Class<? extends Enum<?>>>builder()
+        .put(DoorHingeSide.class, Door.Hinge.class)
+        .put(SlabType.class, Slab.Type.class)
+        .put(StructureMode.class, org.bukkit.block.data.type.StructureBlock.Mode.class)
+        .put(SpeleothemThickness.class, Speleothem.Thickness.class)
+        .put(WallSide.class, Wall.Height.class)
+        .put(BellAttachType.class, Bell.Attachment.class)
+        .put(NoteBlockInstrument.class, Instrument.class)
+        .put(StairsShape.class, Stairs.Shape.class)
+        .put(Direction.class, BlockFace.class)
+        .put(ComparatorMode.class, Comparator.Mode.class)
+        .put(PistonType.class, TechnicalPiston.Type.class)
+        .put(BedPart.class, Bed.Part.class)
+        .put(Half.class, Bisected.Half.class)
+        .put(AttachFace.class, FaceAttachable.AttachedFace.class)
+        .put(RailShape.class, Rail.Shape.class)
+        .put(SculkSensorPhase.class, SculkSensor.Phase.class)
+        .put(DoubleBlockHalf.class, Bisected.Half.class)
+        .put(Tilt.class, BigDripleaf.Tilt.class)
+        .put(ChestType.class, Chest.Type.class)
+        .put(RedstoneSide.class, RedstoneWire.Connection.class)
+        .put(Direction.Axis.class, Axis.class)
+        .put(BambooLeaves.class, Bamboo.Leaves.class)
+        .put(TrialSpawnerState.class, TrialSpawner.State.class)
+        .put(FrontAndTop.class, Orientation.class)
+        .put(VaultState.class, Vault.State.class)
+        .put(CreakingHeartState.class, CreakingHeart.State.class)
+        .put(TestBlockMode.class, org.bukkit.block.data.type.TestBlock.Mode.class)
+        .put(CopperGolemStatueBlock.Pose.class, CopperGolemStatue.Pose.class)
+        .put(SideChainPart.class, SideChaining.ChainPart.class)
+        .put(PotentSulfurState.class, PotentSulfur.State.class)
+        .buildOrThrow();
+
+    // CHECKSTYLE.OFF: DeclarationOrder - MAPPING reads these (directly and through formatApiName) while it is initialized
     private static final Map<String, String> API_RENAMES = ImmutableMap.<String, String>builder()
         .put("SnowLayer", "Snow")
         .put("StainedGlassPane", "GlassPane") // weird that this one implements glass pane but not the regular glass pane
@@ -146,18 +191,6 @@ public final class BlockStateMapping {
         TestBlock.class,
         TestInstanceBlock.class
     );
-
-    // virtual data that doesn't exist as constant in the source but still organized this way in the api
-    public static final ImmutableMultimap<Class<?>, VirtualField> VIRTUAL_NODES = ImmutableMultimap.<Class<?>, VirtualField>builder()
-        .build();
-
-    public static final Map<Property<?>, Field> FALLBACK_GENERIC_FIELDS;
-
-    static {
-        Map<Property<?>, Field> fallbackGenericFields = new HashMap<>();
-        fetchProperties(BlockStateProperties.class, (field, property) -> fallbackGenericFields.put(property, field), null);
-        FALLBACK_GENERIC_FIELDS = Collections.unmodifiableMap(fallbackGenericFields);
-    }
 
     public static final Map<Class<? extends Block>, BlockData> MAPPING;
 
@@ -243,6 +276,7 @@ public final class BlockStateMapping {
         }
         MAPPING = Collections.unmodifiableMap(map);
     }
+    // CHECKSTYLE.ON: DeclarationOrder
 
     private static final Map<String, Class<? extends org.bukkit.block.data.BlockData>> NAME_TO_DATA = Map.of(
         BlockStateProperties.AGE_1.getName(), Ageable.class,
@@ -280,39 +314,6 @@ public final class BlockStateMapping {
         BlockStateProperties.PISTON_TYPE, TechnicalPiston.class,
         BlockStateProperties.STAIRS_SHAPE, Stairs.class
     );
-
-    public static final Map<Class<? extends Enum<? extends StringRepresentable>>, Class<? extends Enum<?>>> ENUM_BRIDGE = ImmutableMap.<Class<? extends Enum<? extends StringRepresentable>>, Class<? extends Enum<?>>>builder()
-        .put(DoorHingeSide.class, Door.Hinge.class)
-        .put(SlabType.class, Slab.Type.class)
-        .put(StructureMode.class, org.bukkit.block.data.type.StructureBlock.Mode.class)
-        .put(SpeleothemThickness.class, Speleothem.Thickness.class)
-        .put(WallSide.class, Wall.Height.class)
-        .put(BellAttachType.class, Bell.Attachment.class)
-        .put(NoteBlockInstrument.class, Instrument.class)
-        .put(StairsShape.class, Stairs.Shape.class)
-        .put(Direction.class, BlockFace.class)
-        .put(ComparatorMode.class, Comparator.Mode.class)
-        .put(PistonType.class, TechnicalPiston.Type.class)
-        .put(BedPart.class, Bed.Part.class)
-        .put(Half.class, Bisected.Half.class)
-        .put(AttachFace.class, FaceAttachable.AttachedFace.class)
-        .put(RailShape.class, Rail.Shape.class)
-        .put(SculkSensorPhase.class, SculkSensor.Phase.class)
-        .put(DoubleBlockHalf.class, Bisected.Half.class)
-        .put(Tilt.class, BigDripleaf.Tilt.class)
-        .put(ChestType.class, Chest.Type.class)
-        .put(RedstoneSide.class, RedstoneWire.Connection.class)
-        .put(Direction.Axis.class, Axis.class)
-        .put(BambooLeaves.class, Bamboo.Leaves.class)
-        .put(TrialSpawnerState.class, TrialSpawner.State.class)
-        .put(FrontAndTop.class, Orientation.class)
-        .put(VaultState.class, Vault.State.class)
-        .put(CreakingHeartState.class, CreakingHeart.State.class)
-        .put(TestBlockMode.class, org.bukkit.block.data.type.TestBlock.Mode.class)
-        .put(CopperGolemStatueBlock.Pose.class, CopperGolemStatue.Pose.class)
-        .put(SideChainPart.class, SideChaining.ChainPart.class)
-        .put(PotentSulfurState.class, PotentSulfur.State.class)
-        .buildOrThrow();
 
     public static @Nullable Class<? extends org.bukkit.block.data.BlockData> getBestSuitedApiClass(Class<?> block) {
         if (!MAPPING.containsKey(block)) {
@@ -373,7 +374,10 @@ public final class BlockStateMapping {
     }
 
     private static boolean isExactly(Set<Class<? extends org.bukkit.block.data.BlockData>> extensions, Class<? extends org.bukkit.block.data.BlockData> globClass) {
-        return extensions.equals(ClassHelper.getAllInterfaces(globClass, org.bukkit.block.data.BlockData.class, new HashSet<>()));
+        Set<Class<?>> interfaces = ClassHelper.getAllInterfaces(globClass, org.bukkit.block.data.BlockData.class, new HashSet<>());
+        // AttachableDirectional only combines FaceAttachable and Directional, which are already in the set
+        interfaces.remove(AttachableDirectional.class);
+        return extensions.equals(interfaces);
     }
 
     private static String formatApiName(Class<?> specialBlock) {
@@ -457,5 +461,8 @@ public final class BlockStateMapping {
         for (Class<?> ext : block.getInterfaces()) {
             fetchProperties(ext, simpleCallback, complexCallback);
         }
+    }
+
+    private BlockStateMapping() {
     }
 }

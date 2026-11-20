@@ -1,15 +1,14 @@
 package io.papermc.paper.event.executor;
 
 import com.destroystokyo.paper.util.SneakyThrow;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.EventExecutor;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
 
 /**
  * This class is designed to be used as hidden class template.
@@ -25,7 +24,6 @@ import java.lang.reflect.Method;
  */
 @SuppressWarnings("unused")
 @ApiStatus.Internal
-@NullMarked
 class MethodHandleEventExecutorTemplate implements EventExecutor {
     private static final Method METHOD;
     private static final MethodHandle HANDLE;
@@ -44,7 +42,7 @@ class MethodHandleEventExecutorTemplate implements EventExecutor {
         if (!EVENT_CLASS.isInstance(event)) return;
         try {
             HANDLE.invokeExact(listener, event);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             SneakyThrow.sneaky(t);
         }
     }

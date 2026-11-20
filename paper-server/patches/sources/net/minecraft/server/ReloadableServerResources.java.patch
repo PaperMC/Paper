@@ -11,17 +11,27 @@
          this.advancements = new ServerAdvancementManager(loadingContext.lookupWithUpdatedTags());
          this.functionLibrary = new ServerFunctionLibrary(functionCompilationPermissions, this.commands.getDispatcher());
      }
-@@ -96,6 +_,14 @@
+@@ -80,8 +_,9 @@
+         final PermissionSet functionCompilationPermissions,
+         final Executor backgroundExecutor,
+         final Executor mainThreadExecutor
++        , final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause // Paper - add registrar event cause
+     ) {
+-        return ReloadableServerRegistries.reload(contextLayers, updatedContextTags, resourceManager, backgroundExecutor)
++        return ReloadableServerRegistries.reload(contextLayers, updatedContextTags, resourceManager, backgroundExecutor, cause) // Paper - tag lifecycle - add registrar event cause
+             .thenCompose(
+                 fullRegistries -> CompletableFuture.<List<DataComponentInitializers.PendingComponents<?>>>supplyAsync(
+                         () -> BuiltInRegistries.DATA_COMPONENT_INITIALIZERS.build(fullRegistries.lookupWithUpdatedTags()), backgroundExecutor
+@@ -96,6 +_,13 @@
                                  functionCompilationPermissions,
                                  (List<DataComponentInitializers.PendingComponents<?>>)pendingComponents
                              );
 +                            // Paper start - call commands event for bootstraps
-+                            //noinspection ConstantValue
 +                            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(
 +                                io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS,
 +                                io.papermc.paper.command.brigadier.PaperCommands.INSTANCE,
 +                                io.papermc.paper.plugin.bootstrap.BootstrapContext.class,
-+                                MinecraftServer.getServer() == null ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD);
++                                cause);
 +                            // Paper end - call commands event
                              return SimpleReloadInstance.create(
                                      resourceManager,

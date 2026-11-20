@@ -2,13 +2,11 @@ package com.destroystokyo.paper.network;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a client connected to the server.
  */
-@NullMarked
 public interface NetworkClient {
 
     /**
@@ -23,7 +21,7 @@ public interface NetworkClient {
      * client's socket address.
      *
      * @return The client's {@link InetSocketAddress}, or the loopback address
-     * if this is a Unix domain socket connection
+     *     if this is a Unix domain socket connection
      */
     InetSocketAddress getAddress();
 

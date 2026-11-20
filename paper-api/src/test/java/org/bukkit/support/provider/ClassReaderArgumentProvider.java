@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.support.AnnotationConsumer;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 import org.objectweb.asm.ClassReader;
 
 public class ClassReaderArgumentProvider implements ArgumentsProvider, AnnotationConsumer<ClassReaderTest> {
@@ -26,67 +27,67 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     static {
         try {
             BUKKIT_CLASSES = Bukkit.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-        } catch (URISyntaxException e) {
+        } catch (final URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Class<?>[] excludedClasses;
-    private String[] excludedPackages;
+    private Class<?>[] excludedClasses = new Class<?>[0];
+    private String[] excludedPackages = new String[0];
 
     @Override
-    public void accept(ClassReaderTest classReaderTest) {
+    public void accept(final ClassReaderTest classReaderTest) {
         this.excludedClasses = classReaderTest.excludedClasses();
         this.excludedPackages = classReaderTest.excludedPackages();
 
-        for (int i = 0; i < excludedPackages.length; i++) {
+        for (int i = 0; i < this.excludedPackages.length; i++) {
             this.excludedPackages[i] = this.excludedPackages[i].replace('.', '/');
         }
     }
 
     @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return getClassReaders().map(Arguments::of);
+    public Stream<? extends Arguments> provideArguments(final ParameterDeclarations declarations, final ExtensionContext extensionContext) {
+        return this.getClassReaders().map(Arguments::of);
     }
 
     public Stream<ClassReader> getClassReaders() {
-        return readBukkitClasses().map(this::toClassReader);
+        return this.readBukkitClasses().map(this::toClassReader);
     }
 
-    private ClassReader toClassReader(InputStream stream) {
+    private ClassReader toClassReader(final InputStream stream) {
         try (stream) {
             return new ClassReader(stream);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private Stream<InputStream> readBukkitClasses() {
-        try {
-            return Files.walk(Path.of(BUKKIT_CLASSES))
-                    .map(Path::toFile)
-                    .filter(File::isFile)
-                    .filter(file -> file.getName().endsWith(".class"))
-                    .filter(file -> filterPackageNames(removeHomeDirectory(file)))
-                    .filter(file -> filterClass(removeHomeDirectory(file)))
-                    .map(file -> {
-                        try {
-                            return new FileInputStream(file);
-                        } catch (FileNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-        } catch (IOException e) {
+        try (Stream<Path> files = Files.walk(Path.of(BUKKIT_CLASSES))) {
+            return files
+                .map(Path::toFile)
+                .filter(File::isFile)
+                .filter(file -> file.getName().endsWith(".class"))
+                .filter(file -> this.filterPackageNames(this.removeHomeDirectory(file)))
+                .filter(file -> this.filterClass(this.removeHomeDirectory(file)))
+                .map(file -> {
+                    try {
+                        return new FileInputStream(file);
+                    } catch (final FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String removeHomeDirectory(File file) {
+    private String removeHomeDirectory(final File file) {
         return file.getAbsolutePath().substring(BUKKIT_CLASSES.getPath().length());
     }
 
-    private boolean filterPackageNames(String name) {
-        for (String packageName : excludedPackages) {
+    private boolean filterPackageNames(final String name) {
+        for (final String packageName : this.excludedPackages) {
             if (name.startsWith(packageName)) {
                 return false;
             }
@@ -95,8 +96,8 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
         return true;
     }
 
-    private boolean filterClass(String name) {
-        for (Class<?> clazz : excludedClasses) {
+    private boolean filterClass(final String name) {
+        for (final Class<?> clazz : this.excludedClasses) {
             if (name.equals(clazz.getName().replace('.', '/') + ".class")) {
                 return false;
             }

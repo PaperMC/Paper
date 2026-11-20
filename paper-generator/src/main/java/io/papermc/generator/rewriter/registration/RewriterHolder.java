@@ -5,10 +5,8 @@ import io.papermc.typewriter.replace.ReplaceOptionsLike;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.function.BiFunction;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public record RewriterHolder(String pattern, @Nullable ClassNamed targetClass, SearchReplaceRewriter rewriter) {
 
     @Contract(value = "_, _, _ -> new", pure = true)

@@ -8,16 +8,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Paper API-specific methods for working with {@link Component}s and related.
  */
-@NullMarked
 public final class PaperComponents {
 
     private PaperComponents() {
@@ -43,13 +40,17 @@ public final class PaperComponents {
      * </ul>
      * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
      *
-     * @param input the component to resolve
-     * @param context the command sender to resolve with
+     * @param input             the component to resolve
+     * @param context           the command sender to resolve with
      * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
      * @return the resolved component
      * @throws IOException if a syntax error tripped during resolving
      */
-    public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject) throws IOException {
+    public static Component resolveWithContext(
+        final Component input,
+        final @Nullable CommandSender context,
+        final @Nullable Entity scoreboardSubject
+    ) throws IOException {
         return resolveWithContext(input, context, scoreboardSubject, true);
     }
 
@@ -73,14 +74,19 @@ public final class PaperComponents {
      * </ul>
      * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
      *
-     * @param input the component to resolve
-     * @param context the command sender to resolve with
+     * @param input             the component to resolve
+     * @param context           the command sender to resolve with
      * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
      * @param bypassPermissions true to bypass permissions checks for resolving components
      * @return the resolved component
      * @throws IOException if a syntax error tripped during resolving
      */
-    public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+    public static Component resolveWithContext(
+        final Component input,
+        final @Nullable CommandSender context,
+        final @Nullable Entity scoreboardSubject,
+        final boolean bypassPermissions
+    ) throws IOException {
         return InternalAPIBridge.get().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
     }
 

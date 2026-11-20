@@ -6,7 +6,6 @@ import org.bukkit.World;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.WorldEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,7 +14,6 @@ import org.jspecify.annotations.Nullable;
  * If the world is in {@link World#isHardcore() hardcore}
  * the resulting difficulty will always be {@link Difficulty#HARD}
  */
-@NullMarked
 public class WorldDifficultyChangeEvent extends WorldEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

@@ -30,7 +30,7 @@ public interface PluginMeta extends Namespaced {
      * {@link #getPluginSoftDependencies()}, and {@link #getLoadBeforePlugins()}.
      * </ul>
      * <p>
-     * In the plugin.yml, this entry is named <code>name</code>.
+     * In the plugin.yml, this entry is named {@code name}.
      * <p>
      * Example:<blockquote><pre>name: MyPlugin</pre></blockquote>
      *
@@ -179,7 +179,7 @@ public interface PluginMeta extends Namespaced {
      * considered legacy (spigot plugins only)
      *
      * @return the version string made up of the major and minor version (e.g. 1.18 or 1.19). Minor versions like 1.18.2
-     * are unified to their major release version (in this example 1.18)
+     *     are unified to their major release version (in this example 1.18)
      */
     @Nullable String getAPIVersion();
 

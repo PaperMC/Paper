@@ -1,7 +1,6 @@
 package io.papermc.paper.plugin.loader;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A plugin loader is responsible for creating certain aspects of a plugin before it is created.
@@ -14,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * set in this class/any other classes loaded not to persist when the plugin loads.
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.OverrideOnly
 public interface PluginLoader {
 

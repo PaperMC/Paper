@@ -7,10 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public record VirtualField(
     String name,
     Type valueType,

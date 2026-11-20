@@ -3,7 +3,6 @@ package io.papermc.paper.plugin.bootstrap;
 import io.papermc.paper.plugin.provider.util.ProviderUtil;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A plugin bootstrap is meant for loading certain parts of the plugin before the server is loaded.
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * <b>All calls to Bukkit may throw a NullPointerExceptions or return null unexpectedly. You should only call api methods that are explicitly documented to work in the bootstrapper</b>
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.OverrideOnly
 public interface PluginBootstrap {
 

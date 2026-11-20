@@ -8,15 +8,14 @@ import io.papermc.generator.types.craftblockdata.property.converter.Converters;
 import io.papermc.generator.utils.NamingManager;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class IntegerPropertyWriter extends PropertyWriter<Integer> {
 
     protected IntegerPropertyWriter(IntegerProperty property) {
         super(property);
     }
 
+    // CHECKSTYLE.OFF: AvoidNestedBlocks - the blocks group the code for each generated method and mirror its control flow
     @Override
     public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator<?> generator, NamingManager naming) {
         if (Converters.has(this.property)) {
@@ -41,4 +40,5 @@ public class IntegerPropertyWriter extends PropertyWriter<Integer> {
             builder.addMethod(methodBuilder.build());
         }
     }
+    // CHECKSTYLE.ON: AvoidNestedBlocks
 }

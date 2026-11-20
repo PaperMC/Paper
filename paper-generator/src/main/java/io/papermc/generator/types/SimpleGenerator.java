@@ -5,9 +5,7 @@ import com.squareup.javapoet.TypeSpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public abstract class SimpleGenerator implements SourceGenerator {
 
     public static final String INDENT_UNIT = "    ";

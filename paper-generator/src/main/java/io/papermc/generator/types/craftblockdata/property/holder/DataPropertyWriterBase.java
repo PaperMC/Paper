@@ -13,9 +13,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public abstract class DataPropertyWriterBase implements DataPropertyMaker {
 
     protected final Stream<? extends Property<?>> properties;

@@ -3,16 +3,17 @@ package io.papermc.paper.event.server;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.ServerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when resources such as datapacks are reloaded (e.g. /minecraft:reload)
+ * Called when resources such as datapacks are reloaded (e.g. /minecraft:reload).
  * <p>
  * Intended for use to re-register custom recipes, advancements that may be lost during a reload like this.
  */
-@NullMarked
 public class ServerResourcesReloadedEvent extends ServerEvent {
 
+    /**
+     * The handler list of this event.
+     */
     public static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Cause cause;
@@ -40,8 +41,17 @@ public class ServerResourcesReloadedEvent extends ServerEvent {
         return HANDLER_LIST;
     }
 
+    /**
+     * The cause of a resource reload.
+     */
     public enum Cause {
+        /**
+         * The resources were reloaded by the {@code /minecraft:reload} command.
+         */
         COMMAND,
+        /**
+         * The resources were reloaded by a plugin.
+         */
         PLUGIN,
     }
 }

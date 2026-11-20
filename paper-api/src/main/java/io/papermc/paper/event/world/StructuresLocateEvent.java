@@ -12,7 +12,6 @@ import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -28,7 +27,6 @@ import org.jspecify.annotations.Nullable;
  *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
  * </ul>
  */
-@NullMarked
 public class StructuresLocateEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -165,6 +163,9 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
 
     /**
      * Result for {@link StructuresLocateEvent}.
+     *
+     * @param pos       the position of the located structure
+     * @param structure the located structure
      */
     public record Result(Position pos, Structure structure) {
 

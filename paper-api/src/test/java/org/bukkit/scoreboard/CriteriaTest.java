@@ -1,22 +1,24 @@
 package org.bukkit.scoreboard;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class CriteriaTest extends AbstractTestingBase {
 
     @Test
     public void testStatistic() {
-        Material item = mock();
+        final Material item = mock();
         when(item.isItem()).thenReturn(true);
         when(item.isBlock()).thenReturn(false);
 
-        Material block = mock();
+        final Material block = mock();
         when(block.isItem()).thenReturn(false);
         when(block.isBlock()).thenReturn(true);
 

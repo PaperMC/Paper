@@ -1,8 +1,7 @@
 package org.bukkit.packs;
 
 import java.util.UUID;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a resource pack.
@@ -16,37 +15,33 @@ public interface ResourcePack {
      *
      * @return the id
      */
-    @NotNull
-    public UUID getId();
+    UUID getId();
 
     /**
      * Gets the url of the resource pack.
      *
      * @return the url
      */
-    @NotNull
-    public String getUrl();
+    String getUrl();
 
     /**
      * Gets the hash of the resource pack.
      *
      * @return the hash
      */
-    @Nullable
-    public String getHash();
+    @Nullable String getHash();
 
     /**
      * Gets the prompt to show of the resource pack.
      *
      * @return the prompt
      */
-    @Nullable
-    public String getPrompt();
+    @Nullable String getPrompt();
 
     /**
      * Gets if the resource pack is required by the server.
      *
      * @return True if is required
      */
-    public boolean isRequired();
+    boolean isRequired();
 }

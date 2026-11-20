@@ -25,7 +25,7 @@ public class TickTest {
 
     @Test
     public void testAddTickToInstant() {
-        Instant now = Instant.now();
+        final Instant now = Instant.now();
         assertEquals(now, now.plus(0, Tick.tick()));
         assertEquals(now.plus(50, ChronoUnit.MILLIS), now.plus(1, Tick.tick()));
         assertEquals(now.plus(100, ChronoUnit.MILLIS), now.plus(2, Tick.tick()));
@@ -34,7 +34,7 @@ public class TickTest {
 
     @Test
     public void testTicksBetweenInstants() {
-        Instant now = Instant.now();
+        final Instant now = Instant.now();
         assertEquals(0, now.until(now.plus(20, ChronoUnit.MILLIS), Tick.tick()));
         assertEquals(1, now.until(now.plus(50, ChronoUnit.MILLIS), Tick.tick()));
         assertEquals(1, now.until(now.plus(60, ChronoUnit.MILLIS), Tick.tick()));

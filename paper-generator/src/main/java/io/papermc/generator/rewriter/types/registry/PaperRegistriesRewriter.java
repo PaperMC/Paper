@@ -13,11 +13,8 @@ import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PaperRegistriesRewriter extends SearchReplaceRewriter {
-
 
     private void appendEntry(String indent, StringBuilder builder, RegistryEntry<?> entry, boolean canBeDelayed, boolean apiOnly) {
         builder.append(indent);
@@ -83,7 +80,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
         builder.append('\n');
 
         for (RegistryEntry<?> entry : RegistryEntries.BUILT_IN) {
-            appendEntry(metadata.indent(), builder, entry, false, false);
+            this.appendEntry(metadata.indent(), builder, entry, false, false);
         }
 
         builder.append('\n');
@@ -91,7 +88,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
         builder.append('\n');
 
         for (RegistryEntry<?> entry : RegistryEntries.DATA_DRIVEN) {
-            appendEntry(metadata.indent(), builder, entry, true, false);
+            this.appendEntry(metadata.indent(), builder, entry, true, false);
         }
 
         builder.append('\n');
@@ -99,7 +96,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
         builder.append('\n');
 
         for (RegistryEntry<?> entry : RegistryEntries.API_ONLY) {
-            appendEntry(metadata.indent(), builder, entry, false, true);
+            this.appendEntry(metadata.indent(), builder, entry, false, true);
         }
 
         builder.deleteCharAt(builder.length() - 2); // delete extra comma...

@@ -12,9 +12,7 @@ import io.papermc.generator.types.craftblockdata.property.holder.DataHolderType;
 import io.papermc.generator.utils.CommonVariable;
 import io.papermc.generator.utils.NamingManager;
 import java.util.Set;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class ArrayAppender implements DataAppender {
 
     @Override
@@ -22,6 +20,7 @@ public class ArrayAppender implements DataAppender {
         return DataHolderType.ARRAY;
     }
 
+    // CHECKSTYLE.OFF: AvoidNestedBlocks - the blocks group the code for each generated method and mirror its control flow
     @Override
     public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase childConverter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming) {
         if (childConverter.getApiType() == Boolean.TYPE) {
@@ -51,4 +50,5 @@ public class ArrayAppender implements DataAppender {
             builder.addMethod(methodBuilder.build());
         }
     }
+    // CHECKSTYLE.ON: AvoidNestedBlocks
 }

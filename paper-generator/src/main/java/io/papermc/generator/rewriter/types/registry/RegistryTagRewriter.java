@@ -17,7 +17,6 @@ import net.minecraft.tags.TagKey;
 import org.bukkit.Keyed;
 import org.bukkit.Tag;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 
 import static io.papermc.generator.utils.Formatting.quoted;
@@ -25,7 +24,6 @@ import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 @ApiStatus.Obsolete
 public class RegistryTagRewriter<T> extends SearchReplaceRewriter {
 
@@ -56,13 +54,13 @@ public class RegistryTagRewriter<T> extends SearchReplaceRewriter {
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
+        Registry<T> registry = Main.registryAccess.lookupOrThrow(this.registryKey);
         Iterator<? extends TagKey<T>> keyIterator = registry.listTagIds().sorted(Formatting.TAG_ORDER).iterator();
 
         while (keyIterator.hasNext()) {
             TagKey<T> tagKey = keyIterator.next();
 
-            String featureFlagName = Main.EXPERIMENTAL_TAGS.get(tagKey);
+            String featureFlagName = Main.experimentalTags.get(tagKey);
             if (featureFlagName != null) {
                 Annotations.experimentalAnnotations(builder, metadata.indent(), this.importCollector, SingleFlagHolder.fromName(featureFlagName));
             }

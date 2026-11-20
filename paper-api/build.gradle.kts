@@ -183,11 +183,6 @@ val generateApiVersioningFile = tasks.register<GenerateApiVersioningFile>("gener
 
 tasks.jar {
     from(generateApiVersioningFile.flatMap { it.outputFile })
-    manifest {
-        attributes(
-            "Automatic-Module-Name" to "org.bukkit"
-        )
-    }
 }
 
 abstract class Services {

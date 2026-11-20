@@ -23,13 +23,16 @@ import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
+import io.papermc.paper.block.pot.PotPatternTypes;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.item.MapPostProcessing;
+import io.papermc.paper.world.Timelines;
 import io.papermc.paper.world.WeatheringCopperState;
+import io.papermc.paper.world.WorldClocks;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -43,11 +46,14 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.animal.golem.CopperGolemState;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SwingAnimationType;
 import net.minecraft.world.level.block.WeatheringCopper;
+import net.minecraft.world.level.gamerules.GameRule;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
@@ -64,7 +70,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
-import io.papermc.paper.block.pot.PotPatternTypes;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.Boat;
@@ -97,30 +102,28 @@ import org.bukkit.map.MapPalette;
 import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.tag.DamageTypeTags;
-import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter.composite;
 import static io.papermc.generator.rewriter.registration.RewriterHolder.holder;
 import static io.papermc.generator.utils.Formatting.quoted;
 
-@NullMarked
 public final class Rewriters {
+
+    public static final Consumer<PatternSourceSetRewriter> API = Rewriters::bootstrapApi;
+    public static final Consumer<PatternSourceSetRewriter> SERVER = Rewriters::bootstrapServer;
 
     public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {
         bootstrapApi(apiSourceSet);
         bootstrapServer(serverSourceSet);
     }
 
-    public static final Consumer<PatternSourceSetRewriter> API = Rewriters::bootstrapApi;
-    public static final Consumer<PatternSourceSetRewriter> SERVER = Rewriters::bootstrapServer;
-
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
             .register("EntityType", EntityType.class, new EntityTypeRewriter())
-            .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(net.minecraft.world.entity.Entity.RemovalReason.class) {
+            .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(Entity.RemovalReason.class) {
                 @Override
-                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.Entity.RemovalReason reason) {
+                protected EnumValue.Builder rewriteEnumValue(Entity.RemovalReason reason) {
                     return super.rewriteEnumValue(reason).arguments(Boolean.toString(reason.shouldDestroy()), Boolean.toString(reason.shouldSave()));
                 }
             })
@@ -154,7 +157,7 @@ public final class Rewriters {
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
             .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
-            .register("CopperGolemState", CopperGolem.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.golem.CopperGolemState.class))
+            .register("CopperGolemState", CopperGolem.State.class, new EnumCloneRewriter<>(CopperGolemState.class))
             .register(ClientOption.class, composite(
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
@@ -207,7 +210,7 @@ public final class Rewriters {
             })
             .register("GameRules", GameRules.class, new RegistryFieldRewriter<>(Registries.GAME_RULE, "getRule") {
                 @Override
-                protected String rewriteFieldType(Holder.Reference<net.minecraft.world.level.gamerules.GameRule<?>> reference) {
+                protected String rewriteFieldType(Holder.Reference<GameRule<?>> reference) {
                     return "%s<%s>".formatted(
                         this.registryEntry.apiClass().getSimpleName(), this.importCollector.getShortName(reference.value().valueClass())
                     );
@@ -243,6 +246,8 @@ public final class Rewriters {
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("SulfurCubeArchetype", SulfurCube.Archetype.class, new RegistryFieldRewriter<>(Registries.SULFUR_CUBE_ARCHETYPE, "getArchetype"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("WorldClocks", WorldClocks.class, new RegistryFieldRewriter<>(Registries.WORLD_CLOCK, "get"))
+            .register("Timelines", Timelines.class, new RegistryFieldRewriter<>(Registries.TIMELINE, "get"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
@@ -278,5 +283,8 @@ public final class Rewriters {
                 }
             });
         RegistryBootstrapper.bootstrapServer(sourceSet);
+    }
+
+    private Rewriters() {
     }
 }

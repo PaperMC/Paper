@@ -7,9 +7,7 @@ import java.util.Iterator;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.FeatureFlag;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PaperFeatureFlagMapping extends SearchReplaceRewriter {
 
     @Override

@@ -12,11 +12,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public final class Formatting {
+
+    public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().identifier().getPath());
+    public static final Comparator<TagKey<?>> TAG_ORDER = alphabeticKeyOrder(tagKey -> tagKey.location().getPath());
 
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
 
@@ -29,7 +30,7 @@ public final class Formatting {
             return "";
         }
         if (registryKey == Registries.GAME_EVENT) {
-            return "GAME_EVENT_"; // Paper doesn't follow the format (should be GAME_EVENTS_) (pre 1.21)
+            return "GAME_EVENT_"; // paper doesn't follow the format (should be GAME_EVENTS_) (pre 1.21)
         }
         return name.toUpperCase(Locale.ENGLISH) + "_";
     }
@@ -74,9 +75,6 @@ public final class Formatting {
         }
         return newName;
     }
-
-    public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().identifier().getPath());
-    public static final Comparator<TagKey<?>> TAG_ORDER = alphabeticKeyOrder(tagKey -> tagKey.location().getPath());
 
     public static <T> Comparator<T> alphabeticKeyOrder(Function<T, String> pathConverter) {
         return Comparator.comparing(pathConverter, (path1, path2) -> {

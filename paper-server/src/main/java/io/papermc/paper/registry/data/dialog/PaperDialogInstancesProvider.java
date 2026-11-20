@@ -41,8 +41,10 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public final class PaperDialogInstancesProvider implements DialogInstancesProvider {
 
     @Override
@@ -64,7 +66,7 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     }
 
     @Override
-    public DialogAction.StaticAction staticAction(final ClickEvent value) {
+    public DialogAction.StaticAction staticAction(final ClickEvent<?> value) {
         return new StaticActionImpl(value);
     }
 

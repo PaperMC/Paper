@@ -1,8 +1,5 @@
 package io.papermc.paper.inventory.recipe;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.component.DataComponents;
@@ -17,8 +14,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import org.bukkit.support.environment.VanillaFeature;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the <b>actual shapeless crafting</b> path: {@link ShapelessRecipe#matches} over a real
@@ -31,7 +30,7 @@ import org.junit.jupiter.api.Test;
  * predicate integration fix.
  */
 @VanillaFeature
-@Disabled("The recipe placement tests are mostly AI generated and require feature patches")
+// @Disabled("The recipe placement tests are mostly AI generated and require feature patches")
 class ShapelessRecipeMatchTest {
 
     private static Ingredient regular(final Item item) {

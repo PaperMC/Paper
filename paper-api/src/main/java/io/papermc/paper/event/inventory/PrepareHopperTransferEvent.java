@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a hopper or hopper minecart is about to choose an item to move,
@@ -15,15 +14,14 @@ import org.jspecify.annotations.NullMarked;
  * The hopper treats disallowed slots of the source as if they do not exist, so
  * a source with items only in disallowed slots is treated as empty.
  */
-@NullMarked
 public class PrepareHopperTransferEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    protected long disallowedSlots;
     private final Inventory source;
     private final Inventory destination;
     private final boolean didSourceInitiate;
-    protected long disallowedSlots;
 
     @ApiStatus.Internal
     public PrepareHopperTransferEvent(final Inventory source, final Inventory destination, final boolean didSourceInitiate) {
@@ -33,7 +31,7 @@ public class PrepareHopperTransferEvent extends Event {
     }
 
     /**
-     * Gets the Inventory that items are being taken from
+     * Gets the Inventory that items are being taken from.
      *
      * @return Inventory that items are being taken from
      */
@@ -42,7 +40,7 @@ public class PrepareHopperTransferEvent extends Event {
     }
 
     /**
-     * Gets the Inventory that items are being put into
+     * Gets the Inventory that items are being put into.
      *
      * @return Inventory that items are being put into
      */
@@ -74,7 +72,7 @@ public class PrepareHopperTransferEvent extends Event {
     /**
      * Sets if the hopper is allowed to take items from a slot of {@link #getSource()}.
      *
-     * @param slot the slot
+     * @param slot    the slot
      * @param allowed whether the slot is allowed
      */
     public void setSlotAllowed(final int slot, final boolean allowed) {

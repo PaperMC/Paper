@@ -13,9 +13,7 @@ import io.papermc.generator.utils.CommonVariable;
 import io.papermc.generator.utils.NamingManager;
 import java.util.Map;
 import java.util.Set;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class ListAppender implements DataAppender {
 
     private static final Map<String, String> METHOD_BASE_RENAMES = Map.of(
@@ -27,6 +25,7 @@ public class ListAppender implements DataAppender {
         return DataHolderType.LIST;
     }
 
+    // CHECKSTYLE.OFF: AvoidNestedBlocks - the blocks group the code for each generated method and mirror its control flow
     @Override
     public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase childConverter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming) {
         NamingManager.NameWrapper methodName = NamingManager.NameWrapper.wrap("get", METHOD_BASE_RENAMES.getOrDefault(baseNaming.getMethodBaseName(), baseNaming.getMethodBaseName()));
@@ -58,4 +57,5 @@ public class ListAppender implements DataAppender {
             builder.addMethod(methodBuilder.build());
         }
     }
+    // CHECKSTYLE.ON: AvoidNestedBlocks
 }

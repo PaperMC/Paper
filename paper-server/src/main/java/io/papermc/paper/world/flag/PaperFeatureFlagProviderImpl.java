@@ -13,7 +13,9 @@ import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionType;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
 
     public static final BiMap<FeatureFlag, net.minecraft.world.flag.FeatureFlag> FLAGS = ImmutableBiMap.of(

@@ -46,7 +46,7 @@ public class PlayerConnectionValidateLoginEvent extends Event {
      *
      * @return connection
      * @apiNote disconnecting the player through this connection
-     * or using any methods that may send packets is not supported
+     *     or using any methods that may send packets is not supported
      */
     public PlayerConnection getConnection() {
         return this.connection;
@@ -61,7 +61,7 @@ public class PlayerConnectionValidateLoginEvent extends Event {
     }
 
     /**
-     * Disallows the player from logging in, with the given reason
+     * Disallows the player from logging in, with the given reason.
      *
      * @param message Kick message to display to the user
      */

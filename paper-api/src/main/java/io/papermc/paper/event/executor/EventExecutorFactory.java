@@ -1,10 +1,5 @@
 package io.papermc.paper.event.executor;
 
-import org.bukkit.event.Event;
-import org.bukkit.event.Listener;
-import org.bukkit.plugin.EventExecutor;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.constant.ConstantDescs;
@@ -15,16 +10,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Objects;
+import org.bukkit.event.Event;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.EventExecutor;
+import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-@NullMarked
 public final class EventExecutorFactory {
     private static final byte[] TEMPLATE_CLASS_BYTES;
 
     static {
-        try (final InputStream is = EventExecutorFactory.class.getResourceAsStream("MethodHandleEventExecutorTemplate.class")) {
+        try (InputStream is = EventExecutorFactory.class.getResourceAsStream("MethodHandleEventExecutorTemplate.class")) {
             TEMPLATE_CLASS_BYTES = Objects.requireNonNull(is, "template class is missing").readAllBytes();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new AssertionError(e);
         }
     }
@@ -34,17 +32,19 @@ public final class EventExecutorFactory {
     }
 
     /**
-     * {@return an {@link EventExecutor} implemented by a hidden class calling a method handle}
+     * Creates an {@link EventExecutor} implemented by a hidden class calling a method handle.
      *
      * @param method     the method to be invoked by the created event executor
      * @param eventClass the class of the event to handle
+     * @return the event executor
+     * @throws AssertionError if the hidden class cannot be defined or instantiated
      */
     public static EventExecutor create(final Method method, final Class<? extends Event> eventClass) {
         final List<?> classData = List.of(method, eventClass);
         try {
             final MethodHandles.Lookup newClass = MethodHandles.lookup().defineHiddenClassWithClassData(TEMPLATE_CLASS_BYTES, classData, true);
             return newClass.lookupClass().asSubclass(EventExecutor.class).getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
+        } catch (final ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
     }
@@ -56,6 +56,10 @@ public final class EventExecutorFactory {
     /**
      * Extracts the class data and creates an adjusted MethodHandle directly usable by the lookup class.
      * The logic is kept here to minimize memory usage per created class.
+     *
+     * @param lookup the lookup of the hidden class, which holds the class data
+     * @return the class data with a method handle adjusted to the event executor signature
+     * @throws AssertionError if the class data cannot be read or the method cannot be unreflected
      */
     static ClassData classData(final MethodHandles.Lookup lookup) {
         try {
@@ -67,7 +71,7 @@ public final class EventExecutorFactory {
             mh = mh.asType(MethodType.methodType(void.class, Listener.class, Event.class));
             final Class<?> eventClass = MethodHandles.classDataAt(lookup, ConstantDescs.DEFAULT_NAME, Class.class, 1);
             return new ClassData(method, mh, eventClass.asSubclass(Event.class));
-        } catch (ReflectiveOperationException e) {
+        } catch (final ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
     }

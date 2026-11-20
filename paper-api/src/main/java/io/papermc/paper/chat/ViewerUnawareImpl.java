@@ -4,10 +4,8 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 @ApiStatus.Internal
-@NullMarked
 sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
     private final ViewerUnaware unaware;
 
@@ -26,7 +24,7 @@ sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnawa
     }
 
     static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
-        static final ViewerUnawareImpl.Default INSTANCE = new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
+        static final ViewerUnawareImpl.Default INSTANCE = new ViewerUnawareImpl.Default((_, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
 
         Default(final ViewerUnaware unaware) {
             super(unaware);

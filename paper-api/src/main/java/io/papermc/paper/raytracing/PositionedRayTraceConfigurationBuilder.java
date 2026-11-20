@@ -8,13 +8,11 @@ import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A builder for configuring a raytrace with a starting location
  * and direction.
  */
-@NullMarked
 public interface PositionedRayTraceConfigurationBuilder {
 
     /**
@@ -102,7 +100,7 @@ public interface PositionedRayTraceConfigurationBuilder {
     /**
      * Sets the targets for the rayTrace.
      *
-     * @param first the first target
+     * @param first  the first target
      * @param others the other targets
      * @return a reference to this object
      */

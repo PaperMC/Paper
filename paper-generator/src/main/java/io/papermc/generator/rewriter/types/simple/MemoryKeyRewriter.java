@@ -24,7 +24,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.Nullable;
 
 import static io.papermc.generator.utils.Formatting.quoted;
 
@@ -37,10 +37,6 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         }
         return null;
     });
-
-    public MemoryKeyRewriter() {
-        super(Registries.MEMORY_MODULE_TYPE, null);
-    }
 
     // this api is not implemented and is not backed by a proper registry
     private static final Set<Class<?>> IGNORED_TYPES = Set.of(
@@ -70,6 +66,12 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         "LIKED_NOTEBLOCK", "LIKED_NOTEBLOCK_POSITION"
     );
 
+    private @Nullable Class<?> apiMemoryType;
+
+    public MemoryKeyRewriter() {
+        super(Registries.MEMORY_MODULE_TYPE, null);
+    }
+
     @Override
     protected boolean canPrintField(Holder.Reference<MemoryModuleType<?>> reference) {
         Class<?> memoryType = MEMORY_GENERIC_TYPES.get(reference.key());
@@ -84,8 +86,6 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
 
         return true;
     }
-
-    private @MonotonicNonNull Class<?> apiMemoryType;
 
     @Override
     protected String rewriteFieldType(Holder.Reference<MemoryModuleType<?>> reference) {

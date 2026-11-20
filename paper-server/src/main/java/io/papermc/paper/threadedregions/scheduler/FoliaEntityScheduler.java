@@ -135,7 +135,7 @@ public final class FoliaEntityScheduler implements EntityScheduler {
         }
 
         private final int getStateVolatile() {
-            return (int)STATE_HANDLE.get(this);
+            return (int)STATE_HANDLE.getVolatile(this);
         }
 
         private final int compareAndExchangeStateVolatile(final int expect, final int update) {

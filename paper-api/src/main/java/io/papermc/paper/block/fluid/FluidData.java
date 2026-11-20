@@ -4,13 +4,11 @@ import org.bukkit.Fluid;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A representation of a fluid in a specific state of data.
  * This type is not linked to a specific location and hence mostly resembles a {@link org.bukkit.block.data.BlockData}.
  */
-@NullMarked
 public interface FluidData extends Cloneable {
 
     /**
@@ -44,8 +42,7 @@ public interface FluidData extends Cloneable {
      *
      * @return the amount as an integer, between 0 and 8
      */
-    @Range(from = 0, to = 8)
-    int getLevel();
+    @Range(from = 0, to = 8) int getLevel();
 
     /**
      * Computes the height of the fluid in the world.
@@ -57,11 +54,10 @@ public interface FluidData extends Cloneable {
      * @param location the location at which to check the high of this fluid data.
      * @return the height as a float value
      */
-    @Range(from = 0, to = 1)
-    float computeHeight(Location location);
+    @Range(from = 0, to = 1) float computeHeight(Location location);
 
     /**
-     * Returns whether this fluid is a source block
+     * Returns whether this fluid is a source block.
      *
      * @return true if the fluid is a source block, false otherwise
      */

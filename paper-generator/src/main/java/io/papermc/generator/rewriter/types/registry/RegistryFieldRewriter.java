@@ -23,8 +23,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -33,17 +31,16 @@ import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
 public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     protected final RegistryEntry<T> registryEntry;
+    protected @Nullable ClassNamed fieldClass;
+
     private final boolean isFilteredRegistry;
     private final @Nullable String fetchMethod;
-
-    protected @MonotonicNonNull ClassNamed fieldClass;
-    private @MonotonicNonNull Supplier<Map<ResourceKey<T>, SingleFlagHolder>> experimentalKeys;
+    private @Nullable Supplier<Map<ResourceKey<T>, SingleFlagHolder>> experimentalKeys;
 
     public RegistryFieldRewriter(ResourceKey<? extends Registry<T>> registryKey, @Nullable String fetchMethod) {
         this.registryEntry = RegistryEntries.byRegistryKey(registryKey);

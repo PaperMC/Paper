@@ -12,15 +12,21 @@ import io.papermc.typewriter.replace.SearchMetadata;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.world.entity.Pose;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.Nullable;
 
 public class PoseRewriter extends EnumCloneRewriter<Pose> {
+
+    private static final Map<String, String> RENAMES = Map.of(
+        Pose.CROUCHING.name(), "SNEAKING"
+    );
+
+    private @Nullable Map<String, CharSequenceBlockToken> javadocsPerConstant;
+
+    private @Nullable SearchMetadata metadata;
 
     public PoseRewriter() {
         super(Pose.class);
     }
-
-    private @MonotonicNonNull Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     private Map<String, CharSequenceBlockToken> parseConstantJavadocs(String content) {
         Map<String, CharSequenceBlockToken> map = new HashMap<>();
@@ -51,15 +57,9 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
         return map;
     }
 
-    private @MonotonicNonNull SearchMetadata metadata;
-
-    private static final Map<String, String> RENAMES = Map.of(
-        Pose.CROUCHING.name(), "SNEAKING"
-    );
-
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        this.javadocsPerConstant = parseConstantJavadocs(metadata.replacedContent());
+        this.javadocsPerConstant = this.parseConstantJavadocs(metadata.replacedContent());
         this.metadata = metadata;
         super.insert(metadata, builder);
     }
