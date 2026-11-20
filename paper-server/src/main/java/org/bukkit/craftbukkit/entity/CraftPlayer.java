@@ -116,6 +116,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.server.players.ServerOpList;
+import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Prediction;
@@ -1533,6 +1535,51 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
         CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, entityType, newValue, this.getHandle());
+    }
+
+    @Override
+    public boolean bypassesPlayerLimit() {
+        return this.server.getHandle().getOps().canBypassPlayerLimit(this.getHandle().nameAndId());
+    }
+
+    @Override
+    public boolean setBypassesPlayerLimit(final boolean bypass) {
+        ServerOpList opList = this.server.getHandle().getOps();
+        ServerOpListEntry existingEntry = opList.get(this.getHandle().nameAndId());
+
+        if (existingEntry == null) {
+            return false;
+        }
+
+        opList.add(new ServerOpListEntry(this.getHandle().nameAndId(), existingEntry.permissions(), bypass));
+        return true;
+    }
+
+    @Override
+    public int getOpLevel() {
+        ServerOpList opList = this.server.getHandle().getOps();
+        ServerOpListEntry entry = opList.get(this.getHandle().nameAndId());
+
+        if (entry == null) {
+            return 0;
+        }
+
+        LevelBasedPermissionSet levelSet = entry.permissions();
+        return levelSet.level().id();
+    }
+
+    @Override
+    public void setOpLevel(final int level) {
+        Preconditions.checkArgument(level >= 0 && level <= 4, "Operator permission level must be between 0 and 4, got '%s'.", level);
+
+        ServerOpListEntry existingEntry = this.server.getHandle().getOps().get(this.getHandle().nameAndId());
+
+        boolean bypassesLimit = existingEntry != null && existingEntry.getBypassesPlayerLimit();
+
+        PermissionLevel permLevel = PermissionLevel.byId(level);
+        LevelBasedPermissionSet permSet = LevelBasedPermissionSet.forLevel(permLevel);
+
+        this.server.getHandle().op(this.getHandle().nameAndId(), Optional.of(permSet), Optional.of(bypassesLimit));
     }
 
     @Override
