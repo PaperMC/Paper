@@ -1,0 +1,268 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyllian Warmerdam <kyllian007@gmail.com>
+Date: Wed, 18 Nov 2026 10:06:14 +0100
+Subject: [PATCH] Don't re-save chunks that were only loaded
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java
+index 7463cf5bf871033a0e5f6d54dd0d427c474d7cd4..1e6c28cd7ff0a839fdb3e4de1d501ea4a50eeb70 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkLoadTask.java
+@@ -339,6 +339,10 @@ public final class ChunkLoadTask extends ChunkProgressionTask {
+             }
+ 
+             try {
++                // Paper start - Don't re-save chunks that were only loaded
++                // check before converting, the converters may modify the tag in place
++                final boolean upgraded = net.minecraft.nbt.NbtUtils.getDataVersion(data, -1) < net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
++                // Paper end - Don't re-save chunks that were only loaded
+                 // run converters
+                 final CompoundTag converted = this.world.getChunkSource().chunkMap.upgradeChunkTag(data);
+ 
+@@ -356,6 +360,12 @@ public final class ChunkLoadTask extends ChunkProgressionTask {
+                     this.world, this.world.getPoiManager(), this.world.getChunkSource().chunkMap.storageInfo(),
+                     new ChunkPos(this.chunkX, this.chunkZ)
+                 );
++                // Paper start - Don't re-save chunks that were only loaded
++                if (upgraded && chunk != null) {
++                    // the converted data differs from what is on disk, write it back in the current format
++                    chunk.markUnsaved();
++                }
++                // Paper end - Don't re-save chunks that were only loaded
+ 
+                 return new TaskResult<>(new ReadChunk(chunk, chunkData), null);
+             } catch (final Throwable thr2) {
+diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java
+index 29563672f4b0e5e13625193125656549b4eba010..8581855e43b5a56643164c6bdf62133faf84b956 100644
+--- a/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java
++++ b/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java
+@@ -75,7 +75,7 @@ public final class BlockStarLightEngine extends StarLightEngine {
+             if (!initRemovedNibbles) {
+                 throw new IllegalStateException();
+             } else {
+-                this.setNibbleInCache(chunkX, chunkY, chunkZ, new SWMRNibbleArray());
++                this.setNibbleInCache(chunkX, chunkY, chunkZ, new SWMRNibbleArray().markCacheOnly()); // Paper - Don't re-save chunks that were only loaded
+             }
+         } else {
+             nibble.setNonNull();
+diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
+index 240416aba0ad4649e1db401aff2565f972f5ca11..2376701e7b9d22fa6048edff4c49f5847930bcb1 100644
+--- a/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
++++ b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
+@@ -58,6 +58,20 @@ public final class SWMRNibbleArray {
+     private byte[] storageUpdating;
+     private boolean updatingDirty; // only returns whether storageUpdating is dirty
+     private volatile byte[] storageVisible;
++    // Paper start - Don't re-save chunks that were only loaded
++    // Nibbles created by initNibble with initRemovedNibbles only live in a light engine's nibble cache for one operation.
++    // They are never attached to a chunk, so changes to them are not visible and are never saved.
++    private boolean cacheOnly;
++
++    public SWMRNibbleArray markCacheOnly() {
++        this.cacheOnly = true;
++        return this;
++    }
++
++    public boolean isCacheOnly() {
++        return this.cacheOnly;
++    }
++    // Paper end - Don't re-save chunks that were only loaded
+ 
+     public SWMRNibbleArray() {
+         this(null, false); // lazy init
+@@ -335,7 +349,17 @@ public final class SWMRNibbleArray {
+             return false;
+         }
+ 
++        final boolean changed; // Paper - Don't re-save chunks that were only loaded
+         synchronized (this) {
++            // Paper start - Don't re-save chunks that were only loaded
++            // Only report a change if the visible state or data actually differs afterwards. Light updates can lower a value
++            // and propagate it back up to where it was, which marks the nibble dirty without changing anything.
++            final boolean uninitialised = this.stateUpdating == INIT_STATE_NULL || this.stateUpdating == INIT_STATE_UNINIT;
++            final byte[] oldVisible = this.storageVisible;
++            final byte[] newVisible = uninitialised ? null : this.storageUpdating;
++            changed = this.stateUpdating != this.stateVisible
++                || (newVisible == null ? oldVisible != null : (oldVisible == null || (newVisible != oldVisible && !Arrays.equals(newVisible, oldVisible))));
++            // Paper end - Don't re-save chunks that were only loaded
+             if (this.stateUpdating == INIT_STATE_NULL || this.stateUpdating == INIT_STATE_UNINIT) {
+                 this.storageVisible = null;
+             } else {
+@@ -356,7 +380,7 @@ public final class SWMRNibbleArray {
+             this.stateVisible = this.stateUpdating;
+         }
+ 
+-        return true;
++        return changed; // Paper - Don't re-save chunks that were only loaded
+     }
+ 
+     // operation type: visible
+diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java
+index d3d1831ff4fabd87d4b18da0b28a0d75d82dfbc7..08d2206607c97a1bbb6e483e49c9f16a1ff42e6d 100644
+--- a/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java
++++ b/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java
+@@ -77,7 +77,7 @@ public final class SkyStarLightEngine extends StarLightEngine {
+             if (!initRemovedNibbles) {
+                 throw new IllegalStateException();
+             } else {
+-                this.setNibbleInCache(chunkX, chunkY, chunkZ, nibble = new SWMRNibbleArray(null, true));
++                this.setNibbleInCache(chunkX, chunkY, chunkZ, nibble = new SWMRNibbleArray(null, true).markCacheOnly()); // Paper - Don't re-save chunks that were only loaded
+             }
+         }
+         this.initNibble(nibble, chunkX, chunkY, chunkZ, extrude);
+diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
+index 1b74af157a70867cf3a62ac8faf7e015dd2b7bac..fa7ce877429d7263d252a33bed5ffae9905a2734 100644
+--- a/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
++++ b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
+@@ -276,7 +276,7 @@ public abstract class StarLightEngine {
+             final int chunkZ = ((index / 5) % 5) - this.chunkOffsetZ;
+             final int ySections = this.maxSection - this.minSection + 1;
+             final int chunkY = ((index / (5*5)) % (ySections + 2 + 2)) - this.chunkOffsetY;
+-            if ((nibble != null && nibble.updateVisible()) || this.notifyUpdateCache[index]) {
++            if ((nibble != null && nibble.updateVisible() && !nibble.isCacheOnly()) || this.notifyUpdateCache[index]) { // Paper - Don't re-save chunks that were only loaded; cache only nibbles never reach the chunk
+                 lightAccess.onLightUpdate(this.skylightPropagator ? LightLayer.SKY : LightLayer.BLOCK, SectionPos.of(chunkX, chunkY, chunkZ));
+             }
+         }
+diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
+index 39ea7198f3bbe4525e686504887e0074de80854d..27bd634e65eb8a304b71f4db043aa529af4051fa 100644
+--- a/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -346,7 +346,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+     }
+ 
+     public boolean tryMarkSaved() {
+-        if (this.unsaved) {
++        if (this.unsaved || this.persistentDataContainer.dirty()) { // Paper - Don't re-save chunks that were only loaded; also clear a dirty pdc on its own
+             this.unsaved = false;
+             this.persistentDataContainer.dirty(false); // CraftBukkit - SPIGOT-6814: chunk was saved, pdc is no longer dirty
+             return true;
+@@ -355,6 +355,16 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeR
+         }
+     }
+ 
++    // Paper start - Don't re-save chunks that were only loaded
++    /**
++     * Only for a chunk that was just created from its saved data, before anything else could modify it.
++     */
++    public void clearUnsavedAfterLoad() {
++        this.unsaved = false;
++        this.persistentDataContainer.dirty(false);
++    }
++    // Paper end - Don't re-save chunks that were only loaded
++
+     public boolean isUnsaved() {
+         return this.unsaved || this.persistentDataContainer.dirty(); // CraftBukkit - SPIGOT-6814: chunk is unsaved if pdc was mutated
+     }
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 76dae652c910e36c860791a8285bd9fee466d5b9..6aedce5c6b7d00eda4d929d5f0f24d65cf5d410f 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -763,10 +763,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+ 
+     public void postProcessGeneration(final ServerLevel level) {
+         ChunkPos chunkPos = this.getPos();
++        boolean consumedSavedData = !this.pendingBlockEntities.isEmpty() || !this.upgradeData.isEmpty(); // Paper - Don't re-save chunks that were only loaded
+ 
+         for (int sectionIndex = 0; sectionIndex < this.postProcessing.length; sectionIndex++) {
+             ShortList postProcessingSection = this.postProcessing[sectionIndex];
+             if (postProcessingSection != null) {
++                consumedSavedData |= !postProcessingSection.isEmpty(); // Paper - Don't re-save chunks that were only loaded
+                 for (Short packedOffset : postProcessingSection) {
+                     BlockPos blockPos = ProtoChunk.unpackOffsetCoordinates(packedOffset, this.getSectionYFromSectionIndex(sectionIndex), chunkPos);
+                     BlockState blockState = this.getBlockState(blockPos);
+@@ -796,6 +798,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         this.pendingBlockEntities.clear();
+         this.upgradeData.upgrade(this);
+         this.postProcessingDone = true; // Paper - rewrite chunk system
++        // Paper start - Don't re-save chunks that were only loaded
++        // post-processing, pending block entities and upgrade data are saved with the chunk until they are consumed here
++        if (consumedSavedData) {
++            this.markUnsaved();
++        }
++        // Paper end - Don't re-save chunks that were only loaded
+     }
+ 
+     private @Nullable BlockEntity promotePendingBlockEntity(final BlockPos pos, final CompoundTag tag) {
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 84a92dc868e61969460dddb156af332e6384bcd1..30f261177baaeeb4c88631293c9a357b844c9eea 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -380,17 +380,28 @@ public record SerializableChunkData(
+         }
+         // CraftBukkit end
+ 
++        // Paper start - Don't re-save chunks that were only loaded
++        // Tracks whether loading changed anything that would be written back, see below
++        boolean changedOnLoad = !this.lightCorrect || this.blendingData != null;
++        // Paper end - Don't re-save chunks that were only loaded
+         chunk.setLightCorrect(this.lightCorrect);
+         Set<Heightmap.Types> toPrime = EnumSet.copyOf(chunk.getPersistedStatus().heightmapsAfter());
+ 
+         for (Entry<Heightmap.Types, long[]> entry : this.heightmaps.entrySet()) {
++            changedOnLoad |= chunk.getOrCreateHeightmapUnprimed(entry.getKey()).getRawData().length != entry.getValue().length; // Paper - Don't re-save chunks that were only loaded; mismatched heightmaps are re-primed
+             chunk.setHeightmap(entry.getKey(), entry.getValue());
+             toPrime.remove(entry.getKey());
+         }
+ 
++        changedOnLoad |= !toPrime.isEmpty(); // Paper - Don't re-save chunks that were only loaded
+         Heightmap.primeHeightmaps(chunk, toPrime);
+-        chunk.setAllStarts(unpackStructureStart(StructurePieceSerializationContext.fromLevel(level), this.structureData, level.getSeed()));
+-        chunk.setAllReferences(unpackStructureReferences(level.registryAccess(), pos, this.structureData));
++        // Paper start - Don't re-save chunks that were only loaded
++        final Map<Structure, StructureStart> starts = unpackStructureStart(StructurePieceSerializationContext.fromLevel(level), this.structureData, level.getSeed());
++        final Map<Structure, LongSet> references = unpackStructureReferences(level.registryAccess(), pos, this.structureData);
++        changedOnLoad |= starts.size() != this.structureData.getCompoundOrEmpty("starts").size() || structureReferencesChanged(this.structureData, references);
++        chunk.setAllStarts(starts);
++        chunk.setAllReferences(references);
++        // Paper end - Don't re-save chunks that were only loaded
+ 
+         for (int sectionIndex = 0; sectionIndex < this.postProcessingSections.length; sectionIndex++) {
+             ShortList postProcessingSection = this.postProcessingSections[sectionIndex];
+@@ -400,6 +411,14 @@ public record SerializableChunkData(
+         }
+ 
+         if (chunkType == ChunkType.LEVELCHUNK) {
++            // Paper start - Don't re-save chunks that were only loaded
++            // The setters above (light flag, structures, PDC) mark the chunk unsaved even though they only restore what is on disk.
++            // If nothing was changed while loading, the freshly created chunk matches its saved data and does not need to be written back.
++            // Proto chunks are left alone, they are marked unsaved by setPersistedStatus anyway.
++            if (!changedOnLoad) {
++                chunk.clearUnsavedAfterLoad();
++            }
++            // Paper end - Don't re-save chunks that were only loaded
+             return this.loadStarlightLightData(level, new ImposterProtoChunk((LevelChunk)chunk, false)); // Paper - starlight
+         }
+ 
+@@ -706,6 +725,32 @@ public record SerializableChunkData(
+         return outmap;
+     }
+ 
++    // Paper start - Don't re-save chunks that were only loaded
++    // unpackStructureReferences drops unknown structures, out of range and duplicate references, and packStructureData skips empty sets
++    private static boolean structureReferencesChanged(final CompoundTag structureData, final Map<Structure, LongSet> references) {
++        final CompoundTag referencesTag = structureData.getCompoundOrEmpty("References");
++        int keptEntries = 0;
++        long keptReferences = 0L;
++        for (final LongSet structureReferences : references.values()) {
++            if (!structureReferences.isEmpty()) {
++                keptEntries++;
++                keptReferences += structureReferences.size();
++            }
++        }
++
++        if (keptEntries != referencesTag.size()) {
++            return true;
++        }
++
++        long savedReferences = 0L;
++        for (final String key : referencesTag.keySet()) {
++            savedReferences += referencesTag.getLongArray(key).map(array -> array.length).orElse(0);
++        }
++
++        return savedReferences != keptReferences;
++    }
++    // Paper end - Don't re-save chunks that were only loaded
++
+     private static Map<Structure, LongSet> unpackStructureReferences(final RegistryAccess registryAccess, final ChunkPos pos, final CompoundTag tag) {
+         Map<Structure, LongSet> outmap = Maps.newHashMap();
+         Registry<Structure> structuresRegistry = registryAccess.lookupOrThrow(Registries.STRUCTURE);
