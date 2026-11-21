@@ -7,7 +7,7 @@ dependencies {
 tasks.processResources {
     val props = mapOf(
         "version" to project.version,
-        "apiversion" to "\"${rootProject.providers.gradleProperty("apiVersion").get()}\"",
+        "apiversion" to "\"${providers.gradleProperty("apiVersion").get()}\"",
     )
     inputs.properties(props)
     filesMatching("paper-plugin.yml") {
