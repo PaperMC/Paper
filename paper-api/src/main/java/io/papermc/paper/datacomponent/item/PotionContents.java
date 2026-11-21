@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.Color;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS
  */
 @ApiStatus.NonExtendable
-public interface PotionContents {
+public interface PotionContents extends BuildableDataComponent<PotionContents, PotionContents.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static PotionContents.Builder potionContents() {
@@ -103,16 +104,6 @@ public interface PotionContents {
         Builder customColor(@Nullable Color color);
 
         /**
-         * Sets the suffix to the translation key of the potion item.
-         *
-         * @param name name
-         * @return the builder for chaining
-         * @see #customName()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder customName(@Nullable String name);
-
-        /**
          * Adds a custom effect instance to this builder.
          *
          * @param effect effect
@@ -131,5 +122,25 @@ public interface PotionContents {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addCustomEffects(List<PotionEffect> effects);
+
+        /**
+         * Sets custom effect instances to this builder.
+         *
+         * @param effects effects
+         * @return the builder for chaining
+         * @see #customEffects()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder customEffects(List<PotionEffect> effects);
+
+        /**
+         * Sets the suffix to the translation key of the potion item.
+         *
+         * @param name name
+         * @return the builder for chaining
+         * @see #customName()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder customName(@Nullable String name);
     }
 }

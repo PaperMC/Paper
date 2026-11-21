@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
@@ -7,7 +8,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
-public interface PiercingWeapon {
+public interface PiercingWeapon extends BuildableDataComponent<PiercingWeapon, PiercingWeapon.Builder> {
 
     /**
      * Returns a new builder for creating a Piercing Weapon.
