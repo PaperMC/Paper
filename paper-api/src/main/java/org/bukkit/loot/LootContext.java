@@ -195,6 +195,21 @@ public final class LootContext {
     }
 
     /**
+     * Creates a new Builder instance pre-populated with the values
+     * of this context.
+     *
+     * @return a new builder
+     */
+    @Contract("-> new")
+    public Builder toBuilder() {
+        final Builder builder = new Builder(this.world);
+        builder.luck = this.luck;
+        builder.random = this.random;
+        builder.contextMap.putAll(this.contextMap);
+        return builder;
+    }
+
+    /**
      * Utility class to make building {@link LootContext} easier. The only
      * required argument is {@link org.bukkit.World}.
      */
