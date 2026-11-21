@@ -24,34 +24,36 @@ import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class CraftLootTable implements org.bukkit.loot.LootTable {
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(Identifier minecraft) {
+    public static org.bukkit.loot.@Nullable LootTable minecraftToBukkit(final @Nullable Identifier minecraft) {
         return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
     }
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
+    public static org.bukkit.loot.@Nullable LootTable minecraftToBukkit(final @Nullable ResourceKey<LootTable> minecraft) {
         return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
     }
 
-    public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
+    public static @Nullable NamespacedKey minecraftToBukkitKey(final @Nullable ResourceKey<LootTable> minecraft) {
         return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.identifier());
     }
 
-    public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {
+    public static @Nullable ResourceKey<LootTable> bukkitToMinecraft(final org.bukkit.loot.@Nullable LootTable table) {
         return (table == null) ? null : CraftLootTable.bukkitKeyToMinecraft(table.getKey());
     }
 
-    public static ResourceKey<LootTable> bukkitKeyToMinecraft(NamespacedKey key) {
+    public static @Nullable ResourceKey<LootTable> bukkitKeyToMinecraft(final @Nullable NamespacedKey key) {
         return (key == null) ? null : ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(key));
     }
 
     private final LootTable handle;
     private final NamespacedKey key;
 
-    public CraftLootTable(NamespacedKey key, LootTable handle) {
+    public CraftLootTable(final NamespacedKey key, final LootTable handle) {
         this.handle = handle;
         this.key = key;
     }
@@ -61,26 +63,15 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     @Override
-    public Collection<ItemStack> populateLoot(Random random, LootContext context) {
-        return this.populateLoot0(random, context);
-    }
-
-    @Override
-    public Collection<ItemStack> populateLoot(LootContext context) {
-        return this.populateLoot0(null, context);
-    }
-
-    public Collection<ItemStack> populateLoot0(@Nullable Random random, LootContext context) {
+    public Collection<ItemStack> populateLoot(final LootContext context) {
         Preconditions.checkArgument(context != null, "context cannot be null");
-        if (random == null) {
-            random = context.getRandom();
-        }
 
-        LootParams params = PaperLootContext.toVanilla(context, this.getHandle().getParamSet());
-        List<net.minecraft.world.item.ItemStack> items = this.handle.getRandomItems(params, Optionull.map(random, RandomSourceWrapper::new));
-        Collection<ItemStack> result = new ArrayList<>(items.size());
+        final Random random = context.getRandom();
+        final LootParams params = PaperLootContext.toVanilla(context, this.getHandle().getParamSet());
+        final List<net.minecraft.world.item.ItemStack> items = this.handle.getRandomItems(params, Optionull.map(random, RandomSourceWrapper::new));
+        final Collection<ItemStack> result = new ArrayList<>(items.size());
 
-        for (net.minecraft.world.item.ItemStack item : items) {
+        for (final net.minecraft.world.item.ItemStack item : items) {
             if (item.isEmpty()) {
                 continue;
             }
@@ -92,24 +83,13 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     @Override
-    public void fillInventory(Inventory inventory, Random random, LootContext context) {
-        this.fillInventory0(inventory, random, context);
-    }
-
-    @Override
-    public void fillInventory(Inventory inventory, LootContext context) {
-        this.fillInventory0(inventory, null, context);
-    }
-
-    public void fillInventory0(Inventory inventory, Random random, LootContext context) {
+    public void fillInventory(final Inventory inventory, final LootContext context) {
         Preconditions.checkArgument(inventory != null, "inventory cannot be null");
         Preconditions.checkArgument(context != null, "context cannot be null");
-        if (random == null) {
-            random = context.getRandom();
-        }
 
-        LootParams params = PaperLootContext.toVanilla(context, this.getHandle().getParamSet());
-        Container container = ((CraftInventory) inventory).getInventory();
+        final Random random = context.getRandom();
+        final LootParams params = PaperLootContext.toVanilla(context, this.getHandle().getParamSet());
+        final Container container = ((CraftInventory) inventory).getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
         this.getHandle().fill(container, params, Optionull.map(random, RandomSourceWrapper::new), true);
@@ -136,7 +116,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof final org.bukkit.loot.LootTable table)) {
             return false;
         }
