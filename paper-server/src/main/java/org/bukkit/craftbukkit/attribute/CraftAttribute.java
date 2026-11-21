@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.OldEnumHolderable;
 import java.util.Locale;
@@ -10,7 +11,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
-import org.bukkit.craftbukkit.util.ApiVersion;
 
 public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.world.entity.ai.attributes.Attribute> implements Attribute {
 
