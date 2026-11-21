@@ -87,7 +87,7 @@ public final class PaperLootContext {
         }
     }
 
-    public static class Key {
+    public static final class Key {
         private static final BiMap<ContextKey<?>, LootContextKey> BRIDGE = HashBiMap.create();
 
         public static final Converter<ContextKey<?>, LootContextKey> CONVERTER = Converter.direct(BRIDGE::get, BRIDGE.inverse()::get);

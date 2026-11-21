@@ -185,29 +185,28 @@ public final class LootContext {
     }
 
     /**
-     * Creates a new Builder instance to facilitate easy
-     * creation of {@linkplain LootContext}s.
-     *
-     * @param world the world the LootContext should use
-     */
-    public static Builder builder(final World world) {
-        return new Builder(world);
-    }
-
-    /**
-     * Creates a new Builder instance pre-populated with the values
-     * of this context.
+     * Creates a new builder from this loot context.
      *
      * @return a new builder
      */
-    @Contract("-> new")
+    @Contract(value = "-> new", pure = true)
     public Builder toBuilder() {
-        final Builder builder = new Builder(this.world);
-        builder.luck = this.luck;
-        builder.random = this.random;
+        final Builder builder = builder(this.world)
+            .luck(this.luck)
+            .withRandom(this.random);
         builder.contextMap.putAll(this.contextMap);
         return builder;
     }
+
+    /**
+ * Creates a new Builder instance to facilitate easy
+ * creation of {@linkplain LootContext}s.
+ *
+ * @param world the world the LootContext should use
+ */
+public static Builder builder(final World world) {
+    return new Builder(world);
+}
 
     /**
      * Utility class to make building {@link LootContext} easier. The only
