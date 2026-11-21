@@ -7,4 +7,9 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Waterlogged;
 
 public interface TrapDoor extends Bisected, Directional, Openable, Powerable, Waterlogged {
+
+    @Override
+    default boolean isSingleBlock() {
+        return true;
+    }
 }
