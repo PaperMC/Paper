@@ -8,6 +8,8 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import static net.kyori.adventure.text.Component.text;
 
@@ -15,7 +17,7 @@ public class TicksPerSecondCommand extends Command {
 
     private boolean hasShownMemoryWarning; // Paper
     private static final ThreadLocal<DecimalFormat> ONE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
-        return new DecimalFormat("########0.0");
+        return new DecimalFormat("########0.0", DecimalFormatSymbols.getInstance(Locale.ROOT)); // Paper - format independent of the system locale
     });
 
     public TicksPerSecondCommand(String name) {
