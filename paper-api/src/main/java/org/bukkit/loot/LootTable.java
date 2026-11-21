@@ -75,4 +75,29 @@ public interface LootTable extends Keyed {
      * @return the allowed keys
      */
     @Unmodifiable Set<LootContextKey> allowedContextKeys();
+
+    /**
+     * Checks if the given context passes validation for this loot table, meaning it can be used
+     * to {@link #populateLoot(LootContext) populate loot} or {@link #fillInventory(Inventory, LootContext) fill an inventory}.
+     * <p>
+     * A context is valid if it contains all the {@link #requiredContextKeys() required keys}. Keys that
+     * are not {@link #allowedContextKeys() allowed} by this loot table are ignored when generating loot,
+     * so they do not make a context invalid. Some loot tables require internal keys that cannot be
+     * supplied through the API, in which case no context is valid.
+     *
+     * @param context the context to check
+     * @return {@code true} if the context passes validation
+     */
+    boolean isValidContext(LootContext context);
+
+    /**
+     * Checks if the context built from the given builder passes validation for this loot table.
+     *
+     * @param builder the builder to check
+     * @return {@code true} if the built context passes validation
+     * @see #isValidContext(LootContext)
+     */
+    default boolean isValidContext(final LootContext.Builder builder) {
+        return this.isValidContext(builder.build());
+    }
 }

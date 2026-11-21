@@ -6,12 +6,15 @@ import io.papermc.paper.loot.PaperLootContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.Optionull;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -97,12 +100,33 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
     @Override
     public Set<LootContextKey> requiredContextKeys() {
-        return PaperLootContext.Key.SET_CONVERTER.fromVanilla(this.getHandle().getParamSet().required());
+        return exposedKeys(this.getHandle().getParamSet().required());
     }
 
     @Override
     public Set<LootContextKey> allowedContextKeys() {
-        return PaperLootContext.Key.SET_CONVERTER.fromVanilla(this.getHandle().getParamSet().allowed());
+        return exposedKeys(this.getHandle().getParamSet().allowed());
+    }
+
+    // some keys (e.g. container) are not exposed in the API, leave them out instead of failing
+    private static Set<LootContextKey> exposedKeys(final Set<ContextKey<?>> keys) {
+        return keys.stream()
+            .map(PaperLootContext.Key.CONVERTER::fromVanilla)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public boolean isValidContext(final LootContext context) {
+        Preconditions.checkArgument(context != null, "context cannot be null");
+        // keys not allowed by the param set are dropped in PaperLootContext#toVanilla, so only the required keys matter
+        for (final ContextKey<?> key : this.getHandle().getParamSet().required()) {
+            final LootContextKey apiKey = PaperLootContext.Key.CONVERTER.fromVanilla(key);
+            if (apiKey == null || !context.has(apiKey)) {
+                return false; // keys not exposed in the API can never be supplied by plugins
+            }
+        }
+        return true;
     }
 
     @Override
