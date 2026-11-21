@@ -22,10 +22,10 @@ import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.loot.LootContext;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.converter.Converter.direct;
@@ -34,7 +34,6 @@ import static io.papermc.paper.util.converter.Converters.entity;
 import static io.papermc.paper.util.converter.Converters.unvalued;
 import static io.papermc.paper.util.converter.Converters.wrapper;
 
-@NullMarked
 public final class PaperLootContext {
 
     private static final Map<ContextKey<?>, Converter<?, ?>> CONVERTER_BY_KEY = new IdentityHashMap<>();
@@ -95,11 +94,11 @@ public final class PaperLootContext {
         public static final Converter<Set<ContextKey<?>>, Set<LootContextKey>> SET_CONVERTER = CONVERTER.setOf();
 
         static {
-            final Converter<Entity, CraftEntity> entity = entity(Entity.class, org.bukkit.craftbukkit.entity.CraftEntity.class);
+            final Converter<Entity, CraftEntity> entity = entity(Entity.class, CraftEntity.class);
             register(LootContextParams.THIS_ENTITY, entity);
             register(LootContextParams.INTERACTING_ENTITY, entity);
             register(LootContextParams.TARGET_ENTITY, entity);
-            register(LootContextParams.LAST_DAMAGE_PLAYER, entity(Player.class, org.bukkit.craftbukkit.entity.CraftHumanEntity.class));
+            register(LootContextParams.LAST_DAMAGE_PLAYER, entity(Player.class, CraftHumanEntity.class));
             register(LootContextParams.DAMAGE_SOURCE, wrapper(CraftDamageSource::new));
             register(LootContextParams.ATTACKING_ENTITY, entity);
             register(LootContextParams.DIRECT_ATTACKING_ENTITY, entity);

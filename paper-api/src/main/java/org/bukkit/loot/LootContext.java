@@ -17,14 +17,12 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents additional information a {@link LootTable} can use to modify its
  * generated loot.
  */
-@NullMarked
 public final class LootContext {
 
     /**
@@ -216,6 +214,7 @@ public final class LootContext {
          */
         @Deprecated(since = "26.4")
         public Builder(final Location location) {
+            Preconditions.checkArgument(location != null, "location cannot be null");
             this(location.getWorld());
             this.with(LootContextKeys.ORIGIN, location);
         }
