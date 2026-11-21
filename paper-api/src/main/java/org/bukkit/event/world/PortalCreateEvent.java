@@ -107,6 +107,11 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
          * When the target end platform is created as a result of a player
          * entering an end portal.
          */
-        END_PLATFORM
+        END_PLATFORM,
+        /**
+         * When the blocks inside an end portal are created due to an end portal
+         * frame being completed with all ender eyes.
+         */
+        ENDER_EYE
     }
 }
