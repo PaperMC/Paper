@@ -1,5 +1,52 @@
 --- a/net/minecraft/world/entity/Interaction.java
 +++ b/net/minecraft/world/entity/Interaction.java
+@@ -36,6 +_,7 @@
+     private static final boolean DEFAULT_RESPONSE = false;
+     public Interaction.@Nullable PlayerAction attack;
+     public Interaction.@Nullable PlayerAction interaction;
++    public net.kyori.adventure.util.TriState canBeHitByProjectile = net.kyori.adventure.util.TriState.NOT_SET; // Paper - improve interaction API
+ 
+     public Interaction(final EntityType<?> type, final Level level) {
+         super(type, level);
+@@ -57,6 +_,17 @@
+         this.interaction = input.read("interaction", Interaction.PlayerAction.CODEC).orElse(null);
+         this.setResponse(input.getBooleanOr("response", false));
+         this.setBoundingBox(this.makeBoundingBox());
++        // Paper start - improve interaction API
++        input.getString("Paper.CanBeHitByProjectile").ifPresent(
++            override -> {
++                try {
++                    this.canBeHitByProjectile = net.kyori.adventure.util.TriState.valueOf(override);
++                } catch (final Exception ignored) {
++                    com.mojang.logging.LogUtils.getLogger().error("Unknown canBeHitByProjectile override {} for {}", override, this);
++                }
++            }
++        );
++        // Paper end
+     }
+ 
+     @Override
+@@ -66,6 +_,11 @@
+         output.storeNullable("attack", Interaction.PlayerAction.CODEC, this.attack);
+         output.storeNullable("interaction", Interaction.PlayerAction.CODEC, this.interaction);
+         output.putBoolean("response", this.getResponse());
++        // Paper start - improve interaction API
++        if (this.canBeHitByProjectile.equals(net.kyori.adventure.util.TriState.TRUE)) {
++            output.putString("Paper.CanBeHitByProjectile", this.canBeHitByProjectile.name());
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -78,7 +_,7 @@
+ 
+     @Override
+     public boolean canBeHitByProjectile() {
+-        return false;
++        return this.canBeHitByProjectile.toBooleanOrElse(false); // Paper - Allow overriding Projectile hit interaction
+     }
+ 
+     @Override
 @@ -99,9 +_,16 @@
      @Override
      public boolean skipAttackInteraction(final Entity source) {
@@ -18,3 +65,15 @@
              }
  
              return !this.getResponse();
+@@ -112,6 +_,11 @@
+ 
+     @Override
+     public final boolean hurtServer(final ServerLevel level, final DamageSource source, final float damage) {
++        // Paper start
++        if (!(source.getDirectEntity() instanceof Player)) { // Avoid trigger for player because it's already managed in skipAttackInteraction
++            org.bukkit.craftbukkit.event.CraftEventFactory.callNonLivingEntityDamageEvent(this, source, damage, true);
++        }
++        // Paper end
+         return false;
+     }
+ 
