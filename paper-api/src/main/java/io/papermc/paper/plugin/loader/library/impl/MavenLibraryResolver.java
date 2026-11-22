@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.loader.library.LibraryStore;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.http.client.HttpResponseException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -96,7 +97,12 @@ public class MavenLibraryResolver implements ClassPathLibrary {
 
             @Override
             public void transferFailed(final TransferEvent event) {
-                LOGGER.warn("Failed to download {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName(), event.getException());
+                for (Throwable cause = event.getException(); cause != null; cause = cause.getCause()) {
+                    if (cause instanceof HttpResponseException response && (response.getStatusCode() == 429 || response.getStatusCode() >= 500)) {
+                        LOGGER.warn("Failed to download {}: {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName(), response.getMessage());
+                        break;
+                    }
+                }
             }
         });
         this.session.setReadOnly();
