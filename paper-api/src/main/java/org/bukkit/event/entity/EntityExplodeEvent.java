@@ -13,10 +13,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an entity explodes interacting with blocks.
  * <p>
- * Explosions caused by mobs do not interact with blocks
- * while {@link org.bukkit.GameRules#MOB_GRIEFING} is disabled
- * as no block interaction will occur. That game rule does not
- * affect other explosions. For example, a wind charge still calls this event
+ * The event isn't called for explosions caused by mobs while
+ * {@link org.bukkit.GameRules#MOB_GRIEFING} is disabled, as no block
+ * interaction will occur. That game rule does not affect other
+ * explosions. For example, a wind charge still calls this event
  * with an {@link ExplosionResult#TRIGGER_BLOCK} result.
  */
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
