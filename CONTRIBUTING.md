@@ -351,6 +351,21 @@ to change the visibility or remove the final modifier from fields, methods, and 
 file, you can add ATs that are applied when you `./gradlew applyPatches`. You can read about the format of ATs 
 [here](https://mcforge.readthedocs.io/en/latest/advanced/accesstransformers/#access-modifiers).
 
+## Paper Generator
+
+The `paper-generator` module automatically generates and rewrites boilerplate API and server implementation classes
+from Minecraft data (such as registries, tags, block data, mob goals, and enums).
+
+You should use the generator instead of manually editing files in `src/generated/java` or generator-managed sections
+of `src/main/java` (for example, when adding or updating registry-backed API types, tags, or block data).
+
+Available Gradle tasks:
+
+- `./gradlew :paper-generator:generate` - generates new API and implementation classes into `paper-api/src/generated/java`
+  and `paper-server/src/generated/java` (individual tasks: `:paper-generator:generateApi`, `:paper-generator:generateImpl`).
+- `./gradlew :paper-generator:rewrite` - rewrites existing generator-managed API and implementation classes in
+  `paper-api/src/main/java` and `paper-server/src/main/java` (individual tasks: `:paper-generator:rewriteApi`, `:paper-generator:rewriteImpl`).
+
 <!--
 ## Patch Notes
 
