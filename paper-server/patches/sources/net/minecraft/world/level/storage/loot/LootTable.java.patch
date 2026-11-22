@@ -20,16 +20,18 @@
                      output.accept(result);
                  } else {
                      int count = result.getCount();
-@@ -143,9 +_,22 @@
+@@ -142,17 +_,30 @@
+         Validatable.validateHolder(context, "modifier", this.modifier);
      }
  
-     public void fill(final Container container, final LootParams params, final long optionalRandomSeed) {
+-    public void fill(final Container container, final LootParams params, final long optionalRandomSeed) {
 -        LootContext context = new LootContext.Builder(params).withOptionalRandomSeed(optionalRandomSeed).create(this.randomSequence);
++    public boolean fill(final Container container, final LootParams params, final long optionalRandomSeed) { // Paper - return whether the container was filled
 +        // CraftBukkit start
-+        this.fill(container, params, optionalRandomSeed == 0L ? null : RandomSource.create(optionalRandomSeed), false);
++        return this.fill(container, params, optionalRandomSeed == 0L ? null : RandomSource.create(optionalRandomSeed), false); // Paper - return whether the container was filled
 +    }
 +
-+    public void fill(Container container, LootParams params, RandomSource randomSource, boolean plugin) {
++    public boolean fill(Container container, LootParams params, RandomSource randomSource, boolean plugin) { // Paper - return whether the container was filled
 +        // CraftBukkit end
 +        LootContext context = new LootContext.Builder(params).withOptionalRandomSource(randomSource).create(this.randomSequence);
          ObjectArrayList<ItemStack> itemStacks = this.getRandomItems(context);
@@ -37,10 +39,26 @@
 +        // CraftBukkit start
 +        org.bukkit.event.world.LootGenerateEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLootGenerateEvent(container, this, context, itemStacks, plugin);
 +        if (event.isCancelled()) {
-+            return;
++            return false; // Paper - return whether the container was filled
 +        }
 +        itemStacks = event.getLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(ObjectArrayList.toList());
 +        // CraftBukkit end
          List<Integer> availableSlots = this.getAvailableSlots(container, random);
          this.shuffleAndSplitItems(itemStacks, availableSlots.size(), random);
  
+         for (ItemStack itemStack : itemStacks) {
+             if (availableSlots.isEmpty()) {
+                 LOGGER.warn("Tried to over-fill a container");
+-                return;
++                return true; // Paper - return whether the container was filled
+             }
+ 
+             if (itemStack.isEmpty()) {
+@@ -161,6 +_,7 @@
+                 container.setItem(availableSlots.remove(availableSlots.size() - 1), itemStack);
+             }
+         }
++        return true; // Paper - return whether the container was filled
+     }
+ 
+     private void shuffleAndSplitItems(final ObjectArrayList<ItemStack> result, final int availableSlots, final RandomSource random) {

@@ -29,7 +29,7 @@
              ContainerHelper.loadAllItems(input, this.getItemStacks());
          }
      }
-@@ -86,19 +_,27 @@
+@@ -86,25 +_,39 @@
      }
  
      default InteractionResult interactWithContainerVehicle(final Player player) {
@@ -46,6 +46,7 @@
          MinecraftServer server = this.level().getServer();
 -        if (this.getContainerLootTable() != null && server != null) {
 +        if (server != null && this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) { // Paper - LootTable API
++            final ResourceKey<LootTable> lootTableKey = this.getContainerLootTable(); // Paper - Restore loot table if LootGenerateEvent is cancelled
              LootTable lootTable = server.reloadableRegistries().getLootTable(this.getContainerLootTable());
              if (player != null) {
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getContainerLootTable());
@@ -53,13 +54,25 @@
  
 -            this.setContainerLootTable(null);
 +            // Paper start - LootTable API
-+            if (this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) {
++            final boolean clearedLootTable; // Paper - Restore loot table if LootGenerateEvent is cancelled
++            if (clearedLootTable = this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) { // Paper - Restore loot table if LootGenerateEvent is cancelled
 +                this.setContainerLootTable(null);
 +            }
 +            // Paper end - LootTable API
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
+             }
+ 
+-            lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getContainerLootTableSeed());
++            // Paper start - Restore loot table if LootGenerateEvent is cancelled
++            if (!lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getContainerLootTableSeed()) && clearedLootTable) {
++                this.setContainerLootTable(lootTableKey);
++            }
++            // Paper end - Restore loot table if LootGenerateEvent is cancelled
+         }
+     }
+ 
 @@ -168,4 +_,14 @@
      default boolean isChestVehicleStillValid(final Player player) {
          return !this.isRemoved() && player.isWithinEntityInteractionRange(this.getBoundingBox(), 4.0);
