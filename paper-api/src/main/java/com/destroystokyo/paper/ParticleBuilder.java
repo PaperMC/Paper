@@ -38,8 +38,7 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Sends the particle to all receiving players (or all). This method is safe to use
-     * Asynchronously
+     * Sends the particle to all receiving players (or all).
      *
      * @return a reference to this object.
      */
@@ -84,7 +83,7 @@ public class ParticleBuilder implements Cloneable {
     /**
      * Example use:
      * <p>
-     * builder.receivers(16); if (builder.hasReceivers()) { sendParticleAsync(builder); }
+     * builder.receivers(16); if (builder.hasReceivers()) { builder.spawn(); }
      *
      * @return If this particle is going to be sent to someone
      */
