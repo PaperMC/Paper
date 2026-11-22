@@ -53,7 +53,7 @@ public interface CraftRecipe extends Recipe {
         } else if (bukkit instanceof final RecipeChoice.ItemTypeChoice itemTypeChoice) {
             stack = Ingredient.of(PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), itemTypeChoice.itemTypes()));
         } else if (bukkit instanceof final RecipeChoice.PredicateChoice predicateChoice) {
-            stack = Ingredient.ofStacks(Collections.singletonList(CraftItemStack.asNMSCopy(predicateChoice.getItemStack())));
+            stack = Ingredient.ofStacks(predicateChoice.getExampleStacks().stream().map(CraftItemStack::asNMSCopy).toList());
             stack.stackPredicate = nmsStack -> predicateChoice.test(CraftItemStack.asBukkitCopy(nmsStack));
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map(CraftItemType::bukkitToMinecraft));
