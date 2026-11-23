@@ -45,34 +45,33 @@ public final class FMA {
             final boolean arm = arch.contains("aarch64") || arch.contains("arm64");
             if (arm) {
                 // FMA is ARMv8 baseline, Apple Silicon included
-                LOGGER.info("FMA supported: " + true + " for all ARMv8 platforms");
-                return true;
+                return report(true, "ARMv8 baseline");
             }
             if (!is64) {
-                LOGGER.info("FMA supported: " + false + " for all non 64-bit platforms");
-                return false;
+                return report(false, "non 64-bit platform");
             }
             if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("linux")) {
                 try {
                     for (final String line : new SystemInfo().getHardware().getProcessor().getFeatureFlags()) {
                         if (line.toLowerCase(Locale.ROOT).matches("(?s).*\\bfma\\b.*")) {
-                            LOGGER.info("FMA supported: " + true + " for Linux platform with feature flag: " + line);
-                            return true;
+                            LOGGER.debug("Matched FMA feature flag line: " + line);
+                            return report(true, "CPU feature flag");
                         }
                     }
 
-                    LOGGER.info("FMA supported: " + false + " for Linux platform without any matching feature flag");
-                    return false;
+                    return report(false, "no CPU feature flag");
                 } catch (final Throwable thr) {
                     LOGGER.debug("Error while retrieving platform flags: ", thr);
-                    LOGGER.info("FMA supported: " + false + " for Linux platform: unable to retrieve feature flags");
-                    return false;
+                    return report(testForFMA(), "performance test, CPU feature flags unavailable");
                 }
             }
             // Windows, macOS: measure the actual thing
-            final boolean fma = testForFMA();
-            LOGGER.info("FMA supported: " + fma + " as determined by performance comparison test");
-            return fma;
+            return report(testForFMA(), "performance test");
+        }
+
+        private static boolean report(final boolean supported, final String reason) {
+            LOGGER.info("FMA supported: " + supported + " (" + reason + ")");
+            return supported;
         }
 
         private static boolean testForFMA() {
