@@ -13,11 +13,10 @@ import org.jspecify.annotations.Nullable;
 
 public class PaperMinecraftSessionService extends MinecraftServicesSessionService {
 
-    private final boolean enforceUuidV4;
+    private static final boolean ENFORCE_UUID_V4 = !Boolean.getBoolean("paper.disableProfileUuidVersionCheck");
 
     protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, PaperServicesDiscoveryService discoveryService) {
         super(servicesKeySet, proxy, discoveryService);
-        this.enforceUuidV4 = !Boolean.getBoolean("paper.disableProfileUuidVersionCheck");
     }
 
     public @Nullable ProfileResult fetchProfile(GameProfile profile, final boolean requireSecure) {
@@ -27,7 +26,7 @@ public class PaperMinecraftSessionService extends MinecraftServicesSessionServic
         if (profile.properties().containsKey("textures")) {
             return new ProfileResult(profile, Collections.emptySet());
         }
-        if (this.enforceUuidV4 && (profile.id() == null || profile.id().version() != 4)) {
+        if (ENFORCE_UUID_V4 && (profile.id() == null || profile.id().version() != 4)) {
             return null;
         }
         ProfileResult result = super.fetchProfile(profile.id(), requireSecure);
@@ -41,7 +40,7 @@ public class PaperMinecraftSessionService extends MinecraftServicesSessionServic
 
     @Override @Deprecated
     public @Nullable ProfileResult fetchProfile(final UUID profileId, final boolean requireSecure) {
-        if (this.enforceUuidV4 && (profileId == null || profileId.version() != 4)) {
+        if (ENFORCE_UUID_V4 && (profileId == null || profileId.version() != 4)) {
             return null;
         }
         return super.fetchProfile(profileId, requireSecure);
