@@ -7363,12 +7363,13 @@ index 0000000000000000000000000000000000000000..78659864651362de4fc104cbeb3e2e9a
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e984597384eba6b8ac877f2803bdbed754ac7ba8
+index 0000000000000000000000000000000000000000..4b9b5b4cb02f28978a907cc8dc5ea612e7f077bf
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1633 @@
+@@ -0,0 +1,1634 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
++import ca.spottedleaf.common.util.DecimalFormats;
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
 +import ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2LongHashTable;
@@ -7649,7 +7650,7 @@ index 0000000000000000000000000000000000000000..e984597384eba6b8ac877f2803bdbed7
 +            }
 +        }
 +
-+        final DecimalFormat format = new DecimalFormat("#0.00");
++        final DecimalFormat format = DecimalFormats.TWO_DECIMAL_PLACES_NO_COMMA.get();
 +
 +        int saved = 0;
 +
@@ -22455,10 +22456,10 @@ index 0000000000000000000000000000000000000000..d3d1831ff4fabd87d4b18da0b28a0d75
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015dd2b7bac
+index 0000000000000000000000000000000000000000..b7a2ea42eb457cfb28a49094fe8dd1dfd6dbc417
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
-@@ -0,0 +1,1450 @@
+@@ -0,0 +1,1437 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import ca.spottedleaf.common.util.IntegerUtil;
@@ -23599,6 +23600,10 @@ index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015
 +                }
 +            } else if ((queueValue & FLAG_WRITE_LEVEL) != 0L) {
 +                // these are used to restore block sources after a propagation decrease
++                // never dim brighter light written since, as vanilla does
++                if (this.getLightLevel(posX, posY, posZ) > propagatedLightLevel) {
++                    continue;
++                }
 +                this.setLightLevel(posX, posY, posZ, propagatedLightLevel);
 +            }
 +
@@ -23767,11 +23772,6 @@ index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015
 +                    this.lightEmissionPos.set(offX, offY, offZ);
 +                    long flags = 0;
 +                    if (((StarlightAbstractBlockState)blockState).starlight$isConditionallyFullOpaque()) {
-+                        final VoxelShape cullingFace = blockState.getFaceOcclusionShape(propagate.getOpposite().nms);
-+
-+                        if (Shapes.faceShapeOccludes(Shapes.empty(), cullingFace)) {
-+                            continue;
-+                        }
 +                        flags |= FLAG_HAS_SIDED_TRANSPARENT_BLOCKS;
 +                    }
 +
@@ -23820,7 +23820,6 @@ index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015
 +                }
 +            } else {
 +                // we actually need to worry about our state here
-+                final BlockState fromBlock = this.getBlockState(posX, posY, posZ);
 +                for (final AxisDirection propagate : checkDirections) {
 +                    final int offX = posX + propagate.x;
 +                    final int offY = posY + propagate.y;
@@ -23828,12 +23827,6 @@ index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015
 +
 +                    final int sectionIndex = (offX >> 4) + 5 * (offZ >> 4) + (5 * 5) * (offY >> 4) + sectionOffset;
 +                    final int localIndex = (offX & 15) | ((offZ & 15) << 4) | ((offY & 15) << 8);
-+
-+                    final VoxelShape fromShape = (((StarlightAbstractBlockState)fromBlock).starlight$isConditionallyFullOpaque()) ? fromBlock.getFaceOcclusionShape(propagate.nms) : Shapes.empty();
-+
-+                    if (fromShape != Shapes.empty() && Shapes.faceShapeOccludes(Shapes.empty(), fromShape)) {
-+                        continue;
-+                    }
 +
 +                    final SWMRNibbleArray currentNibble = this.nibbleCache[sectionIndex];
 +                    final int lightLevel;
@@ -23850,11 +23843,6 @@ index 0000000000000000000000000000000000000000..1b74af157a70867cf3a62ac8faf7e015
 +                    this.lightEmissionPos.set(offX, offY, offZ);
 +                    long flags = 0;
 +                    if (((StarlightAbstractBlockState)blockState).starlight$isConditionallyFullOpaque()) {
-+                        final VoxelShape cullingFace = blockState.getFaceOcclusionShape(propagate.getOpposite().nms);
-+
-+                        if (Shapes.faceShapeOccludes(fromShape, cullingFace)) {
-+                            continue;
-+                        }
 +                        flags |= FLAG_HAS_SIDED_TRANSPARENT_BLOCKS;
 +                    }
 +
@@ -24907,7 +24895,7 @@ index 0000000000000000000000000000000000000000..40d004afdc6449530f5bb2d7c7638b8e
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/util/SaveUtil.java b/ca/spottedleaf/moonrise/patches/starlight/util/SaveUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f3684f853
+index 0000000000000000000000000000000000000000..b790bd079b04d48359b22b299a408479d9eb2cf5
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/util/SaveUtil.java
 @@ -0,0 +1,197 @@
@@ -24932,7 +24920,7 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +
 +    private static final Logger LOGGER = LogUtils.getLogger();
 +
-+    public static final int STARLIGHT_LIGHT_VERSION = 10;
++    public static final int STARLIGHT_LIGHT_VERSION = 11;
 +
 +    public static int getLightVersion() {
 +        return STARLIGHT_LIGHT_VERSION;
