@@ -7,9 +7,11 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.CommandSender;
@@ -26,7 +28,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 public class PaperMSPTCommand {
     public static final String DESCRIPTION = "View server tick times";
 
-    private static final DecimalFormat DF = new DecimalFormat("########0.0");
+    private static final DecimalFormat DF = new DecimalFormat("########0.0", DecimalFormatSymbols.getInstance(Locale.ROOT));
     private static final Component SLASH = text("/");
 
     public static LiteralCommandNode<CommandSourceStack> create() {
