@@ -1,5 +1,6 @@
 package ca.spottedleaf.moonrise.common.util;
 
+import ca.spottedleaf.common.util.DecimalFormats;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import java.text.DecimalFormat;
@@ -8,12 +9,8 @@ import java.util.List;
 
 public final class EntityUtil {
 
-    private static final ThreadLocal<DecimalFormat> THREE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
-        return new DecimalFormat("#,##0.000");
-    });
-
     private static String formatVec(final Vec3 vec) {
-        final DecimalFormat format = THREE_DECIMAL_PLACES.get();
+        final DecimalFormat format = DecimalFormats.THREE_DECIMAL_PLACES.get();
 
         return "(" + format.format(vec.x) + "," + format.format(vec.y) + "," + format.format(vec.z) + ")";
     }
