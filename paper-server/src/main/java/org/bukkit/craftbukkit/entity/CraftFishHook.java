@@ -12,6 +12,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.inventory.EquipmentSlot;
+import org.checkerframework.checker.index.qual.Positive;
 
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 
@@ -118,7 +119,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     }
 
     @Override
-    public void setMaxFishHookDistance(final float maxDistance) {
+    public void setMaxFishHookDistance(final @Positive float maxDistance) {
         this.getHandle().maxFishHookDistance = requirePositive(maxDistance, "maxDistance");
     }
 

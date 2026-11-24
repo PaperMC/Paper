@@ -179,17 +179,17 @@ public interface FishHook extends Projectile {
     void setLureAngle(float min, float max);
 
     /**
-     * Set maximum distance from fish hook to launching projectile source in blocks.
-     * When exceeded, the fish hook despawns.
+     * Set maximum distance from fishhook to launching projectile source in blocks.
+     * When exceeded, the fishhook despawns.
      * <p>
      * Note, that the client has hardcoded limit of 64 blocks for rendering entities,
-     * so the fish hook along with fish line is not rendered for further distances.
+     * so the fishhook along with fish line is not rendered for further distances.
      * <p>
      * The default is 32 blocks.
      *
-     * @param maxDistance maximum distance between fish hook and its source in blocks
+     * @param maxDistance maximum distance between fishhook and its source in blocks
      */
-    void setMaxFishHookDistance(float maxDistance);
+    void setMaxFishHookDistance(@Positive float maxDistance);
 
     /**
      * Get maximum distance from fish hook to launching projectile source in blocks.
@@ -398,7 +398,7 @@ public interface FishHook extends Projectile {
      *
      * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
      * @return The amount of damage which would be applied to the itemstack
-     * @throws IllegalStateException if the fish hook does not have a player casting it.
+     * @throws IllegalStateException if the fishhook does not have a player casting it.
      * @throws IllegalStateException if the player casting it is not holding a
      *                               {@link org.bukkit.inventory.ItemType#FISHING_ROD} in the specified equipment slot.
      */
