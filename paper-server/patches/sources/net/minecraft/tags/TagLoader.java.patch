@@ -21,15 +21,17 @@
      }
  
      public static <T> Map<TagKey<T>, List<Holder<T>>> loadTagsFromNetwork(final TagNetworkSerialization.NetworkPayload tags, final Registry<T> registry) {
-@@ -120,18 +_,39 @@
+@@ -120,18 +_,22 @@
      }
  
      public static List<Registry.PendingTags<?>> loadTagsForExistingRegistries(final ResourceManager manager, final RegistryAccess layer) {
 -        return layer.registries().map(entry -> loadPendingTags(manager, entry.value())).flatMap(Optional::stream).collect(Collectors.toUnmodifiableList());
 +        // Paper start - tag lifecycle - add cause
 +        return loadTagsForExistingRegistries(manager, layer, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL);
-+    }
-+
+     }
+ 
+-    public static <T> void loadTagsForRegistry(final ResourceManager manager, final WritableRegistry<T> registry) {
+-        loadTagsForRegistry(manager, registry.key(), TagLoader.ElementLookup.fromWritableRegistry(registry));
 +    public static List<Registry.PendingTags<?>> loadTagsForExistingRegistries(
 +        final ResourceManager manager, final RegistryAccess layer, final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause
 +    ) {
@@ -37,27 +39,10 @@
 +        // Paper end - tag lifecycle - add cause
      }
  
-     public static <T> void loadTagsForRegistry(final ResourceManager manager, final WritableRegistry<T> registry) {
--        loadTagsForRegistry(manager, registry.key(), TagLoader.ElementLookup.fromWritableRegistry(registry));
-+        // Paper start - tag lifecycle - add registrar event cause
-+        loadTagsForRegistry(manager, registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL);
-+    }
-+    public static <T> void loadTagsForRegistry(final ResourceManager manager, final WritableRegistry<T> registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause) {
-+        loadTagsForRegistry(manager, registry.key(), TagLoader.ElementLookup.fromWritableRegistry(registry), registry, cause);
-+        // Paper end - tag lifecycle - add registrar event cause
-     }
- 
      public static <T> Map<TagKey<T>, List<Holder<T>>> loadTagsForRegistry(
-         final ResourceManager manager, final ResourceKey<? extends Registry<T>> registryKey, final TagLoader.ElementLookup<Holder<T>> lookup
+-        final ResourceManager manager, final ResourceKey<? extends Registry<T>> registryKey, final TagLoader.ElementLookup<Holder<T>> lookup
++        final ResourceManager manager, final ResourceKey<? extends Registry<T>> registryKey, final TagLoader.ElementLookup<Holder<T>> lookup, final WritableRegistry<T> registry, final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause // Paper - tag lifecycle - add registrar event cause
      ) {
-+        // Paper start - tag lifecycle - add registrar event cause
-+        return loadTagsForRegistry(manager, registryKey, lookup, null, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL);
-+    }
-+
-+    public static <T> Map<TagKey<T>, List<Holder<T>>> loadTagsForRegistry(
-+        final ResourceManager manager, final ResourceKey<? extends Registry<T>> registryKey, final TagLoader.ElementLookup<Holder<T>> lookup, final WritableRegistry<T> registry, final io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause
-+    ) {
-+        // Paper end - tag lifecycle - add registrar event cause
          TagLoader<Holder<T>> loader = new TagLoader<>(lookup, Registries.tagsDirPath(registryKey));
 -        return wrapTags(registryKey, loader.build(loader.load(manager)));
 +        return wrapTags(registryKey, loader.build(loader.load(manager), io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause))); // Paper - tag lifecycle

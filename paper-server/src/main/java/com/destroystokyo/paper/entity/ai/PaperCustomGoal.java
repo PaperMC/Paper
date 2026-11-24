@@ -13,9 +13,6 @@ public class PaperCustomGoal<T extends Mob> extends net.minecraft.world.entity.a
         this.handle = handle;
 
         this.setFlags(MobGoalHelper.paperToVanilla(handle.getTypes()));
-        if (this.getFlags().size() == 0) {
-            this.addFlag(Flag.UNKNOWN_BEHAVIOR);
-        }
     }
 
     @Override
