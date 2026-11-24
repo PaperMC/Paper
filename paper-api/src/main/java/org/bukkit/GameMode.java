@@ -3,13 +3,16 @@ package org.bukkit;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import org.bukkit.entity.HumanEntity;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents the various type of game modes that {@link HumanEntity}s may
  * have
  */
-public enum GameMode implements net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
+@NullMarked
+public enum GameMode implements net.kyori.adventure.translation.Translatable {
     /**
      * Creative mode may fly, build instantly, become invulnerable and create
      * free items.
@@ -35,18 +38,16 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
 
     private final int value;
     private static final Map<Integer, GameMode> BY_ID = Maps.newHashMap();
-    // Paper start - translation keys
     private final String translationKey;
 
     @Override
-    public @org.jetbrains.annotations.NotNull String translationKey() {
+    public String translationKey() {
         return this.translationKey;
     }
-    // Paper end
 
-    private GameMode(final int value) {
+    GameMode(final int value) {
         this.value = value;
-        this.translationKey = "gameMode." +  this.name().toLowerCase(java.util.Locale.ENGLISH); // Paper
+        this.translationKey = "gameMode." +  this.name().toLowerCase(java.util.Locale.ENGLISH);
     }
 
     /**
@@ -55,9 +56,9 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
      * @return An integer value of this gamemode
      * @apiNote Internal Use Only
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     public int getValue() {
-        return value;
+        return this.value;
     }
 
     /**
@@ -68,19 +69,17 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
      *     it doesn't exist
      * @apiNote Internal Use Only
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-    @Nullable
-    public static GameMode getByValue(final int value) {
+    @ApiStatus.Internal
+    public static @Nullable GameMode getByValue(final int value) {
         return BY_ID.get(value);
     }
 
     static {
-        for (GameMode mode : values()) {
+        for (final GameMode mode : values()) {
             BY_ID.put(mode.getValue(), mode);
         }
     }
 
-    // Paper start - Add GameMode#isInvulnerable
     /**
      * Checks whether this game mode is invulnerable
      * (i.e. is either {@link #CREATIVE} or {@link #SPECTATOR})
@@ -90,5 +89,4 @@ public enum GameMode implements net.kyori.adventure.translation.Translatable { /
     public boolean isInvulnerable() {
         return this == CREATIVE || this == SPECTATOR;
     }
-    // Paper end - Add GameMode#isInvulnerable
 }
