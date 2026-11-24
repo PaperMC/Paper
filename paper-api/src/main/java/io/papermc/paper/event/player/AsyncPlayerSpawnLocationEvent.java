@@ -23,14 +23,32 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
 
     private final PlayerConfigurationConnection connection;
     private final boolean newPlayer;
+    private final boolean invalidWorld;
     private Location spawnLocation;
 
     @ApiStatus.Internal
     public AsyncPlayerSpawnLocationEvent(final PlayerConfigurationConnection connection, final Location spawnLocation, final boolean newPlayer) {
+        this(connection, spawnLocation, newPlayer, false);
+    }
+
+    @ApiStatus.Internal
+    public AsyncPlayerSpawnLocationEvent(final PlayerConfigurationConnection connection, final Location spawnLocation, final boolean newPlayer, final boolean invalidWorld) {
         super(true);
         this.connection = connection;
         this.spawnLocation = spawnLocation;
         this.newPlayer = newPlayer;
+        this.invalidWorld = invalidWorld;
+    }
+
+    /**
+     * Returns true if the player's saved data referenced a Bukkit world that is no longer loaded or available.
+     *
+     * <p>When this is true, the server falls back to spawning them in a different world at the same coordinates.</p>
+     *
+     * @return whether the player's saved world was invalid
+     */
+    public boolean isInvalidWorld() {
+        return this.invalidWorld;
     }
 
     /**
