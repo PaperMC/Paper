@@ -113,6 +113,16 @@ public final class NullCommandSender implements CommandSender {
     }
 
     @Override
+    public TriState permissionValue(final String permission) {
+        return TriState.TRUE;
+    }
+
+    @Override
+    public TriState permissionValue(final Permission permission) {
+        return TriState.TRUE;
+    }
+
+    @Override
     public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value) {
         throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
     }
