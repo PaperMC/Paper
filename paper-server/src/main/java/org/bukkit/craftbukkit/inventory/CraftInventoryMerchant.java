@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.world.inventory.MerchantContainer;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
 import org.bukkit.inventory.MerchantRecipe;
@@ -12,6 +13,11 @@ public class CraftInventoryMerchant extends CraftInventory implements MerchantIn
     public CraftInventoryMerchant(net.minecraft.world.item.trading.Merchant merchant, MerchantContainer inventory) {
         super(inventory);
         this.merchant = merchant;
+    }
+
+    @Override
+    public ItemStack[] getStorageContents() {
+        return this.asCraftMirror(this.getInventory().getContents().subList(0, 2));
     }
 
     @Override
