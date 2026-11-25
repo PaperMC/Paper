@@ -25,6 +25,11 @@ public interface Stairs extends Bisected, Directional, Waterlogged {
      */
     void setShape(@NotNull Shape shape);
 
+    @Override
+    default boolean isSingleBlock() {
+        return true;
+    }
+
     /**
      * The shape of a stair block - used for constructing corners.
      */
