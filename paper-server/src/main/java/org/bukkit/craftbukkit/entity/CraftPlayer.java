@@ -118,6 +118,8 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Prediction;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
@@ -3268,14 +3270,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         final ImmutableList.Builder<ItemStack> leftovers = ImmutableList.builder();
         for (final ItemStack item : items) {
             final net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+            final int initialCount = nmsStack.getCount();
             final boolean added = handle.getInventory().add(nmsStack);
+            final int addedCount = initialCount - nmsStack.getCount();
+            if (addedCount > 0) {
+                final ItemEntity drop = handle.createItemStackToDrop(nmsStack.copyWithCount(addedCount), false, false);
+                if (drop != null) {
+                    drop.makeFakeItem();
+                    handle.level().addFreshEntity(drop);
+                }
+
+                handle.level().playSound(
+                    null,
+                    handle.getX(),
+                    handle.getY(),
+                    handle.getZ(),
+                    SoundEvents.ITEM_PICKUP,
+                    SoundSource.PLAYERS,
+                    0.2F,
+                    ((handle.getRandom().nextFloat() - handle.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F
+                );
+            }
+
             if (added && nmsStack.isEmpty()) continue; // Item was fully added, neither a drop nor a leftover is needed.
 
             leftovers.add(CraftItemStack.asBukkitCopy(nmsStack)); // Insert copy to avoid mutation to the dropped item from affecting leftovers
             if (!dropIfFull) continue;
 
-            final ItemEntity entity = handle.drop(nmsStack, true, Prediction.PREDICTED);
-            if (entity != null) drops.add((Item) entity.getBukkitEntity());
+            final ItemEntity entity = handle.drop(nmsStack, false, Prediction.PREDICTED, true, drop -> {
+                drop.setPickupDelay(0);
+                drop.setOwner(handle.getUUID());
+            });
+            if (entity != null) {
+                entity.setNoPickUpDelay();
+                entity.setTarget(handle.getUUID());
+                drops.add((Item) entity.getBukkitEntity());
+            }
         }
 
         handle.containerMenu.broadcastChanges();
