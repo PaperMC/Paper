@@ -23,7 +23,7 @@ public class PaperPlayerLoginConnection extends ReadablePlayerCookieConnectionIm
 
     @Override
     public @Nullable PlayerProfile getAuthenticatedProfile() {
-        return this.packetListener.authenticatedProfile == null ? null : CraftPlayerProfile.asBukkitCopy(this.packetListener.authenticatedProfile);
+        return this.packetListener.authenticatedProfile == null ? null : CraftPlayerProfile.asBukkitMirror(this.packetListener.authenticatedProfile);
     }
 
     @Override
