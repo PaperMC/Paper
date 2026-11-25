@@ -1,0 +1,92 @@
+--- a/net/minecraft/commands/execution/tasks/BuildContexts.java
++++ b/net/minecraft/commands/execution/tasks/BuildContexts.java
+@@ -29,7 +_,7 @@
+     public static final DynamicCommandExceptionType ERROR_FORK_LIMIT_REACHED = new DynamicCommandExceptionType(
+         forkLimit -> Component.translatableEscape("command.forkLimit", forkLimit)
+     );
+-    private final String commandInput;
++    protected final String commandInput; // Paper - private -> protected
+     private final ContextChain<T> command;
+ 
+     public BuildContexts(String commandInput, ContextChain<T> command) {
+@@ -38,11 +_,33 @@
+     }
+ 
+     protected void execute(T originalSource, List<T> sources, ExecutionContext<T> context, Frame frame, ChainModifiers chainModifiers) {
+-        ContextChain<T> contextChain = this.command;
++        // Paper start - function command event
++        this.execute(this.commandInput, originalSource, sources, context, frame, chainModifiers);
++    }
++
++    @SuppressWarnings("unchecked")
++    private ContextChain<T> parseCommand(String commandInput, T source) {
++        try {
++            com.mojang.brigadier.ParseResults<net.minecraft.commands.CommandSourceStack> parseResults = net.minecraft.server.MinecraftServer.getServer().getCommands().getDispatcher().parse(commandInput, (net.minecraft.commands.CommandSourceStack) source);
++            net.minecraft.commands.Commands.validateParseResults(parseResults);
++            java.util.Optional<com.mojang.brigadier.context.ContextChain<net.minecraft.commands.CommandSourceStack>> optional = ContextChain.tryFlatten(parseResults.getContext().build(commandInput));
++            if (optional.isEmpty()) {
++                throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseResults.getReader());
++            } else {
++                return (com.mojang.brigadier.context.ContextChain<T>) optional.get();
++            }
++        } catch (CommandSyntaxException e) {
++            e.printStackTrace();
++        }
++        return this.command;
++    }
++
++    protected void execute(String commandInput, T originalSource, List<T> sources, ExecutionContext<T> context, Frame frame, ChainModifiers chainModifiers) {
++        ContextChain<T> contextChain = this.commandInput.equals(commandInput) ? this.command : parseCommand(commandInput, originalSource);
+         ChainModifiers chainModifiers1 = chainModifiers;
+         List<T> list = sources;
+         if (contextChain.getStage() != Stage.EXECUTE) {
+-            context.profiler().push(() -> "prepare " + this.commandInput);
++            context.profiler().push(() -> "prepare " + commandInput);
+ 
+             try {
+                 for (int forkLimit = context.forkLimit(); contextChain.getStage() != Stage.EXECUTE; contextChain = contextChain.nextStage()) {
+@@ -110,18 +_,25 @@
+                     list = List.of(executionCommandSource2);
+                 }
+ 
+-                ExecuteCommand<T> executeCommand = new ExecuteCommand<>(this.commandInput, chainModifiers1, topContext1);
++                ExecuteCommand<T> executeCommand = new ExecuteCommand<>(commandInput, chainModifiers1, topContext1);
+                 ContinuationTask.schedule(context, frame, list, (frame1, argument) -> new CommandQueueEntry<>(frame1, executeCommand.bind(argument)));
+             }
+         }
+     }
++    // Paper end - function command event
+ 
+     protected void traceCommandStart(ExecutionContext<T> executionContext, Frame frame) {
++        // Paper start - function command event
++        this.traceCommandStart(this.commandInput, executionContext, frame);
++    }
++
++    protected void traceCommandStart(String commandInput, ExecutionContext<T> executionContext, Frame frame) {
+         TraceCallbacks traceCallbacks = executionContext.tracer();
+         if (traceCallbacks != null) {
+-            traceCallbacks.onCommand(frame.depth(), this.commandInput);
++            traceCallbacks.onCommand(frame.depth(), commandInput);
+         }
+     }
++    // Paper end - function command event
+ 
+     @Override
+     public String toString() {
+@@ -168,8 +_,14 @@
+ 
+         @Override
+         public void execute(T source, ExecutionContext<T> executionContext, Frame frame) {
+-            this.traceCommandStart(executionContext, frame);
+-            this.execute(source, List.of(source), executionContext, frame, ChainModifiers.DEFAULT);
++            // Paper start - function command event
++            io.papermc.paper.event.function.FunctionCommandEvent event = new io.papermc.paper.event.function.FunctionCommandEvent(((net.minecraft.commands.CommandSourceStack) source).getBukkitSender(), commandInput);
++            if (!event.callEvent()) {
++                return;
++            }
++            this.traceCommandStart(event.getCommand(), executionContext, frame);
++            this.execute(event.getCommand(), source, List.of(source), executionContext, frame, ChainModifiers.DEFAULT);
++            // Paper end - function command event
+         }
+     }
+ }
