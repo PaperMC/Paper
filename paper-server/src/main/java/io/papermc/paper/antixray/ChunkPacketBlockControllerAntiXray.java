@@ -18,7 +18,6 @@ import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biomes;
@@ -41,6 +40,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     private static final LevelChunkSection EMPTY_SECTION = null;
     private final Executor executor;
     private final EngineMode engineMode;
+    private final boolean lavaObscures;
     private final int maxBlockHeight;
     private final int updateRadius;
     private final boolean usePermission;
@@ -57,6 +57,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     private final int[] presetBlockStateBitsEndStoneGlobal;
     private final boolean[] solidGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
     private final boolean[] obfuscateGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
+    private final boolean[] obscuringLavaGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
     private final LevelChunkSection[] emptyNearbyChunkSections = {EMPTY_SECTION, EMPTY_SECTION, EMPTY_SECTION, EMPTY_SECTION};
     private final int maxBlockHeightUpdatePosition;
 
@@ -64,6 +65,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         this.executor = executor;
         WorldConfiguration.Anticheat.AntiXray paperWorldConfig = level.paperConfig().anticheat.antiXray;
         engineMode = paperWorldConfig.engineMode;
+        lavaObscures = paperWorldConfig.lavaObscures;
         maxBlockHeight = paperWorldConfig.maxBlockHeight >> 4 << 4;
         updateRadius = paperWorldConfig.updateRadius;
         usePermission = paperWorldConfig.usePermission;
@@ -134,9 +136,10 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             BlockState blockState = GLOBAL_BLOCKSTATE_PALETTE.valueFor(i);
 
             if (blockState != null) {
+                boolean obscuringLava = lavaObscures && blockState.is(Blocks.LAVA);
+                obscuringLavaGlobal[i] = obscuringLava;
                 solidGlobal[i] = blockState.isRedstoneConductor(emptyChunk, zeroPos)
-                    && !blockState.is(Blocks.SPAWNER) && !blockState.is(Blocks.BARRIER) && !blockState.is(Blocks.SHULKER_BOX) && !blockState.is(Blocks.SLIME_BLOCK) && !blockState.is(Blocks.MANGROVE_ROOTS) || paperWorldConfig.lavaObscures && blockState == Blocks.LAVA.defaultBlockState();
-                // Comparing blockState == Blocks.LAVA.defaultBlockState() instead of blockState.is(Blocks.LAVA) ensures that only "stationary lava" is used
+                    && !blockState.is(Blocks.SPAWNER) && !blockState.is(Blocks.BARRIER) && !blockState.is(Blocks.SHULKER_BOX) && !blockState.is(Blocks.SLIME_BLOCK) && !blockState.is(Blocks.MANGROVE_ROOTS) || obscuringLava;
                 // shulker box checks TE.
             }
         }
@@ -205,6 +208,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     private final ThreadLocal<int[]> presetBlockStateBits = ThreadLocal.withInitial(() -> new int[getPresetBlockStatesFullLength()]);
     private static final ThreadLocal<boolean[]> SOLID = ThreadLocal.withInitial(() -> new boolean[Block.BLOCK_STATE_REGISTRY.size()]);
     private static final ThreadLocal<boolean[]> OBFUSCATE = ThreadLocal.withInitial(() -> new boolean[Block.BLOCK_STATE_REGISTRY.size()]);
+    private static final ThreadLocal<boolean[]> OBSCURING_LAVA = ThreadLocal.withInitial(() -> new boolean[Block.BLOCK_STATE_REGISTRY.size()]);
     // These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
     private static final ThreadLocal<boolean[][]> CURRENT = ThreadLocal.withInitial(() -> new boolean[16][16]);
     private static final ThreadLocal<boolean[][]> NEXT = ThreadLocal.withInitial(() -> new boolean[16][16]);
@@ -214,6 +218,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         int[] presetBlockStateBits = this.presetBlockStateBits.get();
         boolean[] solid = SOLID.get();
         boolean[] obfuscate = OBFUSCATE.get();
+        boolean[] obscuringLava = OBSCURING_LAVA.get();
         boolean[][] current = CURRENT.get();
         boolean[][] next = NEXT.get();
         boolean[][] nextNext = NEXT_NEXT.get();
@@ -221,11 +226,13 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         BitStorageReader bitStorageReader = new BitStorageReader();
         BitStorageWriter bitStorageWriter = new BitStorageWriter();
         LevelChunkSection[] nearbyChunkSections = new LevelChunkSection[4];
+        LevelChunkSection[] nearbyChunkSectionsAbove = new LevelChunkSection[4];
         LevelChunk chunk = chunkPacketInfoAntiXray.getChunk();
         Level level = chunk.getLevel();
         int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSectionY(), chunk.getSectionsCount()) - 1;
         boolean[] solidTemp = null;
         boolean[] obfuscateTemp = null;
+        boolean[] obscuringLavaTemp = null;
         bitStorageReader.setBuffer(chunkPacketInfoAntiXray.getBuffer());
         bitStorageWriter.setBuffer(chunkPacketInfoAntiXray.getBuffer());
         int numberOfBlocks = presetBlockStateBits.length;
@@ -300,6 +307,9 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
 
                 bitStorageWriter.setIndex(chunkPacketInfoAntiXray.getIndex(chunkSectionIndex));
 
+                LevelChunkSection currentChunkSection = chunk.getSections()[chunkSectionIndex];
+                LevelChunkSection aboveCurrentChunkSection = chunkSectionIndex == chunk.getSectionsCount() - 1 ? EMPTY_SECTION : chunk.getSections()[chunkSectionIndex + 1];
+
                 // Check if the chunk section below was not obfuscated
                 if (chunkSectionIndex == 0 || !chunkPacketInfoAntiXray.isWritten(chunkSectionIndex - 1) || chunkPacketInfoAntiXray.getPresetValues(chunkSectionIndex - 1) == null) {
                     // If so, initialize some stuff
@@ -307,6 +317,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                     bitStorageReader.setIndex(chunkPacketInfoAntiXray.getIndex(chunkSectionIndex));
                     solidTemp = readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex), solid, solidGlobal);
                     obfuscateTemp = readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex), obfuscate, obfuscateGlobal);
+                    obscuringLavaTemp = lavaObscures ? readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex), obscuringLava, obscuringLavaGlobal) : obscuringLavaGlobal;
                     // Read the blocks of the upper layer of the chunk section below if it exists
                     LevelChunkSection belowChunkSection = null;
                     boolean skipFirstLayer = chunkSectionIndex == 0 || (belowChunkSection = chunk.getSections()[chunkSectionIndex - 1]) == EMPTY_SECTION;
@@ -314,13 +325,13 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                     for (int z = 0; z < 16; z++) {
                         for (int x = 0; x < 16; x++) {
                             current[z][x] = true;
-                            next[z][x] = skipFirstLayer || isTransparent(belowChunkSection, x, 15, z);
+                            next[z][x] = skipFirstLayer || isTransparentUpOrSide(belowChunkSection, currentChunkSection, x, 15, z);
                         }
                     }
 
                     // Abuse the obfuscateLayer method to read the blocks of the first layer of the current chunk section
                     bitStorageWriter.setBits(0);
-                    obfuscateLayer(-1, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, emptyNearbyChunkSections, random);
+                    obfuscateLayer(-1, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, obscuringLavaTemp, presetBlockStateBitsTemp, current, next, nextNext, emptyNearbyChunkSections, emptyNearbyChunkSections, currentChunkSection, aboveCurrentChunkSection, 0, random);
                 }
 
                 bitStorageWriter.setBits(chunkPacketInfoAntiXray.getBits(chunkSectionIndex));
@@ -329,6 +340,11 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                 nearbyChunkSections[2] = chunkPacketInfoAntiXray.getNearbyChunks()[2] == null ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[2].getSections()[chunkSectionIndex];
                 nearbyChunkSections[3] = chunkPacketInfoAntiXray.getNearbyChunks()[3] == null ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[3].getSections()[chunkSectionIndex];
 
+                nearbyChunkSectionsAbove[0] = chunkPacketInfoAntiXray.getNearbyChunks()[0] == null || chunkSectionIndex == chunk.getSectionsCount() - 1 ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[0].getSections()[chunkSectionIndex + 1];
+                nearbyChunkSectionsAbove[1] = chunkPacketInfoAntiXray.getNearbyChunks()[1] == null || chunkSectionIndex == chunk.getSectionsCount() - 1 ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[1].getSections()[chunkSectionIndex + 1];
+                nearbyChunkSectionsAbove[2] = chunkPacketInfoAntiXray.getNearbyChunks()[2] == null || chunkSectionIndex == chunk.getSectionsCount() - 1 ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[2].getSections()[chunkSectionIndex + 1];
+                nearbyChunkSectionsAbove[3] = chunkPacketInfoAntiXray.getNearbyChunks()[3] == null || chunkSectionIndex == chunk.getSectionsCount() - 1 ? EMPTY_SECTION : chunkPacketInfoAntiXray.getNearbyChunks()[3].getSections()[chunkSectionIndex + 1];
+
                 // Obfuscate all layers of the current chunk section except the upper one
                 for (int y = 0; y < 15; y++) {
                     boolean[][] temp = current;
@@ -336,7 +352,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                     next = nextNext;
                     nextNext = temp;
                     random.nextLayer();
-                    obfuscateLayer(y, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
+                    obfuscateLayer(y, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, obscuringLavaTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, nearbyChunkSectionsAbove, currentChunkSection, aboveCurrentChunkSection, y + 1, random);
                 }
 
                 // Check if the chunk section above doesn't need obfuscation
@@ -361,8 +377,9 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                         // There is nothing to read anymore
                         bitStorageReader.setBits(0);
                         solid[0] = true;
+                        obscuringLava[0] = false;
                         random.nextLayer();
-                        obfuscateLayer(15, bitStorageReader, bitStorageWriter, solid, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
+                        obfuscateLayer(15, bitStorageReader, bitStorageWriter, solid, obfuscateTemp, obscuringLava, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, nearbyChunkSectionsAbove, EMPTY_SECTION, EMPTY_SECTION, 0, random);
                     }
                 } else {
                     // If not, initialize the reader and other stuff for the chunk section above to obfuscate the upper layer of the current chunk section
@@ -370,12 +387,14 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                     bitStorageReader.setIndex(chunkPacketInfoAntiXray.getIndex(chunkSectionIndex + 1));
                     solidTemp = readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex + 1), solid, solidGlobal);
                     obfuscateTemp = readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex + 1), obfuscate, obfuscateGlobal);
+                    obscuringLavaTemp = lavaObscures ? readPalette(chunkPacketInfoAntiXray.getPalette(chunkSectionIndex + 1), obscuringLava, obscuringLavaGlobal) : obscuringLavaGlobal;
                     boolean[][] temp = current;
                     current = next;
                     next = nextNext;
                     nextNext = temp;
+                    LevelChunkSection sectionAboveReadSection = chunkSectionIndex + 2 >= chunk.getSectionsCount() ? EMPTY_SECTION : chunk.getSections()[chunkSectionIndex + 2];
                     random.nextLayer();
-                    obfuscateLayer(15, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
+                    obfuscateLayer(15, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, obscuringLavaTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, nearbyChunkSectionsAbove, aboveCurrentChunkSection, sectionAboveReadSection, 0, random);
                 }
 
                 bitStorageWriter.flush();
@@ -385,20 +404,27 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         chunkPacketInfoAntiXray.getChunkPacket().setReady(true);
     }
 
-    private void obfuscateLayer(int y, BitStorageReader bitStorageReader, BitStorageWriter bitStorageWriter, boolean[] solid, boolean[] obfuscate, int[] presetBlockStateBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, LevelChunkSection[] nearbyChunkSections, IntSupplier random) {
+    private void obfuscateLayer(int y, BitStorageReader bitStorageReader, BitStorageWriter bitStorageWriter, boolean[] solid, boolean[] obfuscate, boolean[] obscuringLava, int[] presetBlockStateBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, LevelChunkSection[] nearbyChunkSections, LevelChunkSection[] nearbyChunkSectionsAbove, LevelChunkSection readChunkSection, LevelChunkSection aboveReadChunkSection, int readY, IntSupplier random) {
         // First block of first line
         int bits = bitStorageReader.read();
 
-        if (nextNext[0][0] = !solid[bits]) {
+        boolean transparent = !solid[bits];
+        boolean surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 0, readY, 0);
+        nextNext[0][0] = transparent || surfaceLava;
+
+        if (transparent) {
             bitStorageWriter.skip();
-            next[0][1] = true;
-            next[1][0] = true;
         } else {
-            if (current[0][0] || isTransparent(nearbyChunkSections[2], 0, y, 15) || isTransparent(nearbyChunkSections[0], 15, y, 0)) {
+            if (current[0][0] || isTransparentUpOrSide(nearbyChunkSections[2], nearbyChunkSectionsAbove[2], 0, y, 15) || isTransparentUpOrSide(nearbyChunkSections[0], nearbyChunkSectionsAbove[0], 15, y, 0)) {
                 bitStorageWriter.skip();
             } else {
                 bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
             }
+        }
+
+        if (transparent || surfaceLava) {
+            next[0][1] = true;
+            next[1][0] = true;
         }
 
         if (!obfuscate[bits]) {
@@ -409,17 +435,24 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         for (int x = 1; x < 15; x++) {
             bits = bitStorageReader.read();
 
-            if (nextNext[0][x] = !solid[bits]) {
+            transparent = !solid[bits];
+            surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, x, readY, 0);
+            nextNext[0][x] = transparent || surfaceLava;
+
+            if (transparent) {
                 bitStorageWriter.skip();
-                next[0][x - 1] = true;
-                next[0][x + 1] = true;
-                next[1][x] = true;
             } else {
-                if (current[0][x] || isTransparent(nearbyChunkSections[2], x, y, 15)) {
+                if (current[0][x] || isTransparentUpOrSide(nearbyChunkSections[2], nearbyChunkSectionsAbove[2], x, y, 15)) {
                     bitStorageWriter.skip();
                 } else {
                     bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
                 }
+            }
+
+            if (transparent || surfaceLava) {
+                next[0][x - 1] = true;
+                next[0][x + 1] = true;
+                next[1][x] = true;
             }
 
             if (!obfuscate[bits]) {
@@ -430,16 +463,25 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         // Last block of first line
         bits = bitStorageReader.read();
 
-        if (nextNext[0][15] = !solid[bits]) {
+        transparent = !solid[bits];
+        surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 15, readY, 0);
+        nextNext[0][15] = transparent || surfaceLava;
+
+        if (transparent) {
             bitStorageWriter.skip();
-            next[0][14] = true;
-            next[1][15] = true;
         } else {
-            if (current[0][15] || isTransparent(nearbyChunkSections[2], 15, y, 15) || isTransparent(nearbyChunkSections[1], 0, y, 0)) {
+            if (current[0][15]
+                || isTransparentUpOrSide(nearbyChunkSections[2], nearbyChunkSectionsAbove[2], 15, y, 15)
+                || isTransparentUpOrSide(nearbyChunkSections[1], nearbyChunkSectionsAbove[1], 0, y, 0)) {
                 bitStorageWriter.skip();
             } else {
                 bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
             }
+        }
+
+        if (transparent || surfaceLava) {
+            next[0][14] = true;
+            next[1][15] = true;
         }
 
         if (!obfuscate[bits]) {
@@ -451,17 +493,24 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             // First block
             bits = bitStorageReader.read();
 
-            if (nextNext[z][0] = !solid[bits]) {
+            transparent = !solid[bits];
+            surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 0, readY, z);
+            nextNext[z][0] = transparent || surfaceLava;
+
+            if (transparent) {
                 bitStorageWriter.skip();
-                next[z][1] = true;
-                next[z - 1][0] = true;
-                next[z + 1][0] = true;
             } else {
-                if (current[z][0] || isTransparent(nearbyChunkSections[0], 15, y, z)) {
+                if (current[z][0] || isTransparentUpOrSide(nearbyChunkSections[0], nearbyChunkSectionsAbove[0], 15, y, z)) {
                     bitStorageWriter.skip();
                 } else {
                     bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
                 }
+            }
+
+            if (transparent || surfaceLava) {
+                next[z][1] = true;
+                next[z - 1][0] = true;
+                next[z + 1][0] = true;
             }
 
             if (!obfuscate[bits]) {
@@ -472,18 +521,25 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             for (int x = 1; x < 15; x++) {
                 bits = bitStorageReader.read();
 
-                if (nextNext[z][x] = !solid[bits]) {
+                transparent = !solid[bits];
+                surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, x, readY, z);
+                nextNext[z][x] = transparent || surfaceLava;
+
+                if (transparent) {
                     bitStorageWriter.skip();
-                    next[z][x - 1] = true;
-                    next[z][x + 1] = true;
-                    next[z - 1][x] = true;
-                    next[z + 1][x] = true;
                 } else {
                     if (current[z][x]) {
                         bitStorageWriter.skip();
                     } else {
                         bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
                     }
+                }
+
+                if (transparent || surfaceLava) {
+                    next[z][x - 1] = true;
+                    next[z][x + 1] = true;
+                    next[z - 1][x] = true;
+                    next[z + 1][x] = true;
                 }
 
                 if (!obfuscate[bits]) {
@@ -494,17 +550,24 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             // Last block
             bits = bitStorageReader.read();
 
-            if (nextNext[z][15] = !solid[bits]) {
+            transparent = !solid[bits];
+            surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 15, readY, z);
+            nextNext[z][15] = transparent || surfaceLava;
+
+            if (transparent) {
                 bitStorageWriter.skip();
-                next[z][14] = true;
-                next[z - 1][15] = true;
-                next[z + 1][15] = true;
             } else {
-                if (current[z][15] || isTransparent(nearbyChunkSections[1], 0, y, z)) {
+                if (current[z][15] || isTransparentUpOrSide(nearbyChunkSections[1], nearbyChunkSectionsAbove[1], 0, y, z)) {
                     bitStorageWriter.skip();
                 } else {
                     bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
                 }
+            }
+
+            if (transparent || surfaceLava) {
+                next[z][14] = true;
+                next[z - 1][15] = true;
+                next[z + 1][15] = true;
             }
 
             if (!obfuscate[bits]) {
@@ -515,16 +578,25 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         // First block of last line
         bits = bitStorageReader.read();
 
-        if (nextNext[15][0] = !solid[bits]) {
+        transparent = !solid[bits];
+        surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 0, readY, 15);
+        nextNext[15][0] = transparent || surfaceLava;
+
+        if (transparent) {
             bitStorageWriter.skip();
-            next[15][1] = true;
-            next[14][0] = true;
         } else {
-            if (current[15][0] || isTransparent(nearbyChunkSections[3], 0, y, 0) || isTransparent(nearbyChunkSections[0], 15, y, 15)) {
+            if (current[15][0]
+                || isTransparentUpOrSide(nearbyChunkSections[3], nearbyChunkSectionsAbove[3], 0, y, 0)
+                || isTransparentUpOrSide(nearbyChunkSections[0], nearbyChunkSectionsAbove[0], 15, y, 15)) {
                 bitStorageWriter.skip();
             } else {
                 bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
             }
+        }
+
+        if (transparent || surfaceLava) {
+            next[15][1] = true;
+            next[14][0] = true;
         }
 
         if (!obfuscate[bits]) {
@@ -535,17 +607,24 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         for (int x = 1; x < 15; x++) {
             bits = bitStorageReader.read();
 
-            if (nextNext[15][x] = !solid[bits]) {
+            transparent = !solid[bits];
+            surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, x, readY, 15);
+            nextNext[15][x] = transparent || surfaceLava;
+
+            if (transparent) {
                 bitStorageWriter.skip();
-                next[15][x - 1] = true;
-                next[15][x + 1] = true;
-                next[14][x] = true;
             } else {
-                if (current[15][x] || isTransparent(nearbyChunkSections[3], x, y, 0)) {
+                if (current[15][x] || isTransparentUpOrSide(nearbyChunkSections[3], nearbyChunkSectionsAbove[3], x, y, 0)) {
                     bitStorageWriter.skip();
                 } else {
                     bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
                 }
+            }
+
+            if (transparent || surfaceLava) {
+                next[15][x - 1] = true;
+                next[15][x + 1] = true;
+                next[14][x] = true;
             }
 
             if (!obfuscate[bits]) {
@@ -556,16 +635,25 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         // Last block of last line
         bits = bitStorageReader.read();
 
-        if (nextNext[15][15] = !solid[bits]) {
+        transparent = !solid[bits];
+        surfaceLava = lavaObscures && !transparent && obscuringLava[bits] && isSurfaceLava(readChunkSection, aboveReadChunkSection, 15, readY, 15);
+        nextNext[15][15] = transparent || surfaceLava;
+
+        if (transparent) {
             bitStorageWriter.skip();
-            next[15][14] = true;
-            next[14][15] = true;
         } else {
-            if (current[15][15] || isTransparent(nearbyChunkSections[3], 15, y, 0) || isTransparent(nearbyChunkSections[1], 0, y, 15)) {
+            if (current[15][15]
+                || isTransparentUpOrSide(nearbyChunkSections[3], nearbyChunkSectionsAbove[3], 15, y, 0)
+                || isTransparentUpOrSide(nearbyChunkSections[1], nearbyChunkSectionsAbove[1], 0, y, 15)) {
                 bitStorageWriter.skip();
             } else {
                 bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
             }
+        }
+
+        if (transparent || surfaceLava) {
+            next[15][14] = true;
+            next[14][15] = true;
         }
 
         if (!obfuscate[bits]) {
@@ -586,6 +674,45 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             // Internal implementation details of PalettedContainer, LinearPalette, HashMapPalette, CrudeIncrementalIntIdentityHashBiMap, ... guarantee us that no (other) exceptions will occur
             return true;
         }
+    }
+
+    private boolean isSurfaceLava(LevelChunkSection chunkSection, LevelChunkSection aboveChunkSection, int x, int y, int z) {
+        if (chunkSection == EMPTY_SECTION) {
+            return false;
+        }
+
+        try {
+            return !hasLavaAbove(chunkSection, aboveChunkSection, x, y, z);
+        } catch (MissingPaletteEntryException e) {
+            return false;
+        }
+    }
+
+    private boolean isTransparentUpOrSide(LevelChunkSection chunkSection, LevelChunkSection aboveChunkSection, int x, int y, int z) {
+        if (chunkSection == EMPTY_SECTION) {
+            return true;
+        }
+
+        try {
+            BlockState blockState = chunkSection.getBlockState(x, y, z);
+            int blockStateId = GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState, PaletteResize.noResizeExpected());
+
+            if (!solidGlobal[blockStateId]) {
+                return true;
+            }
+
+            return obscuringLavaGlobal[blockStateId] && !hasLavaAbove(chunkSection, aboveChunkSection, x, y, z);
+        } catch (MissingPaletteEntryException e) {
+            return true;
+        }
+    }
+
+    private boolean hasLavaAbove(LevelChunkSection chunkSection, LevelChunkSection aboveChunkSection, int x, int y, int z) {
+        if (y < 15) {
+            return chunkSection.getBlockState(x, y + 1, z).is(Blocks.LAVA);
+        }
+
+        return aboveChunkSection != EMPTY_SECTION && aboveChunkSection.getBlockState(x, 0, z).is(Blocks.LAVA);
     }
 
     private boolean[] readPalette(Palette<BlockState> palette, boolean[] temp, boolean[] global) {
@@ -611,6 +738,21 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     public void onBlockChange(Level level, BlockPos blockPos, BlockState newBlockState, BlockState oldBlockState, @Block.UpdateFlags int flags, int maxUpdateDepth) {
         if (oldBlockState != null && solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(oldBlockState, PaletteResize.noResizeExpected())] && !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(newBlockState, PaletteResize.noResizeExpected())] && blockPos.getY() <= maxBlockHeightUpdatePosition) {
             updateNearbyBlocks(level, blockPos);
+        }
+
+        if (lavaObscures && updateRadius >= 1 && oldBlockState != null && oldBlockState.is(Blocks.LAVA) && !newBlockState.is(Blocks.LAVA)) {
+            BlockPos lavaPos = blockPos.below();
+
+            if (lavaPos.getY() <= maxBlockHeightUpdatePosition) {
+                BlockState belowBlockState = level.getBlockStateIfLoaded(lavaPos);
+
+                if (belowBlockState != null && belowBlockState.is(Blocks.LAVA)) {
+                    updateBlock(level, lavaPos.west());
+                    updateBlock(level, lavaPos.east());
+                    updateBlock(level, lavaPos.north());
+                    updateBlock(level, lavaPos.south());
+                }
+            }
         }
     }
 
