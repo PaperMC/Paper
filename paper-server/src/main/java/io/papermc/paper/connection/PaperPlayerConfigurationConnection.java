@@ -130,7 +130,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
     @Override
     public PlayerProfile getProfile() {
-        return CraftPlayerProfile.asBukkitCopy(this.packetListener.getOwner());
+        return CraftPlayerProfile.asBukkitMirror(this.packetListener.getOwner());
     }
 
     @Override
