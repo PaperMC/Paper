@@ -35,6 +35,7 @@ public class CraftMapRenderer extends MapRenderer {
         }
 
         for (String key : this.worldMap.decorations.keySet()) {
+            if (io.papermc.paper.FeatureHooks.isMapMarkerHiddenFrom(this.worldMap, key, player.getName())) continue;
             // If this cursor is for a player check visibility with vanish system
             Player other = Bukkit.getPlayerExact(key);
             if (other != null && !player.canSee(other)) {
