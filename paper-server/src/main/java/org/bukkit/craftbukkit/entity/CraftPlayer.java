@@ -118,7 +118,6 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Prediction;
 import net.minecraft.util.ProblemReporter;
@@ -3279,17 +3278,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
                     drop.makeFakeItem();
                     handle.level().addFreshEntity(drop);
                 }
-
-                handle.level().playSound(
-                    null,
-                    handle.getX(),
-                    handle.getY(),
-                    handle.getZ(),
-                    SoundEvents.ITEM_PICKUP,
-                    SoundSource.PLAYERS,
-                    0.2F,
-                    ((handle.getRandom().nextFloat() - handle.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F
-                );
             }
 
             if (added && nmsStack.isEmpty()) continue; // Item was fully added, neither a drop nor a leftover is needed.
