@@ -33,6 +33,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ConfigurationTask;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
@@ -170,6 +171,13 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     @Override
     public Set<String> getListeningPluginChannels() {
         return Set.copyOf(this.channels());
+    }
+
+    public void sendSupportedChannels() {
+        final byte[] payload = PluginMessageBridgeImpl.encodeSupportedChannels();
+        if (payload != null) {
+            this.packetListener.send(new ClientboundCustomPayloadPacket(new DiscardedPayload(ServerCommonPacketListenerImpl.CUSTOM_REGISTER, payload)));
+        }
     }
 
     @Override

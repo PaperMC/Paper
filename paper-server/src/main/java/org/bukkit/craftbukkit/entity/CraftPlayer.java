@@ -25,8 +25,6 @@ import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -48,8 +46,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.identity.Identity;
@@ -2377,21 +2373,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     public void sendSupportedChannels() {
         if (this.getHandle().connection == null) return;
-        Set<String> listening = this.server.getMessenger().getIncomingChannels();
-
-        if (!listening.isEmpty()) {
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-            for (String channel : listening) {
-                try {
-                    stream.write(channel.getBytes(StandardCharsets.UTF_8));
-                    stream.write((byte) 0);
-                } catch (IOException ex) {
-                    Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + this.getName(), ex);
-                }
-            }
-
-            this.sendCustomPayload(ServerGamePacketListenerImpl.CUSTOM_REGISTER, stream.toByteArray());
+        final byte[] payload = PluginMessageBridgeImpl.encodeSupportedChannels();
+        if (payload != null) {
+            this.sendCustomPayload(ServerGamePacketListenerImpl.CUSTOM_REGISTER, payload);
         }
     }
 
