@@ -1,0 +1,401 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 15:31:47 -0700
+Subject: [PATCH] Unload unused map data
+
+Map data was kept in memory from first use until server shutdown.
+
+Map data is now managed by MapDataCache. Each time map data is saved,
+maps that were not used since the previous save are unloaded, as long as
+no player carries or views them, no plugin changed their renderers (the
+renderers live on the MapView and would be lost), and their file is up
+to date. Missing map lookups are no longer cached forever either.
+
+Unloaded maps are kept weakly: while anything still references one, e.g.
+a plugin holding its MapView, it is loaded again as the same object
+instead of being read from disk, so MapViews held by plugins keep working
+without new API.
+
+MapDataCache is thread-safe, except for unloading, which runs on the
+thread that saves map data.
+
+Behaviour changes:
+- MapInitializeEvent is called again when a map is read from disk after
+  it was unloaded and collected.
+- MapInitializeEvent for a new map is called after the map is registered,
+  so getting the map in a listener returns it. Previously it was looked up
+  on disk, returning null, or a separate stale copy if an old file existed
+  for that id.
+- MapView setters now mark the map dirty. Changes made through them were
+  previously only saved if something else marked the map dirty.
+- Maps are not unloaded while autosave is disabled.
+
+diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
+index c77fd7401f713d422212cd01d54196b45a43267d..f943a67365d04b72002e88386d7a8d2291b4d48e 100644
+--- a/io/papermc/paper/FeatureHooks.java
++++ b/io/papermc/paper/FeatureHooks.java
+@@ -145,10 +145,11 @@ public final class FeatureHooks {
+     }
+ 
+     public static void markMapDirty(final net.minecraft.world.level.saveddata.maps.MapItemSavedData data) {
+-        data.setDirty();
++        net.minecraft.server.MinecraftServer.getServer().mapDataCache.markDirty(data); // Paper - Unload unused map data
+     }
+ 
+     public static void markMapUsed(final net.minecraft.world.level.saveddata.maps.MapItemSavedData data) {
++        net.minecraft.server.MinecraftServer.getServer().mapDataCache.markUsed(data); // Paper - Unload unused map data
+     }
+ 
+     public static int getViewDistance(net.minecraft.server.level.ServerLevel level) {
+diff --git a/io/papermc/paper/world/MapDataCache.java b/io/papermc/paper/world/MapDataCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e721bae44bc871eea9a154c8d7427fd9d6f9bccc
+--- /dev/null
++++ b/io/papermc/paper/world/MapDataCache.java
+@@ -0,0 +1,256 @@
++package io.papermc.paper.world;
++
++import ca.spottedleaf.concurrentutil.lock.Notifier;
++import ca.spottedleaf.concurrentutil.map.concurrent.ints.ConcurrentChainedInt2ReferenceHashTable;
++import java.lang.ref.Reference;
++import java.lang.ref.ReferenceQueue;
++import java.lang.ref.WeakReference;
++import java.util.Optional;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.saveddata.maps.MapId;
++import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
++import net.minecraft.world.level.storage.SavedDataStorage;
++import org.bukkit.event.server.MapInitializeEvent;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Unloads map data that is no longer used.
++ *
++ * <p>A map is in one of three states:</p>
++ * <ul>
++ *     <li><b>Loaded</b>: in the storage cache, so it is saved.</li>
++ *     <li><b>Unloaded</b>: only referenced weakly here. It stays in memory as long as something else references it,
++ *     e.g. a plugin holding its MapView. Using it again loads that same object, without reading it from disk or
++ *     calling MapInitializeEvent again.</li>
++ *     <li><b>Collected</b>: nothing referenced it anymore. Using it again reads it from disk.</li>
++ * </ul>
++ *
++ * <p>Maps are unloaded by {@link #unloadUnused}, which runs before map data is saved. A map is unloaded when it was
++ * not used since the previous run and nothing holds it: no player carries or views it, and no plugin changed its
++ * renderers (those live on the MapView and would be lost).</p>
++ *
++ * <p>Since unloaded maps are not saved, the file of an unloaded map must stay up to date until it is collected:</p>
++ * <ul>
++ *     <li>A map is only unloaded when its file is up to date: it is not dirty and no write is pending. This is only
++ *     reliable on the thread that saves map data (the dirty flag is cleared when a save is scheduled, not when it
++ *     completes), so {@link #unloadUnused} must run on that thread.</li>
++ *     <li>An unloaded map is loaded again before it changes: the game only changes maps it just got through
++ *     {@link #get}, or that a player holds, and MapView changes go through {@link #markDirty}.
++ *     Data returned by {@link #get} must not be kept and changed across a call to {@link #unloadUnused} (in
++ *     practice, across ticks) unless a player holds the map.</li>
++ * </ul>
++ *
++ * <p>All other methods can be called from any thread. A map is only returned to other threads once
++ * MapInitializeEvent was called for it, so that they see the renderers plugins add in it.</p>
++ */
++public final class MapDataCache {
++
++    private final MinecraftServer server;
++    /** Maps that do not exist are loaded too, with null data. */
++    private final ConcurrentChainedInt2ReferenceHashTable<LoadedMap> loaded = new ConcurrentChainedInt2ReferenceHashTable<>();
++    private final ConcurrentChainedInt2ReferenceHashTable<UnloadedMap> unloaded = new ConcurrentChainedInt2ReferenceHashTable<>();
++    private final ReferenceQueue<MapItemSavedData> collectedMaps = new ReferenceQueue<>();
++
++    public MapDataCache(final MinecraftServer server) {
++        this.server = server;
++    }
++
++    public @Nullable MapItemSavedData get(final MapId id) {
++        while (true) {
++            final LoadedMap map = this.getOrLoad(id);
++            map.awaitInitialized();
++            if (map.markUsed()) {
++                return map.data;
++            }
++            // The map is being unloaded right now, wait for that to finish and load it again
++            Thread.onSpinWait();
++        }
++    }
++
++    /** Sets the data of a new map and calls MapInitializeEvent for it. */
++    public void set(final MapId id, final MapItemSavedData data) {
++        data.id = id;
++        final LoadedMap map = new LoadedMap(data);
++        map.initialization = new Initialization(Thread.currentThread(), new Notifier(true));
++        this.loaded.compute(id.id(), (key, previous) -> {
++            this.unloaded.remove(key);
++            this.storage().set(MapItemSavedData.type(id), data);
++            return map;
++        });
++
++        // Called outside of the table lock, getting the map from a listener finds the new map
++        try {
++            new MapInitializeEvent(data.mapView).callEvent();
++        } finally {
++            map.finishInitializing();
++        }
++    }
++
++    /** Marks the map dirty, and loads it again if it is unloaded so that the change is saved. */
++    public void markDirty(final MapItemSavedData data) {
++        data.setDirty();
++        this.markUsed(data);
++    }
++
++    /** Marks the map used, and loads it again if it is unloaded. */
++    public void markUsed(final MapItemSavedData data) {
++        if (data.id != null) {
++            this.get(data.id);
++        }
++    }
++
++    private LoadedMap getOrLoad(final MapId id) {
++        final LoadedMap existing = this.loaded.get(id.id());
++        if (existing != null) {
++            return existing;
++        }
++
++        final boolean[] readFromDisk = {false};
++        final LoadedMap map = this.loaded.computeIfAbsent(id.id(), key -> {
++            final MapItemSavedData stillReferenced = this.takeUnloaded(key);
++            if (stillReferenced != null) {
++                this.storage().cache.put(MapItemSavedData.type(id), Optional.of(stillReferenced));
++                return new LoadedMap(stillReferenced);
++            }
++            readFromDisk[0] = true;
++            final LoadedMap read = new LoadedMap(this.storage().get(MapItemSavedData.type(id)));
++            if (read.data != null) {
++                read.initialization = new Initialization(Thread.currentThread(), new Notifier(true));
++            }
++            return read;
++        });
++
++        // Called outside of the table lock, getting the map from a listener finds the loaded map
++        if (readFromDisk[0] && map.data != null) {
++            try {
++                map.data.id = id;
++                new MapInitializeEvent(map.data.mapView).callEvent();
++            } finally {
++                map.finishInitializing();
++            }
++        }
++        return map;
++    }
++
++    private @Nullable MapItemSavedData takeUnloaded(final int id) {
++        final UnloadedMap unloadedMap = this.unloaded.remove(id);
++        return unloadedMap == null ? null : unloadedMap.get();
++    }
++
++    /** Unloads maps that were not used since the previous call. Must be called on the thread that saves map data, before saving. */
++    public void unloadUnused() {
++        this.forgetCollectedMaps();
++
++        // Files on disk may be outdated until the pending writes complete
++        if (this.storage().hasPendingWrites()) {
++            return;
++        }
++
++        for (final ConcurrentChainedInt2ReferenceHashTable.TableEntry<LoadedMap> entry : this.loaded) {
++            final LoadedMap map = entry.getValue();
++            if (map.checkAndResetUsed()) {
++                continue;
++            }
++            if (map.data != null && !canUnload(map.data)) {
++                continue;
++            }
++            if (map.tryMarkUnloading()) {
++                this.unload(entry.getKey(), map);
++            }
++        }
++    }
++
++    private static boolean canUnload(final MapItemSavedData data) {
++        synchronized (data) {
++            return !data.isDirty() && data.carriedBy.isEmpty() && data.mapView.hasOnlyDefaultRenderer();
++        }
++    }
++
++    private void unload(final int id, final LoadedMap map) {
++        // Make the map available to load again before it is no longer loaded
++        if (map.data != null) {
++            this.unloaded.put(id, new UnloadedMap(id, map.data, this.collectedMaps));
++        }
++        this.storage().cache.remove(MapItemSavedData.type(new MapId(id)), Optional.ofNullable(map.data));
++        this.loaded.remove(id, map);
++    }
++
++    private void forgetCollectedMaps() {
++        Reference<? extends MapItemSavedData> collected;
++        while ((collected = this.collectedMaps.poll()) != null) {
++            final UnloadedMap unloadedMap = (UnloadedMap) collected;
++            this.unloaded.remove(unloadedMap.id, unloadedMap);
++        }
++    }
++
++    private SavedDataStorage storage() {
++        return this.server.getDataStorage();
++    }
++
++    /**
++     * Using a map and unloading it can happen at the same time on different threads. Each side writes its own flag,
++     * then reads the other's (both volatile), so at least one of them sees the other: either unloading sees that the
++     * map was used and does not unload it, or using it sees that it is being unloaded and loads it again.
++     */
++    private static final class LoadedMap {
++        private final @Nullable MapItemSavedData data;
++        private volatile boolean used = true;
++        private volatile boolean unloading;
++        /** Set while MapInitializeEvent is called for the map. */
++        private volatile @Nullable Initialization initialization;
++
++        private LoadedMap(final @Nullable MapItemSavedData data) {
++            this.data = data;
++        }
++
++        /** Waits until MapInitializeEvent was called, unless the map is being initialized by this thread (e.g. a listener gets it). */
++        private void awaitInitialized() {
++            final Initialization initialization = this.initialization;
++            if (initialization != null && initialization.thread() != Thread.currentThread()) {
++                initialization.done().waitUntilReady();
++            }
++        }
++
++        private void finishInitializing() {
++            final Initialization initialization = this.initialization;
++            this.initialization = null;
++            initialization.done().notifyThreads();
++        }
++
++        /** Returns false if the map is being unloaded. */
++        private boolean markUsed() {
++            this.used = true;
++            return !this.unloading;
++        }
++
++        private boolean checkAndResetUsed() {
++            if (this.used) {
++                this.used = false;
++                return true;
++            }
++            return false;
++        }
++
++        /** Returns false if the map was used concurrently. */
++        private boolean tryMarkUnloading() {
++            this.unloading = true;
++            if (this.used) {
++                this.unloading = false;
++                return false;
++            }
++            return true;
++        }
++    }
++
++    private record Initialization(Thread thread, Notifier done) {
++    }
++
++    private static final class UnloadedMap extends WeakReference<MapItemSavedData> {
++        private final int id;
++
++        private UnloadedMap(final int id, final MapItemSavedData data, final ReferenceQueue<MapItemSavedData> queue) {
++            super(data, queue);
++            this.id = id;
++        }
++    }
++}
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index a8c330e21a715711ed21dd9084deea5254121b44..f313fcd002b6cc47a2397bf65a8ce1dfee2c41ec 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -216,6 +216,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public LevelStorageSource.LevelStorageAccess storageSource;
+     protected final PlayerDataStorage playerDataStorage;
+     private final SavedDataStorage savedDataStorage;
++    public final io.papermc.paper.world.MapDataCache mapDataCache = new io.papermc.paper.world.MapDataCache(this); // Paper - Unload unused map data
+     private final List<Runnable> tickables = Lists.newArrayList();
+     // Paper - per-level GameRules
+     private MetricsRecorder metricsRecorder = InactiveMetricsRecorder.INSTANCE;
+@@ -951,6 +952,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end - split out global level data
+         GameProfile singleplayerProfile = this.getSingleplayerProfile();
+         this.storageSource.saveDataTag(this.worldData, singleplayerProfile == null ? null : singleplayerProfile.id());
++        this.mapDataCache.unloadUnused(); // Paper - Unload unused map data
+         if (flush) {
+             this.savedDataStorage.saveAndJoin();
+         } else {
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index a5a35487ee77403e0483a76a37277c99dfd36eac..05bb47c0f62c241210dd3d7aa28b1cf4384c108d 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2574,37 +2574,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     @Override
+     public @Nullable MapItemSavedData getMapData(final MapId id) {
+-        // Paper start - Call missing map initialize event and set id
+-        final SavedDataStorage storage = this.getServer().getDataStorage();
+-
+-        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(MapItemSavedData.type(id));
+-        if (cacheEntry == null) { // Cache did not contain, try to load and may init
+-            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(id)); // get populates the cache
+-            if (mapData != null) { // map was read, init it and return
+-                mapData.id = id;
+-                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
+-                return mapData;
+-            }
+-
+-            return null; // Map does not exist, reading failed.
+-        }
+-        // Cache entry exists, update it with the id ref and return.
+-        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
+-            mapItemSavedData.id = id;
+-            return mapItemSavedData;
+-        }
+-
+-        return null;
+-        // Paper end - Call missing map initialize event and set id
++        return this.getServer().mapDataCache.get(id); // Paper - Unload unused map data
+     }
+ 
+     public void setMapData(final MapId id, final MapItemSavedData data) {
+-        // CraftBukkit start
+-        data.id = id;
+-        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(data.mapView);
+-        event.callEvent();
+-        // CraftBukkit end
+-        this.getServer().getDataStorage().set(MapItemSavedData.type(id), data);
++        this.getServer().mapDataCache.set(id, data); // Paper - Unload unused map data
+     }
+ 
+     public MapId getFreeMapId() {
+diff --git a/net/minecraft/world/level/storage/SavedDataStorage.java b/net/minecraft/world/level/storage/SavedDataStorage.java
+index d2a379b55467af19d9c7915e6964f97ca7ea264f..1398fbba5101ee0a601a603ccd4c3e0dd4fef099 100644
+--- a/net/minecraft/world/level/storage/SavedDataStorage.java
++++ b/net/minecraft/world/level/storage/SavedDataStorage.java
+@@ -40,7 +40,7 @@ import org.slf4j.Logger;
+ 
+ public class SavedDataStorage implements AutoCloseable {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    public final Map<SavedDataType<?>, Optional<SavedData>> cache = new HashMap<>();
++    public final Map<SavedDataType<?>, Optional<SavedData>> cache = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - Unload unused map data; changing a MapView can load its map, so a plugin unsafely doing that off the main thread must not corrupt the cache
+     private final DataFixer fixerUpper;
+     private final HolderLookup.Provider registries;
+     private final Path dataFolder;
+@@ -214,6 +214,12 @@ public class SavedDataStorage implements AutoCloseable {
+         }
+     }
+ 
++    // Paper start - Unload unused map data
++    public boolean hasPendingWrites() {
++        return !this.pendingWriteFuture.isDone();
++    }
++    // Paper end - Unload unused map data
++
+     public void saveAndJoin() {
+         this.scheduleSave().join();
+     }
