@@ -1,16 +1,15 @@
 package org.bukkit.command;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a class which contains a single method for executing commands
  *
- * @apiNote plugin developers should prefer to use the
+ * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@ApiStatus.Obsolete(since = "26.3")
+@Deprecated(since = "26.4")
 public interface CommandExecutor {
 
     /**
@@ -24,10 +23,10 @@ public interface CommandExecutor {
      * @param label Alias of the command which was used
      * @param args Passed command arguments
      * @return true if a valid command, otherwise false
-     * @apiNote plugin developers should prefer to use the
+     * @deprecated plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
      *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
-    @ApiStatus.Obsolete(since = "26.3")
+    @Deprecated(since = "26.4")
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args);
 }
