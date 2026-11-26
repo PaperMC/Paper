@@ -2,12 +2,14 @@ package io.papermc.paper.brigadier;
 
 import java.util.Set;
 import java.util.UUID;
+import net.kyori.adventure.permission.PermissionChecker;
+import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
-import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
@@ -21,6 +23,10 @@ import org.jetbrains.annotations.Nullable;
 public final class NullCommandSender implements CommandSender {
 
     public static final CommandSender INSTANCE = new NullCommandSender();
+
+    private static final Pointers POINTERS = Pointers.builder()
+        .withStatic(PermissionChecker.POINTER, PermissionChecker.always(TriState.TRUE))
+        .build();
 
     private NullCommandSender() {
     }
@@ -107,6 +113,16 @@ public final class NullCommandSender implements CommandSender {
     }
 
     @Override
+    public TriState permissionValue(final String permission) {
+        return TriState.TRUE;
+    }
+
+    @Override
+    public TriState permissionValue(final Permission permission) {
+        return TriState.TRUE;
+    }
+
+    @Override
     public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value) {
         throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
     }
@@ -147,5 +163,10 @@ public final class NullCommandSender implements CommandSender {
 
     @Override
     public void setOp(final boolean value) {
+    }
+
+    @Override
+    public Pointers pointers() {
+        return POINTERS;
     }
 }
