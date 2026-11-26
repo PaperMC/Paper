@@ -20,7 +20,7 @@
      }
  
      default boolean trySaveLootTable(final ValueOutput base) {
-@@ -61,25 +_,41 @@
+@@ -61,31 +_,64 @@
          }
  
          base.store("LootTable", LootTable.KEY_CODEC, lootTable);
@@ -58,14 +58,21 @@
                  CriteriaTriggers.GENERATE_LOOT.trigger(serverPlayer, lootTableKey);
              }
  
-+            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) { // Paper - LootTable API
++            final boolean clearedLootTable; // Paper - Restore loot table if LootGenerateEvent is cancelled
++            if (clearedLootTable = forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) { // Paper - LootTable API // Paper - Restore loot table if LootGenerateEvent is cancelled
              this.setLootTable(null);
 +            } // Paper - LootTable API
              LootParams.Builder params = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(worldPosition));
              if (player != null) {
                  params.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -88,4 +_,16 @@
-             lootTable.fill(this, params.create(LootContextParamSets.CHEST), this.getLootTableSeed());
+             }
+ 
+-            lootTable.fill(this, params.create(LootContextParamSets.CHEST), this.getLootTableSeed());
++            // Paper start - Restore loot table if LootGenerateEvent is cancelled
++            if (!lootTable.fill(this, params.create(LootContextParamSets.CHEST), this.getLootTableSeed()) && clearedLootTable && !forceClearLootTable) {
++                this.setLootTable(lootTableKey);
++            }
++            // Paper end - Restore loot table if LootGenerateEvent is cancelled
          }
      }
 +
