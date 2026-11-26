@@ -114,7 +114,24 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      */
     @Contract(value = "_, _ -> new", pure = true)
     static PredicateChoice predicateChoice(Predicate<? super ItemStack> stackPredicate, ItemStack exampleStack) {
-        return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
+        return new PredicateRecipeChoiceImpl(stackPredicate, List.of(exampleStack));
+    }
+
+    /**
+     * Creates a recipe choice that will be valid only if an item matches the
+     * given predicate.
+     * <p>
+     * <b>Note:</b> Mutating the {@link ItemStack ItemStacks} within the predicate is not
+     * supported.
+     *
+     * @param stackPredicate the predicate to match against.
+     * @param exampleStacks  a list of example {@link ItemStack ItemStacks} to be shown in the
+     *                       recipe book. Cannot be empty or contain null or air elements.
+     * @return a new PredicateChoice
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static PredicateChoice predicateChoice(Predicate<? super ItemStack> stackPredicate, List<ItemStack> exampleStacks) {
+        return new PredicateRecipeChoiceImpl(stackPredicate, exampleStacks);
     }
 
     /**
@@ -407,6 +424,13 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      */
     @ApiStatus.NonExtendable
     interface PredicateChoice extends RecipeChoice {
+
+        /**
+         * Gets a list of example stacks that match this choice.
+         *
+         * @return a list of example stacks
+         */
+        List<ItemStack> getExampleStacks();
 
     }
 }
