@@ -38,6 +38,13 @@ public record PaperItemAttributeModifiers(
         return convert(this.impl);
     }
 
+    @Override
+    public Builder toBuilder() {
+        Builder builder = new BuilderImpl();
+        this.modifiers().forEach(entry -> builder.addModifier(entry.attribute(), entry.modifier(), entry.display()));
+        return builder;
+    }
+
     public record PaperEntry(Attribute attribute, AttributeModifier modifier, AttributeModifierDisplay display) implements ItemAttributeModifiers.Entry {
     }
 

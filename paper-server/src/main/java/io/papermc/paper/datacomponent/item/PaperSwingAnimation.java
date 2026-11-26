@@ -25,6 +25,13 @@ public record PaperSwingAnimation(
         return this.impl.duration();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .type(this.type())
+            .duration(this.duration());
+    }
+
     static final class BuilderImpl implements SwingAnimation.Builder {
 
         private SwingAnimationType type = net.minecraft.world.item.component.SwingAnimation.DEFAULT.type();

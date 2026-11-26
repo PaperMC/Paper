@@ -45,6 +45,15 @@ public record PaperPiercingWeapon(
             .orElse(null);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .dealsKnockback(this.dealsKnockback())
+            .dismounts(this.dismounts())
+            .sound(this.sound())
+            .hitSound(this.hitSound());
+    }
+
     static final class BuilderImpl implements PiercingWeapon.Builder {
 
         private boolean dealsKnockback = true;

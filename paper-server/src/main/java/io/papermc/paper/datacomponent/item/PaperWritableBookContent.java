@@ -41,6 +41,11 @@ public record PaperWritableBookContent(
         );
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().filteredPages(this.pages());
+    }
+
     static final class BuilderImpl implements WritableBookContent.Builder {
 
         private final List<Filterable<String>> pages = new ObjectArrayList<>();
@@ -83,6 +88,13 @@ public record PaperWritableBookContent(
         }
 
         @Override
+        public Builder pages(final List<String> pages) {
+            this.pages.clear();
+            this.addPages(pages);
+            return this;
+        }
+
+        @Override
         public WritableBookContent.Builder addFilteredPage(final Filtered<String> page) {
             validatePageLength(page.raw());
             if (page.filtered() != null) {
@@ -103,6 +115,13 @@ public record PaperWritableBookContent(
                 }
                 this.pages.add(new Filterable<>(page.raw(), Optional.ofNullable(page.filtered())));
             }
+            return this;
+        }
+
+        @Override
+        public Builder filteredPages(final List<Filtered<String>> pages) {
+            this.pages.clear();
+            this.addFilteredPages(pages);
             return this;
         }
 

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Contract;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
  */
 @ApiStatus.NonExtendable
-public interface ItemArmorTrim  {
+public interface ItemArmorTrim {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemArmorTrim.Builder itemArmorTrim(final ArmorTrim armorTrim) {

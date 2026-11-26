@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import net.kyori.adventure.text.Component;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
  */
 @ApiStatus.NonExtendable
-public interface ItemLore {
+public interface ItemLore extends BuildableDataComponent<ItemLore, ItemLore.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemLore lore(final List<? extends ComponentLike> lines) {
