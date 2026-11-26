@@ -13,6 +13,8 @@ import org.jspecify.annotations.Nullable;
 
 public class PaperMinecraftSessionService extends MinecraftServicesSessionService {
 
+    private static final boolean ENFORCE_UUID_V4 = !Boolean.getBoolean("paper.disableProfileUuidVersionCheck");
+
     protected PaperMinecraftSessionService(ServicesKeySet servicesKeySet, Proxy proxy, PaperServicesDiscoveryService discoveryService) {
         super(servicesKeySet, proxy, discoveryService);
     }
@@ -23,6 +25,9 @@ public class PaperMinecraftSessionService extends MinecraftServicesSessionServic
         profile = playerProfile.getGameProfile();
         if (profile.properties().containsKey("textures")) {
             return new ProfileResult(profile, Collections.emptySet());
+        }
+        if (ENFORCE_UUID_V4 && (profile.id() == null || profile.id().version() != 4)) {
+            return null;
         }
         ProfileResult result = super.fetchProfile(profile.id(), requireSecure);
         if (result != null) {
@@ -35,6 +40,9 @@ public class PaperMinecraftSessionService extends MinecraftServicesSessionServic
 
     @Override @Deprecated
     public @Nullable ProfileResult fetchProfile(final UUID profileId, final boolean requireSecure) {
+        if (ENFORCE_UUID_V4 && (profileId == null || profileId.version() != 4)) {
+            return null;
+        }
         return super.fetchProfile(profileId, requireSecure);
     }
 }
