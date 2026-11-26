@@ -1,6 +1,6 @@
 package org.bukkit.loot;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a {@link org.bukkit.block.Container} or a
@@ -32,10 +32,8 @@ public interface Lootable {
      *
      * @return the Loot Table attached to this block or entity.
      */
-    @Nullable
-    LootTable getLootTable();
+    @Nullable LootTable getLootTable();
 
-    // Paper start
     /**
      * Set the loot table and seed for a container or entity at the same time.
      * <br>
@@ -61,7 +59,6 @@ public interface Lootable {
     default void clearLootTable() {
         this.setLootTable(null);
     }
-    // Paper end
 
     /**
      * Set the seed used when this Loot Table generates loot.

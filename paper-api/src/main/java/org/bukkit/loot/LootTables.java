@@ -3,14 +3,12 @@ package org.bukkit.loot;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This enum holds a list of all known {@link LootTable}s offered by Mojang.
  * This list is not guaranteed to be accurate in future versions.
  * <br>
- * See the
- * <a href="https://minecraft.wiki/w/Loot_table#List_of_loot_tables">
+ * See the <a href="https://minecraft.wiki/w/Loot_table">
  * Minecraft Wiki</a> for more information on loot tables.
  */
 public enum LootTables implements Keyed {
@@ -260,11 +258,10 @@ public enum LootTables implements Keyed {
 
     private final String location;
 
-    LootTables(/*@NotNull*/ String location) {
+    LootTables(final String location) {
         this.location = location;
     }
 
-    @NotNull
     @Override
     public NamespacedKey getKey() {
         return NamespacedKey.minecraft(location);
@@ -276,7 +273,6 @@ public enum LootTables implements Keyed {
      *
      * @return the associated LootTable
      */
-    @NotNull
     public LootTable getLootTable() {
         return Bukkit.getLootTable(getKey());
     }
