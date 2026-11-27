@@ -35,6 +35,21 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
     <P, C> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<P, C> type, @NotNull C value);
 
     /**
+     * Stores a metadata tag on the {@link PersistentDataHolder} instance.
+     * <p>
+     * This API cannot be used to manipulate minecraft data, as the values will
+     * be stored using your namespace.  If this tag already exists on the
+     * holder, nothing will change.
+     * 
+     * @param key the key the container will be tagged with
+     * 
+     * @throws IllegalArgumentException if the key is null
+     */
+    default void tag(@NotNull NamespacedKey key) {
+        set(key, PersistentDataType.BOOLEAN, true);
+    }
+
+    /**
      * Stores a metadata value on the {@link PersistentDataHolder} instance.
      * <p>
      * This API cannot be used to manipulate minecraft data, as the values will
