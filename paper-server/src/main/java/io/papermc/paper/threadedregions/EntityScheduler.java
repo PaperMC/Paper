@@ -143,6 +143,9 @@ public final class EntityScheduler {
                 retireTask.accept(thisEntity);
             }
         }
+
+        // this scheduler will never be ticked anymore, clear the delayed tasks; helps with gc.
+        this.oneTimeDelayed.clear();
     }
 
     /**
