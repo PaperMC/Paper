@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.entity.Shearable;
 import io.papermc.paper.world.WeatheringCopperState;
 import org.bukkit.World;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
@@ -90,6 +89,9 @@ public interface CopperGolem extends Golem, Shearable {
          */
         static AtTime atTime(@Range(from = 0, to = Long.MAX_VALUE) final long time) {
             Preconditions.checkArgument(time >= 0, "time must be non-negative");
+            record AtTimeImpl(long time) implements AtTime {
+            }
+
             return new AtTimeImpl(time);
         }
 
@@ -122,7 +124,7 @@ public interface CopperGolem extends Golem, Shearable {
          *
          * @see #atTime(long)
          */
-        sealed interface AtTime extends Oxidizing permits AtTimeImpl {
+        non-sealed interface AtTime extends Oxidizing {
             /**
              * Gets the absolute game time of the next weathering event.
              *
@@ -132,12 +134,6 @@ public interface CopperGolem extends Golem, Shearable {
             @Range(from = 0, to = Long.MAX_VALUE)
             long time();
         }
-
-        /**
-         * @hidden
-         */
-        @ApiStatus.Internal
-        record AtTimeImpl(long time) implements AtTime {}
     }
 
     @NullMarked
