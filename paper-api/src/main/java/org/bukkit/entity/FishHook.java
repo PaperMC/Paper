@@ -2,12 +2,15 @@ package org.bukkit.entity;
 
 import org.bukkit.inventory.EquipmentSlot;
 import io.papermc.paper.event.entity.FishHookStateChangeEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a fishing hook.
  */
+@NullMarked
 public interface FishHook extends Projectile {
 
     /**
@@ -18,7 +21,7 @@ public interface FishHook extends Projectile {
      *
      * @return Minimum number of ticks one has to wait for a fish appearing
      */
-    public int getMinWaitTime();
+    int getMinWaitTime();
 
     /**
      * Set the minimum number of ticks one has to wait for a fish appearing.
@@ -29,7 +32,7 @@ public interface FishHook extends Projectile {
      * @param minWaitTime Minimum number of ticks one has to wait for a fish
      * appearing
      */
-    public void setMinWaitTime(int minWaitTime);
+    void setMinWaitTime(int minWaitTime);
 
     /**
      * Get the maximum number of ticks one has to wait for a fish appearing.
@@ -39,7 +42,7 @@ public interface FishHook extends Projectile {
      *
      * @return Maximum number of ticks one has to wait for a fish appearing
      */
-    public int getMaxWaitTime();
+    int getMaxWaitTime();
 
     /**
      * Set the maximum number of ticks one has to wait for a fish appearing.
@@ -50,7 +53,7 @@ public interface FishHook extends Projectile {
      * @param maxWaitTime Maximum number of ticks one has to wait for a fish
      * appearing
      */
-    public void setMaxWaitTime(int maxWaitTime);
+    void setMaxWaitTime(int maxWaitTime);
 
     /**
      * Set both the minimum (default 100) and maximum (default 600) amount
@@ -59,7 +62,7 @@ public interface FishHook extends Projectile {
      * @param min minimum ticks for a fish to appear
      * @param max maximum ticks for a fish to appear
      */
-    public void setWaitTime(int min, int max);
+    void setWaitTime(int min, int max);
 
     /**
      * Get the minimum number of ticks one has to wait for a fish to bite
@@ -72,7 +75,7 @@ public interface FishHook extends Projectile {
      *
      * @return Minimum number of ticks one has to wait for a fish to bite
      */
-    public int getMinLureTime();
+    int getMinLureTime();
 
     /**
      * Set the minimum number of ticks one has to wait for a fish to bite
@@ -86,7 +89,7 @@ public interface FishHook extends Projectile {
      * @param minLureTime Minimum number of ticks one has to wait for a fish
      * to bite
      */
-    public void setMinLureTime(int minLureTime);
+    void setMinLureTime(int minLureTime);
 
     /**
      * Get the maximum number of ticks one has to wait for a fish to bite
@@ -99,7 +102,7 @@ public interface FishHook extends Projectile {
      *
      * @return Maximum number of ticks one has to wait for a fish to bite
      */
-    public int getMaxLureTime();
+    int getMaxLureTime();
 
     /**
      * Set the maximum number of ticks one has to wait for a fish to bite
@@ -113,7 +116,7 @@ public interface FishHook extends Projectile {
      * @param maxLureTime Maximum number of ticks one has to wait for a fish
      * to bite
      */
-    public void setMaxLureTime(int maxLureTime);
+    void setMaxLureTime(int maxLureTime);
 
     /**
      * Set both the minimum (default 20) and maximum (default 80) amount
@@ -122,7 +125,7 @@ public interface FishHook extends Projectile {
      * @param min minimum ticks to wait for a bite
      * @param max maximum ticks to wait for a bite
      */
-    public void setLureTime(int min, int max);
+    void setLureTime(int min, int max);
 
     /**
      * Get the minimum angle (in degrees, 0 being positive Z 90 being negative
@@ -132,7 +135,7 @@ public interface FishHook extends Projectile {
      *
      * @return Minimum angle of where a fish will appear
      */
-    public float getMinLureAngle();
+    float getMinLureAngle();
 
     /**
      * Set the minimum angle (in degrees, 0 being positive Z 90 being negative
@@ -142,7 +145,7 @@ public interface FishHook extends Projectile {
      *
      * @param minLureAngle Minimum angle of where a fish may appear
      */
-    public void setMinLureAngle(float minLureAngle);
+    void setMinLureAngle(float minLureAngle);
 
     /**
      * Get the maximum angle (in degrees, 0 being positive Z 90 being negative
@@ -152,7 +155,7 @@ public interface FishHook extends Projectile {
      *
      * @return Maximum angle of where a fish will appear
      */
-    public float getMaxLureAngle();
+    float getMaxLureAngle();
 
     /**
      * Set the maximum angle (in degrees, 0 being positive Z 90 being negative
@@ -162,7 +165,7 @@ public interface FishHook extends Projectile {
      *
      * @param maxLureAngle Maximum angle of where a fish may appear
      */
-    public void setMaxLureAngle(float maxLureAngle);
+    void setMaxLureAngle(float maxLureAngle);
 
     /**
      * Set both the minimum (default 0) and maximum (default 360) angle of where
@@ -173,7 +176,27 @@ public interface FishHook extends Projectile {
      * @param min minimum angle in degrees
      * @param max maximum angle in degrees
      */
-    public void setLureAngle(float min, float max);
+    void setLureAngle(float min, float max);
+
+    /**
+     * Set maximum distance from fishhook to launching projectile source in blocks.
+     * When exceeded, the fishhook despawns.
+     * <p>
+     * Note, that the client has hardcoded limit of 64 blocks for rendering entities,
+     * so the fishhook along with fish line is not rendered for further distances.
+     * <p>
+     * The default is 32 blocks.
+     *
+     * @param maxDistance maximum distance between fishhook and its source in blocks
+     */
+    void setMaxFishHookDistance(@Positive float maxDistance);
+
+    /**
+     * Get maximum distance from fish hook to launching projectile source in blocks.
+     *
+     * @return maximum distance between fish hook and its source in blocks
+     */
+    float getMaxFishHookDistance();
 
     /**
      * Get whether the lure enchantment should be applied to reduce the wait
@@ -186,7 +209,7 @@ public interface FishHook extends Projectile {
      * @return Whether the lure enchantment should be applied to reduce the wait
      * time
      */
-    public boolean getApplyLure();
+    boolean getApplyLure();
 
     /**
      * Set whether the lure enchantment should be applied to reduce the wait
@@ -199,7 +222,7 @@ public interface FishHook extends Projectile {
      * @param applyLure Whether the lure enchantment should be applied to reduce
      * the wait time
      */
-    public void setApplyLure(boolean applyLure);
+    void setApplyLure(boolean applyLure);
 
     /**
      * Gets the chance of a fish biting.
@@ -211,7 +234,7 @@ public interface FishHook extends Projectile {
      * @deprecated has no effect in newer Minecraft versions
      */
     @Deprecated(since = "1.9.2", forRemoval = true)
-    public double getBiteChance();
+    double getBiteChance();
 
     /**
      * Sets the chance of a fish biting.
@@ -225,7 +248,7 @@ public interface FishHook extends Projectile {
      * @deprecated has no effect in newer Minecraft versions
      */
     @Deprecated(since = "1.9.2", forRemoval = true)
-    public void setBiteChance(double chance) throws IllegalArgumentException;
+    void setBiteChance(double chance) throws IllegalArgumentException;
 
     /**
      * Check whether or not this fish hook is in open water.
@@ -235,22 +258,21 @@ public interface FishHook extends Projectile {
      *
      * @return true if in open water, false otherwise
      */
-    public boolean isInOpenWater();
+    boolean isInOpenWater();
 
     /**
      * Get the entity hooked by this fish hook.
      *
      * @return the hooked entity. null if none
      */
-    @Nullable
-    public Entity getHookedEntity();
+    @Nullable Entity getHookedEntity();
 
     /**
      * Set the entity hooked by this fish hook.
      *
      * @param entity the entity to set, or null to unhook
      */
-    public void setHookedEntity(@Nullable Entity entity);
+    void setHookedEntity(@Nullable Entity entity);
 
     /**
      * Pull the hooked entity to the caster of this fish hook. If no entity is
@@ -258,7 +280,7 @@ public interface FishHook extends Projectile {
      *
      * @return true if pulled, false if no entity is hooked
      */
-    public boolean pullHookedEntity();
+    boolean pullHookedEntity();
 
     /**
      * Whether or not wait and lure time will be impacted by direct sky access.
@@ -267,7 +289,7 @@ public interface FishHook extends Projectile {
      *
      * @return skylight access influences catch rate
      */
-    public boolean isSkyInfluenced();
+    boolean isSkyInfluenced();
 
     /**
      * Set whether or not wait and lure time will be impacted by direct sky
@@ -277,7 +299,7 @@ public interface FishHook extends Projectile {
      *
      * @param skyInfluenced if this hook is influenced by skylight access
      */
-    public void setSkyInfluenced(boolean skyInfluenced);
+    void setSkyInfluenced(boolean skyInfluenced);
 
     /**
      * Whether or not wait and lure time will be impacted by rain.
@@ -286,7 +308,7 @@ public interface FishHook extends Projectile {
      *
      * @return rain influences catch rate
      */
-    public boolean isRainInfluenced();
+    boolean isRainInfluenced();
 
     /**
      * Set whether or not wait and lure time will be impacted by rain.
@@ -295,21 +317,20 @@ public interface FishHook extends Projectile {
      *
      * @param rainInfluenced if this hook is influenced by rain
      */
-    public void setRainInfluenced(boolean rainInfluenced);
+    void setRainInfluenced(boolean rainInfluenced);
 
     /**
      * Get the current state of this fish hook.
      *
      * @return the fish hook state
      */
-    @NotNull
-    public HookState getState();
+    HookState getState();
 
     /**
      * Represents a state in which a fishing hook may be.
      * State transitions can be listened for using {@link FishHookStateChangeEvent}
      */
-    public enum HookState {
+    enum HookState {
 
         /**
          * The fishing hook has been cast and is either in the air or resting
@@ -349,8 +370,7 @@ public interface FishHook extends Projectile {
      *         while a value of zero represents a fish that has already bitten the hook.
      * @see #getWaitTime()
      */
-    @org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE)
-    int getTimeUntilBite();
+    @NonNegative int getTimeUntilBite();
 
     /**
      * Sets the number of ticks the fish has to swim until biting the hook.
@@ -359,7 +379,7 @@ public interface FishHook extends Projectile {
      *              One is the minimum that can be passed to this method and instructs the fish to bite the very next tick.
      * @throws IllegalArgumentException if the passed tick value is less than one.
      */
-    void setTimeUntilBite(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int ticks) throws IllegalArgumentException;
+    void setTimeUntilBite(@Positive int ticks) throws IllegalArgumentException;
 
     /**
      * Completely resets this fishing hook's fishing state, re-randomizing the time needed until a fish is lured and
@@ -378,9 +398,9 @@ public interface FishHook extends Projectile {
      *
      * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
      * @return The amount of damage which would be applied to the itemstack
-     * @throws IllegalStateException if the fish hook does not have a player casting it.
+     * @throws IllegalStateException if the fishhook does not have a player casting it.
      * @throws IllegalStateException if the player casting it is not holding a
      *                               {@link org.bukkit.inventory.ItemType#FISHING_ROD} in the specified equipment slot.
      */
-    int retrieve(@NotNull EquipmentSlot slot);
+    int retrieve(EquipmentSlot slot);
 }
